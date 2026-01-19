@@ -1,0 +1,18 @@
+{
+  "py-new-core": {
+    "description": "Create a Core Data Class (No UI)",
+    "prompt": "Create a Python dataclass in `core/`. Use `__slots__` for optimization. Add docstrings. Ensure NO PyQt imports. Implement `serialize`/`deserialize` methods using `struct`."
+  },
+  "py-new-brush": {
+    "description": "Port a Brush from C++ to Python",
+    "prompt": "Read the Legacy C++ brush logic. Implement the logic class in `logic_layer/brushes/`. Inherit from `BaseBrush`. Ensure implementation of `draw` and `undraw`."
+  },
+  "py-parse-struct": {
+    "description": "Generate struct.unpack string from C++ struct",
+    "prompt": "Convert this C++ struct definition to a Python `struct.unpack` format string. Explain the byte offsets."
+  },
+  "py-test-gen": {
+    "description": "Generate Pytest for Module",
+    "prompt": "Create a pytest file for the selected module. Use `pytest.fixture` for setup. Mock any `vis_layer` dependencies if testing logic."
+  }
+}

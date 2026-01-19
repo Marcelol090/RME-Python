@@ -1,0 +1,7 @@
+[0;36m[INFO][0m  [2026-01-11 00:52:23] === Quality Pipeline Iniciado ===
+[0;36m[INFO][0m  [2026-01-11 00:52:24] Modo: dry-run | Verbose: true | Telemetry: false
+[0;36m[INFO][0m  [2026-01-11 00:52:24] Verificando dependências do sistema...
+[0;34m[DEBUG][0m [2026-01-11 00:52:24] python encontrado: /c/Python312/python
+[0;31m[ERROR][0m [2026-01-11 00:52:24] Dependência ausente: ruff
+[0;36m[INFO][0m  [2026-01-11 00:52:24] Sugestão de instalação: pip install ruff
+[1;33m[WARN][0m  [2026-01-11 00:52:24] Nenhum snapshot ativo para rollback

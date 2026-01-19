@@ -1,0 +1,2418 @@
+[
+  {
+    "tool": "ruff",
+    "rule": "I001",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 31,
+    "message": "Import block is un-sorted or un-formatted",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP035",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 39,
+    "message": "Import from `collections.abc` instead: `Iterable`",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 52,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 62,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 68,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 174,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "E501",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 199,
+    "message": "Line too long (122 > 120)",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 202,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 256,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 276,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 344,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 345,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "F841",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 354,
+    "message": "Local variable `other_edge` is assigned to but never used",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 407,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 418,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "UP045",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 513,
+    "message": "Use `X | None` for type annotations",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "E402",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\validate_doodads_in_memory.py",
+    "line": 16,
+    "message": "Module level import not at top of file",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "I001",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\validate_doodads_in_memory.py",
+    "line": 16,
+    "message": "Import block is un-sorted or un-formatted",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "E402",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\validate_doodads_in_memory.py",
+    "line": 18,
+    "message": "Module level import not at top of file",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "E402",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\validate_doodads_in_memory.py",
+    "line": 19,
+    "message": "Module level import not at top of file",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "E402",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\validate_doodads_in_memory.py",
+    "line": 20,
+    "message": "Module level import not at top of file",
+    "severity": null
+  },
+  {
+    "tool": "ruff",
+    "rule": "E402",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\validate_doodads_in_memory.py",
+    "line": 21,
+    "message": "Module level import not at top of file",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\assets\\sprite_appearances.py",
+    "line": 118,
+    "message": "`_load_sheet` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\assets\\sprite_appearances.py",
+    "line": 205,
+    "message": "`get_sprite_rgba` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\database\\door_pairs.py",
+    "line": 27,
+    "message": "`load_door_pairs` is too complex (16 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\database\\items_otb.py",
+    "line": 159,
+    "message": "`_parse_item_node` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\map_detection.py",
+    "line": 22,
+    "message": "`detect_map_file` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\item_parser.py",
+    "line": 74,
+    "message": "`apply_known_attribute_map_fields` is too complex (15 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\item_parser.py",
+    "line": 174,
+    "message": "`parse_item_payload` is too complex (30 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\loader.py",
+    "line": 102,
+    "message": "`load` is too complex (14 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\loader.py",
+    "line": 343,
+    "message": "`_parse_tile_area` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\saver.py",
+    "line": 160,
+    "message": "`_build_attribute_map_attr` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\saver.py",
+    "line": 258,
+    "message": "`_build_item_payload` is too complex (21 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm\\tile_parser.py",
+    "line": 123,
+    "message": "`_parse_tile_children` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\otbm_loader.py",
+    "line": 39,
+    "message": "`_load_external_files_into_gamemap` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\spawn_xml.py",
+    "line": 23,
+    "message": "`parse_monster_spawns_xml` is too complex (14 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\io\\spawn_xml.py",
+    "line": 103,
+    "message": "`parse_npc_spawns_xml` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\core\\memory_guard.py",
+    "line": 67,
+    "message": "`load_default` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\alignment.py",
+    "line": 13,
+    "message": "`select_border_alignment` is too complex (23 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\alignment.py",
+    "line": 115,
+    "message": "`select_border_alignment_when_present` is too complex (21 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 79,
+    "message": "`_candidate_border_keys` is too complex (17 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 196,
+    "message": "`update_positions` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 278,
+    "message": "`_process_wall_logic` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 320,
+    "message": "`_process_terrain_logic` is too complex (35 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 428,
+    "message": "`_process_ground_border_logic` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 527,
+    "message": "`apply_autoborder_brush_to_positions` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\borders\\processor.py",
+    "line": 604,
+    "message": "`apply_brush_definition_around_positions` is too complex (18 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\brush_definitions.py",
+    "line": 192,
+    "message": "`_virtual_brush_for_id` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\brush_definitions.py",
+    "line": 405,
+    "message": "`load_from_file` is too complex (15 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\brush_definitions.py",
+    "line": 471,
+    "message": "`load_doodads_from_materials` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\map_statistics.py",
+    "line": 39,
+    "message": "`compute_map_statistics` is too complex (17 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 363,
+    "message": "`apply_door_brush_to_positions` is too complex (22 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 1193,
+    "message": "`set_monster_spawn_areas` is too complex (14 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 1371,
+    "message": "`set_npc_spawn_areas` is too complex (14 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 1649,
+    "message": "`delete_monster_spawn_entry_at_cursor` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 1713,
+    "message": "`delete_monster_spawn_entries` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 1911,
+    "message": "`delete_npc_spawn_entry_at_cursor` is too complex (11 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 1970,
+    "message": "`delete_npc_spawn_entries` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 2042,
+    "message": "`clear_invalid_tiles` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 2156,
+    "message": "`_randomize_positions` is too complex (13 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 2355,
+    "message": "`mouse_down` is too complex (34 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\editor.py",
+    "line": 2524,
+    "message": "`mouse_up` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\gestures.py",
+    "line": 207,
+    "message": "`_flood_fill_positions_64x64` is too complex (14 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\session\\move.py",
+    "line": 26,
+    "message": "`move_selection` is too complex (18 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\transactional_brush.py",
+    "line": 465,
+    "message": "`paint` is too complex (46 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\logic_layer\\transactional_brush.py",
+    "line": 719,
+    "message": "`end` is too complex (17 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 202,
+    "message": "`_export_wall_brush` is too complex (12 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 250,
+    "message": "`_export_ground_brush` is too complex (36 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "ruff_c901",
+    "rule": "C901",
+    "file": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\tools\\export_brushes_json.py",
+    "line": 418,
+    "message": "`iter_exported_brushes` is too complex (21 > 10)",
+    "severity": null
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_palettes.py",
+    "line": 11,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_palettes.QtMapEditorPalettesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_palettes.py",
+    "line": 12,
+    "message": "Cannot determine type of \"palettes\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_palettes.py",
+    "line": 14,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_palettes.QtMapEditorPalettesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_palettes.py",
+    "line": 15,
+    "message": "Cannot determine type of \"palettes\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 15,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 35,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 47,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 57,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 101,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 111,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 120,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_navigation.py",
+    "line": 135,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation.QtMapEditorNavigationMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_mirror.py",
+    "line": 11,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror.QtMapEditorMirrorMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_mirror.py",
+    "line": 22,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror.QtMapEditorMirrorMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_mirror.py",
+    "line": 25,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror.QtMapEditorMirrorMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_mirror.py",
+    "line": 30,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror.QtMapEditorMirrorMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_mirror.py",
+    "line": 40,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror.QtMapEditorMirrorMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_mirror.py",
+    "line": 49,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror.QtMapEditorMirrorMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 18,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file.QtMapEditorFileMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 32,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file.QtMapEditorFileMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 63,
+    "message": "\"OTBMLoader\" has no attribute \"load_with_detection\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 68,
+    "message": "\"OTBMLoader\" has no attribute \"last_otbm_path\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 74,
+    "message": "\"OTBMLoader\" has no attribute \"last_id_mapper\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 81,
+    "message": "\"OTBMLoader\" has no attribute \"last_config\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 81,
+    "message": "\"OTBMLoader\" has no attribute \"last_otbm_path\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 82,
+    "message": "\"OTBMLoader\" has no attribute \"last_otbm_path\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 82,
+    "message": "\"OTBMLoader\" has no attribute \"last_config\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 87,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file.QtMapEditorFileMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_file.py",
+    "line": 96,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file.QtMapEditorFileMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 12,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 16,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 20,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 24,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 33,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 41,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 51,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 61,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 70,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 80,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 91,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 109,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit.QtMapEditorEditMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_edit.py",
+    "line": 113,
+    "message": "Item \"None\" of \"QClipboard | None\" has no attribute \"setText\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 15,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 23,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 33,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 44,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 59,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 74,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 84,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 96,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 104,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 111,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 112,
+    "message": "Cannot determine type of \"palettes\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_brushes.py",
+    "line": 114,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes.QtMapEditorBrushesMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 23,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 33,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 34,
+    "message": "Cannot determine type of \"_memory_guard\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 44,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 54,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 80,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 85,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 95,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 120,
+    "message": "Item \"None\" of \"Any | None\" has no attribute \"engine\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 123,
+    "message": "Item \"None\" of \"Any | None\" has no attribute \"client_version\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 129,
+    "message": "Item \"None\" of \"Any | None\" has no attribute \"items_otb\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 132,
+    "message": "Item \"None\" of \"Any | None\" has no attribute \"items_xml\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 137,
+    "message": "\"Collection[str]\" has no attribute \"items\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 144,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 188,
+    "message": "Cannot determine type of \"_memory_guard\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 197,
+    "message": "Cannot determine type of \"_memory_guard\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 198,
+    "message": "Cannot determine type of \"_memory_guard\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "misc",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 216,
+    "message": "The erased type of self \"py_rme_canary.vis_layer.ui.main_window.editor.QtMapEditor\" is not a supertype of its class \"py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets.QtMapEditorAssetsMixin\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "unreachable",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_assets.py",
+    "line": 218,
+    "message": "Statement is unreachable",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\find_item.py",
+    "line": 56,
+    "message": "Item \"None\" of \"MinimapWidget | None\" has no attribute \"update\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 14,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 15,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 16,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 17,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 18,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 19,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 20,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 22,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 23,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 24,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 25,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 26,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 30,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 32,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 34,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 36,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 38,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 40,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 53,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 55,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 56,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 57,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 58,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 61,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 62,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 64,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 65,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 66,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 67,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 69,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 70,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 71,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 73,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 74,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 75,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 76,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 77,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 79,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 80,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 81,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 82,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 84,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 85,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 86,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 88,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 89,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 91,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 92,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 93,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 94,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 95,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 97,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 98,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 100,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 101,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 102,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 103,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 104,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 105,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 107,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 108,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 111,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 112,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 113,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 114,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 115,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 117,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 118,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 121,
+    "message": "Item \"None\" of \"QMenuBar | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 123,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 124,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 125,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 126,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 127,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 129,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 130,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 131,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 132,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 134,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 135,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 136,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 137,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 138,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 141,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 143,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 150,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 152,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 153,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 154,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 156,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 157,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 158,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 159,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 160,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 161,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 162,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 163,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 164,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 165,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 167,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 168,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 169,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 170,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 173,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addMenu\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 174,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 175,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 176,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 177,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 179,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 180,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 181,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 183,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 184,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 185,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addSeparator\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 186,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 187,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 188,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 189,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 190,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 191,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 192,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 193,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 194,
+    "message": "Item \"None\" of \"QMenu | Any | None\" has no attribute \"addAction\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\main_window\\build_menus.py",
+    "line": 197,
+    "message": "Incompatible types in assignment (expression has type \"QMenu | Any | None\", variable has type \"QMenu\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\build_actions.py",
+    "line": 230,
+    "message": "\"QtMapEditor\" has no attribute \"act_brush_variation_prev\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\main_window\\build_actions.py",
+    "line": 235,
+    "message": "\"QtMapEditor\" has no attribute \"act_brush_variation_next\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 243,
+    "message": "Incompatible types in assignment (expression has type \"int | None\", variable has type \"int\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "no-redef",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 264,
+    "message": "Name \"used\" already defined on line 225",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 265,
+    "message": "Incompatible types in assignment (expression has type \"tuple[str, ...]\", variable has type \"list[str]\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "no-redef",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 266,
+    "message": "Name \"name_to_vid\" already defined on line 227",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 277,
+    "message": "Incompatible types in assignment (expression has type \"int | None\", variable has type \"int\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 294,
+    "message": "Incompatible types in assignment (expression has type \"tuple[str, ...]\", variable has type \"list[str]\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "no-redef",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 295,
+    "message": "Name \"name_to_vid\" already defined on line 227",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 306,
+    "message": "Incompatible types in assignment (expression has type \"int | None\", variable has type \"int\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 425,
+    "message": "\"QtMapEditor\" has no attribute \"dock_brushes\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 426,
+    "message": "\"QtMapEditor\" has no attribute \"brush_filter\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 427,
+    "message": "\"QtMapEditor\" has no attribute \"brush_list\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "attr-defined",
+    "file": "vis_layer\\ui\\docks\\palette.py",
+    "line": 428,
+    "message": "\"QtMapEditor\" has no attribute \"_primary_palette\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\docks\\minimap.py",
+    "line": 95,
+    "message": "Item \"None\" of \"Item | None\" has no attribute \"id\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "var-annotated",
+    "file": "vis_layer\\ui\\canvas\\widget.py",
+    "line": 152,
+    "message": "Need type annotation for \"stack\" (hint: \"stack: list[<type>] = ...\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\canvas\\widget.py",
+    "line": 182,
+    "message": "Cannot determine type of \"indicators\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\canvas\\widget.py",
+    "line": 183,
+    "message": "Cannot determine type of \"indicators\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\canvas\\widget.py",
+    "line": 206,
+    "message": "Cannot determine type of \"indicators\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\canvas\\widget.py",
+    "line": 211,
+    "message": "Cannot determine type of \"indicators\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\canvas\\widget.py",
+    "line": 216,
+    "message": "Cannot determine type of \"indicators\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\build_docks.py",
+    "line": 15,
+    "message": "Cannot determine type of \"palettes\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\build_docks.py",
+    "line": 32,
+    "message": "Cannot determine type of \"actions_history\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "has-type",
+    "file": "vis_layer\\ui\\main_window\\qt_map_editor_docks.py",
+    "line": 36,
+    "message": "Cannot determine type of \"actions_history\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 244,
+    "message": "Incompatible types in assignment (expression has type \"str | None\", base class \"QtMapEditorFileMixin\" defined the type as \"None\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 257,
+    "message": "Incompatible types in assignment (expression has type \"str | None\", base class \"QtMapEditorAssetsMixin\" defined the type as \"str\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 258,
+    "message": "Incompatible types in assignment (expression has type \"None\", variable has type \"SpriteAppearances\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 265,
+    "message": "Incompatible types in assignment (expression has type \"str | None\", base class \"QtMapEditorAssetsMixin\" defined the type as \"None\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "assignment",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 273,
+    "message": "Incompatible types in assignment (expression has type \"int | None\", base class \"QtMapEditorMirrorMixin\" defined the type as \"int\")",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 461,
+    "message": "Item \"None\" of \"QStyle | None\" has no attribute \"standardIcon\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 463,
+    "message": "Item \"None\" of \"QStyle | None\" has no attribute \"standardIcon\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 465,
+    "message": "Item \"None\" of \"QStyle | None\" has no attribute \"standardIcon\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 467,
+    "message": "Item \"None\" of \"QStyle | None\" has no attribute \"standardIcon\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 469,
+    "message": "Item \"None\" of \"QStyle | None\" has no attribute \"standardIcon\"",
+    "severity": "error"
+  },
+  {
+    "tool": "mypy",
+    "rule": "union-attr",
+    "file": "vis_layer\\ui\\main_window\\editor.py",
+    "line": 471,
+    "message": "Item \"None\" of \"QStyle | None\" has no attribute \"standardIcon\"",
+    "severity": "error"
+  }
+]

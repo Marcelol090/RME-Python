@@ -1,0 +1,613 @@
+[
+{
+  "text": "print(f\"Skipping (syntax error): {path}\")",
+  "range": {
+    "byteOffset": {
+      "start": 1327,
+      "end": 1368
+    },
+    "start": {
+      "line": 45,
+      "column": 8
+    },
+    "end": {
+      "line": 45,
+      "column": 49
+    }
+  },
+  "file": "scripts\\ast_auto_split.py",
+  "lines": "        print(f\"Skipping (syntax error): {path}\")",
+  "charCount": {
+    "leading": 8,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"Skipping (syntax error): {path}\"",
+        "range": {
+          "byteOffset": {
+            "start": 1333,
+            "end": 1367
+          },
+          "start": {
+            "line": 45,
+            "column": 14
+          },
+          "end": {
+            "line": 45,
+            "column": 48
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"\\nCandidate: {path} ({len(lines)} lines)\")",
+  "range": {
+    "byteOffset": {
+      "start": 2378,
+      "end": 2428
+    },
+    "start": {
+      "line": 76,
+      "column": 4
+    },
+    "end": {
+      "line": 76,
+      "column": 54
+    }
+  },
+  "file": "scripts\\ast_auto_split.py",
+  "lines": "    print(f\"\\nCandidate: {path} ({len(lines)} lines)\")",
+  "charCount": {
+    "leading": 4,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"\\nCandidate: {path} ({len(lines)} lines)\"",
+        "range": {
+          "byteOffset": {
+            "start": 2384,
+            "end": 2427
+          },
+          "start": {
+            "line": 76,
+            "column": 10
+          },
+          "end": {
+            "line": 76,
+            "column": 53
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"  -> propose: {name} -> {new_path.name}\")",
+  "range": {
+    "byteOffset": {
+      "start": 2477,
+      "end": 2526
+    },
+    "start": {
+      "line": 78,
+      "column": 8
+    },
+    "end": {
+      "line": 78,
+      "column": 57
+    }
+  },
+  "file": "scripts\\ast_auto_split.py",
+  "lines": "        print(f\"  -> propose: {name} -> {new_path.name}\")",
+  "charCount": {
+    "leading": 8,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"  -> propose: {name} -> {new_path.name}\"",
+        "range": {
+          "byteOffset": {
+            "start": 2483,
+            "end": 2525
+          },
+          "start": {
+            "line": 78,
+            "column": 14
+          },
+          "end": {
+            "line": 78,
+            "column": 56
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"Applied split: backup {backup.name}\")",
+  "range": {
+    "byteOffset": {
+      "start": 3345,
+      "end": 3390
+    },
+    "start": {
+      "line": 105,
+      "column": 4
+    },
+    "end": {
+      "line": 105,
+      "column": 49
+    }
+  },
+  "file": "scripts\\ast_auto_split.py",
+  "lines": "    print(f\"Applied split: backup {backup.name}\")",
+  "charCount": {
+    "leading": 4,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"Applied split: backup {backup.name}\"",
+        "range": {
+          "byteOffset": {
+            "start": 3351,
+            "end": 3389
+          },
+          "start": {
+            "line": 105,
+            "column": 10
+          },
+          "end": {
+            "line": 105,
+            "column": 48
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"Normalized {len(issues)} issues -> {OUT}\")",
+  "range": {
+    "byteOffset": {
+      "start": 5096,
+      "end": 5146
+    },
+    "start": {
+      "line": 140,
+      "column": 4
+    },
+    "end": {
+      "line": 140,
+      "column": 54
+    }
+  },
+  "file": "scripts\\normalize_issues.py",
+  "lines": "    print(f\"Normalized {len(issues)} issues -> {OUT}\")",
+  "charCount": {
+    "leading": 4,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"Normalized {len(issues)} issues -> {OUT}\"",
+        "range": {
+          "byteOffset": {
+            "start": 5102,
+            "end": 5145
+          },
+          "start": {
+            "line": 140,
+            "column": 10
+          },
+          "end": {
+            "line": 140,
+            "column": 53
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(\"OK: doodad in-memory validations passed\")",
+  "range": {
+    "byteOffset": {
+      "start": 6202,
+      "end": 6250
+    },
+    "start": {
+      "line": 144,
+      "column": 4
+    },
+    "end": {
+      "line": 144,
+      "column": 52
+    }
+  },
+  "file": "tools\\validate_doodads_in_memory.py",
+  "lines": "    print(\"OK: doodad in-memory validations passed\")\r",
+  "charCount": {
+    "leading": 4,
+    "trailing": 1
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "\"OK: doodad in-memory validations passed\"",
+        "range": {
+          "byteOffset": {
+            "start": 6208,
+            "end": 6249
+          },
+          "start": {
+            "line": 144,
+            "column": 10
+          },
+          "end": {
+            "line": 144,
+            "column": 51
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(\"Normalized issues not found; run normalize step first.\")",
+  "range": {
+    "byteOffset": {
+      "start": 615,
+      "end": 678
+    },
+    "start": {
+      "line": 21,
+      "column": 8
+    },
+    "end": {
+      "line": 21,
+      "column": 71
+    }
+  },
+  "file": "scripts\\compare_with_baseline.py",
+  "lines": "        print(\"Normalized issues not found; run normalize step first.\")",
+  "charCount": {
+    "leading": 8,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "\"Normalized issues not found; run normalize step first.\"",
+        "range": {
+          "byteOffset": {
+            "start": 621,
+            "end": 677
+          },
+          "start": {
+            "line": 21,
+            "column": 14
+          },
+          "end": {
+            "line": 21,
+            "column": 70
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"New issues: {len(new)} -> {OUT}\")",
+  "range": {
+    "byteOffset": {
+      "start": 1097,
+      "end": 1138
+    },
+    "start": {
+      "line": 31,
+      "column": 4
+    },
+    "end": {
+      "line": 31,
+      "column": 45
+    }
+  },
+  "file": "scripts\\compare_with_baseline.py",
+  "lines": "    print(f\"New issues: {len(new)} -> {OUT}\")",
+  "charCount": {
+    "leading": 4,
+    "trailing": 0
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"New issues: {len(new)} -> {OUT}\"",
+        "range": {
+          "byteOffset": {
+            "start": 1103,
+            "end": 1137
+          },
+          "start": {
+            "line": 31,
+            "column": 10
+          },
+          "end": {
+            "line": 31,
+            "column": 44
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(\"OTBM header\")",
+  "range": {
+    "byteOffset": {
+      "start": 923,
+      "end": 943
+    },
+    "start": {
+      "line": 29,
+      "column": 4
+    },
+    "end": {
+      "line": 29,
+      "column": 24
+    }
+  },
+  "file": "tools\\read_otbm_header.py",
+  "lines": "    print(\"OTBM header\")\r",
+  "charCount": {
+    "leading": 4,
+    "trailing": 1
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "\"OTBM header\"",
+        "range": {
+          "byteOffset": {
+            "start": 929,
+            "end": 942
+          },
+          "start": {
+            "line": 29,
+            "column": 10
+          },
+          "end": {
+            "line": 29,
+            "column": 23
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"  otbm_version: {h.otbm_version}\")",
+  "range": {
+    "byteOffset": {
+      "start": 949,
+      "end": 991
+    },
+    "start": {
+      "line": 30,
+      "column": 4
+    },
+    "end": {
+      "line": 30,
+      "column": 46
+    }
+  },
+  "file": "tools\\read_otbm_header.py",
+  "lines": "    print(f\"  otbm_version: {h.otbm_version}\")\r",
+  "charCount": {
+    "leading": 4,
+    "trailing": 1
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"  otbm_version: {h.otbm_version}\"",
+        "range": {
+          "byteOffset": {
+            "start": 955,
+            "end": 990
+          },
+          "start": {
+            "line": 30,
+            "column": 10
+          },
+          "end": {
+            "line": 30,
+            "column": 45
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"  width: {h.width}\")",
+  "range": {
+    "byteOffset": {
+      "start": 997,
+      "end": 1025
+    },
+    "start": {
+      "line": 31,
+      "column": 4
+    },
+    "end": {
+      "line": 31,
+      "column": 32
+    }
+  },
+  "file": "tools\\read_otbm_header.py",
+  "lines": "    print(f\"  width: {h.width}\")\r",
+  "charCount": {
+    "leading": 4,
+    "trailing": 1
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"  width: {h.width}\"",
+        "range": {
+          "byteOffset": {
+            "start": 1003,
+            "end": 1024
+          },
+          "start": {
+            "line": 31,
+            "column": 10
+          },
+          "end": {
+            "line": 31,
+            "column": 31
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"  height: {h.height}\")",
+  "range": {
+    "byteOffset": {
+      "start": 1031,
+      "end": 1061
+    },
+    "start": {
+      "line": 32,
+      "column": 4
+    },
+    "end": {
+      "line": 32,
+      "column": 34
+    }
+  },
+  "file": "tools\\read_otbm_header.py",
+  "lines": "    print(f\"  height: {h.height}\")\r",
+  "charCount": {
+    "leading": 4,
+    "trailing": 1
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"  height: {h.height}\"",
+        "range": {
+          "byteOffset": {
+            "start": 1037,
+            "end": 1060
+          },
+          "start": {
+            "line": 32,
+            "column": 10
+          },
+          "end": {
+            "line": 32,
+            "column": 33
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+},
+{
+  "text": "print(f\"  items_total: {count}\")",
+  "range": {
+    "byteOffset": {
+      "start": 1255,
+      "end": 1287
+    },
+    "start": {
+      "line": 40,
+      "column": 8
+    },
+    "end": {
+      "line": 40,
+      "column": 40
+    }
+  },
+  "file": "tools\\read_otbm_header.py",
+  "lines": "        print(f\"  items_total: {count}\")\r",
+  "charCount": {
+    "leading": 8,
+    "trailing": 1
+  },
+  "language": "Python",
+  "metaVariables": {
+    "single": {
+      "MSG": {
+        "text": "f\"  items_total: {count}\"",
+        "range": {
+          "byteOffset": {
+            "start": 1261,
+            "end": 1286
+          },
+          "start": {
+            "line": 40,
+            "column": 14
+          },
+          "end": {
+            "line": 40,
+            "column": 39
+          }
+        }
+      }
+    },
+    "multi": {},
+    "transformed": {}
+  }
+}
+]
