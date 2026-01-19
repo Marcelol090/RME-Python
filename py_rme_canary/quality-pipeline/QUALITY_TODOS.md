@@ -1,17 +1,17 @@
 # Quality Pipeline TODOs (derived from quality_pipeline_v1.md)
 
 ## Semana 1-2 — Quick Wins
-- [ ] Criar diretório `tools/quality_scripts/` e `__init__.py`
-- [ ] Extrair `index_symbols.py`
-- [ ] Extrair `normalize_issues.py`
-- [ ] Atualizar `quality.sh` para usar scripts externos
-- [ ] Testar `./quality.sh --dry-run --verbose`
+- [x] Criar diretório `tools/quality_scripts/` e `__init__.py`
+- [x] Extrair `index_symbols.py`
+- [x] Extrair `normalize_issues.py`
+- [x] Atualizar `quality.sh` para usar scripts externos
+- [x] Testar `./quality.sh --dry-run --verbose`
 - [ ] Instalar `pre-commit`
-- [ ] Adicionar `.pre-commit-config.yaml`
+- [x] Adicionar `.pre-commit-config.yaml`
 - [ ] Rodar `pre-commit run --all-files`
-- [ ] Instalar `uv`
+- [x] Instalar `uv`
 - [ ] Testar `uv pip install -r requirements.txt`
-- [ ] Atualizar `quality.sh` para detectar `uv`
+- [x] Atualizar `quality.sh` para detectar `uv`
 
 ## Semana 3-4 — Paralelização
 - [ ] Instalar GNU Parallel

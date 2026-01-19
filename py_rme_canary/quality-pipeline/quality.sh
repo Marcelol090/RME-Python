@@ -115,6 +115,7 @@ log() {
 }
 
 # Prefer uv when available for faster installs
+# shellcheck disable=SC2034 # exported for future installers
 if command -v uv &>/dev/null; then
   PYTHON_INSTALL_CMD="uv pip install"
   log INFO "Usando uv (fast mode)"
@@ -729,4 +730,3 @@ main() {
 }
 
 main
-

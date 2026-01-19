@@ -600,3 +600,8 @@ Agora o Codex tem "memória de longo prazo" e não vai se perder entre sessões.
 - **Adjusted:** `quality.sh` paths now resolve scripts via `QUALITY_SCRIPTS_DIR`; duplicate headers cleaned.
 - **Next:** Finish Fase 1 items (run pre-commit install/run, uv setup test), then parallel/cache (Fase 2) and Taskfile migration (Fase 3).
 
+### [2026-01-19] Quality pipeline CRLF cleanup + uv verified
+- **Fixed:** `quality.sh` rewritten with LF endings; ShellCheck now only warns about placeholder `PYTHON_INSTALL_CMD` (silenced via SC2034 disable).
+- **Verified:** `quality.sh --dry-run --verbose` passes with uv detected in PATH; outputs 576 Ruff issues / 184 Radon high CC / 0 mypy errors; Sonar runs without token (local).
+- **Updated:** `QUALITY_TODOS.md` checkboxes for completed Fase 1 items.
+
