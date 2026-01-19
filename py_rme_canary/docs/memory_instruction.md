@@ -587,3 +587,10 @@ Agora o Codex tem "memória de longo prazo" e não vai se perder entre sessões.
 - **Updated:** `docs/IMPLEMENTATION_STATUS.md` notes OpenGLCanvasWidget as the primary canvas.
 - **Next:** validate OpenGL/QPainter fallback parity and confirm no interaction regressions.
 
+### [2026-01-19] Tooling parity + quality pipeline
+- **Added:** `pyproject.toml` with Ruff/Mypy config (py312, line-length 120, excludes vis_layer/tools) to satisfy quality pipeline expectations.
+- **Updated:** `quality-pipeline/quality.sh` normalization step now tolerates non-dict radon entries and missing ast-grep output; reran `quality.sh --dry-run --verbose` with sonar-scanner, ruff, mypy, radon, sg all discovered in PATH.
+- **Fixed:** `BrushSettings.apply_brush_with_size` now typed (Callable[..., list[Any]]); mypy baseline clean again.
+- **Added:** `.gitignore` entries for `.agent/` and `Remeres-map-editor-linux-4.0.0/` to avoid committing local agent metadata and legacy reference tree.
+- **Note:** Latest `quality.sh` dry-run completes; 576 Ruff issues and 183 high Radon CC remain; Sonar ran without token (local mode).
+

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Iterator
+from typing import Any, Callable, Iterator
 
 from py_rme_canary.core.data.item import Position
 
@@ -123,11 +123,11 @@ class BrushSettings:
 
 
 def apply_brush_with_size(
-    brush_func,
-    game_map,
+    brush_func: Callable[[Any, Position], list[Any]],
+    game_map: Any,
     center: Position,
     settings: BrushSettings,
-) -> list:
+) -> list[Any]:
     """Apply a brush function across all positions in brush size.
 
     Args:

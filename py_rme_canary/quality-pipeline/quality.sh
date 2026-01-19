@@ -559,6 +559,8 @@ elif isinstance(radon_data, list):
     radon_entries = radon_data
 
 for i in radon_entries:
+    if not isinstance(i, dict):
+        continue
     issues.append({
         "tool": "radon",
         "function": i.get("name"),
@@ -569,7 +571,14 @@ for i in radon_entries:
 
 # AST-grep
 astgrep_data = safe_load(".quality_reports/astgrep_results.json")
-for file_matches in astgrep_data:
+if isinstance(astgrep_data, dict):
+    astgrep_iter = [astgrep_data]
+elif isinstance(astgrep_data, list):
+    astgrep_iter = astgrep_data
+else:
+    astgrep_iter = []
+
+for file_matches in astgrep_iter:
     for match in file_matches.get("matches", []):
         issues.append({
             "tool": "ast-grep",
