@@ -610,3 +610,8 @@ Agora o Codex tem "memória de longo prazo" e não vai se perder entre sessões.
 - **Added:** `tools/quality_scripts/hash_python.py` to fingerprint the Python tree; caching wrappers now reuse Ruff/Mypy/Radon outputs whenever sources unchanged (two dry-run runs show cache hits).
 - **Note:** `QUALITY_TODOS.md` now tracks Phase 2 progress (parallel baseline + caching done, install Parallel/time measurement pending); Stage 2 still logs GNU Parallel as missing so sequential path used.
 
+### [2026-01-19] Quality pipeline Phase 3 — Task migration groundwork
+- **Added:** `Taskfile.yml` as a Task-based orchestration entrypoint covering `setup`, `quality:check`, `quality:fix`, individual tool checks, `tests` group, `clean`, and `snapshot`.
+- **Updated:** `QUALITY_TODOS.md` checkboxes now reflect Task tasks (cleanup/snapshot tasks already wired, Taskfile created, per-tool tasks ported; Task binary install + Task run still pending).
+- **Next:** Install `task` (Go 1.19+) and run `task quality:check` to validate the Task-based workflow; document Task usage in README once onboarding is complete.
+

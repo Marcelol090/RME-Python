@@ -25,11 +25,11 @@
 
 ## Semana 5-6 — Task Migration
 - [ ] Instalar Task (Go 1.19+)
-- [ ] Criar `Taskfile.yml`
-- [ ] Migrar tasks: `ruff:check`, `mypy:check`, `radon:check`
-- [ ] Migrar task `tests`
+- [x] Criar `Taskfile.yml`
+- [x] Migrar tasks: `ruff:check`, `mypy:check`, `radon:check`
+- [x] Migrar task `tests`
 - [ ] Testar `task quality:check`
-- [ ] Adicionar utilidades (clean, snapshot)
+- [x] Adicionar utilidades (clean, snapshot)
 - [ ] Documentar Task no README
 
 ## Opcional — Ferramentas Avançadas

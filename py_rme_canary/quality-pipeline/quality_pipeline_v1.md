@@ -915,6 +915,13 @@ git checkout main -- quality.sh
 
 ---
 
+## Status Atual (2026-01-19)
+
+- Taskfile criado para setup, quality:check, quality:fix, testes e utilitários.
+- Próximo passo: instalar 	ask (Go 1.19+) e executar 	ask quality:check; documentar uso no README finaliza a migração.
+
+---
+
 ## Contatos e Suporte
 
 **Duvidas?**
