@@ -594,3 +594,9 @@ Agora o Codex tem "memória de longo prazo" e não vai se perder entre sessões.
 - **Added:** `.gitignore` entries for `.agent/` and `Remeres-map-editor-linux-4.0.0/` to avoid committing local agent metadata and legacy reference tree.
 - **Note:** Latest `quality.sh` dry-run completes; 576 Ruff issues and 183 high Radon CC remain; Sonar ran without token (local mode).
 
+### [2026-01-19] Quality pipeline refactor - Fase 1 start
+- **Added:** `tools/quality_scripts/index_symbols.py` and `normalize_issues.py`; `quality.sh` now calls these external scripts and detects `uv` for faster installs.
+- **Added:** `QUALITY_TODOS.md` summarizing pipeline rollout (Semanas 1-6 + opcionais) and `.pre-commit-config.yaml` with ruff/mypy/radon/shellcheck hooks.
+- **Adjusted:** `quality.sh` paths now resolve scripts via `QUALITY_SCRIPTS_DIR`; duplicate headers cleaned.
+- **Next:** Finish Fase 1 items (run pre-commit install/run, uv setup test), then parallel/cache (Fase 2) and Taskfile migration (Fase 3).
+

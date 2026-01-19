@@ -11,6 +11,8 @@ PYTHON_BIN="${PYTHON_BIN:-python}"
 
 # Detecção automática de diretórios (evita hardcoded paths)
 ROOT_DIR="${ROOT_DIR:-$(pwd)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+QUALITY_SCRIPTS_DIR="$(cd "$SCRIPT_DIR/../tools/quality_scripts" && pwd)"
 REPORT_DIR="${REPORT_DIR:-.quality_reports}"
 TMP_DIR="${TMP_DIR:-.quality_tmp}"
 CACHE_DIR="${CACHE_DIR:-.quality_cache}"
@@ -111,6 +113,15 @@ log() {
     echo "{\"level\":\"$level\",\"timestamp\":\"$timestamp\",\"message\":\"$message\"}" >> "$REPORT_DIR/telemetry.jsonl"
   fi
 }
+
+# Prefer uv when available for faster installs
+if command -v uv &>/dev/null; then
+  PYTHON_INSTALL_CMD="uv pip install"
+  log INFO "Usando uv (fast mode)"
+else
+  PYTHON_INSTALL_CMD="pip install"
+  log WARN "uv nao encontrado - usando pip (slow mode)"
+fi
 
 #############################################
 # DEPENDÊNCIAS - VALIDAÇÃO AVANÇADA
@@ -257,50 +268,10 @@ index_symbols() {
   local output="$1"
   log INFO "Indexando símbolos → $output"
 
-  "$PYTHON_BIN" - "$output" <<'PYTHON'
-import ast
-import json
-from pathlib import Path
-import sys
-import sys
-import sys
-import sys
-import sys
-
-symbols = []
-errors = []
-
-for path in Path(".").rglob("*.py"):
-    if any(p in str(path) for p in (".venv", "__pycache__", "site-packages", ".tox")):
-        continue
-    
-    try:
-        source = path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(path))
-    except SyntaxError as e:
-        errors.append({"file": str(path), "error": str(e)})
-        continue
-    except Exception as e:
-        errors.append({"file": str(path), "error": f"Unexpected: {str(e)}"})
-        continue
-
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            symbols.append({
-                "type": node.__class__.__name__,
-                "name": node.name,
-                "file": str(path),
-                "line": node.lineno,
-                "decorators": [d.id if isinstance(d, ast.Name) else str(d) for d in getattr(node, 'decorator_list', [])]
-            })
-
-output_path = Path(sys.argv[1])
-output_path.write_text(json.dumps({"symbols": symbols, "errors": errors}, indent=2))
-
-if errors:
-    print(f"⚠️  {len(errors)} arquivo(s) com erro de parsing", file=sys.stderr)
-PYTHON
-
+  if ! "$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/index_symbols.py" "$output"; then
+    log ERROR "Falha ao indexar símbolos"
+    return 1
+  fi
 }
 
 #############################################
@@ -526,72 +497,10 @@ run_libcst() {
 normalize_issues() {
   log INFO "Normalizando issues de todas as ferramentas..."
 
-  "$PYTHON_BIN" - "$ISSUES_NORMALIZED" <<'PYTHON'
-import json
-from pathlib import Path
-import sys
-
-issues = []
-
-def safe_load(path):
-    try:
-        return json.loads(Path(path).read_text())
-    except Exception:
-        return []
-
-# Ruff
-for i in safe_load(".ruff.json") or []:
-    issues.append({
-        "tool": "ruff",
-        "code": i.get("code"),
-        "file": i.get("filename"),
-        "line": i.get("location", {}).get("row"),
-        "severity": "high" if i.get("code", "").startswith("S") else "medium"
-    })
-
-# Radon
-radon_data = safe_load(".radon.json")
-radon_entries = []
-if isinstance(radon_data, dict):
-    for entries in radon_data.values():
-        radon_entries.extend(entries)
-elif isinstance(radon_data, list):
-    radon_entries = radon_data
-
-for i in radon_entries:
-    if not isinstance(i, dict):
-        continue
-    issues.append({
-        "tool": "radon",
-        "function": i.get("name"),
-        "complexity": i.get("complexity"),
-        "file": i.get("filename"),
-        "severity": "high" if i.get("complexity", 0) > 10 else "medium"
-    })
-
-# AST-grep
-astgrep_data = safe_load(".quality_reports/astgrep_results.json")
-if isinstance(astgrep_data, dict):
-    astgrep_iter = [astgrep_data]
-elif isinstance(astgrep_data, list):
-    astgrep_iter = astgrep_data
-else:
-    astgrep_iter = []
-
-for file_matches in astgrep_iter:
-    for match in file_matches.get("matches", []):
-        issues.append({
-            "tool": "ast-grep",
-            "file": file_matches.get("file"),
-            "line": match.get("range", {}).get("start", {}).get("line"),
-            "pattern": match.get("text"),
-            "severity": "medium"
-        })
-
-Path(sys.argv[1]).write_text(json.dumps(issues, indent=2))
-print(f"✓ {len(issues)} issues normalizados")
-PYTHON
-
+  if ! "$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/normalize_issues.py" "$ISSUES_NORMALIZED"; then
+    log ERROR "Falha ao normalizar issues"
+    return 1
+  fi
 }
 
 #############################################
@@ -820,3 +729,4 @@ main() {
 }
 
 main
+
