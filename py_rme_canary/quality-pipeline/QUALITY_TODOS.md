@@ -15,13 +15,13 @@
 
 ## Semana 3-4 — Paralelização
 - [ ] Instalar GNU Parallel
-- [ ] Adicionar `export_functions()` no `quality.sh`
-- [ ] Rodar baseline em paralelo
+- [x] Adicionar `export_functions()` no `quality.sh`
+- [x] Rodar baseline em paralelo
 - [ ] Medir tempo: `time ./quality.sh --dry-run`
-- [ ] Adicionar `get_python_hash()`
-- [ ] Adicionar `run_with_cache()`
-- [ ] Usar cache em ruff/mypy/radon
-- [ ] Testar cache (2 execuções seguidas)
+- [x] Adicionar `get_python_hash()`
+- [x] Adicionar `run_with_cache()`
+- [x] Usar cache em ruff/mypy/radon
+- [x] Testar cache (2 execuções seguidas)
 
 ## Semana 5-6 — Task Migration
 - [ ] Instalar Task (Go 1.19+)

@@ -605,3 +605,8 @@ Agora o Codex tem "memória de longo prazo" e não vai se perder entre sessões.
 - **Verified:** `quality.sh --dry-run --verbose` passes with uv detected in PATH; outputs 576 Ruff issues / 184 Radon high CC / 0 mypy errors; Sonar runs without token (local).
 - **Updated:** `QUALITY_TODOS.md` checkboxes for completed Fase 1 items.
 
+### [2026-01-19] Quality pipeline Phase 2 — parallel baseline & cache
+- **Implemented:** `run_baseline` wrapper that forks into parallel workers if GNU Parallel is installed, falling back to sequential baseline otherwise, and logs cache hits/misses via `run_with_cache`.
+- **Added:** `tools/quality_scripts/hash_python.py` to fingerprint the Python tree; caching wrappers now reuse Ruff/Mypy/Radon outputs whenever sources unchanged (two dry-run runs show cache hits).
+- **Note:** `QUALITY_TODOS.md` now tracks Phase 2 progress (parallel baseline + caching done, install Parallel/time measurement pending); Stage 2 still logs GNU Parallel as missing so sequential path used.
+

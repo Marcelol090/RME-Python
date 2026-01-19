@@ -37,6 +37,7 @@ SKIP_LIBCST=false
 SKIP_SONAR=false
 VERBOSE=false
 ENABLE_TELEMETRY=false
+PARALLEL_AVAILABLE=false
 
 #############################################
 # CORES PARA OUTPUT
@@ -187,7 +188,14 @@ check_dependencies() {
     log ERROR "$missing dependência(s) crítica(s) ausente(s)"
     exit 1
   fi
-  
+
+  if command -v parallel &>/dev/null; then
+    PARALLEL_AVAILABLE=true
+    log INFO "GNU Parallel disponível para baseline"
+  else
+    log WARN "GNU Parallel não encontrado - baseline será sequencial"
+  fi
+
   log SUCCESS "Todas as dependências verificadas"
 }
 
@@ -272,6 +280,73 @@ index_symbols() {
   if ! "$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/index_symbols.py" "$output"; then
     log ERROR "Falha ao indexar símbolos"
     return 1
+  fi
+}
+
+run_with_cache() {
+  local cache_key="$1"
+  local cache_file="$CACHE_DIR/${cache_key}.hash"
+  shift 1
+
+  local current_hash
+  current_hash=$("$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/hash_python.py")
+  local previous_hash=""
+
+  if [[ -f "$cache_file" ]]; then
+    previous_hash=$(cat "$cache_file")
+  fi
+
+  if [[ "$current_hash" == "$previous_hash" ]]; then
+    log INFO "Cache HIT para $cache_key (nenhuma mudança nas fontes)"
+    return 0
+  fi
+
+  log INFO "Cache MISS para $cache_key"
+  if "$@"; then
+    echo "$current_hash" > "$cache_file"
+    return 0
+  fi
+
+  return 1
+}
+
+run_ruff_cached() {
+  run_with_cache "ruff" run_ruff ".ruff.json"
+}
+
+run_mypy_cached() {
+  run_with_cache "mypy" run_mypy ".mypy_baseline.log"
+}
+
+run_radon_cached() {
+  run_with_cache "radon" run_radon ".radon.json"
+}
+
+run_baseline_sequential() {
+  index_symbols "$SYMBOL_INDEX_BEFORE" || return 1
+  run_ruff_cached || return 1
+  run_mypy_cached || return 1
+  run_radon_cached || return 1
+}
+
+run_baseline_parallel() {
+  log INFO "=== FASE 1: BASELINE (PARALELO) ==="
+  index_symbols "$SYMBOL_INDEX_BEFORE" || return 1
+  export -f run_ruff_cached run_mypy_cached run_radon_cached run_with_cache run_ruff run_mypy run_radon log
+  if ! parallel --tag --halt now,fail=1 --jobs 3 \
+    "run_ruff_cached .ruff.json" \
+    "run_mypy_cached .mypy_baseline.log" \
+    "run_radon_cached .radon.json"; then
+    log ERROR "Baseline paralelo falhou"
+    return 1
+  fi
+}
+
+run_baseline() {
+  if [[ "$PARALLEL_AVAILABLE" == true ]]; then
+    run_baseline_parallel
+  else
+    run_baseline_sequential
   fi
 }
 
@@ -688,10 +763,10 @@ main() {
   
   # Fase 1: Baseline
   log INFO "=== FASE 1: BASELINE ==="
-  index_symbols "$SYMBOL_INDEX_BEFORE"
-  run_ruff ".ruff.json"
-  run_mypy ".mypy_baseline.log"
-  run_radon ".radon.json"
+  if ! run_baseline; then
+    log ERROR "Baseline falhou"
+    exit 1
+  fi
   
   # Fase 2: Refatoração (se apply)
   if [[ "$MODE" == "apply" ]]; then
