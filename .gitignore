@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# IDE/editor
+.vscode/
+.idea/
+.cursor/
+*.code-workspace
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Coverage/test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Build/package
+dist/
+build/
+*.egg-info/
+
+# Project-specific reports/artifacts
+.quality_reports/
+.quality_cache/
+.quality_tmp/
+reports/
+
+# Cursor exports
+py_rme_canary/.cursor.zip
+
+# Archives
+*.zip
