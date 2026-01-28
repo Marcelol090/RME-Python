@@ -1,7 +1,13 @@
 import pytest
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
-from py_rme_canary.vis_layer.renderer.render_model import RenderFrame
+from py_rme_canary.vis_layer.renderer.render_model import (
+    DrawCommand,
+    DrawCommandType,
+    LayerType,
+    Rect,
+    RenderFrame,
+)
 
 # Mock loading if necessary, or use minimal logic
 # Since we don't have large maps committed, we bench synthetic creation or small loads
@@ -32,7 +38,12 @@ def test_render_frame_time(benchmark):
         frame = RenderFrame()
         # Simulate adding commands
         for i in range(100):
-            frame.add_command(1, 2, i)  # Assuming signature
+            cmd = DrawCommand(
+                command_type=DrawCommandType.FILL_RECT,
+                layer=LayerType.GROUND,
+                rect=Rect(i, i, 32, 32),
+            )
+            frame.add_command(cmd)
 
     result = benchmark(render_loop)
     assert benchmark.stats["mean"] < 0.016

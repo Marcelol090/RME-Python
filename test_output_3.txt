@@ -1,0 +1,296 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PyQt6 6.10.2 -- Qt runtime 6.10.1 -- Qt compiled 6.10.0
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0
+collected 128 items
+
+py_rme_canary/tests/logic_layer/operations/test_remove_monsters.py ...   [  2%]
+py_rme_canary/tests/logic_layer/test_brush_settings.py .......           [  7%]
+py_rme_canary/tests/logic_layer/test_brushes.py ..........               [ 15%]
+py_rme_canary/tests/logic_layer/test_door_brush.py ........              [ 21%]
+py_rme_canary/tests/logic_layer/test_replace_items.py .......            [ 27%]
+py_rme_canary/tests/performance/test_benchmarks.py EE                    [ 28%]
+py_rme_canary/tests/ui/test_gui_example.py .                             [ 29%]
+py_rme_canary/tests/ui/test_smoke.py E                                   [ 30%]
+py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py ........... [ 39%]
+................................................                         [ 76%]
+py_rme_canary/tests/unit/logic_layer/test_drawing_options.py ........... [ 85%]
+                                                                         [ 85%]
+py_rme_canary/tests/unit/test_autoborder_wall_like.py ..                 [ 86%]
+py_rme_canary/tests/unit/test_gamemap.py .                               [ 87%]
+py_rme_canary/tests/unit/test_map_detection.py ...                       [ 89%]
+py_rme_canary/tests/unit/test_mirroring.py ......                        [ 94%]
+py_rme_canary/tests/unit/test_otmm_loader.py ......                      [ 99%]
+py_rme_canary/tests/unit/test_otmm_saver.py .                            [100%]
+
+==================================== ERRORS ====================================
+___________________ ERROR at setup of test_map_creation_time ___________________
+file /app/py_rme_canary/tests/performance/test_benchmarks.py, line 10
+  @pytest.mark.benchmark
+  def test_map_creation_time(benchmark):
+E       fixture 'benchmark' not found
+>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, doctest_namespace, monkeypatch, no_cover, pytestconfig, qapp, qapp_args, qapp_cls, qtbot, qtlog, qtmodeltester, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/py_rme_canary/tests/performance/test_benchmarks.py:10
+___________________ ERROR at setup of test_render_frame_time ___________________
+file /app/py_rme_canary/tests/performance/test_benchmarks.py, line 22
+  @pytest.mark.benchmark
+  def test_render_frame_time(benchmark):
+E       fixture 'benchmark' not found
+>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, doctest_namespace, monkeypatch, no_cover, pytestconfig, qapp, qapp_args, qapp_cls, qtbot, qtlog, qtmodeltester, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/py_rme_canary/tests/performance/test_benchmarks.py:22
+____________________ ERROR at setup of test_smoke_workflow _____________________
+
+    @pytest.fixture
+    def mock_brush_mgr():
+        """Returns a BrushManager loaded from the default data file."""
+>       return BrushManager.from_json_file(os.path.join("data", "brushes.json"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+py_rme_canary/tests/ui/test_smoke.py:14:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+py_rme_canary/logic_layer/brush_definitions.py:402: in from_json_file
+    mgr.load_from_file(json_path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = BrushManager(_brushes={}, _family_index={}, _doodads={}, _doodads_loaded=False, _doodads_source_path=None, _doodads_warnings=[])
+json_path = 'data/brushes.json'
+
+    def load_from_file(self, json_path: str) -> None:
+>       with open(json_path, encoding="utf-8") as f:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'data/brushes.json'
+
+py_rme_canary/logic_layer/brush_definitions.py:406: FileNotFoundError
+=============================== warnings summary ===============================
+py_rme_canary/tests/performance/test_benchmarks.py:10
+  /app/py_rme_canary/tests/performance/test_benchmarks.py:10: PytestUnknownMarkWarning: Unknown pytest.mark.benchmark - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.benchmark
+
+py_rme_canary/tests/performance/test_benchmarks.py:22
+  /app/py_rme_canary/tests/performance/test_benchmarks.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.benchmark - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.benchmark
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.12-final-0 _______________
+
+Name                                                                 Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------------------------------
+py_rme_canary/__init__.py                                                0      0   100%
+py_rme_canary/core/__init__.py                                           0      0   100%
+py_rme_canary/core/assets/__init__.py                                    0      0   100%
+py_rme_canary/core/assets/sprite_appearances.py                        190    153    19%   38-44, 47-48, 66-69, 73, 76-109, 112-116, 119-203, 208-270, 276-288
+py_rme_canary/core/config/__init__.py                                    0      0   100%
+py_rme_canary/core/config/configuration_manager.py                      57     57     0%   1-90
+py_rme_canary/core/config/project.py                                    85     56    34%   39-42, 53-104, 121-133, 139-142, 146-153
+py_rme_canary/core/constants/__init__.py                                 5      0   100%
+py_rme_canary/core/constants/item_attributes.py                          6      0   100%
+py_rme_canary/core/constants/magic.py                                    6      0   100%
+py_rme_canary/core/constants/otbm.py                                    41      0   100%
+py_rme_canary/core/constants/otmm.py                                    33      0   100%
+py_rme_canary/core/data/__init__.py                                      5      0   100%
+py_rme_canary/core/data/creature.py                                     13      0   100%
+py_rme_canary/core/data/door.py                                         12      0   100%
+py_rme_canary/core/data/gamemap.py                                      62     13    79%   87-89, 92-97, 100, 103, 106, 109
+py_rme_canary/core/data/houses.py                                       14      0   100%
+py_rme_canary/core/data/item.py                                         36      2    94%   22, 93
+py_rme_canary/core/data/map_header.py                                    3      0   100%
+py_rme_canary/core/data/models/__init__.py                               7      0   100%
+py_rme_canary/core/data/models/house.py                                  3      0   100%
+py_rme_canary/core/data/models/item.py                                   3      0   100%
+py_rme_canary/core/data/models/position.py                               3      0   100%
+py_rme_canary/core/data/models/spawn.py                                  3      0   100%
+py_rme_canary/core/data/models/tile.py                                   3      0   100%
+py_rme_canary/core/data/models/zone.py                                   3      0   100%
+py_rme_canary/core/data/position.py                                      3      0   100%
+py_rme_canary/core/data/spawns.py                                       28      0   100%
+py_rme_canary/core/data/tile.py                                         40     13    68%   52-54, 59, 64-66, 85-87, 106, 109, 128
+py_rme_canary/core/data/towns.py                                         8      0   100%
+py_rme_canary/core/data/zones.py                                         6      0   100%
+py_rme_canary/core/database/__init__.py                                  4      0   100%
+py_rme_canary/core/database/door_catalog.py                             43     33    23%   29-40, 44-46, 56-80
+py_rme_canary/core/database/door_pairs.py                               55     51     7%   30-95
+py_rme_canary/core/database/id_mapper.py                                36     15    58%   38, 42, 49, 57, 62, 67-70, 75-78, 83, 88
+py_rme_canary/core/database/items_otb.py                               135     99    27%   45-75, 79-82, 86, 90-98, 102-116, 128-156, 162-206
+py_rme_canary/core/database/items_xml.py                               123     33    73%   69-71, 76, 95, 99, 103, 109, 116-126, 132-133, 145, 177-189, 203-204, 218, 223
+py_rme_canary/core/exceptions/__init__.py                                4      0   100%
+py_rme_canary/core/exceptions/config.py                                  4      0   100%
+py_rme_canary/core/exceptions/io.py                                     14      0   100%
+py_rme_canary/core/exceptions/mapping.py                                 2      0   100%
+py_rme_canary/core/io/__init__.py                                        2      0   100%
+py_rme_canary/core/io/atomic_io.py                                      18     14    22%   17-32
+py_rme_canary/core/io/creatures_xml.py                                  53     39    26%   10, 14, 18-44, 49-54, 59-64, 68, 72
+py_rme_canary/core/io/houses_xml.py                                     75     62    17%   14-66, 70-79, 83-105, 109-110, 114
+py_rme_canary/core/io/map_detection.py                                 106     79    25%   44-86, 90-97, 101-106, 110-115, 120-153
+py_rme_canary/core/io/otbm/__init__.py                                   7      0   100%
+py_rme_canary/core/io/otbm/header_parser.py                             54     38    30%   48-80, 89-118, 126
+py_rme_canary/core/io/otbm/item_parser.py                              165    148    10%   41-64, 69-71, 102-143, 168-172, 181-303, 320-323
+py_rme_canary/core/io/otbm/loader.py                                   249    208    16%   82-94, 99-102, 106-256, 260-280, 290-309, 318-356, 365-416, 425-456, 468-475, 493-507
+py_rme_canary/core/io/otbm/saver.py                                    326    286    12%   73-75, 80-82, 87-89, 94-99, 108-115, 120-123, 128-131, 140, 162-198, 203-250, 261-342, 347-351, 361-392, 404-434, 453-459, 464-476, 496-570, 575, 580, 595-625
+py_rme_canary/core/io/otbm/streaming.py                                 73     22    70%   19, 50-51, 53, 62, 66, 78-79, 97-108, 122-125
+py_rme_canary/core/io/otbm/tile_parser.py                               99     85    14%   42-43, 58-112, 134-179, 183-208
+py_rme_canary/core/io/otbm_loader.py                                    61     41    33%   40-78, 96, 106, 109-117
+py_rme_canary/core/io/otbm_saver.py                                      3      0   100%
+py_rme_canary/core/io/otmm.py                                          487    105    78%   131-134, 143-144, 148, 189-205, 223, 230, 236-237, 277-278, 299-300, 324-325, 328, 339, 354, 356, 405, 413, 455-457, 464, 480, 495, 514-527, 534, 570-581, 584, 630, 634-636, 640, 643, 658-660, 663-665, 669, 672, 709-711, 715, 718, 728-730, 734, 737, 772-774, 778, 781, 791-793, 797, 800, 821, 831-833, 837, 840, 863-873, 877, 887-889, 893, 896
+py_rme_canary/core/io/otmm_saver.py                                    166     13    92%   56, 62, 68, 76, 95, 116, 122, 140-141, 150, 153, 179, 313
+py_rme_canary/core/io/spawn_xml.py                                     166    147    11%   19-20, 24-100, 104-171, 176-179, 184-193, 197-219, 223-243, 247-248, 252-253, 257, 261
+py_rme_canary/core/io/xml/__init__.py                                   15     10    33%   21-67
+py_rme_canary/core/io/xml/base.py                                       14     10    29%   11-14, 18-23
+py_rme_canary/core/io/xml/houses.py                                      3      3     0%   6-15
+py_rme_canary/core/io/xml/spawns.py                                      3      3     0%   6-17
+py_rme_canary/core/io/xml/spawns_loader.py                              64     52    19%   32-42, 51-75, 86-102, 113-129, 141-192
+py_rme_canary/core/io/xml/zones.py                                       3      3     0%   6-10
+py_rme_canary/core/io/zones_xml.py                                      47     35    26%   13-30, 34-43, 47-57, 61-62, 66
+py_rme_canary/core/memory_guard.py                                     133     72    46%   17-20, 27-32, 105, 110-136, 175-178, 184, 188-189, 192, 197, 202-223, 226-244
+py_rme_canary/core/protocols/__init__.py                                 5      0   100%
+py_rme_canary/core/protocols/live_client.py                             69     54    22%   24-31, 35-37, 41-56, 60-63, 67-75, 79-94, 98-102
+py_rme_canary/core/protocols/live_packets.py                            29      2    93%   44, 48
+py_rme_canary/core/protocols/live_peer.py                               17      5    71%   21-24, 27
+py_rme_canary/core/protocols/live_server.py                             92     76    17%   24-30, 34-48, 52-60, 64-71, 75-96, 100-113, 119-125, 129-135
+py_rme_canary/core/protocols/live_socket.py                             84     68    19%   22-26, 29-30, 33-34, 37, 40-51, 54-61, 66-79, 84-98, 101-113
+py_rme_canary/core/protocols/tile_recorder.py                            5      0   100%
+py_rme_canary/core/runtime.py                                           26     26     0%   1-44
+py_rme_canary/logic_layer/__init__.py                                    4      0   100%
+py_rme_canary/logic_layer/auto_border.py                                 3      0   100%
+py_rme_canary/logic_layer/borders/__init__.py                            5      0   100%
+py_rme_canary/logic_layer/borders/alignment.py                         124    117     6%   32-93, 106-112, 129-192, 206-215
+py_rme_canary/logic_layer/borders/neighbor_mask.py                      24     17    29%   57-65, 86-92, 97
+py_rme_canary/logic_layer/borders/processor.py                         379    265    30%   104-109, 113-116, 119-133, 138, 154, 159, 161, 169, 193, 204, 221-237, 241-276, 280, 290, 294, 298, 304, 315, 321, 326-430, 434-487, 513-528, 543-610
+py_rme_canary/logic_layer/borders/tile_utils.py                         41     31    24%   26-33, 49-56, 70-90, 103
+py_rme_canary/logic_layer/brush_definitions.py                         450    325    28%   83-103, 109-127, 133-151, 157-170, 176-189, 193-327, 367, 372-373, 380-382, 403, 407-469, 480-527, 539-544, 547-548, 551-574, 579-590, 639, 643-647, 651-657, 661-676, 680-689, 700-706, 710-730, 734-736, 740-749, 753-781
+py_rme_canary/logic_layer/brush_settings.py                             52     16    69%   109-122, 142-146
+py_rme_canary/logic_layer/door_brush.py                                 56      5    91%   97, 101, 106, 117, 211
+py_rme_canary/logic_layer/drawing_options.py                           178     34    81%   301-302, 305-306, 313-314, 317-318, 321-322, 325-326, 329-330, 333-334, 341-342, 345-346, 349-350, 353-354, 357-358, 361-362, 365-366, 369-370, 373-374
+py_rme_canary/logic_layer/editor_session.py                              3      0   100%
+py_rme_canary/logic_layer/eraser_brush.py                               46     17    63%   53, 57-75, 85, 106
+py_rme_canary/logic_layer/flag_brush.py                                 37      7    81%   49-55, 64, 75, 84, 111-112
+py_rme_canary/logic_layer/geometry.py                                   25      0   100%
+py_rme_canary/logic_layer/history/__init__.py                            4      4     0%   6-10
+py_rme_canary/logic_layer/history/action.py                              3      3     0%   1-5
+py_rme_canary/logic_layer/history/manager.py                             3      3     0%   1-5
+py_rme_canary/logic_layer/history/stroke.py                              3      3     0%   1-5
+py_rme_canary/logic_layer/map_metadata_actions.py                      198    116    41%   23, 26-32, 35-40, 43-47, 59, 62-67, 70-75, 78-84, 101, 104-110, 113-119, 122-128, 142, 145-151, 154-160, 163-169, 186, 189-195, 198-204, 207-213, 227, 230-231, 234-235, 238, 252, 255-256, 259-260, 263
+py_rme_canary/logic_layer/map_search.py                                100     89    11%   16-23, 27-43, 60-81, 96-106, 116-131, 144-168, 178-197
+py_rme_canary/logic_layer/map_statistics.py                            109     83    24%   36, 52-119, 141-173
+py_rme_canary/logic_layer/mirroring.py                                  46      4    91%   54, 71, 103, 105
+py_rme_canary/logic_layer/monster_brush.py                              62     23    63%   47, 67, 75, 80-81, 104, 162-188, 197-205
+py_rme_canary/logic_layer/npc_brush.py                                  40     20    50%   36, 42, 45, 59-91, 99-122
+py_rme_canary/logic_layer/operations/__init__.py                         5      5     0%   7-12
+py_rme_canary/logic_layer/operations/remove.py                           3      3     0%   1-5
+py_rme_canary/logic_layer/operations/replace.py                          3      3     0%   1-5
+py_rme_canary/logic_layer/operations/search.py                           3      3     0%   1-5
+py_rme_canary/logic_layer/operations/statistics.py                       3      3     0%   1-5
+py_rme_canary/logic_layer/remove_items.py                              132     45    66%   35, 37, 39, 41, 43, 45, 58-98, 135-155, 172, 183, 309, 354, 362
+py_rme_canary/logic_layer/replace_items.py                              66     54    18%   17-51, 55-77, 112-141
+py_rme_canary/logic_layer/session/__init__.py                            6      0   100%
+py_rme_canary/logic_layer/session/action_queue.py                       54      5    91%   63, 66, 69-71
+py_rme_canary/logic_layer/session/clipboard.py                          66     50    24%   28, 32, 36, 40-41, 52-74, 93-153
+py_rme_canary/logic_layer/session/editor.py                           1601   1442    10%   89, 92, 96, 107-128, 132, 224-233, 238-253, 256-270, 277-279, 282-286, 293-302, 305-313, 316-324, 329-366, 377-488, 494-548, 553-614, 620-622, 626-627, 631-633, 637, 641-643, 647-649, 652-660, 674-682, 689-704, 709-725, 740-765, 770-785, 790-808, 815-855, 873-926, 931-956, 961-1001, 1009-1052, 1059-1092, 1097-1120, 1127-1166, 1171-1196, 1201-1262, 1267-1300, 1305-1344, 1349-1374, 1379-1438, 1443-1476, 1481-1496, 1501-1516, 1534-1578, 1585-1652, 1663-1716, 1721-1788, 1802-1845, 1850-1914, 1921-1973, 1978-2045, 2062-2128, 2141-2145, 2158-2159, 2164-2224, 2229, 2232, 2235, 2238, 2241, 2244, 2247, 2255, 2261, 2264, 2269, 2273, 2277-2279, 2283-2311, 2315-2356, 2369-2512, 2516-2524, 2527, 2530-2570, 2574-2578, 2581, 2587-2619, 2625-2650, 2663-2700, 2709-2743, 2748-2751, 2754-2757, 2763-2769, 2772-2785, 2789-2793, 2797-2799, 2807-2824, 2828-2837
+py_rme_canary/logic_layer/session/gestures.py                          151    116    23%   36, 46, 51, 55-57, 61, 69-71, 74-80, 98-122, 134-141, 155-158, 162-166, 170-172, 179-205, 209-263
+py_rme_canary/logic_layer/session/move.py                               98     82    16%   46-149, 153-158, 162-177, 181-183
+py_rme_canary/logic_layer/session/selection.py                         106     75    29%   35-46, 65, 69, 73, 77-84, 88-92, 96, 100, 104, 114-117, 121-125, 138-176, 180-182, 186-188
+py_rme_canary/logic_layer/transactional_brush.py                       487    414    15%   50, 62, 65, 68, 72, 91, 94-97, 100, 103-107, 110-114, 124, 135-138, 141-146, 149-154, 189-193, 196-206, 209, 212-229, 237-260, 263, 266-268, 280-302, 305-328, 345-377, 380-390, 401-434, 442-444, 457-463, 471-715, 725-791, 796-801, 804-811
+py_rme_canary/rme_multi_ide_setup.py                                    58     58     0%   13-355
+py_rme_canary/tests/conftest.py                                          3      0   100%
+py_rme_canary/tests/logic_layer/operations/test_remove_monsters.py      56      1    98%   121
+py_rme_canary/tests/logic_layer/test_brush_settings.py                  52      1    98%   90
+py_rme_canary/tests/logic_layer/test_brushes.py                        100      1    99%   173
+py_rme_canary/tests/logic_layer/test_door_brush.py                      57      1    98%   96
+py_rme_canary/tests/logic_layer/test_replace_items.py                   71      1    99%   133
+py_rme_canary/tests/performance/test_benchmarks.py                      17     10    41%   14-19, 31-38
+py_rme_canary/tests/ui/test_gui_example.py                              19      0   100%
+py_rme_canary/tests/ui/test_smoke.py                                    80     68    15%   21-33, 53-188
+py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py           182      0   100%
+py_rme_canary/tests/unit/logic_layer/test_drawing_options.py           123      0   100%
+py_rme_canary/tests/unit/test_autoborder_wall_like.py                   43      0   100%
+py_rme_canary/tests/unit/test_gamemap.py                                 7      0   100%
+py_rme_canary/tests/unit/test_map_detection.py                          20      0   100%
+py_rme_canary/tests/unit/test_mirroring.py                              18      0   100%
+py_rme_canary/tests/unit/test_otmm_loader.py                           198      1    99%   42
+py_rme_canary/tests/unit/test_otmm_saver.py                             55      0   100%
+py_rme_canary/tools/__init__.py                                          0      0   100%
+py_rme_canary/tools/export_brushes_json.py                             320    320     0%   31-537
+py_rme_canary/tools/quality_scripts/__init__.py                          0      0   100%
+py_rme_canary/tools/quality_scripts/hash_python.py                      15     15     0%   4-37
+py_rme_canary/tools/quality_scripts/index_symbols.py                    46     46     0%   4-91
+py_rme_canary/tools/quality_scripts/normalize_issues.py                 70     70     0%   4-142
+py_rme_canary/tools/read_otbm_header.py                                 27     27     0%   1-47
+py_rme_canary/tools/updater.py                                         120    120     0%   8-225
+py_rme_canary/tools/validate_doodads_in_memory.py                       97     97     0%   1-149
+py_rme_canary/vis_layer/__init__.py                                      0      0   100%
+py_rme_canary/vis_layer/qt_app.py                                       22     22     0%   1-31
+py_rme_canary/vis_layer/renderer/__init__.py                             5      0   100%
+py_rme_canary/vis_layer/renderer/map_drawer.py                         182    113    38%   77, 82, 124-145, 152, 156-160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 212-238, 245, 252-261, 274-303, 308-326, 333-340, 347-349, 357, 365-378, 386, 392-393
+py_rme_canary/vis_layer/renderer/opengl_backend.py                     243    200    18%   24-26, 29-36, 39-66, 73-84, 87-96, 99-147, 150-161, 164-184, 189-192, 195-196, 199-201, 204-209, 223, 247-258, 262, 275-280, 283-284, 287, 290-325, 328, 331-339, 342, 346, 350, 353, 356-390
+py_rme_canary/vis_layer/renderer/opengl_canvas.py                      519    472     9%   24-26, 46-80, 84, 87, 90-97, 100-104, 107-112, 115-120, 123-126, 129-136, 139-147, 150-157, 160-208, 212-234, 238-245, 249-275, 279-288, 292-296, 299-302, 305-326, 329-435, 438-461, 466-570, 573-605, 608-654, 657-662, 665-670, 674, 680
+py_rme_canary/vis_layer/renderer/qpainter_backend.py                    46     31    33%   21-24, 27, 30-31, 34-37, 40-42, 45-47, 50-53, 56-61, 64-65, 68-69
+py_rme_canary/vis_layer/renderer/render_model.py                        67     14    79%   44-58, 98, 102-107, 111
+py_rme_canary/vis_layer/ui/__init__.py                                   0      0   100%
+py_rme_canary/vis_layer/ui/_experimental/__init__.py                     2      2     0%   16-18
+py_rme_canary/vis_layer/ui/_experimental/dialogs.py                     48     48     0%   13-103
+py_rme_canary/vis_layer/ui/_experimental/tileset.py                     46     46     0%   9-84
+py_rme_canary/vis_layer/ui/actions_history.py                            3      3     0%   7-11
+py_rme_canary/vis_layer/ui/canvas/__init__.py                            2      2     0%   7-9
+py_rme_canary/vis_layer/ui/canvas/widget.py                            489    489     0%   1-633
+py_rme_canary/vis_layer/ui/docks/__init__.py                             4      0   100%
+py_rme_canary/vis_layer/ui/docks/actions_history.py                     61     52    15%   11-13, 16-30, 33-53, 56-85
+py_rme_canary/vis_layer/ui/docks/minimap.py                             94     76    19%   25-28, 31-36, 39-53, 56-64, 67-125
+py_rme_canary/vis_layer/ui/docks/palette.py                            313    283    10%   59-62, 66, 76-80, 83, 97-106, 109-111, 114-125, 128-151, 154-155, 158-394, 397-445, 448-454
+py_rme_canary/vis_layer/ui/drawing_options_coordinator.py              135    123     9%   40-44, 49, 56-59, 66-105, 112-147, 154-192, 199-234, 255-260
+py_rme_canary/vis_layer/ui/helpers.py                                   25      8    68%   11-20
+py_rme_canary/vis_layer/ui/indicators.py                                80     68    15%   14-17, 21, 24-80, 83-110
+py_rme_canary/vis_layer/ui/main_window/__init__.py                       0      0   100%
+py_rme_canary/vis_layer/ui/main_window/build_actions.py                364    349     4%   23, 33-506
+py_rme_canary/vis_layer/ui/main_window/build_docks.py                   41     35    15%   15-66
+py_rme_canary/vis_layer/ui/main_window/build_menus.py                  159    155     3%   12-219
+py_rme_canary/vis_layer/ui/main_window/dialogs.py                      228    189    17%   38-55, 58, 71-116, 119-129, 135-164, 167, 172-199, 202-209, 214-230, 233, 244-267, 270, 273-277, 282-309, 312-314, 317-331, 335-341
+py_rme_canary/vis_layer/ui/main_window/editor.py                       373    185    50%   243-490
+py_rme_canary/vis_layer/ui/main_window/find_item.py                     67     58    13%   23, 29-88, 92-108
+py_rme_canary/vis_layer/ui/main_window/find_on_map.py                   27     21    22%   16-40
+py_rme_canary/vis_layer/ui/main_window/live_connect.py                  37     29    22%   13-33, 36, 40-50, 53-54
+py_rme_canary/vis_layer/ui/main_window/menubar/__init__.py               0      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/assets/__init__.py        2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/assets/tools.py           3      1    67%   5
+py_rme_canary/vis_layer/ui/main_window/menubar/edit/__init__.py          2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/edit/tools.py            43     21    51%   5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65, 69, 73, 77, 81, 85
+py_rme_canary/vis_layer/ui/main_window/menubar/file/__init__.py          2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/file/tools.py            11      5    55%   5, 9, 13, 17, 21
+py_rme_canary/vis_layer/ui/main_window/menubar/map/tools.py             38     32    16%   17-45, 50-68, 73-75
+py_rme_canary/vis_layer/ui/main_window/menubar/mirror/__init__.py        2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/mirror/tools.py           7      3    57%   5, 9, 13
+py_rme_canary/vis_layer/ui/main_window/menubar/mode/__init__.py          2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/mode/tools.py             3      1    67%   5
+py_rme_canary/vis_layer/ui/main_window/menubar/view/__init__.py          2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/view/tools.py             5      2    60%   5, 9
+py_rme_canary/vis_layer/ui/main_window/menubar/window/__init__.py        2      0   100%
+py_rme_canary/vis_layer/ui/main_window/menubar/window/tools.py          25     12    52%   5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_assets.py         187    166    11%   24-31, 34-42, 45-52, 56-78, 81-83, 86-93, 98-142, 145-214, 219-236, 239-261
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py        100     84    16%   16-21, 24-31, 34-42, 45-57, 60-72, 75-82, 85-94, 97-102, 105-109, 112, 115-123
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_dialogs.py         56     45    20%   16-17, 20-34, 37-60, 63-74, 77-79
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_docks.py           29     22    24%   13-14, 17-26, 29-40
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_edit.py            90     74    18%   13-14, 17-18, 21-22, 26-31, 34-39, 42-49, 52-59, 62-68, 72-78, 82-89, 95-107, 110-116
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py            69     56    19%   19-30, 33-85, 88-94, 97-103
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_mirror.py          39     30    23%   12-20, 23, 26-28, 31-36, 41-47, 50-56
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py     111     97    13%   18-33, 36-45, 48-55, 58-97, 102-109, 112-118, 121-133, 136-142
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py         7      2    71%   12, 15
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py        633    599     5%   14, 22-26, 30-37, 40-55, 58-69, 72-98, 101-130, 135-179, 182-211, 214-250, 253-284, 287-327, 330-352, 355-378, 381-395, 398-417, 420-435, 440-517, 520-549, 552-588, 591-609, 612-636, 639-657, 660-684, 687-722, 725-767, 770-800, 803-844, 847-876, 879-886
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py       201    193     4%   18-250
+py_rme_canary/vis_layer/ui/main_window/qt_map_editor_view.py           123    104    15%   14-18, 21-30, 33-44, 47-51, 54-66, 69-80, 83-88, 91-93, 96-99, 102-106, 109-113, 116-120, 123-127, 130-160
+py_rme_canary/vis_layer/ui/map_canvas.py                                 3      3     0%   9-13
+py_rme_canary/vis_layer/ui/minimap.py                                    3      3     0%   9-13
+py_rme_canary/vis_layer/ui/palette.py                                    3      3     0%   7-11
+py_rme_canary/vis_layer/ui/theme.py                                     58     58     0%   5-339
+py_rme_canary/vis_layer/ui/themes.py                                    35     35     0%   1-59
+--------------------------------------------------------------------------------------------------
+TOTAL                                                                16028  11274    30%
+=========================== short test summary info ============================
+ERROR py_rme_canary/tests/performance/test_benchmarks.py::test_map_creation_time
+ERROR py_rme_canary/tests/performance/test_benchmarks.py::test_render_frame_time
+ERROR py_rme_canary/tests/ui/test_smoke.py::test_smoke_workflow - FileNotFoun...
+================== 125 passed, 2 warnings, 3 errors in 2.94s ===================

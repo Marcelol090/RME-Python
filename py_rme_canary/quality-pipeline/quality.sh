@@ -161,7 +161,21 @@ check_dependencies() {
   require ruff "pip install ruff" || ((missing++))
   require mypy "pip install mypy" || ((missing++))
   require radon "pip install radon" || ((missing++))
-  require sg "cargo install ast-grep" || ((missing++))
+
+  # Check for ast-grep or sg (preferring ast-grep to avoid system sg command)
+  if command -v ast-grep &>/dev/null; then
+    AST_GREP_BIN="ast-grep"
+    log DEBUG "ast-grep encontrado: $(command -v ast-grep)"
+  elif command -v sg &>/dev/null && ! sg --version 2>&1 | grep -q "usage: sg"; then
+    # Verify it's not the system sg command (which usually outputs usage info containing 'usage: sg')
+    AST_GREP_BIN="sg"
+    log DEBUG "ast-grep (via sg) encontrado: $(command -v sg)"
+  else
+    log ERROR "Dependencia ausente: ast-grep / sg"
+    log INFO "Sugestao de instalacao: pip install ast-grep-cli OR cargo install ast-grep"
+    ((missing++))
+  fi
+
   require git "apt install git / brew install git" || ((missing++))
   
   # SonarScanner (opcional)
@@ -472,11 +486,11 @@ run_astgrep() {
   # 1. Test rules antes de aplicar (auditoria)
   if [[ "$VERBOSE" == true ]]; then
     log DEBUG "Testando regras ast-grep..."
-    sg test "$rules_dir" || log WARN "Algumas regras falharam nos testes"
+    "$AST_GREP_BIN" test "$rules_dir" || log WARN "Algumas regras falharam nos testes"
   fi
   
   # 2. Scan com relatório estruturado
-  sg scan \
+  "$AST_GREP_BIN" scan \
     --rule "$rules_dir" \
     --json \
     "$ROOT_DIR" > "$output_file" 2>/dev/null || true
@@ -484,7 +498,7 @@ run_astgrep() {
   # 3. Apply rewrite se modo apply
   if [[ "$MODE" == "apply" ]]; then
     log INFO "Aplicando transformações ast-grep..."
-    sg scan \
+    "$AST_GREP_BIN" scan \
       --rule "$rules_dir" \
       --rewrite \
       "$ROOT_DIR" || log WARN "Algumas transformações falharam"
