@@ -1,0 +1,7 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app
+configfile: pyproject.toml
+collected 0 items / 1 skipped
+
+============================== 1 skipped in 0.03s ==============================
