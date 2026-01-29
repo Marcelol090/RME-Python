@@ -82,7 +82,7 @@ class PreferencesDialog(QDialog):
 
     def _load_current_settings(self) -> None:
         """Load current settings from config manager or defaults."""
-        # Defaults
+        # TODO: Load from actual config.toml or ConfigurationManager
         self._settings = {
             "show_welcome_dialog": True,
             "always_make_backup": True,
@@ -98,19 +98,6 @@ class PreferencesDialog(QDialog):
             "copy_position_format": 0,  # 0-4 for different formats
             "client_assets_folder": "",
         }
-
-        # Load from ConfigurationManager
-        try:
-            from py_rme_canary.core.config.configuration_manager import ConfigurationManager
-
-            loaded = ConfigurationManager.load_app_settings()
-            # Only update keys that exist in defaults to avoid garbage
-            for k, v in loaded.items():
-                if k in self._settings:
-                    # Type safety check? basic types are safe enough
-                    self._settings[k] = v
-        except Exception as e:
-            print(f"[PreferencesDialog] Failed to load settings: {e}")
 
     def _create_general_page(self) -> QWidget:
         """Create General settings tab.
@@ -313,15 +300,7 @@ class PreferencesDialog(QDialog):
         self._settings["copy_position_format"] = self._pos_format_group.checkedId()
         self._settings["client_assets_folder"] = self._assets_folder_edit.text()
 
-        # Write to ConfigurationManager
-        try:
-            from py_rme_canary.core.config.configuration_manager import ConfigurationManager
-
-            ConfigurationManager.save_app_settings(self._settings)
-            print(f"[PreferencesDialog] Settings saved to {ConfigurationManager.get_app_config_path()}")
-        except Exception as e:
-            print(f"[PreferencesDialog] Failed to save settings: {e}")
-
+        # TODO: Write to config.toml or ConfigurationManager
         print(f"[PreferencesDialog] Settings saved: {self._settings}")
 
     def _on_apply(self) -> None:
