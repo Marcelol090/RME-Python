@@ -1,8 +1,7 @@
 On branch jules-718164234639151269-3c1778c8
 Changes to be committed:
   (use "git restore --staged <file>..." to unstage)
-	new file:   git_status.txt
-	new file:   git_status_2.txt
+	modified:   .github/workflows/ci.yml
 	modified:   py_rme_canary/core/__pycache__/__init__.cpython-312.pyc
 	modified:   py_rme_canary/core/__pycache__/memory_guard.cpython-312.pyc
 	modified:   py_rme_canary/core/assets/__pycache__/__init__.cpython-312.pyc
@@ -65,6 +64,7 @@ Changes to be committed:
 	modified:   py_rme_canary/core/io/xml/__pycache__/__init__.cpython-312.pyc
 	modified:   py_rme_canary/core/io/xml/__pycache__/base.cpython-312.pyc
 	modified:   py_rme_canary/core/io/xml/__pycache__/spawns_loader.cpython-312.pyc
+	modified:   py_rme_canary/core/io/xml/safe.py
 	modified:   py_rme_canary/core/protocols/__pycache__/__init__.cpython-312.pyc
 	modified:   py_rme_canary/core/protocols/__pycache__/live_client.cpython-312.pyc
 	modified:   py_rme_canary/core/protocols/__pycache__/live_packets.cpython-312.pyc
@@ -175,4 +175,4 @@ Changes to be committed:
 
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
-	git_status_3.txt
+	git_status_final.txt
