@@ -31,6 +31,8 @@ class GestureHandler:
     _doodad_use_custom_thickness: bool = False
     _doodad_custom_thickness_low: int = 1
     _doodad_custom_thickness_ceil: int = 100
+    _doodad_erase_like: bool = False
+    _eraser_leave_unique: bool = True
 
     def __post_init__(self) -> None:
         self._stroke = TransactionalBrushStroke(
@@ -39,6 +41,8 @@ class GestureHandler:
             history=self.history,
             auto_border_enabled=bool(self.auto_border_enabled),
         )
+        self._stroke.doodad_erase_like = bool(self._doodad_erase_like)
+        self._stroke.eraser_leave_unique = bool(self._eraser_leave_unique)
 
     @property
     def is_active(self) -> bool:
@@ -78,6 +82,16 @@ class GestureHandler:
             self._stroke.doodad_use_custom_thickness = bool(enabled)
             self._stroke.doodad_custom_thickness_low = int(low)
             self._stroke.doodad_custom_thickness_ceil = int(ceil)
+
+    def set_doodad_erase_like(self, enabled: bool) -> None:
+        self._doodad_erase_like = bool(enabled)
+        if self._stroke is not None:
+            self._stroke.doodad_erase_like = bool(enabled)
+
+    def set_eraser_leave_unique(self, enabled: bool) -> None:
+        self._eraser_leave_unique = bool(enabled)
+        if self._stroke is not None:
+            self._stroke.eraser_leave_unique = bool(enabled)
 
     def mouse_down(
         self,
@@ -119,6 +133,8 @@ class GestureHandler:
         self._stroke.doodad_use_custom_thickness = bool(self._doodad_use_custom_thickness)
         self._stroke.doodad_custom_thickness_low = int(self._doodad_custom_thickness_low)
         self._stroke.doodad_custom_thickness_ceil = int(self._doodad_custom_thickness_ceil)
+        self._stroke.doodad_erase_like = bool(self._doodad_erase_like)
+        self._stroke.eraser_leave_unique = bool(self._eraser_leave_unique)
         self._stroke.begin(
             x=int(x),
             y=int(y),
@@ -138,6 +154,8 @@ class GestureHandler:
         self._stroke.doodad_use_custom_thickness = bool(self._doodad_use_custom_thickness)
         self._stroke.doodad_custom_thickness_low = int(self._doodad_custom_thickness_low)
         self._stroke.doodad_custom_thickness_ceil = int(self._doodad_custom_thickness_ceil)
+        self._stroke.doodad_erase_like = bool(self._doodad_erase_like)
+        self._stroke.eraser_leave_unique = bool(self._eraser_leave_unique)
         self._stroke.paint(
             x=int(x),
             y=int(y),

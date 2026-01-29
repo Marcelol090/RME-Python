@@ -23,6 +23,7 @@ from py_rme_canary.core.data.item import Item
 from py_rme_canary.core.data.tile import Tile
 
 from .auto_border import AutoBorderProcessor, replace_top_item
+from .borders.neighbor_mask import NEIGHBOR_OFFSETS
 from .brush_definitions import (
     DEFAULT_OPTIONAL_BORDER_CARPET_ID,
     VIRTUAL_FLAG_BASE,
@@ -32,12 +33,17 @@ from .brush_definitions import (
     VIRTUAL_OPTIONAL_BORDER_ID,
     VIRTUAL_ZONE_BASE,
     VIRTUAL_ZONE_MAX,
+    BrushDefinition,
     BrushManager,
+    CarpetBrushSpec,
     DoodadAlternative,
     DoodadBrushSpec,
     DoodadCompositeChoice,
     DoodadItemChoice,
     DoodadTilePlacement,
+    TableBrushSpec,
+    carpet_alignment_for_mask,
+    table_alignment_for_mask,
 )
 
 TileKey = tuple[int, int, int]
@@ -173,6 +179,12 @@ class TransactionalBrushStroke:
     doodad_use_custom_thickness: bool = False
     doodad_custom_thickness_low: int = 1
     doodad_custom_thickness_ceil: int = 100
+
+    # Legacy-inspired: doodad erase behavior + eraser unique protection.
+    # - doodad_erase_like: remove only items owned by the current doodad brush.
+    # - eraser_leave_unique: skip items with unique/action ids or container contents.
+    doodad_erase_like: bool = False
+    eraser_leave_unique: bool = True
 
     action: PaintAction | None = None
     dirty: set[TileKey] = field(default_factory=set)
@@ -376,6 +388,61 @@ class TransactionalBrushStroke:
         self.game_map.set_tile(after)
         self.dirty.add((int(x), int(y), int(z)))
 
+    def _is_complex_item(self, item: Item) -> bool:
+        if item.items:
+            return True
+        if item.unique_id is not None or item.action_id is not None:
+            return True
+        if item.text or item.description or item.destination is not None:
+            return True
+        if item.attribute_map:
+            return True
+        if item.depot_id is not None or item.house_door_id is not None:
+            return True
+        if item.subtype is not None or item.count is not None:
+            return True
+        return False
+
+    def _apply_doodad_remove_owned_all(
+        self,
+        *,
+        x: int,
+        y: int,
+        z: int,
+        owned_ids: frozenset[int],
+    ) -> None:
+        before = self.game_map.get_tile(int(x), int(y), int(z))
+        if before is None:
+            return
+
+        removed = False
+        new_items: list[Item] = []
+        for it in list(before.items):
+            if int(it.id) in owned_ids:
+                if self.eraser_leave_unique and self._is_complex_item(it):
+                    new_items.append(it)
+                    continue
+                removed = True
+                continue
+            new_items.append(it)
+
+        new_ground = before.ground
+        if new_ground is not None and int(new_ground.id) in owned_ids:
+            if not (self.eraser_leave_unique and self._is_complex_item(new_ground)):
+                new_ground = None
+                removed = True
+
+        if not removed:
+            return
+
+        after = replace(before, items=new_items, ground=new_ground, modified=True)
+        if before == after:
+            return
+        assert self.action is not None
+        self.action.record_tile_change((int(x), int(y), int(z)), before, after)
+        self.game_map.set_tile(after)
+        self.dirty.add((int(x), int(y), int(z)))
+
     def _choose_tile_items(self, *, placement: DoodadTilePlacement, seed: bytes) -> tuple[int, ...]:
         items = tuple(placement.items or ())
         if not items:
@@ -491,6 +558,36 @@ class TransactionalBrushStroke:
                 idx = int(self.brush_variation) % len(variants)
                 effective_server_id = int(variants[idx])
 
+        if brush_def is not None and brush_type_norm == "table" and brush_def.table_spec is not None:
+            table_spec = brush_def.table_spec
+            seed = (
+                f"table-base:{int(x)},{int(y)},{int(z)}:{int(brush_def.server_id)}:{int(self.brush_variation)}".encode()
+            )
+            base_id = table_spec.choose_item_id("north", seed=seed)
+            if base_id is None:
+                base_id = table_spec.choose_item_id("alone", seed=seed)
+            if base_id is None:
+                ids = table_spec.item_ids()
+                if ids:
+                    base_id = int(ids[0])
+            if base_id is not None:
+                effective_server_id = int(base_id)
+
+        if brush_def is not None and brush_type_norm == "carpet" and brush_def.carpet_spec is not None:
+            carpet_spec = brush_def.carpet_spec
+            seed = (
+                f"carpet-base:{int(x)},{int(y)},{int(z)}:{int(brush_def.server_id)}:{int(self.brush_variation)}"
+            ).encode()
+            base_id = carpet_spec.choose_item_id("center", seed=seed)
+            if base_id is None:
+                base_id = carpet_spec.choose_item_id("none", seed=seed)
+            if base_id is None:
+                ids = carpet_spec.item_ids()
+                if ids:
+                    base_id = int(ids[0])
+            if base_id is not None:
+                effective_server_id = int(base_id)
+
         # Legacy Replace tool (Alt) for ground brushes:
         # - If replace_source_ground_id is None: only apply to empty tiles (no ground).
         # - Else: only apply to tiles whose current ground matches replace_source_ground_id.
@@ -574,10 +671,10 @@ class TransactionalBrushStroke:
             if target_id <= 0:
                 return
 
-            spec = getattr(brush_def, "doodad_spec", None)
+            doodad_spec = getattr(brush_def, "doodad_spec", None)
 
             # Legacy: canSmear is gated by `draggable`.
-            if spec is not None and (not bool(getattr(spec, "draggable", True))):
+            if doodad_spec is not None and (not bool(getattr(doodad_spec, "draggable", True))):
                 origin = self._stroke_origin
                 if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
                     return
@@ -586,14 +683,14 @@ class TransactionalBrushStroke:
             # We don't have full movement flagging yet, so use a conservative
             # approximation: require a tile with ground.
             if (
-                spec is not None
-                and (not bool(getattr(spec, "on_blocking", False)))
+                doodad_spec is not None
+                and (not bool(getattr(doodad_spec, "on_blocking", False)))
                 and (before is None or before.ground is None)
             ):
                 return
 
             # If the brush declares one_size, only apply on the origin tile.
-            if spec is not None and bool(getattr(spec, "one_size", False)):
+            if doodad_spec is not None and bool(getattr(doodad_spec, "one_size", False)):
                 origin = self._stroke_origin
                 if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
                     return
@@ -603,11 +700,11 @@ class TransactionalBrushStroke:
                 y=int(y),
                 z=int(z),
                 selected_server_id=int(selected_server_id),
-                spec=spec,
+                spec=doodad_spec,
             ) and not bool(alt):
                 return
 
-            if spec is None:
+            if doodad_spec is None:
                 # Fallback behavior (MVP): treat doodad as a simple decoration item id.
                 if bool(alt):
                     self._apply_doodad_remove_one(x=int(x), y=int(y), z=int(z), item_id=int(target_id))
@@ -615,36 +712,41 @@ class TransactionalBrushStroke:
                     self._apply_doodad_add(x=int(x), y=int(y), z=int(z), item_id=int(target_id), allow_duplicates=True)
                 return
 
-            owned_ids = self._doodad_owned_ids(spec)
+            owned_ids = self._doodad_owned_ids(doodad_spec)
+            erase_ids = owned_ids
+            if not bool(self.doodad_erase_like):
+                all_ids = self.brush_manager.doodad_owned_ids()
+                if all_ids:
+                    erase_ids = all_ids
 
-            alt_spec = self._doodad_pick_alternative(spec)
+            if bool(alt):
+                self._apply_doodad_remove_owned_all(
+                    x=int(x),
+                    y=int(y),
+                    z=int(z),
+                    owned_ids=erase_ids,
+                )
+                return
+
+            alt_spec = self._doodad_pick_alternative(doodad_spec)
             seed = f"doodad:{int(x)},{int(y)},{int(z)}:{int(target_id)}:{int(self.brush_variation)}".encode()
             kind, obj = self._choose_doodad_candidate(alt=alt_spec, seed=seed)
             if kind is None or obj is None:
                 return
 
-            allow_dupes = bool(getattr(spec, "on_duplicate", False))
+            allow_dupes = bool(getattr(doodad_spec, "on_duplicate", False))
 
             if kind == "item":
                 it = obj
                 assert isinstance(it, DoodadItemChoice)
-                if bool(alt):
-                    self._apply_doodad_remove_owned_one(
-                        x=int(x),
-                        y=int(y),
-                        z=int(z),
-                        preferred_item_id=int(it.id),
-                        owned_ids=owned_ids,
-                    )
-                else:
-                    self._apply_doodad_add(
-                        x=int(x),
-                        y=int(y),
-                        z=int(z),
-                        item_id=int(it.id),
-                        allow_duplicates=bool(allow_dupes),
-                        owned_ids=owned_ids,
-                    )
+                self._apply_doodad_add(
+                    x=int(x),
+                    y=int(y),
+                    z=int(z),
+                    item_id=int(it.id),
+                    allow_duplicates=bool(allow_dupes),
+                    owned_ids=owned_ids,
+                )
                 return
 
             comp = obj
@@ -656,7 +758,7 @@ class TransactionalBrushStroke:
                 tz = int(z) + int(placement.dz)
 
                 # Respect on_blocking=false for each composite tile too.
-                if spec is not None and (not bool(getattr(spec, "on_blocking", False))):
+                if doodad_spec is not None and not bool(getattr(doodad_spec, "on_blocking", False)):
                     dest_before = self.game_map.get_tile(int(tx), int(ty), int(tz))
                     if dest_before is None or dest_before.ground is None:
                         continue
@@ -666,23 +768,14 @@ class TransactionalBrushStroke:
                 for iid in chosen_ids:
                     if int(iid) <= 0:
                         continue
-                    if bool(alt):
-                        self._apply_doodad_remove_owned_one(
-                            x=int(tx),
-                            y=int(ty),
-                            z=int(tz),
-                            preferred_item_id=int(iid),
-                            owned_ids=owned_ids,
-                        )
-                    else:
-                        self._apply_doodad_add(
-                            x=int(tx),
-                            y=int(ty),
-                            z=int(tz),
-                            item_id=int(iid),
-                            allow_duplicates=bool(allow_dupes),
-                            owned_ids=owned_ids,
-                        )
+                    self._apply_doodad_add(
+                        x=int(tx),
+                        y=int(ty),
+                        z=int(tz),
+                        item_id=int(iid),
+                        allow_duplicates=bool(allow_dupes),
+                        owned_ids=owned_ids,
+                    )
             return
 
         elif brush_type_norm == "carpet" and brush_def is not None:
@@ -714,6 +807,112 @@ class TransactionalBrushStroke:
         self.game_map.set_tile(after)
         self.dirty.add((x, y, z))
 
+    def _apply_table_alignment(self, *, brush_def: BrushDefinition) -> None:
+        if self.action is None:
+            return
+        spec: TableBrushSpec | None = brush_def.table_spec
+        if spec is None:
+            return
+        table_ids = frozenset(int(v) for v in spec.item_ids())
+        if not table_ids:
+            return
+
+        expanded = self._expanded_dirty_with_neighbors()
+        for x, y, z in sorted(expanded):
+            tile = self.game_map.get_tile(int(x), int(y), int(z))
+            if tile is None:
+                continue
+            if not self._tile_contains_any_item_id(tile, table_ids):
+                continue
+
+            mask = 0
+            for bit, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+                neighbor = self.game_map.get_tile(int(x + dx), int(y + dy), int(z))
+                if neighbor is None:
+                    continue
+                if self._tile_contains_any_item_id(neighbor, table_ids):
+                    mask |= 1 << int(bit)
+
+            alignment = table_alignment_for_mask(int(mask))
+            seed = (
+                f"table:{int(x)},{int(y)},{int(z)}:{int(brush_def.server_id)}:{int(self.brush_variation)}:{alignment}"
+            ).encode()
+            chosen_id = spec.choose_item_id(alignment, seed=seed)
+            if chosen_id is None or int(chosen_id) <= 0:
+                continue
+
+            new_items: list[Item] = []
+            changed = False
+            for it in tile.items:
+                if int(it.id) in table_ids:
+                    if int(it.id) != int(chosen_id):
+                        new_items.append(replace(it, id=int(chosen_id)))
+                        changed = True
+                    else:
+                        new_items.append(it)
+                else:
+                    new_items.append(it)
+
+            if not changed:
+                continue
+
+            after = replace(tile, items=new_items, modified=True)
+            self.action.record_tile_change((int(x), int(y), int(z)), tile, after)
+            self.game_map.set_tile(after)
+
+    def _apply_carpet_alignment(self, *, brush_def: BrushDefinition) -> None:
+        if self.action is None:
+            return
+        spec: CarpetBrushSpec | None = brush_def.carpet_spec
+        if spec is None:
+            return
+        carpet_ids = frozenset(int(v) for v in spec.item_ids())
+        if not carpet_ids:
+            return
+
+        expanded = self._expanded_dirty_with_neighbors()
+        for x, y, z in sorted(expanded):
+            tile = self.game_map.get_tile(int(x), int(y), int(z))
+            if tile is None:
+                continue
+            if not self._tile_contains_any_item_id(tile, carpet_ids):
+                continue
+
+            mask = 0
+            for bit, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+                neighbor = self.game_map.get_tile(int(x + dx), int(y + dy), int(z))
+                if neighbor is None:
+                    continue
+                if self._tile_contains_any_item_id(neighbor, carpet_ids):
+                    mask |= 1 << int(bit)
+
+            alignment = carpet_alignment_for_mask(int(mask))
+            seed = (
+                f"carpet:{int(x)},{int(y)},{int(z)}:{int(brush_def.server_id)}:{int(self.brush_variation)}:{alignment}"
+            ).encode()
+            chosen_id = spec.choose_item_id(alignment, seed=seed)
+            if chosen_id is None or int(chosen_id) <= 0:
+                continue
+
+            new_items: list[Item] = []
+            changed = False
+            for it in tile.items:
+                if int(it.id) in carpet_ids:
+                    if int(it.id) != int(chosen_id):
+                        new_items.append(replace(it, id=int(chosen_id)))
+                        changed = True
+                    else:
+                        new_items.append(it)
+                else:
+                    new_items.append(it)
+
+            if not changed:
+                continue
+
+            after = replace(tile, items=new_items, modified=True)
+            self.action.record_tile_change((int(x), int(y), int(z)), tile, after)
+            self.game_map.set_tile(after)
+
     def end(self) -> PaintAction | None:
         """Finalize the stroke.
 
@@ -729,7 +928,25 @@ class TransactionalBrushStroke:
         brush_def = self.brush_manager.get_brush(selected_server_id)
         brush_type_norm = str(brush_def.brush_type).strip().lower() if brush_def is not None else "wall"
 
-        if self.dirty and self.auto_border_enabled and brush_type_norm not in ("flag", "zone", "doodad"):
+        if (
+            self.dirty
+            and self.auto_border_enabled
+            and brush_type_norm == "table"
+            and brush_def is not None
+            and brush_def.table_spec is not None
+        ):
+            self._apply_table_alignment(brush_def=brush_def)
+            self.autoborder_runs += 1
+        elif (
+            self.dirty
+            and self.auto_border_enabled
+            and brush_type_norm == "carpet"
+            and brush_def is not None
+            and brush_def.carpet_spec is not None
+        ):
+            self._apply_carpet_alignment(brush_def=brush_def)
+            self.autoborder_runs += 1
+        elif self.dirty and self.auto_border_enabled and brush_type_norm not in ("flag", "zone", "doodad"):
             # `AutoBorderProcessor.update_positions()` already expands to the needed
             # neighborhood per brush-type. Passing expanded positions here would
             # over-expand and increase work.

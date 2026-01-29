@@ -2,11 +2,13 @@
 
 Mirrors legacy C++ BrushShape enum and brush_size from gui.cpp.
 """
+
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Callable, Iterator
+from typing import Any
 
 from py_rme_canary.core.data.item import Position
 
@@ -21,13 +23,13 @@ class BrushShape(IntEnum):
 # Predefined brush sizes matching RME C++
 # Size 0 = 1x1, Size 1 = 3x3, etc.
 BRUSH_SIZE_DIMENSIONS = {
-    0: 1,   # 1x1
-    1: 3,   # 3x3
-    2: 5,   # 5x5
-    4: 7,   # 7x7
-    6: 9,   # 9x9
+    0: 1,  # 1x1
+    1: 3,  # 3x3
+    2: 5,  # 5x5
+    4: 7,  # 7x7
+    6: 9,  # 9x9
     8: 11,  # 11x11
-    11: 15, # 15x15
+    11: 15,  # 15x15
 }
 
 

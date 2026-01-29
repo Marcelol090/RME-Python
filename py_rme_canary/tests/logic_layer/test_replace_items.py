@@ -1,4 +1,5 @@
 """Tests for replace_items and find_items functions."""
+
 from __future__ import annotations
 
 import unittest
@@ -19,9 +20,7 @@ class TestReplaceItemsInTile(unittest.TestCase):
     def test_replace_in_ground(self) -> None:
         """Replace ground item."""
         tile = Tile(x=10, y=10, z=7, ground=Item(id=100))
-        new_tile, count = replace_items_in_tile(
-            tile=tile, source_id=100, target_id=200
-        )
+        new_tile, count = replace_items_in_tile(tile=tile, source_id=100, target_id=200)
         self.assertEqual(count, 1)
         self.assertIsNotNone(new_tile.ground)
         self.assertEqual(new_tile.ground.id, 200)
@@ -29,13 +28,13 @@ class TestReplaceItemsInTile(unittest.TestCase):
     def test_replace_in_items(self) -> None:
         """Replace items in stack."""
         tile = Tile(
-            x=10, y=10, z=7,
+            x=10,
+            y=10,
+            z=7,
             ground=Item(id=50),
             items=[Item(id=100), Item(id=101), Item(id=100)],
         )
-        new_tile, count = replace_items_in_tile(
-            tile=tile, source_id=100, target_id=200
-        )
+        new_tile, count = replace_items_in_tile(tile=tile, source_id=100, target_id=200)
         self.assertEqual(count, 2)
         self.assertEqual(len(new_tile.items), 3)
         self.assertEqual(new_tile.items[0].id, 200)
@@ -45,9 +44,7 @@ class TestReplaceItemsInTile(unittest.TestCase):
     def test_no_match(self) -> None:
         """No replacement when ID not found."""
         tile = Tile(x=10, y=10, z=7, ground=Item(id=50), items=[Item(id=60)])
-        new_tile, count = replace_items_in_tile(
-            tile=tile, source_id=100, target_id=200
-        )
+        new_tile, count = replace_items_in_tile(tile=tile, source_id=100, target_id=200)
         self.assertEqual(count, 0)
         self.assertIs(new_tile, tile)  # Same object returned
 
@@ -69,9 +66,7 @@ class TestReplaceItemsInMap(unittest.TestCase):
         self.game_map.set_tile(tile2)
         self.game_map.set_tile(tile3)
 
-        changed, result = replace_items_in_map(
-            self.game_map, source_id=100, target_id=200
-        )
+        changed, result = replace_items_in_map(self.game_map, source_id=100, target_id=200)
 
         self.assertEqual(result.replaced, 3)  # 1 + 2 = 3 replacements
         self.assertEqual(len(changed), 2)

@@ -20,8 +20,10 @@ so the open variant pairs with the plain closed door.
 
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from pathlib import Path
+
+from py_rme_canary.core.io.xml.safe import ParseError
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 def load_door_pairs(items_xml_path: str | Path) -> dict[int, int]:
@@ -87,7 +89,7 @@ def load_door_pairs(items_xml_path: str | Path) -> dict[int, int]:
             # Keep memory low.
             elem.clear()
 
-    except ET.ParseError:
+    except ParseError:
         return {}
     except Exception:
         return {}

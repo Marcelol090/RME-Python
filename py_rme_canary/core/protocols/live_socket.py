@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import socket
 import threading
+from contextlib import suppress
 
 from .live_packets import NetworkHeader, PacketType
 
@@ -55,10 +56,8 @@ class LiveSocket:
         self.socket = None
         if sock is None:
             return
-        try:
+        with suppress(OSError):
             sock.close()
-        except OSError:
-            pass
 
     def send_packet(self, packet_type: PacketType, payload: bytes) -> bool:
         """Send a framed packet over the socket."""

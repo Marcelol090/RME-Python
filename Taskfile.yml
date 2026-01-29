@@ -44,7 +44,7 @@ tasks:
   mypy:check:
     desc: Type check core + logic_layer
     vars:
-      CACHE_DIR: {{.CACHE_DIR}}/mypy_cache
+      CACHE_DIR: "{{.CACHE_DIR}}/mypy_cache"
     cmds:
       - mkdir -p {{.CACHE_DIR}}
       - mypy py_rme_canary/core py_rme_canary/logic_layer --config-file=pyproject.toml --cache-dir={{.CACHE_DIR}}/mypy_cache

@@ -1,4 +1,5 @@
 """Tests for BrushSettings functionality."""
+
 from __future__ import annotations
 
 import unittest
@@ -55,10 +56,10 @@ class TestBrushSettings(unittest.TestCase):
 
         # Check corners exist
         pos_tuples = {(p.x, p.y) for p in positions}
-        self.assertIn((9, 9), pos_tuples)   # NW
+        self.assertIn((9, 9), pos_tuples)  # NW
         self.assertIn((11, 9), pos_tuples)  # NE
         self.assertIn((9, 11), pos_tuples)  # SW
-        self.assertIn((11, 11), pos_tuples) # SE
+        self.assertIn((11, 11), pos_tuples)  # SE
 
     def test_affected_positions_3x3_circle(self) -> None:
         """Size 1 circle affects fewer tiles than square."""
@@ -72,9 +73,9 @@ class TestBrushSettings(unittest.TestCase):
 
         pos_tuples = {(p.x, p.y) for p in positions}
         self.assertIn((10, 10), pos_tuples)  # Center
-        self.assertIn((9, 10), pos_tuples)   # W
+        self.assertIn((9, 10), pos_tuples)  # W
         self.assertIn((11, 10), pos_tuples)  # E
-        self.assertIn((10, 9), pos_tuples)   # N
+        self.assertIn((10, 9), pos_tuples)  # N
         self.assertIn((10, 11), pos_tuples)  # S
         # Corners should NOT be included
         self.assertNotIn((9, 9), pos_tuples)

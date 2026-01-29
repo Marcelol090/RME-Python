@@ -171,6 +171,67 @@ class ItemParser:
         self._on_warning = on_warning
         self._otbm_version = otbm_version
 
+    def _resolve_raw_item_id(
+        self,
+        raw_item_id: int,
+        *,
+        tile_pos: tuple[int, int, int] | None = None,
+    ) -> tuple[int, int | None, int | None]:
+        raw_id = int(raw_item_id)
+        client_id: int | None = None
+        server_id = int(raw_id)
+        raw_unknown_id: int | None = None
+
+        if int(self._otbm_version) >= 5:
+            # ClientID format: raw id is client-side; map to ServerID.
+            client_id = int(raw_id)
+            if self._id_mapper is not None:
+                mapped = self._id_mapper.get_server_id(int(raw_id))
+                if mapped is not None:
+                    server_id = int(mapped)
+                else:
+                    if self._on_warning is not None:
+                        self._on_warning(
+                            code="missing_client_id_mapping",
+                            message=f"No server id mapping for client id {raw_id}",
+                            raw_id=int(raw_id),
+                            tile_pos=tile_pos,
+                            action=self._unknown_item_policy,
+                        )
+                    if self._unknown_item_policy == "error":
+                        raise OTBMParseError(f"No server id mapping for client id {raw_id}")
+                    raw_unknown_id = int(raw_id)
+                    server_id = 0
+            else:
+                if self._on_warning is not None:
+                    self._on_warning(
+                        code="missing_id_mapper",
+                        message="ClientID map loaded without IdMapper; ids may be incorrect.",
+                        raw_id=int(raw_id),
+                        tile_pos=tile_pos,
+                    )
+        else:
+            if self._id_mapper is not None:
+                try:
+                    client_id = self._id_mapper.get_client_id(int(raw_id))
+                except Exception:
+                    client_id = None
+
+        return int(server_id), client_id, raw_unknown_id
+
+    def parse_compact_item_id(
+        self,
+        raw_item_id: int,
+        *,
+        tile_pos: tuple[int, int, int] | None = None,
+    ) -> Item:
+        item_id, client_id, raw_unknown_id = self._resolve_raw_item_id(raw_item_id, tile_pos=tile_pos)
+        return Item(
+            id=int(item_id),
+            client_id=int(client_id) if client_id is not None else None,
+            raw_unknown_id=int(raw_unknown_id) if raw_unknown_id is not None else None,
+        )
+
     def parse_item_payload(
         self,
         payload: EscapedPayloadReader,
@@ -179,17 +240,9 @@ class ItemParser:
     ) -> Item:
         """Parse an item from its OTBM payload."""
         raw_item_id = int(struct.unpack("<H", payload.read_escaped_bytes(2))[0])
+        item_id, client_id, raw_unknown_id = self._resolve_raw_item_id(raw_item_id, tile_pos=tile_pos)
 
-        client_id: int | None = None
-        if self._id_mapper is not None:
-            try:
-                client_id = self._id_mapper.get_client_id(int(raw_item_id))
-            except Exception:
-                client_id = None
-
-        item_id = int(raw_item_id)
-        raw_unknown_id: int | None = None
-        if self._items_db is not None:
+        if self._items_db is not None and int(item_id) != 0:
             try:
                 known = self._items_db.get(int(item_id))
             except Exception:
@@ -199,7 +252,8 @@ class ItemParser:
                 if policy == "error":
                     raise OTBMParseError(f"Unknown item id {item_id}")
 
-                raw_unknown_id = int(item_id)
+                if raw_unknown_id is None:
+                    raw_unknown_id = int(item_id)
                 if policy in {"placeholder", "skip"}:
                     item_id = 0
 
@@ -277,19 +331,27 @@ class ItemParser:
 
         # Apply attribute map fields
         if attribute_map:
-            (subtype, count, text, description, action_id, unique_id, destination, depot_id, house_door_id) = (
-                apply_known_attribute_map_fields(
-                    attribute_map,
-                    subtype=subtype,
-                    count=count,
-                    text=text,
-                    description=description,
-                    action_id=action_id,
-                    unique_id=unique_id,
-                    destination=destination,
-                    depot_id=depot_id,
-                    house_door_id=house_door_id,
-                )
+            (
+                subtype,
+                count,
+                text,
+                description,
+                action_id,
+                unique_id,
+                destination,
+                depot_id,
+                house_door_id,
+            ) = apply_known_attribute_map_fields(
+                attribute_map,
+                subtype=subtype,
+                count=count,
+                text=text,
+                description=description,
+                action_id=action_id,
+                unique_id=unique_id,
+                destination=destination,
+                depot_id=depot_id,
+                house_door_id=house_door_id,
             )
 
         if self._items_db is not None and int(item_id) != 0:

@@ -373,4 +373,3 @@ def find_items_in_map(
                 break
 
     return results
-

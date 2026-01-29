@@ -4,11 +4,13 @@ Monorepo Discovery & Workspace Manager - v2.2.0
 Nx/Turborepo-compatible workspace detection
 """
 
+import argparse
 import json
 import logging
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import yaml
 
@@ -30,7 +32,7 @@ class Workspace:
 class MonorepoScanner:
     """Detect and parse monorepo structures"""
 
-    WORKSPACE_PATTERNS = [
+    WORKSPACE_PATTERNS: ClassVar[list[str]] = [
         "quality.yaml",  # Quality pipeline config
         "pyproject.toml",  # Python project
         "package.json",  # Node.js project
@@ -96,7 +98,7 @@ class MonorepoScanner:
     def _scan_nx_workspace(self) -> list[Workspace]:
         """Scan Nx monorepo structure"""
 
-        nx_config = json.loads((self.root / "nx.json").read_text())
+        _ = json.loads((self.root / "nx.json").read_text())
         workspaces = []
 
         # Nx uses workspace.json or project.json files
@@ -115,7 +117,7 @@ class MonorepoScanner:
     def _scan_turborepo_workspace(self) -> list[Workspace]:
         """Scan Turborepo structure"""
 
-        turbo_config = json.loads((self.root / "turbo.json").read_text())
+        _ = json.loads((self.root / "turbo.json").read_text())
 
         # Turborepo uses package.json workspaces
         if (self.root / "package.json").exists():
@@ -191,10 +193,7 @@ class MonorepoScanner:
         # Load quality config if exists
         quality_config_path = path / "quality.yaml"
 
-        if quality_config_path.exists():
-            config = yaml.safe_load(quality_config_path.read_text())
-        else:
-            config = {}
+        config = yaml.safe_load(quality_config_path.read_text()) if quality_config_path.exists() else {}
 
         # Detect language
         language = self._detect_language(path)
@@ -314,8 +313,6 @@ class WorkspaceOrchestrator:
     def _topological_sort(self, graph: dict[str, list[str]]) -> list[str]:
         """Topological sort for execution order"""
 
-        from collections import deque
-
         # Calculate in-degrees
         in_degree = dict.fromkeys(graph, 0)
 
@@ -346,8 +343,6 @@ class WorkspaceOrchestrator:
 
 
 def main():
-    import argparse
-
     parser = argparse.ArgumentParser(description="Monorepo Discovery")
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--output", type=Path, help="Save plan to JSON")

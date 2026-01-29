@@ -13,6 +13,7 @@ import platform
 import re
 import threading
 import urllib.request
+from urllib.parse import urlparse
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -142,14 +143,16 @@ class Updater:
 
     @staticmethod
     def _default_fetch(url: str, timeout_s: float) -> bytes:
+        safe_url = Updater._validate_update_url(url)
         req = urllib.request.Request(
-            url,
+            safe_url,
             headers={
                 "User-Agent": "py-rme-canary-updater/1.0",
                 "Accept": "application/json, text/plain, */*",
             },
         )
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+        # Scheme validated above; only http/https allowed.
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # nosec B310
             return resp.read()
 
     @staticmethod
@@ -223,6 +226,15 @@ class Updater:
         suffix = match.group(4) or ""
         is_release = 1 if suffix == "" else 0
         return (major, minor, patch, is_release, suffix)
+
+    @staticmethod
+    def _validate_update_url(url: str) -> str:
+        parsed = urlparse(url)
+        if parsed.scheme not in {"https", "http"}:
+            raise ValueError(f"Unsupported update URL scheme: {parsed.scheme!r}")
+        if not parsed.netloc:
+            raise ValueError("Invalid update URL: missing host")
+        return url
 
 
 if __name__ == "__main__":  # pragma: no cover

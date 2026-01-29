@@ -3,6 +3,7 @@
 Sets tile flags like Protection Zone, No-PVP, No-Logout, PVP Zone.
 Mirrors legacy C++ FlagBrush from brush.cpp lines 247-297.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -54,7 +55,7 @@ class FlagBrush:
         }
         return names.get(self.flag, "Flag brush")
 
-    def can_draw(self, game_map: "GameMap", pos: "Position") -> bool:
+    def can_draw(self, game_map: GameMap, pos: Position) -> bool:
         """Check if flag can be set/cleared.
 
         Flag brushes require tile with ground.
@@ -66,19 +67,20 @@ class FlagBrush:
 
     def draw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Set or clear flag on tile."""
         tile = game_map.get_tile(pos.x, pos.y, pos.z)
         if tile is None or not self.can_draw(game_map, pos):
             return []
 
         # Calculate new flags
-        if self.set_flag:
-            new_flags = tile.map_flags | self.flag
-        else:
-            new_flags = tile.map_flags & ~self.flag
+        new_flags = (
+            TileFlag(int(tile.map_flags) | int(self.flag))
+            if self.set_flag
+            else TileFlag(int(tile.map_flags) & ~int(self.flag))
+        )
 
         if new_flags == tile.map_flags:
             return []  # No change
@@ -103,9 +105,9 @@ class FlagBrush:
 
     def undraw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Clear flag from tile (opposite of draw)."""
         # undraw is the opposite of draw
         inverted = FlagBrush(flag=self.flag, set_flag=not self.set_flag)

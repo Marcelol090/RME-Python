@@ -28,7 +28,7 @@ def main():
     current = json.loads(NORMAL.read_text(encoding="utf-8"))
     baseline = json.loads(BASE.read_text(encoding="utf-8")) if BASE.exists() else []
 
-    base_keys = set(key_for_issue(i) for i in baseline)
+    base_keys = {key_for_issue(i) for i in baseline}
     new = [i for i in current if key_for_issue(i) not in base_keys]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

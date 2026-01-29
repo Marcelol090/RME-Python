@@ -72,7 +72,7 @@ class AntiGravityClient:
 
         except requests.HTTPError as e:
             log.error(f"API error for {file_path}: {e.response.status_code}")
-            if e.response.status_code == 401:
+            if e.response.status_code == AUTH_ERROR_STATUS:
                 log.error("Authentication failed - check ANTIGRAVITY_API_KEY")
             return {"file": file_path, "error": str(e), "findings": []}
 
@@ -91,9 +91,9 @@ class AntiGravityClient:
 
         if critical > 0:
             return "critical"
-        elif high > 2:
+        elif high > HIGH_FINDINGS_THRESHOLD:
             return "high"
-        elif high > 0 or len(findings) > 5:
+        elif high > 0 or len(findings) > FINDINGS_THRESHOLD:
             return "medium"
         else:
             return "low"
@@ -184,3 +184,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+AUTH_ERROR_STATUS = 401
+HIGH_FINDINGS_THRESHOLD = 2
+FINDINGS_THRESHOLD = 5

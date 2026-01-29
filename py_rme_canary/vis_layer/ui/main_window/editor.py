@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
 from collections import OrderedDict
 from typing import Optional
 
+from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QAction, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -38,6 +40,8 @@ from py_rme_canary.vis_layer.ui.main_window.find_item import open_find_item
 from py_rme_canary.vis_layer.ui.main_window.dialogs import MapStatisticsDialog, ReplaceItemsDialog, show_not_implemented
 from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
 from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
+
+logger = logging.getLogger(__name__)
 from py_rme_canary.vis_layer.ui.docks.palette import PaletteManager
 
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets import QtMapEditorAssetsMixin
@@ -86,6 +90,9 @@ class QtMapEditor(
     act_save: QAction
     act_save_as: QAction
     act_exit: QAction
+    act_import_monsters_npcs: QAction
+    act_import_monster_folder: QAction
+    act_import_map: QAction
     act_undo: QAction
     act_redo: QAction
     act_cancel: QAction
@@ -108,6 +115,12 @@ class QtMapEditor(
     act_merge_paste: QAction
     act_borderize_paste: QAction
     act_selection_mode: QAction
+    act_lasso_select: QAction
+    act_selection_depth_compensate: QAction
+    act_selection_depth_current: QAction
+    act_selection_depth_lower: QAction
+    act_selection_depth_visible: QAction
+    act_selection_depth_group: QAction
     act_toggle_mirror: QAction
     act_mirror_axis_x: QAction
     act_mirror_axis_y: QAction
@@ -116,6 +129,7 @@ class QtMapEditor(
     act_zoom_out: QAction
     act_zoom_normal: QAction
     act_new_view: QAction
+    act_new_instance: QAction
     act_fullscreen: QAction
     act_take_screenshot: QAction
     act_show_shade: QAction
@@ -138,6 +152,7 @@ class QtMapEditor(
     act_show_pathing: QAction
     act_show_tooltips: QAction
     act_show_preview: QAction
+    act_ingame_preview: QAction
     act_show_wall_hooks: QAction
     act_show_pickupables: QAction
     act_show_moveables: QAction
@@ -157,6 +172,7 @@ class QtMapEditor(
     act_palette_waypoint: QAction
     act_palette_zones: QAction
     act_palette_raw: QAction
+    act_palette_large_icons: QAction
     act_window_minimap: QAction
     act_window_actions_history: QAction
     act_clear_invalid_tiles_selection: QAction
@@ -166,6 +182,7 @@ class QtMapEditor(
     act_waypoint_set_here: QAction
     act_waypoint_delete: QAction
     act_switch_door_here: QAction
+    act_convert_map_format: QAction
     act_town_add_edit: QAction
     act_town_set_temple_here: QAction
     act_town_delete: QAction
@@ -184,6 +201,12 @@ class QtMapEditor(
     act_npc_spawn_delete_entry_here: QAction
     act_zone_add_edit: QAction
     act_zone_delete_definition: QAction
+    act_src_connect: QAction
+    act_src_disconnect: QAction
+    act_live_host: QAction
+    act_live_stop: QAction
+    act_live_kick: QAction
+    act_live_ban: QAction
 
     # Editor-owned actions (created in editor.py)
     act_find_item: QAction
@@ -193,6 +216,9 @@ class QtMapEditor(
     act_remove_item_on_selection: QAction
     act_find_waypoint: QAction
     act_find_on_map_item: QAction
+
+    quick_replace_source_id: int | None
+    quick_replace_target_id: int | None
 
     # Docks/widgets built by builders
     dock_minimap: QDockWidget | None
@@ -238,6 +264,7 @@ class QtMapEditor(
     drawing_options: DrawingOptions
     drawing_options_coordinator: DrawingOptionsCoordinator
     map_drawer: MapDrawer
+    asset_profile: object | None
 
     def __init__(self) -> None:
         super().__init__()
@@ -249,6 +276,14 @@ class QtMapEditor(
         extra_brushes = os.path.join("data", "brushes_extra.json")
         if os.path.exists(extra_brushes):
             self.brush_mgr.load_from_file(extra_brushes)
+        materials_brushs = os.path.join("data", "materials", "brushs.xml")
+        if os.path.exists(materials_brushs):
+            try:
+                self.brush_mgr.load_table_brushes_from_materials(materials_brushs)
+                self.brush_mgr.load_carpet_brushes_from_materials(materials_brushs)
+                self.brush_mgr.load_door_brushes_from_materials(materials_brushs)
+            except Exception as exc:
+                logger.warning("Failed to load table/carpet/door brushes from %s: %s", materials_brushs, exc)
 
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
@@ -269,6 +304,8 @@ class QtMapEditor(
         # Client sprite assets (legacy sprite sheets via catalog-content.json)
         self.assets_dir: Optional[str] = None
         self.sprite_assets = None
+        self.appearance_assets = None
+        self.asset_profile = None
         self.id_mapper = None
         # LRU cache to avoid unbounded growth
         self._sprite_cache: "OrderedDict[tuple[int, int], QPixmap]" = OrderedDict()
@@ -276,9 +313,11 @@ class QtMapEditor(
         self._sprite_render_temporarily_disabled: bool = False
         self._sprite_render_emergency_warned: bool = False
         self._sprite_render_disabled_reason: Optional[str] = None
+        self._animation_clock_ms: int = 0
 
         # Selection mode (legacy-like box selection)
         self.selection_mode: bool = False
+        self.lasso_enabled: bool = False
 
         # Mirror drawing (legacy-like: toggle, pick axis, set axis from cursor)
         self.mirror_enabled: bool = False
@@ -318,8 +357,13 @@ class QtMapEditor(
         self.show_tooltips: bool = True
         self.show_preview: bool = True
         self.show_indicators: bool = True
+        self.ingame_preview_enabled: bool = False
+        self.ingame_preview_controller = None
 
         self._extra_views: list["QtMapEditor"] = []
+        self.quick_replace_source_id = None
+        self.quick_replace_target_id = None
+        self.palette_large_icons: bool = False
 
         # UI services
         self.indicators = IndicatorService()
@@ -443,6 +487,15 @@ class QtMapEditor(
         self._build_menus_and_toolbars()
         self._build_docks()
 
+        self.session.set_live_chat_callback(self._handle_live_chat)
+        self.session.set_live_client_list_callback(self._handle_live_client_list)
+        self.session.set_live_cursor_callback(self._handle_live_cursor)
+
+        self._live_timer = QTimer(self)
+        self._live_timer.setInterval(50)
+        self._live_timer.timeout.connect(self._poll_live_events)
+        self._live_timer.start()
+
 
         self._update_brush_label()
         self.apply_ui_state_to_session()
@@ -465,6 +518,15 @@ class QtMapEditor(
         self.act_show_tooltips.setChecked(bool(self.show_tooltips))
         self.act_show_preview.setChecked(bool(self.show_preview))
         self.act_show_indicators_simple.setChecked(bool(self.show_indicators))
+        self.act_palette_large_icons.setChecked(bool(self.palette_large_icons))
+
+    def advance_animation_clock(self, delta_ms: int) -> None:
+        if int(delta_ms) <= 0:
+            return
+        self._animation_clock_ms = (int(self._animation_clock_ms) + int(delta_ms)) % 1_000_000_000
+
+    def animation_time_ms(self) -> int:
+        return int(self._animation_clock_ms)
 
         # Small UX polish
         self.act_copy_position.setStatusTip("Copy current cursor position to clipboard")

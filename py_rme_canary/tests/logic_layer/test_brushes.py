@@ -1,4 +1,5 @@
 """Tests for specialized brushes: Monster, NPC, Eraser, Flag."""
+
 from __future__ import annotations
 
 import unittest
@@ -52,7 +53,9 @@ class TestMonsterBrush(unittest.TestCase):
     def test_draw_no_duplicate(self) -> None:
         """draw() doesn't add duplicate monster."""
         tile = Tile(
-            x=50, y=50, z=7,
+            x=50,
+            y=50,
+            z=7,
             ground=Item(id=100),
             monsters=[Monster(name="Rat", direction=2)],
         )
@@ -95,7 +98,9 @@ class TestEraserBrush(unittest.TestCase):
     def test_erase_monsters_only(self) -> None:
         """Erase only monsters, keep items."""
         tile = Tile(
-            x=50, y=50, z=7,
+            x=50,
+            y=50,
+            z=7,
             ground=Item(id=100),
             items=[Item(id=200)],
             monsters=[Monster(name="Rat", direction=2)],
@@ -114,7 +119,9 @@ class TestEraserBrush(unittest.TestCase):
     def test_erase_all(self) -> None:
         """Erase everything."""
         tile = Tile(
-            x=50, y=50, z=7,
+            x=50,
+            y=50,
+            z=7,
             ground=Item(id=100),
             items=[Item(id=200)],
             monsters=[Monster(name="Rat", direction=2)],
@@ -155,7 +162,9 @@ class TestFlagBrush(unittest.TestCase):
     def test_clear_flag(self) -> None:
         """FlagBrush with set_flag=False clears flag."""
         tile = Tile(
-            x=50, y=50, z=7,
+            x=50,
+            y=50,
+            z=7,
             ground=Item(id=100),
             map_flags=TileFlag.PROTECTION_ZONE,
         )

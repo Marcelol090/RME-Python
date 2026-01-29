@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import functools
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
+
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 def _default_monsters_path() -> Path:
@@ -12,6 +13,14 @@ def _default_monsters_path() -> Path:
 
 def _default_npcs_path() -> Path:
     return Path("data") / "creatures" / "npcs.xml"
+
+
+def default_monsters_path() -> Path:
+    return _default_monsters_path()
+
+
+def default_npcs_path() -> Path:
+    return _default_npcs_path()
 
 
 def _parse_creature_names(xml_text: str, *, root_tag: str, child_tag: str) -> tuple[str, ...]:
@@ -70,3 +79,8 @@ def iter_monster_names(path: str | Path | None = None) -> Iterable[str]:
 
 def iter_npc_names(path: str | Path | None = None) -> Iterable[str]:
     return load_npc_names(path)
+
+
+def clear_creature_name_cache() -> None:
+    load_monster_names.cache_clear()
+    load_npc_names.cache_clear()

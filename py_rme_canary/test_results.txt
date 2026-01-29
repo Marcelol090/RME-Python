@@ -1,0 +1,217 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.4, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\venv\Scripts\python.exe
+cachedir: .pytest_cache
+PyQt6 6.10.2 -- Qt runtime 6.10.1 -- Qt compiled 6.10.0
+rootdir: C:\Users\Marcelo Henrique\Desktop\projec_rme
+configfile: pyproject.toml
+plugins: qt-4.5.0
+collecting ... collected 157 items
+
+tests\logic_layer\operations\test_remove_monsters.py::TestRemoveMonsters::test_preservation PASSED [  0%]
+tests\logic_layer\operations\test_remove_monsters.py::TestRemoveMonsters::test_remove_multiple_monsters PASSED [  1%]
+tests\logic_layer\operations\test_remove_monsters.py::TestRemoveMonsters::test_selection_only PASSED [  1%]
+tests\logic_layer\test_brush_settings.py::TestBrushShape::test_shapes_exist PASSED [  2%]
+tests\logic_layer\test_brush_settings.py::TestBrushSettings::test_affected_positions_1x1 PASSED [  3%]
+tests\logic_layer\test_brush_settings.py::TestBrushSettings::test_affected_positions_3x3_circle PASSED [  3%]
+tests\logic_layer\test_brush_settings.py::TestBrushSettings::test_affected_positions_3x3_square PASSED [  4%]
+tests\logic_layer\test_brush_settings.py::TestBrushSettings::test_default_settings PASSED [  5%]
+tests\logic_layer\test_brush_settings.py::TestBrushSettings::test_preview_offsets PASSED [  5%]
+tests\logic_layer\test_brush_settings.py::TestBrushSettings::test_radius_calculation PASSED [  6%]
+tests\logic_layer\test_brushes.py::TestMonsterBrush::test_can_draw_no_ground PASSED [  7%]
+tests\logic_layer\test_brushes.py::TestMonsterBrush::test_can_draw_with_ground PASSED [  7%]
+tests\logic_layer\test_brushes.py::TestMonsterBrush::test_draw_no_duplicate PASSED [  8%]
+tests\logic_layer\test_brushes.py::TestMonsterBrush::test_draw_places_monster PASSED [  8%]
+tests\logic_layer\test_brushes.py::TestNpcBrush::test_can_draw_with_ground PASSED [  9%]
+tests\logic_layer\test_brushes.py::TestNpcBrush::test_cannot_draw_existing_npc PASSED [ 10%]
+tests\logic_layer\test_brushes.py::TestEraserBrush::test_erase_all PASSED [ 10%]
+tests\logic_layer\test_brushes.py::TestEraserBrush::test_erase_monsters_only PASSED [ 11%]
+tests\logic_layer\test_brushes.py::TestFlagBrush::test_clear_flag PASSED [ 12%]
+tests\logic_layer\test_brushes.py::TestFlagBrush::test_set_pz_flag PASSED [ 12%]
+tests\logic_layer\test_door_brush.py::TestDoorType::test_door_types_exist PASSED [ 13%]
+tests\logic_layer\test_door_brush.py::TestDoorType::test_get_name PASSED [ 14%]
+tests\logic_layer\test_door_brush.py::TestDoorBrush::test_can_draw_no_tile PASSED [ 14%]
+tests\logic_layer\test_door_brush.py::TestDoorBrush::test_can_draw_with_wall PASSED [ 15%]
+tests\logic_layer\test_door_brush.py::TestDoorBrush::test_draw_converts_wall PASSED [ 15%]
+tests\logic_layer\test_door_brush.py::TestDoorBrush::test_draw_preserves_open_state PASSED [ 16%]
+tests\logic_layer\test_door_brush.py::TestDoorBrush::test_switch_door PASSED [ 17%]
+tests\logic_layer\test_replace_items.py::TestReplaceItemsInTile::test_no_match PASSED [ 17%]
+tests\logic_layer\test_replace_items.py::TestReplaceItemsInTile::test_replace_in_ground PASSED [ 18%]
+tests\logic_layer\test_replace_items.py::TestReplaceItemsInTile::test_replace_in_items PASSED [ 19%]
+tests\logic_layer\test_replace_items.py::TestReplaceItemsInMap::test_replace_across_tiles PASSED [ 19%]
+tests\logic_layer\test_replace_items.py::TestReplaceItemsInMap::test_selection_only PASSED [ 20%]
+tests\logic_layer\test_replace_items.py::TestFindItemsInMap::test_find_empty PASSED [ 21%]
+tests\logic_layer\test_replace_items.py::TestFindItemsInMap::test_find_item PASSED [ 21%]
+tests\performance\test_assets_benchmarks.py::test_legacy_sprite_decode_benchmark ERROR [ 22%]
+tests\performance\test_benchmarks.py::test_map_creation_time ERROR       [ 22%]
+tests\performance\test_benchmarks.py::test_render_frame_time ERROR       [ 23%]
+tests\ui\test_gui_example.py::test_button_click PASSED                   [ 24%]
+tests\ui\test_smoke.py::test_smoke_workflow ERROR                        [ 24%]
+tests\unit\core\assets\test_appearances_dat.py::test_load_appearances_dat_minimal PASSED [ 25%]
+tests\unit\core\assets\test_appearances_dat.py::test_resolve_appearances_path PASSED [ 26%]
+tests\unit\core\assets\test_appearances_dat.py::test_animation_phase_selection PASSED [ 26%]
+tests\unit\core\assets\test_asset_loader.py::test_load_assets_modern_profile PASSED [ 27%]
+tests\unit\core\assets\test_asset_loader.py::test_load_assets_legacy_profile PASSED [ 28%]
+tests\unit\core\assets\test_asset_profile.py::test_detect_modern_assets_from_client_root PASSED [ 28%]
+tests\unit\core\assets\test_asset_profile.py::test_detect_legacy_assets_from_folder PASSED [ 29%]
+tests\unit\core\assets\test_asset_profile.py::test_detect_assets_conflict_raises PASSED [ 29%]
+tests\unit\core\assets\test_legacy_dat_spr.py::test_legacy_sprite_decode PASSED [ 30%]
+tests\unit\core\assets\test_sprite_appearances_png.py::test_load_png_sprite_sheet SKIPPED [ 31%]
+tests\unit\core\protocols\test_live_login_payload.py::test_login_payload_roundtrip PASSED [ 31%]
+tests\unit\core\protocols\test_live_login_payload.py::test_login_payload_empty_password PASSED [ 32%]
+tests\unit\core\protocols\test_live_login_payload.py::test_login_payload_without_separator PASSED [ 33%]
+tests\unit\logic_layer\test_action_queue.py::test_queue_merges_with_default_delay PASSED [ 33%]
+tests\unit\logic_layer\test_action_queue.py::test_queue_does_not_merge_without_delay PASSED [ 34%]
+tests\unit\logic_layer\test_action_queue.py::test_reset_timer_prevents_merge PASSED [ 35%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_matches_cpp_legacy[0] PASSED [ 35%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_matches_cpp_legacy[1] PASSED [ 36%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_matches_cpp_legacy[3] PASSED [ 36%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_matches_cpp_legacy[5] PASSED [ 37%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_size_0_returns_single_tile PASSED [ 38%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_size_1_returns_3x3_grid PASSED [ 38%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_size_3_returns_7x7_grid PASSED [ 39%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_size_5_returns_11x11_grid PASSED [ 40%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintDraw::test_formula_2splus1_squared PASSED [ 40%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_matches_cpp_legacy[0] PASSED [ 41%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_matches_cpp_legacy[1] PASSED [ 42%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_matches_cpp_legacy[3] PASSED [ 42%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_matches_cpp_legacy[5] PASSED [ 43%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_size_0_returns_3x3_grid PASSED [ 43%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_size_1_returns_5x5_grid PASSED [ 44%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_size_3_returns_9x9_grid PASSED [ 45%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_formula_2splus3_squared PASSED [ 45%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSquareFootprintBorder::test_border_contains_draw_tiles PASSED [ 46%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_matches_cpp_legacy[0] PASSED [ 47%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_matches_cpp_legacy[1] PASSED [ 47%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_matches_cpp_legacy[3] PASSED [ 48%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_matches_cpp_legacy[5] PASSED [ 49%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_size_0_returns_single_tile PASSED [ 49%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_size_1_returns_cross_pattern PASSED [ 50%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_size_3_count PASSED [ 50%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintDraw::test_size_5_count PASSED [ 51%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_matches_cpp_legacy[0] PASSED [ 52%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_matches_cpp_legacy[1] PASSED [ 52%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_matches_cpp_legacy[3] PASSED [ 53%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_matches_cpp_legacy[5] PASSED [ 54%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_size_0_count PASSED [ 54%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_size_1_count PASSED [ 55%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_size_3_count PASSED [ 56%]
+tests\unit\logic_layer\test_brush_footprint.py::TestCircleFootprintBorder::test_size_5_count PASSED [ 56%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_draw_4way_symmetry[0] PASSED [ 57%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_draw_4way_symmetry[1] PASSED [ 57%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_draw_4way_symmetry[2] PASSED [ 58%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_draw_4way_symmetry[3] PASSED [ 59%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_draw_4way_symmetry[5] PASSED [ 59%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_border_4way_symmetry[0] PASSED [ 60%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_border_4way_symmetry[1] PASSED [ 61%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_border_4way_symmetry[2] PASSED [ 61%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_border_4way_symmetry[3] PASSED [ 62%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_square_border_4way_symmetry[5] PASSED [ 63%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_draw_8way_symmetry[0] PASSED [ 63%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_draw_8way_symmetry[1] PASSED [ 64%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_draw_8way_symmetry[2] PASSED [ 64%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_draw_8way_symmetry[3] PASSED [ 65%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_draw_8way_symmetry[5] PASSED [ 66%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_border_8way_symmetry[0] PASSED [ 66%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_border_8way_symmetry[1] PASSED [ 67%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_border_8way_symmetry[2] PASSED [ 68%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_border_8way_symmetry[3] PASSED [ 68%]
+tests\unit\logic_layer\test_brush_footprint.py::TestSymmetry::test_circle_border_8way_symmetry[5] PASSED [ 69%]
+tests\unit\logic_layer\test_brush_footprint.py::TestInputHandling::test_negative_size_treated_as_zero PASSED [ 70%]
+tests\unit\logic_layer\test_brush_footprint.py::TestInputHandling::test_shape_case_insensitive PASSED [ 70%]
+tests\unit\logic_layer\test_brush_footprint.py::TestInputHandling::test_shape_whitespace_handling PASSED [ 71%]
+tests\unit\logic_layer\test_brush_footprint.py::TestInputHandling::test_default_shape_is_square PASSED [ 71%]
+tests\unit\logic_layer\test_brush_footprint.py::TestInputHandling::test_unknown_shape_treated_as_square PASSED [ 72%]
+tests\unit\logic_layer\test_carpet_brush.py::test_carpet_brush_single_tile_uses_center_alignment PASSED [ 73%]
+tests\unit\logic_layer\test_carpet_brush.py::test_carpet_brush_northeast_alignment PASSED [ 73%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_default_values PASSED [ 74%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_set_default PASSED [ 75%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_set_ingame PASSED [ 75%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_is_only_colors PASSED [ 76%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_is_tile_indicators PASSED [ 77%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_is_tooltips PASSED [ 77%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_setter_methods PASSED [ 78%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_toggle_grid PASSED [ 78%]
+tests\unit\logic_layer\test_drawing_options.py::TestDrawingOptions::test_change_notification PASSED [ 79%]
+tests\unit\logic_layer\test_drawing_options.py::TestTransparencyMode::test_enum_values PASSED [ 80%]
+tests\unit\logic_layer\test_drawing_options.py::TestTransparencyMode::test_enum_distinct PASSED [ 80%]
+tests\unit\logic_layer\test_recent_brushes.py::test_recent_brushes_keep_most_recent_and_limit PASSED [ 81%]
+tests\unit\logic_layer\test_recent_brushes.py::test_recent_brushes_dedupe_moves_to_front PASSED [ 82%]
+tests\unit\logic_layer\test_table_brush.py::test_table_brush_single_tile_uses_alone_alignment PASSED [ 82%]
+tests\unit\logic_layer\test_table_brush.py::test_table_brush_row_aligns_edges_and_center PASSED [ 83%]
+tests\unit\test_autoborder_ground_advanced.py::test_ground_equivalent_neighbor_counts_as_same PASSED [ 84%]
+tests\unit\test_autoborder_ground_advanced.py::test_ground_friend_neighbor_counts_as_same PASSED [ 84%]
+tests\unit\test_autoborder_ground_advanced.py::test_border_group_removes_existing_group_items PASSED [ 85%]
+tests\unit\test_autoborder_wall_like.py::test_carpet_updates_neighbors_and_keeps_top_items PASSED [ 85%]
+tests\unit\test_autoborder_wall_like.py::test_table_updates_neighbors_and_stacks_on_top PASSED [ 86%]
+tests\unit\test_gamemap.py::test_gamemap_initialization PASSED           [ 87%]
+tests\unit\test_map_detection.py::test_detect_otmm_magic PASSED          [ 87%]
+tests\unit\test_map_detection.py::test_detect_otbm_magic_with_otmm_extension PASSED [ 88%]
+tests\unit\test_map_detection.py::test_load_otmm_not_implemented PASSED  [ 89%]
+tests\unit\test_mirroring.py::test_mirrored_position_x_axis PASSED       [ 89%]
+tests\unit\test_mirroring.py::test_mirrored_position_y_axis PASSED       [ 90%]
+tests\unit\test_mirroring.py::test_mirrored_position_same_returns_none PASSED [ 91%]
+tests\unit\test_mirroring.py::test_mirrored_position_bounds PASSED       [ 91%]
+tests\unit\test_mirroring.py::test_union_with_mirrored_stable_dedupe PASSED [ 92%]
+tests\unit\test_mirroring.py::test_union_with_mirrored_skips_invalid_z PASSED [ 92%]
+tests\unit\test_otmm_loader.py::test_otmm_loader_reads_tiles_and_items PASSED [ 93%]
+tests\unit\test_otmm_loader.py::test_otmm_loader_reads_house_payload_u16 PASSED [ 94%]
+tests\unit\test_otmm_loader.py::test_otmm_loader_reads_town_data PASSED  [ 94%]
+tests\unit\test_otmm_loader.py::test_otmm_loader_reads_spawn_data PASSED [ 95%]
+tests\unit\test_otmm_loader.py::test_otmm_loader_handles_unknown_item_placeholder PASSED [ 96%]
+tests\unit\test_otmm_loader.py::test_otmm_loader_handles_empty_nodes PASSED [ 96%]
+tests\unit\test_otmm_saver.py::test_otmm_serialize_roundtrip PASSED      [ 97%]
+tests\unit\vis_layer\test_map_drawer_overlays.py::test_draw_grid_and_shade_when_enabled PASSED [ 98%]
+tests\unit\vis_layer\test_map_drawer_overlays.py::test_spawn_indicator_and_ingame_box_emit_selection_rects PASSED [ 98%]
+tests\unit\vis_layer\test_map_drawer_tooltips.py::test_draw_tooltips_renders_hover_info PASSED [ 99%]
+tests\unit\vis_layer\test_qpainter_fallback.py::test_qpainter_fallback_draws_placeholder_color PASSED [100%]
+
+=================================== ERRORS ====================================
+____________ ERROR at setup of test_legacy_sprite_decode_benchmark ____________
+file C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_assets_benchmarks.py, line 21
+  @pytest.mark.benchmark
+  def test_legacy_sprite_decode_benchmark(tmp_path: Path, benchmark) -> None:
+E       fixture 'benchmark' not found
+>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, monkeypatch, pytestconfig, qapp, qapp_args, qapp_cls, qtbot, qtlog, qtmodeltester, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_assets_benchmarks.py:21
+__________________ ERROR at setup of test_map_creation_time ___________________
+file C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_benchmarks.py, line 10
+  @pytest.mark.benchmark
+  def test_map_creation_time(benchmark):
+E       fixture 'benchmark' not found
+>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, monkeypatch, pytestconfig, qapp, qapp_args, qapp_cls, qtbot, qtlog, qtmodeltester, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_benchmarks.py:10
+__________________ ERROR at setup of test_render_frame_time ___________________
+file C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_benchmarks.py, line 22
+  @pytest.mark.benchmark
+  def test_render_frame_time(benchmark):
+E       fixture 'benchmark' not found
+>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, monkeypatch, pytestconfig, qapp, qapp_args, qapp_cls, qtbot, qtlog, qtmodeltester, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_benchmarks.py:22
+____________________ ERROR at setup of test_smoke_workflow ____________________
+E   FileNotFoundError: [Errno 2] No such file or directory: 'data\\brushes.json'
+============================== warnings summary ===============================
+tests\performance\test_assets_benchmarks.py:21
+  C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_assets_benchmarks.py:21: PytestUnknownMarkWarning: Unknown pytest.mark.benchmark - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.benchmark
+
+tests\performance\test_benchmarks.py:10
+  C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_benchmarks.py:10: PytestUnknownMarkWarning: Unknown pytest.mark.benchmark - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.benchmark
+
+tests\performance\test_benchmarks.py:22
+  C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\tests\performance\test_benchmarks.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.benchmark - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.benchmark
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests\performance\test_assets_benchmarks.py::test_legacy_sprite_decode_benchmark
+ERROR tests\performance\test_benchmarks.py::test_map_creation_time
+ERROR tests\performance\test_benchmarks.py::test_render_frame_time
+ERROR tests\ui\test_smoke.py::test_smoke_workflow - FileNotFoundError: [Errno...
+============ 152 passed, 1 skipped, 3 warnings, 4 errors in 5.13s =============

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import xml.etree.ElementTree as ET
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 from typing import Optional
 
 from PyQt6.QtGui import QPixmap

@@ -11,10 +11,12 @@ It intentionally does not model the full RME `ItemType` surface area.
 # items_xml.py
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from py_rme_canary.core.io.xml.safe import Element, ParseError
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 class ItemsXMLError(ValueError):
@@ -85,10 +87,12 @@ class ItemsXML:
         items_by_server_id: dict[int, ItemType],
         client_to_server: dict[int, int],
         server_to_client: dict[int, int],
+        server_id_by_name: dict[str, int] | None = None,
     ):
         self._items_by_server_id = items_by_server_id
         self._client_to_server = client_to_server
         self._server_to_client = server_to_client
+        self._server_id_by_name = server_id_by_name or {}
 
     @property
     def items_by_server_id(self) -> dict[int, ItemType]:
@@ -110,6 +114,10 @@ class ItemsXML:
 
     def get_client_id(self, server_id: int) -> int | None:
         return self._server_to_client.get(int(server_id))
+    
+    def get_server_id_by_name(self, name: str) -> int | None:
+        """Look up server ID by item name (case-insensitive)."""
+        return self._server_id_by_name.get(name.strip().lower())
 
     @classmethod
     def load(cls, path: str | Path, *, strict_mapping: bool = True) -> ItemsXML:
@@ -118,7 +126,7 @@ class ItemsXML:
             root = ET.parse(str(p)).getroot()
         except FileNotFoundError as e:
             raise ItemsXMLError(f"items.xml not found: {p}") from e
-        except ET.ParseError as e:
+        except ParseError as e:
             raise ItemsXMLError(f"Failed to parse items.xml: {p} ({e})") from e
         except Exception as e:
             raise ItemsXMLError(f"Failed to load items.xml: {p} ({type(e).__name__}: {e})") from e
@@ -129,15 +137,16 @@ class ItemsXML:
     def from_string(cls, xml_text: str, *, strict_mapping: bool = True) -> ItemsXML:
         try:
             root = ET.fromstring(xml_text)
-        except ET.ParseError as e:
+        except ParseError as e:
             raise ItemsXMLError(f"Failed to parse items.xml from string ({e})") from e
         return cls.from_root(root, strict_mapping=strict_mapping)
 
     @classmethod
-    def from_root(cls, root: ET.Element, *, strict_mapping: bool = True) -> ItemsXML:
+    def from_root(cls, root: Element, *, strict_mapping: bool = True) -> ItemsXML:
         items_by_server_id: dict[int, ItemType] = {}
         client_to_server: dict[int, int] = {}
         server_to_client: dict[int, int] = {}
+        server_id_by_name: dict[str, int] = {}
 
         for item_node in _iter_item_nodes(root):
             sid = _parse_int(item_node.get("id") or "")
@@ -145,6 +154,9 @@ class ItemsXML:
                 continue
 
             name = item_node.get("name") or ""
+            if name:
+                server_id_by_name[name.lower()] = int(sid)
+
             attrs = _read_attribute_children(item_node)
 
             # Common OpenTibia / Canary naming patterns
@@ -192,10 +204,11 @@ class ItemsXML:
             items_by_server_id=items_by_server_id,
             client_to_server=client_to_server,
             server_to_client=server_to_client,
+            server_id_by_name=server_id_by_name,
         )
 
 
-def _iter_item_nodes(root: ET.Element) -> Iterable[ET.Element]:
+def _iter_item_nodes(root: Element) -> Iterable[Element]:
     # Common layouts:
     # - <items><item .../></items>
     # - <item .../> (rare)
@@ -208,7 +221,7 @@ def _iter_item_nodes(root: ET.Element) -> Iterable[ET.Element]:
             yield node
 
 
-def _read_attribute_children(item_node: ET.Element) -> dict[str, str]:
+def _read_attribute_children(item_node: Element) -> dict[str, str]:
     attrs: dict[str, str] = {}
 
     # Some formats place data directly as item attributes; keep them too.

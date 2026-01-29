@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
 
 from py_rme_canary.core.data.zones import Zone
 from py_rme_canary.core.exceptions.io import ZonesXmlError
 from py_rme_canary.core.io.xml.base import as_int
+from py_rme_canary.core.io.xml.safe import Element
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 def parse_zones_xml(xml_text: str) -> dict[int, Zone]:
@@ -30,7 +31,7 @@ def parse_zones_xml(xml_text: str) -> dict[int, Zone]:
     return out
 
 
-def _indent(elem: ET.Element, level: int = 0) -> None:
+def _indent(elem: Element, level: int = 0) -> None:
     i = "\n" + level * "\t"
     if len(elem):
         if not elem.text or not elem.text.strip():

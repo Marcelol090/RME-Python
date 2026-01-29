@@ -9,7 +9,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class FeatureCheck:
 class FunctionalParityVerifier:
     """Verify logic layer functional parity with C++ legacy."""
 
-    CRITICAL_FEATURES = {
+    CRITICAL_FEATURES: ClassVar[dict[str, dict[str, tuple[str, str]]]] = {
         "Map IO": {
             "OTBM Load": ("core/io", "otbm"),
             "OTBM Save": ("core/io", "save"),
@@ -115,14 +115,16 @@ class FunctionalParityVerifier:
             return
 
         # Search for keyword in files
-        found_locations = []
-
         if full_path.is_dir():
-            for py_file in full_path.rglob("*.py"):
-                if self._file_contains_keyword(py_file, keyword):
-                    found_locations.append(str(py_file.relative_to(self.root)))
-        elif self._file_contains_keyword(full_path, keyword):
-            found_locations.append(str(full_path.relative_to(self.root)))
+            found_locations = [
+                str(py_file.relative_to(self.root))
+                for py_file in full_path.rglob("*.py")
+                if self._file_contains_keyword(py_file, keyword)
+            ]
+        else:
+            found_locations = (
+                [str(full_path.relative_to(self.root))] if self._file_contains_keyword(full_path, keyword) else []
+            )
 
         if found_locations:
             self.results.append(

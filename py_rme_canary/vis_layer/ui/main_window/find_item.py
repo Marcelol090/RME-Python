@@ -36,14 +36,14 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
     res = dlg.result_value()
     positions: list[Position] = []
     named_results: list[tuple[str, Position]] = []
-    
+
     if res.mode == "item":
         sid = int(res.query_id)
         positions = find_item_positions(editor.map, server_id=sid)
         if not positions:
             QMessageBox.information(editor, "Find Item", f"No tiles found with serverId={sid}.")
             return
-            
+
     elif res.mode == "creature":
         # Search both? Or should have split them? find_monsters + find_npcs
         # For now, let's search both and combine, or just one if strictly typed.
@@ -51,7 +51,7 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
         m_results = find_monsters(editor.map, query=res.query_name)
         n_results = find_npcs(editor.map, query=res.query_name)
         named_results = sorted(m_results + n_results, key=lambda x: x[0])
-        
+
         if not named_results:
              QMessageBox.information(editor, "Find Creature", f"No creatures found matching '{res.query_name}'.")
              return
@@ -61,7 +61,7 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
         if not named_results:
              QMessageBox.information(editor, "Find House", f"No houses found matching '{res.query_name}'.")
              return
-    
+
     chosen: Position | None = None
 
     if positions:
@@ -71,7 +71,7 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
             pick = FindPositionsDialog(editor, title="Find Results", positions=positions)
             if pick.exec() == pick.DialogCode.Accepted:
                 chosen = pick.selected_position()
-    
+
     elif named_results:
         if len(named_results) == 1:
             chosen = named_results[0][1]

@@ -93,14 +93,14 @@ ATTR_CHARGES = 0x16
 # Reading attribute
 def read_attribute(stream: BinaryIO) -> tuple[int, bytes]:
     attr_type = read_byte_escaped(stream)
-    
+
     if attr_type == ATTR_TEXT:
         length = struct.unpack('<H', stream.read(2))[0]
         value = stream.read(length)
     elif attr_type == ATTR_ACTION_ID:
         value = struct.unpack('<H', stream.read(2))[0]
     # ... more types
-    
+
     return attr_type, value
 ```
 
@@ -117,7 +117,7 @@ class OTBMValidator:
     def validate_node_depth(self, depth: int) -> None:
         if depth > 16:
             raise OTBMError(f"Node depth {depth} exceeds limit 16")
-    
+
     def validate_position(self, x: int, y: int, z: int) -> None:
         if not (0 <= x < self.width and 0 <= y < self.height):
             raise OTBMError(f"Position ({x}, {y}, {z}) out of bounds")
@@ -133,7 +133,7 @@ class OTBMStreamingParser:
     def __init__(self, file: BinaryIO):
         self.file = file
         self.node_stack = []
-    
+
     def parse(self) -> Iterator[OTBMNode]:
         """Yield nodes as they're parsed (memory efficient)."""
         while True:
@@ -145,15 +145,15 @@ class OTBMStreamingParser:
                     break
             except EOFError:
                 break
-    
+
     def _read_node(self) -> Optional[OTBMNode]:
         marker = read_byte_escaped(self.file)
         if marker != OTBM_NODE_START:
             return None
-        
+
         node_type = read_byte_escaped(self.file)
         properties = self._read_properties(node_type)
-        
+
         # Don't load children into memory - yield them lazily
         return OTBMNode(type=node_type, properties=properties)
 ```
@@ -203,7 +203,7 @@ def test_load_real_otbm():
     \"\"\"Test with actual RME-generated map.\"\"\"
     loader = OTBMLoader()
     game_map = loader.load("tests/fixtures/realmap.otbm")
-    
+
     assert game_map.width == 256
     assert game_map.height == 256
     assert len(game_map.tiles) > 0
@@ -213,7 +213,7 @@ def test_escape_sequences():
     \"\"\"Test reading/writing escape sequences.\"\"\"
     # Create buffer with escaped bytes
     buf = BytesIO(bytes([0xFF, 0xFD, 0xFF, 0xFE, 0xFF, 0xFF]))
-    
+
     # Should read as: 0xFD, 0xFE, 0xFF (literals)
     assert read_byte_escaped(buf) == 0xFD
     assert read_byte_escaped(buf) == 0xFE
@@ -248,7 +248,7 @@ class Position:
     x: int
     y: int
     z: int
-    
+
 # Saves 40-50% memory + faster attribute access
 ```
 
@@ -268,9 +268,9 @@ class GameMap:
     def __init__(self):
         # Use dict with (x, y, z) tuple as key
         self._tiles: dict[tuple[int, int, int], Tile] = {}
-        
+
         # NOT list[list[list[Tile]]] - wastes memory on sparse maps
-    
+
     def get_tile(self, x: int, y: int, z: int) -> Optional[Tile]:
         return self._tiles.get((x, y, z))  # O(1) lookup
 ```
@@ -311,21 +311,21 @@ from py_rme_canary.core.data.gamemap import GameMap
 game_map = GameMap()
 # ... populate map
 \"\"\"
-    
+
     # Old method
     old = timeit.timeit(
         "game_map.get_tile_slow(100, 100, 7)",
         setup=setup,
         number=100000
     )
-    
+
     # New method
     new = timeit.timeit(
         "game_map.get_tile(100, 100, 7)",
         setup=setup,
         number=100000
     )
-    
+
     print(f"Speedup: {old/new:.2f}x")
 ```
 ```
@@ -342,32 +342,32 @@ game_map = GameMap()
     "description": "Fix layer violation imports",
     "prompt": "Analyze imports and fix layer violations:\n1. Scan for illegal imports (core→logic/vis, logic→vis)\n2. Move code to correct layer OR use Protocol\n3. Update all references\n4. Run: grep -r 'from.*vis_layer' core/ logic_layer/\n5. Verify no circular imports with pydeps"
   },
-  
+
   "rme-add-tests": {
     "description": "Add comprehensive tests for module",
     "prompt": "Create tests for selected module:\n1. Unit tests (pytest)\n2. Edge cases (None, empty, overflow)\n3. Error cases (exceptions)\n4. Property-based tests (hypothesis) if applicable\n5. Achieve 90%+ coverage\n6. Mock external dependencies"
   },
-  
+
   "rme-benchmark": {
     "description": "Add performance benchmark",
     "prompt": "Create benchmark for selected function:\n1. Use pytest-benchmark\n2. Test with realistic data sizes\n3. Set regression threshold\n4. Document expected performance\n5. Add to CI pipeline"
   },
-  
+
   "rme-refactor-dataclass": {
     "description": "Refactor class to frozen dataclass",
     "prompt": "Convert selected class to frozen dataclass:\n1. Identify all attributes\n2. Create @dataclass(frozen=True, slots=True)\n3. Convert mutations to replace()\n4. Update all usage sites\n5. Run tests to verify\n6. Document immutability benefits"
   },
-  
+
   "rme-optimize-hotpath": {
     "description": "Optimize performance-critical code",
     "prompt": "Optimize selected code:\n1. Profile with cProfile/line_profiler\n2. Add @lru_cache for pure functions\n3. Use __slots__ in dataclasses\n4. Replace lists with generators if appropriate\n5. Benchmark before/after\n6. Document speedup in commit message"
   },
-  
+
   "rme-port-cpp": {
     "description": "Port C++ code from RME/TFS/Canary",
     "prompt": "Port C++ implementation to Python:\n1. Locate C++ source (provide file:line)\n2. Extract algorithm (ignore memory management)\n3. Design Python equivalent with type hints\n4. Write tests FIRST (TDD)\n5. Validate behavior matches C++\n6. Document C++ source in docstring"
   },
-  
+
   "rme-security-audit": {
     "description": "Security audit for file I/O code",
     "prompt": "Audit security of selected code:\n1. Check path traversal vulnerabilities\n2. Validate all user inputs\n3. Add file size limits (MemoryGuard)\n4. Use atomic writes (prevent corruption)\n5. Add error handling\n6. Run bandit security linter"
@@ -427,19 +427,19 @@ from py_rme_canary.core.io.otbm.streaming import read_byte_escaped
 class TileParser:
     def __init__(self, items_db: ItemsXML):
         self.items_db = items_db
-    
+
     def parse_tile(self, stream: BinaryIO) -> Tile:
         \"\"\"Parse tile node from OTBM stream.
-        
+
         OTBM Structure:
         [0xFD] [OTBM_TILE] [x:u16] [y:u16] [z:u8] [attrs...] [items...] [0xFE]
-        
+
         Args:
             stream: Binary stream positioned at tile node
-            
+
         Returns:
             Parsed Tile object
-            
+
         References:
             RME: source/iomap_otbm.cpp:456
         \"\"\"
@@ -465,17 +465,17 @@ def test_parse_tile_basic():
     buf.write(bytes([7]))  # z
     buf.write(bytes([0xFE]))  # Node end
     buf.seek(0)
-    
+
     parser = TileParser(items_db)
     tile = parser.parse_tile(buf)
-    
+
     assert tile.position == Position(100, 100, 7)
 
 def test_parse_tile_with_items():
     \"\"\"Test parsing tile with items.\"\"\"
     # ... create OTBM data with items
     tile = parser.parse_tile(buf)
-    
+
     assert len(tile.items) > 0
 
 def test_parse_tile_with_escape():
@@ -484,7 +484,7 @@ def test_parse_tile_with_escape():
     buf = BytesIO()
     buf.write(bytes([0xFF, 0xFD]))  # Escaped 0xFD
     buf.seek(0)
-    
+
     value = read_byte_escaped(buf)
     assert value == 0xFD
 ```
@@ -498,10 +498,10 @@ class OTBMLoader:
     def load(self, path: Path) -> GameMap:
         with open(path, 'rb') as f:
             # ... parse header
-            
+
             # Use TileParser
             tile_parser = TileParser(self.items_db)
-            
+
             while not eof:
                 node_type = read_byte_escaped(f)
                 if node_type == OTBM_TILE:
@@ -516,10 +516,10 @@ def test_load_rme_map():
     \"\"\"Integration test with real RME map.\"\"\"
     loader = OTBMLoader(items_db)
     game_map = loader.load("tests/fixtures/forgotten.otbm")
-    
+
     assert game_map.width > 0
     assert len(game_map.tiles) > 0
-    
+
     # Spot check specific tile
     tile = game_map.get_tile(1000, 1000, 7)
     assert tile is not None
@@ -577,7 +577,7 @@ grep -r "class.*Brush" source/
 // source/groundBrush.cpp
 void GroundBrush::draw(BaseMap* map, Tile* tile, void* parameter) {
     uint32_t ground_id = getItemID();
-    
+
     // Auto-border: check 8 neighbors
     uint32_t border_mask = 0;
     for(int i = 0; i < 8; ++i) {
@@ -586,7 +586,7 @@ void GroundBrush::draw(BaseMap* map, Tile* tile, void* parameter) {
             border_mask |= (1 << i);
         }
     }
-    
+
     // Lookup border variant
     uint32_t border_id = borderLookup[ground_id][border_mask];
     tile->addItem(Item::Create(border_id));
@@ -607,56 +607,56 @@ from py_rme_canary.logic_layer.brushes.base_brush import BaseBrush
 @dataclass(frozen=True, slots=True)
 class GroundBrush(BaseBrush):
     \"\"\"Ground brush with auto-bordering.
-    
+
     Attributes:
         ground_id: Base ground item ID
         border_group: Border group for lookups
-    
+
     References:
         RME: source/groundBrush.cpp
     \"\"\"
     ground_id: int
     border_group: str
-    
+
     def apply(
-        self, 
-        game_map: GameMap, 
+        self,
+        game_map: GameMap,
         pos: Position
     ) -> list[TileDelta]:
         \"\"\"Apply ground with auto-border.
-        
+
         Algorithm:
         1. Check 8 neighbors
         2. Compute border mask (8-bit)
         3. Lookup border variant
         4. Place item on tile
-        
+
         Args:
             game_map: Target map
             pos: Position to paint
-            
+
         Returns:
             List of tile modifications for undo/redo
         \"\"\"
         tile = game_map.get_or_create_tile(pos)
-        
+
         # Compute border mask
         mask = self._compute_neighbor_mask(game_map, pos)
-        
+
         # Lookup border variant
         border_id = get_border_variant(self.ground_id, mask)
-        
+
         # Create delta for undo
         old_tile = tile.copy()
-        
+
         # Apply ground
         tile.ground = Item(id=border_id)
-        
+
         return [TileDelta(pos=pos, old=old_tile, new=tile)]
-    
+
     def _compute_neighbor_mask(
-        self, 
-        game_map: GameMap, 
+        self,
+        game_map: GameMap,
         pos: Position
     ) -> int:
         \"\"\"Compute 8-neighbor border mask.\"\"\"
@@ -664,12 +664,12 @@ class GroundBrush(BaseBrush):
         for i, (dx, dy) in enumerate(DIRECTIONS_8):
             neighbor_pos = Position(pos.x + dx, pos.y + dy, pos.z)
             neighbor = game_map.get_tile(neighbor_pos)
-            
+
             if neighbor and self._matches_ground(neighbor):
                 mask |= (1 << i)
-        
+
         return mask
-    
+
     def _matches_ground(self, tile: Tile) -> bool:
         \"\"\"Check if tile has matching ground.\"\"\"
         if not tile.ground:
@@ -686,9 +686,9 @@ def test_ground_brush_isolated():
     game_map = GameMap()
     brush = GroundBrush(ground_id=4526, border_group="grass")
     pos = Position(100, 100, 7)
-    
+
     deltas = brush.apply(game_map, pos)
-    
+
     assert len(deltas) == 1
     tile = game_map.get_tile(pos)
     assert tile.ground.id == 4526  # Base grass
@@ -697,7 +697,7 @@ def test_ground_brush_with_neighbors():
     \"\"\"Test auto-border with neighbors.\"\"\"
     game_map = GameMap()
     brush = GroundBrush(ground_id=4526, border_group="grass")
-    
+
     # Place grass tiles in pattern
     #   G G G
     #   G X G  <- X is target
@@ -708,11 +708,11 @@ def test_ground_brush_with_neighbors():
                 continue  # Skip center
             pos = Position(100 + dx, 100 + dy, 7)
             game_map.set_tile(pos, Tile(ground=Item(id=4526)))
-    
+
     # Apply brush to center
     center = Position(100, 100, 7)
     deltas = brush.apply(game_map, center)
-    
+
     tile = game_map.get_tile(center)
     # Should use inner grass variant (all neighbors match)
     assert tile.ground.id != 4526  # Not base grass
@@ -723,14 +723,14 @@ def test_ground_brush_undo():
     game_map = GameMap()
     brush = GroundBrush(ground_id=4526, border_group="grass")
     pos = Position(100, 100, 7)
-    
+
     # Apply brush
     deltas = brush.apply(game_map, pos)
-    
+
     # Undo
     for delta in reversed(deltas):
         delta.undo(game_map)
-    
+
     # Should be back to empty
     tile = game_map.get_tile(pos)
     assert tile is None or tile.ground is None
@@ -743,8 +743,8 @@ def test_ground_brush_undo():
 # logic_layer/brush_definitions.py
 class BrushManager:
     def create_ground_brush(
-        self, 
-        ground_id: int, 
+        self,
+        ground_id: int,
         border_group: str
     ) -> GroundBrush:
         \"\"\"Factory method for ground brushes.\"\"\"
@@ -860,7 +860,7 @@ class TileOperation:
     position: Position
     action: str  # "set_ground", "add_item", etc
     data: dict[str, Any]
-    
+
     def __lt__(self, other: TileOperation) -> bool:
         # Total order: timestamp, then op_id
         if self.timestamp != other.timestamp:
@@ -871,11 +871,11 @@ class TileOperation:
 class LWWTileSet:
     def __init__(self):
         self.operations: list[TileOperation] = []
-    
+
     def apply(self, op: TileOperation) -> None:
         self.operations.append(op)
         self.operations.sort()  # Maintain total order
-    
+
     def compute_state(self, pos: Position) -> Tile:
         # Apply operations in order
         tile = Tile()
@@ -935,24 +935,24 @@ class SyncManager:
         self.game_map = game_map
         self.server_url = server_url
         self.ws: Optional[WebSocket] = None
-        
+
         # CRDT operation log
         self.operations: list[TileOperation] = []
-        
+
         # Pending operations (not yet acknowledged)
         self.pending: list[TileOperation] = []
-        
+
         # Lamport clock for ordering
         self.clock = 0
-    
+
     async def connect(self) -> None:
         self.ws = await websockets.connect(self.server_url)
         asyncio.create_task(self._receive_loop())
-    
+
     async def apply_local_edit(
-        self, 
-        pos: Position, 
-        action: str, 
+        self,
+        pos: Position,
+        action: str,
         data: dict
     ) -> None:
         # Create operation
@@ -965,32 +965,32 @@ class SyncManager:
             action=action,
             data=data
         )
-        
+
         # Apply locally (optimistic)
         self._apply_operation(op)
-        
+
         # Send to server
         self.pending.append(op)
         await self.ws.send(json.dumps(asdict(op)))
-    
+
     async def _receive_loop(self) -> None:
         while True:
             msg = await self.ws.recv()
             op = TileOperation(**json.loads(msg))
-            
+
             # Update clock (Lamport algorithm)
             self.clock = max(self.clock, op.timestamp) + 1
-            
+
             # Apply operation
             self._apply_operation(op)
-            
+
             # Remove from pending if it's ours
             self.pending = [p for p in self.pending if p.op_id != op.op_id]
-    
+
     def _apply_operation(self, op: TileOperation) -> None:
         # Insert operation in sorted order (CRDT)
         bisect.insort(self.operations, op)
-        
+
         # Recompute tile state
         tile = self._compute_tile_state(op.position)
         self.game_map.set_tile(op.position, tile)
@@ -1003,7 +1003,7 @@ class BroadcastManager:
     def __init__(self):
         self.clients: list[WebSocket] = []
         self.operations: list[TileOperation] = []
-    
+
     async def handle_client(self, ws: WebSocket) -> None:
         self.clients.append(ws)
         try:
@@ -1012,19 +1012,19 @@ class BroadcastManager:
                 "type": "initial_state",
                 "operations": [asdict(op) for op in self.operations]
             }))
-            
+
             # Receive loop
             async for msg in ws:
                 op = TileOperation(**json.loads(msg))
-                
+
                 # Store operation
                 bisect.insort(self.operations, op)
-                
+
                 # Broadcast to all clients
                 await self.broadcast(op)
         finally:
             self.clients.remove(ws)
-    
+
     async def broadcast(self, op: TileOperation) -> None:
         msg = json.dumps(asdict(op))
         await asyncio.gather(
@@ -1309,16 +1309,16 @@ from pathlib import Path
 def validate_path(path: Path) -> Path:
     \"\"\"Validate file path against directory traversal.\"\"\"
     resolved = path.resolve()
-    
+
     # Check against allowed directories
     allowed_dirs = [
         Path("maps/"),
         Path("data/"),
     ]
-    
+
     if not any(resolved.is_relative_to(d) for d in allowed_dirs):
         raise SecurityError(f"Path {path} not allowed")
-    
+
     return resolved
 
 # Usage
@@ -1335,10 +1335,10 @@ guard = MemoryGuard.get_instance()
 
 def load_file(path: Path) -> bytes:
     size = path.stat().st_size
-    
+
     if not guard.can_allocate(size):
         raise MemoryError(f"File too large: {size} bytes")
-    
+
     with guard.track_allocation(size):
         return path.read_bytes()
 ```
@@ -1352,11 +1352,11 @@ def sanitize_map_name(name: str) -> str:
     # Allow only alphanumeric + underscore + dash
     if not re.match(r'^[a-zA-Z0-9_-]+$', name):
         raise ValueError(f"Invalid map name: {name}")
-    
+
     # Limit length
     if len(name) > 100:
         raise ValueError("Map name too long")
-    
+
     return name
 ```
 
@@ -1372,7 +1372,7 @@ def atomic_write(path: Path, data: bytes) -> None:
     # Write to temp file first
     temp_path = path.with_suffix(".tmp")
     temp_path.write_bytes(data)
-    
+
     # Atomic rename (POSIX guarantees atomicity)
     temp_path.replace(path)
 ```
@@ -1402,7 +1402,7 @@ def load_map(path: Path, user_id: str) -> GameMap:
         f"User {user_id} loading map {path}",
         extra={"user_id": user_id, "path": str(path)}
     )
-    
+
     # ... load map
 ```
 

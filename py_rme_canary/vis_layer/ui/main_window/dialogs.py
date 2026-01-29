@@ -118,14 +118,14 @@ class FindEntityDialog(QDialog):
     def result_value(self) -> FindEntityResult:
         idx = self._tabs.currentIndex()
         title = self._tabs.tabText(idx)
-        
+
         if title == "Item":
             return FindEntityResult(mode="item", query_id=self._item_id_spin.value())
         elif title == "Creature":
             return FindEntityResult(mode="creature", query_name=self._creature_name_edit.text())
         elif title == "House":
             return FindEntityResult(mode="house", query_name=self._house_name_edit.text())
-        
+
         return FindEntityResult(mode="unknown")
 
 
@@ -165,6 +165,12 @@ class ReplaceItemsDialog(QDialog):
 
     def values(self) -> tuple[int, int]:
         return int(self._from_spin.value()), int(self._to_spin.value())
+
+    def set_from_id(self, value: int) -> None:
+        self._from_spin.setValue(int(value))
+
+    def set_to_id(self, value: int) -> None:
+        self._to_spin.setValue(int(value))
 
 
 class FindPositionsDialog(QDialog):

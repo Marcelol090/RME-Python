@@ -13,3 +13,17 @@ class QtMapEditorPalettesMixin:
 
     def _select_palette(self: "QtMapEditor", palette_key: str) -> None:
         self.palettes.select_palette(palette_key)
+
+    def _toggle_palette_large_icons(self: "QtMapEditor", enabled: bool) -> None:
+        self.palette_large_icons = bool(enabled)
+        size = 48 if bool(enabled) else 24
+        try:
+            self.palettes.set_icon_size(int(size))
+        except Exception:
+            pass
+        try:
+            self.status.showMessage(
+                "Palette icons: large" if bool(enabled) else "Palette icons: normal"
+            )
+        except Exception:
+            pass

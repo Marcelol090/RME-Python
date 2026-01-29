@@ -4,8 +4,14 @@ from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtWidgets import QMessageBox
 
-from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog, MapStatisticsDialog, ReplaceItemsDialog
+from py_rme_canary.vis_layer.ui.main_window.dialogs import (
+    FindItemDialog,
+    FindPositionsDialog,
+    MapStatisticsDialog,
+    ReplaceItemsDialog,
+)
 from py_rme_canary.vis_layer.ui.main_window.find_item import open_find_item
+from py_rme_canary.logic_layer.map_search import find_item_positions
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -19,6 +25,10 @@ class QtMapEditorDialogsMixin:
     def _open_replace_items_dialog(self) -> None:
         editor = cast("QtMapEditor", self)
         dlg = ReplaceItemsDialog(editor)
+        if editor.quick_replace_source_id is not None:
+            dlg.set_from_id(int(editor.quick_replace_source_id))
+        if editor.quick_replace_target_id is not None:
+            dlg.set_to_id(int(editor.quick_replace_target_id))
         if dlg.exec() != dlg.DialogCode.Accepted:
             return
         from_id, to_id = dlg.values()
@@ -41,6 +51,10 @@ class QtMapEditorDialogsMixin:
 
         dlg = ReplaceItemsDialog(editor)
         dlg.setWindowTitle("Replace Items on Selection")
+        if editor.quick_replace_source_id is not None:
+            dlg.set_from_id(int(editor.quick_replace_source_id))
+        if editor.quick_replace_target_id is not None:
+            dlg.set_to_id(int(editor.quick_replace_target_id))
         if dlg.exec() != dlg.DialogCode.Accepted:
             return
 
@@ -77,3 +91,47 @@ class QtMapEditorDialogsMixin:
         editor = cast("QtMapEditor", self)
         dlg = MapStatisticsDialog(editor, game_map=editor.map)
         dlg.exec()
+
+    def _set_quick_replace_source(self, item_id: int) -> None:
+        editor = cast("QtMapEditor", self)
+        editor.quick_replace_source_id = int(item_id)
+        if editor.quick_replace_target_id is not None:
+            editor.status.showMessage(
+                f"Quick Replace: {int(item_id)} → {int(editor.quick_replace_target_id)}"
+            )
+        else:
+            editor.status.showMessage(f"Quick Replace: find item set to {int(item_id)}")
+
+    def _set_quick_replace_target(self, item_id: int) -> None:
+        editor = cast("QtMapEditor", self)
+        editor.quick_replace_target_id = int(item_id)
+        if editor.quick_replace_source_id is not None:
+            editor.status.showMessage(
+                f"Quick Replace: {int(editor.quick_replace_source_id)} → {int(item_id)}"
+            )
+        else:
+            editor.status.showMessage(f"Quick Replace: replace item set to {int(item_id)}")
+
+    def _find_item_by_id(self, item_id: int) -> None:
+        editor = cast("QtMapEditor", self)
+        positions = find_item_positions(editor.map, server_id=int(item_id))
+        if not positions:
+            QMessageBox.information(editor, "Find Item", f"No tiles found with serverId={int(item_id)}.")
+            return
+
+        if len(positions) == 1:
+            pos = positions[0]
+        else:
+            pick = FindPositionsDialog(editor, title="Find Results", positions=positions)
+            if pick.exec() != pick.DialogCode.Accepted:
+                return
+            pos = pick.selected_position()
+            if pos is None:
+                return
+
+        editor.center_view_on(int(pos.x), int(pos.y), int(pos.z), push_history=True)
+        try:
+            editor.session.set_single_selection(x=int(pos.x), y=int(pos.y), z=int(pos.z))
+        except Exception:
+            pass
+        editor.canvas.update()

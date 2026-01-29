@@ -86,7 +86,7 @@ class TileParser:
             elif attr == OTBM_ATTR_ITEM:
                 # Compact item (just item id)
                 item_id = struct.unpack("<H", payload.read_escaped_bytes(2))[0]
-                item = Item(id=int(item_id))
+                item = self._item_parser.parse_compact_item_id(int(item_id), tile_pos=tile_pos)
                 if ground is None:
                     ground = item
                 else:

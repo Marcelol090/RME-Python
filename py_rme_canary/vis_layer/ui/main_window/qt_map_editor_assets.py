@@ -9,7 +9,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-from py_rme_canary.core.assets.sprite_appearances import SpriteAppearances, SpriteAppearancesError, resolve_assets_dir
+from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
+from py_rme_canary.core.assets.loader import load_assets_from_profile
+from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteError
+from py_rme_canary.core.assets.sprite_appearances import SpriteAppearancesError
 from py_rme_canary.core.config.project import find_project_for_otbm
 from py_rme_canary.core.memory_guard import MemoryGuardError
 
@@ -25,20 +28,45 @@ class QtMapEditorAssetsMixin:
         if not path:
             return
         try:
-            assets_dir = resolve_assets_dir(path)
-            self._set_assets_dir(assets_dir)
-        except SpriteAppearancesError as e:
+            profile = detect_asset_profile(path)
+            self._apply_asset_profile(profile)
+        except (AssetProfileError, SpriteAppearancesError) as e:
             QMessageBox.critical(self, "Assets", str(e))
 
     def _set_assets_dir(self: "QtMapEditor", assets_dir: str) -> None:
-        sa = SpriteAppearances(assets_dir=assets_dir, memory_guard=self._memory_guard)
-        sa.load_catalog_content(load_data=False)
-        self.assets_dir = str(assets_dir)
-        self.sprite_assets = sa
+        try:
+            profile = detect_asset_profile(assets_dir)
+        except AssetProfileError as e:
+            QMessageBox.critical(self, "Assets", str(e))
+            return
+        self._apply_asset_profile(profile)
+
+    def _apply_asset_profile(self: "QtMapEditor", profile) -> None:
+        self.asset_profile = profile
+        try:
+            loaded = load_assets_from_profile(profile, memory_guard=self._memory_guard)
+        except (AssetProfileError, SpriteAppearancesError, LegacySpriteError) as exc:
+            QMessageBox.critical(self, "Assets", str(exc))
+            return
+
+        self.assets_dir = str(profile.assets_dir or profile.root)
+        self.sprite_assets = loaded.sprite_assets
+        self.appearance_assets = loaded.appearance_assets
         self._sprite_cache.clear()
         self._sprite_render_temporarily_disabled = False
         self._sprite_render_disabled_reason = None
-        self._update_status_capabilities(prefix=f"Assets loaded: {self.assets_dir} (sheets: {len(sa.sheets)})")
+
+        prefix_parts: list[str] = []
+        if loaded.sheet_count is not None:
+            prefix_parts.append(f"sheets: {loaded.sheet_count}")
+        if loaded.sprite_count is not None:
+            prefix_parts.append(f"sprites: {loaded.sprite_count}")
+        prefix_suffix = f" ({', '.join(prefix_parts)})" if prefix_parts else ""
+        self._update_status_capabilities(prefix=f"Assets loaded: {self.assets_dir}{prefix_suffix}")
+
+        if loaded.appearance_error:
+            self.status.showMessage(f"Appearances load failed: {loaded.appearance_error}")
+
         self._update_sprite_preview()
 
     def _apply_detected_context(self: "QtMapEditor", metadata: dict) -> None:
@@ -85,12 +113,34 @@ class QtMapEditorAssetsMixin:
     def _update_status_capabilities(self: "QtMapEditor", *, prefix: str = "") -> None:
         assets = "ON" if self.sprite_assets is not None else "OFF"
         mapping = "ON" if self.id_mapper is not None else "OFF"
+        appearances = "ON" if self.appearance_assets is not None else "OFF"
         sprite = "ON" if self._sprite_render_enabled() else "OFF"
+        profile = getattr(self, "asset_profile", None)
+        profile_kind = str(getattr(profile, "kind", "none"))
         engine = str(self.engine or "unknown")
         cv = int(self.client_version or 0)
-        cap = f"engine={engine} client={cv} | assets={assets} mapping={mapping} sprite={sprite}"
+        cap = (
+            f"engine={engine} client={cv} | profile={profile_kind} assets={assets} "
+            f"appearances={appearances} mapping={mapping} sprite={sprite}"
+        )
         msg = f"{prefix} | {cap}" if prefix else cap
         self.status.showMessage(msg)
+
+    def _resolve_sprite_id_from_client_id(self: "QtMapEditor", client_id: int) -> int | None:
+        if self.appearance_assets is None:
+            return int(client_id)
+        time_ms = None
+        if hasattr(self, "animation_time_ms") and getattr(self, "show_preview", False):
+            time_ms = int(self.animation_time_ms())
+        sprite_id = self.appearance_assets.get_sprite_id(
+            int(client_id),
+            kind="object",
+            time_ms=time_ms,
+            seed=int(client_id),
+        )
+        if sprite_id is None:
+            return int(client_id)
+        return int(sprite_id)
 
     def _maybe_write_default_project_json(self: "QtMapEditor", *, opened_otbm_path: str, cfg) -> None:
         # Legacy-friendly behavior: if user opens a bare .otbm without any wrapper,
@@ -149,7 +199,10 @@ class QtMapEditorAssetsMixin:
         cid = self.id_mapper.get_client_id(int(server_id))
         if cid is None or int(cid) <= 0:
             return None
-        key = (int(cid), int(tile_px))
+        sprite_id = self._resolve_sprite_id_from_client_id(int(cid))
+        if sprite_id is None or int(sprite_id) < 0:
+            return None
+        key = (int(sprite_id), int(tile_px))
         cached = self._sprite_cache.get(key)
         if cached is not None:
             # LRU bump
@@ -159,7 +212,7 @@ class QtMapEditorAssetsMixin:
                 pass
             return cached
         try:
-            w, h, bgra = self.sprite_assets.get_sprite_rgba(int(cid))
+            w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
             img = QImage(bgra, int(w), int(h), int(w) * 4, QImage.Format.Format_ARGB32).copy()
             pm = QPixmap.fromImage(img)
             if pm.isNull():
@@ -223,9 +276,12 @@ class QtMapEditorAssetsMixin:
         cid = self.id_mapper.get_client_id(int(server_id))
         if cid is None or int(cid) <= 0:
             return None
+        sprite_id = self._resolve_sprite_id_from_client_id(int(cid))
+        if sprite_id is None or int(sprite_id) < 0:
+            return None
         try:
-            w, h, bgra = self.sprite_assets.get_sprite_rgba(int(cid))
-            return (int(cid), int(w), int(h), bgra)
+            w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
+            return (int(sprite_id), int(w), int(h), bgra)
         except MemoryError:
             self._disable_sprite_render_temporarily(reason="MemoryError while building sprite bytes")
             return None

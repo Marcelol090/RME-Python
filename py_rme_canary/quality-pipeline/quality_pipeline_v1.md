@@ -1,7 +1,7 @@
 # Quality Pipeline - Plano de Melhorias Completo
 
-**Status Atual:** Pipeline funcional, mas com oportunidades de otimizacao  
-**Objetivo:** Melhorar performance, manutenibilidade e confiabilidade  
+**Status Atual:** Pipeline funcional, mas com oportunidades de otimizacao
+**Objetivo:** Melhorar performance, manutenibilidade e confiabilidade
 **Timeline:** 4-6 semanas (progresso incremental)
 
 ---
@@ -47,13 +47,13 @@ def should_skip(path: Path) -> bool:
 def extract_symbols(path: Path) -> list[dict[str, Any]]:
     """Extrai simbolos de um arquivo Python."""
     symbols = []
-    
+
     try:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
     except (SyntaxError, UnicodeDecodeError) as e:
         return [{"error": str(e), "file": str(path)}]
-    
+
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             symbols.append({
@@ -66,7 +66,7 @@ def extract_symbols(path: Path) -> list[dict[str, Any]]:
                     for d in getattr(node, 'decorator_list', [])
                 ]
             })
-    
+
     return symbols
 
 
@@ -74,18 +74,18 @@ def index_all_symbols(root: Path = Path(".")) -> dict[str, Any]:
     """Indexa todos os simbolos do projeto."""
     all_symbols = []
     errors = []
-    
+
     for path in root.rglob("*.py"):
         if should_skip(path):
             continue
-        
+
         symbols = extract_symbols(path)
         for symbol in symbols:
             if "error" in symbol:
                 errors.append(symbol)
             else:
                 all_symbols.append(symbol)
-    
+
     return {
         "symbols": all_symbols,
         "errors": errors,
@@ -98,18 +98,18 @@ def main() -> int:
     if len(sys.argv) < 2:
         print("Usage: index_symbols.py <output_file.json>", file=sys.stderr)
         return 1
-    
+
     output_path = Path(sys.argv[1])
-    
+
     print(f"Indexando simbolos...")
     result = index_all_symbols()
-    
+
     output_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    
+
     print(f"âœ“ {len(result['symbols'])} simbolos indexados")
     if result['errors']:
         print(f"âš  {len(result['errors'])} arquivo(s) com erro", file=sys.stderr)
-    
+
     return 0
 
 
@@ -143,10 +143,10 @@ def safe_load_json(path: Path | str) -> Any:
 def normalize_ruff_issues(ruff_data: list[dict]) -> list[dict]:
     """Normaliza issues do Ruff."""
     issues = []
-    
+
     if not ruff_data:
         return issues
-    
+
     for issue in ruff_data:
         issues.append({
             "tool": "ruff",
@@ -157,33 +157,33 @@ def normalize_ruff_issues(ruff_data: list[dict]) -> list[dict]:
             "column": issue.get("location", {}).get("column"),
             "severity": "high" if issue.get("code", "").startswith("S") else "medium",
         })
-    
+
     return issues
 
 
 def normalize_radon_issues(radon_data: Any) -> list[dict]:
     """Normaliza metricas do Radon."""
     issues = []
-    
+
     if not radon_data:
         return issues
-    
+
     # Radon pode retornar dict de listas ou lista direta
     radon_entries = []
-    
+
     if isinstance(radon_data, dict):
         for file_entries in radon_data.values():
             if isinstance(file_entries, list):
                 radon_entries.extend(file_entries)
     elif isinstance(radon_data, list):
         radon_entries = radon_data
-    
+
     for entry in radon_entries:
         if not isinstance(entry, dict):
             continue
-        
+
         complexity = entry.get("complexity", 0)
-        
+
         issues.append({
             "tool": "radon",
             "function": entry.get("name"),
@@ -192,29 +192,29 @@ def normalize_radon_issues(radon_data: Any) -> list[dict]:
             "line": entry.get("lineno"),
             "severity": "high" if complexity > 10 else "medium",
         })
-    
+
     return issues
 
 
 def normalize_astgrep_issues(astgrep_data: Any) -> list[dict]:
     """Normaliza resultados do ast-grep."""
     issues = []
-    
+
     if not astgrep_data:
         return issues
-    
+
     # ast-grep pode retornar dict ou lista
     astgrep_iter = []
-    
+
     if isinstance(astgrep_data, dict):
         astgrep_iter = [astgrep_data]
     elif isinstance(astgrep_data, list):
         astgrep_iter = astgrep_data
-    
+
     for file_matches in astgrep_iter:
         if not isinstance(file_matches, dict):
             continue
-        
+
         for match in file_matches.get("matches", []):
             issues.append({
                 "tool": "ast-grep",
@@ -224,26 +224,26 @@ def normalize_astgrep_issues(astgrep_data: Any) -> list[dict]:
                 "rule": match.get("rule_id"),
                 "severity": "medium",
             })
-    
+
     return issues
 
 
 def normalize_all_issues() -> dict[str, Any]:
     """Normaliza issues de todas as ferramentas."""
     all_issues = []
-    
+
     # Ruff
     ruff_data = safe_load_json(".ruff.json")
     all_issues.extend(normalize_ruff_issues(ruff_data or []))
-    
+
     # Radon
     radon_data = safe_load_json(".radon.json")
     all_issues.extend(normalize_radon_issues(radon_data))
-    
+
     # ast-grep
     astgrep_data = safe_load_json(".quality_reports/astgrep_results.json")
     all_issues.extend(normalize_astgrep_issues(astgrep_data))
-    
+
     return {
         "issues": all_issues,
         "total": len(all_issues),
@@ -264,19 +264,19 @@ def main() -> int:
     if len(sys.argv) < 2:
         print("Usage: normalize_issues.py <output_file.json>", file=sys.stderr)
         return 1
-    
+
     output_path = Path(sys.argv[1])
-    
+
     print("Normalizando issues...")
     result = normalize_all_issues()
-    
+
     output_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    
+
     print(f"âœ“ {result['total']} issues normalizados")
     print(f"  - Ruff: {result['by_tool']['ruff']}")
     print(f"  - Radon: {result['by_tool']['radon']}")
     print(f"  - ast-grep: {result['by_tool']['ast-grep']}")
-    
+
     return 0
 
 
@@ -302,7 +302,7 @@ index_symbols() {
 index_symbols() {
   local output="$1"
   log INFO "Indexando simbolos -> $output"
-  
+
   "$PYTHON_BIN" tools/quality_scripts/index_symbols.py "$output" || {
     log ERROR "Falha ao indexar simbolos"
     return 1
@@ -311,7 +311,7 @@ index_symbols() {
 
 normalize_issues() {
   log INFO "Normalizando issues..."
-  
+
   "$PYTHON_BIN" tools/quality_scripts/normalize_issues.py "$ISSUES_NORMALIZED" || {
     log ERROR "Falha ao normalizar issues"
     return 1
@@ -319,7 +319,7 @@ normalize_issues() {
 }
 ```
 
-**Tempo estimado:** 2-3 horas  
+**Tempo estimado:** 2-3 horas
 **Beneficio:** Codigo testavel, debugavel, reutilizavel
 
 ---
@@ -354,7 +354,7 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
-  
+
   # Mypy - Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
@@ -363,7 +363,7 @@ repos:
         additional_dependencies: [types-PyQt6]
         args: [--config-file=pyproject.toml]
         files: ^(py_rme_canary/core|py_rme_canary/logic_layer)/.*\.py$
-  
+
   # Radon - Complexity check
   - repo: local
     hooks:
@@ -373,14 +373,14 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-  
+
   # ShellCheck - Bash linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6
     hooks:
       - id: shellcheck
         args: [-x]  # Follow source
-  
+
   # Trailing whitespace, EOF, YAML
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -405,7 +405,7 @@ pre-commit run --all-files
 # De agora em diante, roda automaticamente antes de cada commit!
 ```
 
-**Tempo estimado:** 30 minutos  
+**Tempo estimado:** 30 minutos
 **Beneficio:** Previne 90% dos erros de qualidade antes do commit
 
 ---
@@ -459,7 +459,7 @@ else
 fi
 ```
 
-**Tempo estimado:** 15 minutos  
+**Tempo estimado:** 15 minutos
 **Beneficio:** 10-100x speedup em instalacao de dependencias
 
 ---
@@ -497,7 +497,7 @@ export_functions() {
   export -f run_mypy
   export -f run_radon
   export -f run_astgrep
-  
+
   # Exportar variaveis necessarias
   export PYTHON_BIN
   export REPORT_DIR
@@ -508,15 +508,15 @@ export_functions() {
 # Fase 1 com paralelizacao
 run_baseline_parallel() {
   log INFO "=== FASE 1: BASELINE (PARALELO) ==="
-  
+
   export_functions
-  
+
   # Rodar em paralelo (3 jobs simultaneos)
   parallel --tag --halt now,fail=1 --jobs 3 ::: \
     "run_ruff .ruff.json" \
     "run_mypy .mypy_baseline.log" \
     "run_radon .radon.json"
-  
+
   log SUCCESS "Baseline concluido em paralelo"
 }
 ```
@@ -535,7 +535,7 @@ time ./quality.sh --dry-run
 # Speedup: ~2x
 ```
 
-**Tempo estimado:** 1-2 horas  
+**Tempo estimado:** 1-2 horas
 **Beneficio:** 2-3x reducao no tempo de execucao
 
 ---
@@ -566,25 +566,25 @@ run_with_cache() {
   local cache_key="$1"
   local output_file="$2"
   local command="$3"
-  
+
   local cache_file="$CACHE_DIR/${cache_key}.cache"
-  
+
   if [[ -f "$cache_file" ]]; then
     local cached_hash
     cached_hash=$(cat "$cache_file")
-    
+
     local current_hash
     current_hash=$(get_python_hash)
-    
+
     if [[ "$cached_hash" == "$current_hash" ]]; then
       log INFO "Cache HIT para $cache_key"
       return 0
     fi
   fi
-  
+
   log INFO "Cache MISS para $cache_key - executando..."
   eval "$command"
-  
+
   # Salva hash no cache
   get_python_hash > "$cache_file"
 }
@@ -595,7 +595,7 @@ run_ruff_cached() {
 }
 ```
 
-**Tempo estimado:** 2 horas  
+**Tempo estimado:** 2 horas
 **Beneficio:** Pula execucoes desnecessarias (speedup 10x quando cache hit)
 
 ---
@@ -637,7 +637,7 @@ tasks:
     cmds:
       - uv pip install -r requirements.txt
       - pre-commit install
-  
+
   # Quality checks (parallel by default!)
   quality:check:
     desc: Run all quality checks
@@ -645,14 +645,14 @@ tasks:
       - ruff:check
       - mypy:check
       - radon:check
-  
+
   quality:fix:
     desc: Apply auto-fixes
     deps: [snapshot]
     cmds:
       - task: ruff:fix
       - task: tests
-  
+
   # Ruff
   ruff:check:
     desc: Check code with Ruff
@@ -663,13 +663,13 @@ tasks:
     cmds:
       - mkdir -p {{.REPORT_DIR}}
       - ruff check . --output-format=json > {{.REPORT_DIR}}/ruff.json
-  
+
   ruff:fix:
     desc: Auto-fix with Ruff
     cmds:
       - ruff check --fix .
       - ruff format .
-  
+
   # Mypy
   mypy:check:
     desc: Type check with Mypy
@@ -685,7 +685,7 @@ tasks:
           --config-file=pyproject.toml \
           --cache-dir={{.CACHE_DIR}}/mypy_cache \
           > {{.REPORT_DIR}}/mypy.log 2>&1 || true
-  
+
   # Radon
   radon:check:
     desc: Check complexity with Radon
@@ -696,38 +696,38 @@ tasks:
     cmds:
       - mkdir -p {{.REPORT_DIR}}
       - radon cc . --min B --json > {{.REPORT_DIR}}/radon.json
-  
+
   # Tests
   tests:
     desc: Run all tests
     cmds:
       - pytest tests/ -v --cov=py_rme_canary --cov-report=term-missing
-  
+
   tests:unit:
     desc: Run unit tests only
     cmds:
       - pytest tests/unit/ -v
-  
+
   tests:ui:
     desc: Run UI tests (headless)
     env:
       QT_QPA_PLATFORM: offscreen
     cmds:
       - pytest tests/ui/ -v --qt-no-window-capture
-  
+
   # Utilities
   snapshot:
     desc: Create git snapshot for rollback
     cmds:
       - git add -A
       - git stash push -u -m "quality-snapshot-$(date +%s)"
-  
+
   clean:
     desc: Clean all generated files
     cmds:
       - rm -rf {{.REPORT_DIR}} {{.CACHE_DIR}}
       - rm -f .ruff*.json .radon*.json .mypy*.log
-  
+
   # Full pipeline
   pipeline:
     desc: Run full quality pipeline
@@ -753,7 +753,7 @@ task pipeline
 task --list
 ```
 
-**Tempo estimado:** 4-6 horas  
+**Tempo estimado:** 4-6 horas
 **Beneficio:** YAML legivel, cache automatico, paralelizacao nativa
 
 ---
@@ -794,15 +794,15 @@ VERSION 0.7
 quality:
     FROM python:3.12-slim
     WORKDIR /app
-    
+
     COPY requirements.txt .
     RUN pip install -r requirements.txt
-    
+
     COPY . .
-    
+
     RUN ruff check . --output-format=json > ruff.json
     RUN mypy . --config-file=pyproject.toml
-    
+
     SAVE ARTIFACT ruff.json AS LOCAL .quality_reports/ruff.json
 ```
 
@@ -917,10 +917,52 @@ git checkout main -- quality.sh
 
 ## Status Atual (2026-01-19)
 
-- Taskfile criado para setup, quality:check, quality:fix, testes e utilitários.
-- Próximo passo: instalar 	ask (Go 1.19+) e executar 	ask quality:check; documentar uso no README finaliza a migração.
+- Taskfile criado para setup, quality:check, quality:fix, testes e utilitï¿½rios.
+- Prï¿½ximo passo: instalar 	ask (Go 1.19+) e executar 	ask quality:check; documentar uso no README finaliza a migraï¿½ï¿½o.
 
 ---
+
+## Jules Integration (Experimental)
+
+Implementation from `quality.sh`:
+
+```bash
+# New function to generate tests via Jules API
+run_jules_generate_tests() {
+  # Load API key from .env if present
+  if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+  fi
+
+  if [ -z "${JULES_API_KEY:-}" ]; then
+    log WARN "JULES_API_KEY not set â€“ skipping Jules test generation"
+    return 0
+  fi
+
+  # Example prompt â€“ can be customized later
+  local prompt='Add unit tests for the utils module'
+  local payload=$(cat <<EOF
+{
+  "prompt": "$prompt",
+  "sourceContext": {
+    "source": "sources/github-owner-repo",
+    "githubRepoContext": { "startingBranch": "main" }
+  }
+}
+EOF
+)
+
+  log INFO "Calling Jules API to generate unit tests"
+  local response=$(curl -s -X POST \
+    -H "x-goog-api-key: $JULES_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$payload" \
+    https://jules.googleapis.com/v1alpha/sessions)
+
+  echo "$response" > "$REPORT_DIR/jules_response.json"
+  log INFO "Jules response saved to $REPORT_DIR/jules_response.json"
+}
+```
 
 ## Contatos e Suporte
 
@@ -934,3 +976,5 @@ git checkout main -- quality.sh
 - pre-commit: https://pre-commit.com/
 - uv: https://github.com/astral-sh/uv
 - GNU Parallel: https://www.gnu.org/software/parallel/
+
+```

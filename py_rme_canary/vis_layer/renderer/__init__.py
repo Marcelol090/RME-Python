@@ -15,17 +15,34 @@ from .render_model import (
     RenderFrame,
     THEME_COLORS,
 )
-from .opengl_canvas import (
-    OpenGLCanvasWidget,
-    is_opengl_available,
-)
+
+# Heavy Qt imports are optional to keep MapDrawer usable in headless/unit tests.
+try:
+    from .opengl_canvas import (
+        OpenGLCanvasWidget,
+        is_opengl_available,
+    )
+except Exception:  # pragma: no cover - fallback for headless envs without PyQt6/OpenGL
+    class OpenGLCanvasWidget:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs) -> None:
+            raise ImportError("PyQt6/OpenGL not available")
+
+    def is_opengl_available() -> bool:
+        return False
+
+try:
+    from .qpainter_backend import QPainterRenderBackend
+except Exception:  # pragma: no cover - fallback for headless envs without PyQt6
+    class QPainterRenderBackend:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs) -> None:
+            raise ImportError("PyQt6 is required for QPainterRenderBackend")
+
 from .map_drawer import (
     MapDrawer,
     RenderBackend,
     Viewport,
     create_map_drawer,
 )
-from .qpainter_backend import QPainterRenderBackend
 
 __all__ = [
     # Model

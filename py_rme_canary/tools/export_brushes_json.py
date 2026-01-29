@@ -37,7 +37,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from xml.etree import ElementTree
+from py_rme_canary.core.io.xml.safe import Element, ParseError, safe_etree as ET
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,7 +49,7 @@ class ExportBrush:
     transitions: tuple[dict, ...] = ()
 
 
-def _int_attr(elem: ElementTree.Element, name: str) -> int | None:
+def _int_attr(elem: Element, name: str) -> int | None:
     v = elem.get(name)
     if v is None or v == "":
         return None
@@ -59,7 +59,7 @@ def _int_attr(elem: ElementTree.Element, name: str) -> int | None:
         return None
 
 
-def _pick_best_item_id(parent: ElementTree.Element) -> int | None:
+def _pick_best_item_id(parent: Element) -> int | None:
     """Pick an item id from children like `<item id="..." chance="..."/>`.
 
     Strategy: choose max(chance), tie-breaker by first occurrence.
@@ -110,7 +110,7 @@ _CARDINAL_EDGE_TO_KEY: dict[str, str] = {
 def _load_border_sets(borders_xml_path: Path) -> dict[int, dict[str, int]]:
     """Load border sets from `data/materials/borders/borders.xml`."""
 
-    tree = ElementTree.parse(borders_xml_path)
+    tree = ET.parse(borders_xml_path)
     root = tree.getroot()
 
     out: dict[int, dict[str, int]] = {}
@@ -145,7 +145,7 @@ def _strip_invalid_xml_chars(text: str) -> str:
     return "".join(ch for ch in text if ch in ("\t", "\n", "\r") or ord(ch) >= 0x20)
 
 
-def _parse_xml_root_tolerant(xml_path: Path) -> ElementTree.Element:
+def _parse_xml_root_tolerant(xml_path: Path) -> Element:
     """Parse XML, fixing common real-world RME data issues.
 
     RME material XMLs sometimes contain unescaped ampersands in attribute values
@@ -156,7 +156,7 @@ def _parse_xml_root_tolerant(xml_path: Path) -> ElementTree.Element:
     raw = xml_path.read_text(encoding="utf-8", errors="replace")
     raw = _strip_invalid_xml_chars(raw)
     raw = _XML_AMPERSAND_RE.sub("&amp;", raw)
-    return ElementTree.fromstring(raw)
+    return ET.fromstring(raw)
 
 
 _CARPET_ALIGN_TO_KEY: dict[str, str] = {
@@ -171,7 +171,7 @@ _CARPET_ALIGN_TO_KEY: dict[str, str] = {
 }
 
 
-def _export_carpet_brush(brush: ElementTree.Element) -> ExportBrush | None:
+def _export_carpet_brush(brush: Element) -> ExportBrush | None:
     name = (brush.get("name") or "").strip()
     server_id = _int_attr(brush, "server_lookid")
     if server_id is None:
@@ -201,7 +201,7 @@ def _export_carpet_brush(brush: ElementTree.Element) -> ExportBrush | None:
     )
 
 
-def _export_wall_brush(brush: ElementTree.Element) -> ExportBrush | None:
+def _export_wall_brush(brush: Element) -> ExportBrush | None:
     name = (brush.get("name") or "").strip()
     server_id = _int_attr(brush, "server_lookid")
     if server_id is None:
@@ -250,7 +250,7 @@ def _export_wall_brush(brush: ElementTree.Element) -> ExportBrush | None:
 
 
 def _export_ground_brush(
-    brush: ElementTree.Element,
+    brush: Element,
     *,
     border_sets: dict[int, dict[str, int]],
     name_to_server_id: dict[str, int],
@@ -406,7 +406,7 @@ def _export_ground_brush(
     )
 
 
-def _brush_primary_server_id(brush: ElementTree.Element) -> int | None:
+def _brush_primary_server_id(brush: Element) -> int | None:
     server_id = _int_attr(brush, "server_lookid")
     if server_id is None:
         server_id = _int_attr(brush, "lookid")
@@ -437,7 +437,7 @@ def iter_exported_brushes(materials_dir: Path, *, borders_dir: Path | None = Non
     for xml_path in xml_files:
         try:
             root = _parse_xml_root_tolerant(xml_path)
-        except ElementTree.ParseError:
+        except ParseError:
             continue
         for brush in root.findall("brush"):
             brush_type = (brush.get("type") or "").strip().lower()
@@ -464,7 +464,7 @@ def iter_exported_brushes(materials_dir: Path, *, borders_dir: Path | None = Non
     for xml_path in xml_files:
         try:
             root = _parse_xml_root_tolerant(xml_path)
-        except ElementTree.ParseError:
+        except ParseError:
             continue
         for brush in root.findall("brush"):
             brush_type = (brush.get("type") or "").strip().lower()

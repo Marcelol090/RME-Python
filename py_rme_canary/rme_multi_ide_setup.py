@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: E501
 """
 py_rme_canary AI Environment Generator
 Author: Senior Python Architect & OT Specialist
@@ -6,13 +7,12 @@ Target: Antigravity IDE (.agent) & Cursor IDE (.cursor)
 
 Description:
 Configura o ambiente para o desenvolvimento do 'py_rme_canary' (Python RME).
-Injeta as regras estritas do PRD.md e PROJECT_STRUCTURE.md, definindo 
+Injeta as regras estritas do PRD.md e PROJECT_STRUCTURE.md, definindo
 Workflows Lineares e Reflexivos para cada modelo (Opus, Sonnet, Gemini, GPT-5).
 """
 
-from pathlib import Path
 import json
-import os
+from pathlib import Path
 
 # ==========================================
 # DEFINIÇÕES DE CONTEÚDO (Linear & Reflective Logic)
@@ -256,50 +256,55 @@ globs: **/*.py
 COMMANDS_JSON = {
     "py-new-core": {
         "description": "Create a Core Data Class (No UI)",
-        "prompt": "Create a Python dataclass in `core/`. Use `__slots__` for optimization. Add docstrings. Ensure NO PyQt imports. Implement `serialize`/`deserialize` methods using `struct`."
+        "prompt": "Create a Python dataclass in `core/`. Use `__slots__` for optimization. Add docstrings. Ensure NO PyQt imports. Implement `serialize`/`deserialize` methods using `struct`.",
     },
     "py-new-brush": {
         "description": "Port a Brush from C++ to Python",
-        "prompt": "Read the Legacy C++ brush logic. Implement the logic class in `logic_layer/brushes/`. Inherit from `BaseBrush`. Ensure implementation of `draw` and `undraw`."
+        "prompt": "Read the Legacy C++ brush logic. Implement the logic class in `logic_layer/brushes/`. Inherit from `BaseBrush`. Ensure implementation of `draw` and `undraw`.",
     },
     "py-parse-struct": {
         "description": "Generate struct.unpack string from C++ struct",
-        "prompt": "Convert this C++ struct definition to a Python `struct.unpack` format string. Explain the byte offsets."
+        "prompt": "Convert this C++ struct definition to a Python `struct.unpack` format string. Explain the byte offsets.",
     },
     "py-test-gen": {
         "description": "Generate Pytest for Module",
-        "prompt": "Create a pytest file for the selected module. Use `pytest.fixture` for setup. Mock any `vis_layer` dependencies if testing logic."
-    }
+        "prompt": "Create a pytest file for the selected module. Use `pytest.fixture` for setup. Mock any `vis_layer` dependencies if testing logic.",
+    },
 }
 
 # ==========================================
 # INSTALLATION LOGIC
 # ==========================================
 
+
 class Colors:
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    CYAN = '\033[96m'
-    RESET = '\033[0m'
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    CYAN = "\033[96m"
+    RESET = "\033[0m"
+
 
 def print_step(msg):
     print(f"{Colors.CYAN}[INFO]{Colors.RESET} {msg}")
 
+
 def print_success(msg):
     print(f"{Colors.GREEN}[OK]{Colors.RESET} {msg}")
 
+
 def write_file(path: Path, content: str):
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, 'w', encoding='utf-8') as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write(content.strip())
     print_success(f"Generated: {path}")
+
 
 def main():
     root = Path.cwd()
     print(f"{Colors.YELLOW}=== py_rme_canary AI Environment Setup ==={Colors.RESET}")
     print(f"Target Directory: {root}")
-    print(f"Focus: Python Reimplementation (PRD v2.1.0)\n")
-    print(f"Mode: Linear & Reflective Reasoning (Zero Fallback)\n")
+    print("Focus: Python Reimplementation (PRD v2.1.0)\n")
+    print("Mode: Linear & Reflective Reasoning (Zero Fallback)\n")
 
     # 1. Antigravity Workflows
     print_step("Installing Antigravity Workflows (.agent/workflows)...")
@@ -315,18 +320,18 @@ def main():
     write_file(root / ".agent/rules/sonnet_rules.md", RULES_COMMON + "\n" + RULE_PYTHON_RME)
     write_file(root / ".agent/rules/gemini_rules.md", RULES_COMMON)
     write_file(root / ".agent/rules/gpt5_rules.md", RULES_COMMON + "\n" + RULE_C_TO_PY)
-    
+
     # 3. Cursor Rules
     print_step("Installing Cursor Rules (.cursor/rules)...")
     write_file(root / ".cursor/rules/project_structure.mdc", RULE_PROJECT_STRUCTURE)
     write_file(root / ".cursor/rules/python_rme.mdc", RULE_PYTHON_RME)
     write_file(root / ".cursor/rules/c_to_py.mdc", RULE_C_TO_PY)
-    
+
     # 4. Cursor Commands
     print_step("Installing Cursor Commands (.cursor/commands)...")
     cmd_path = root / ".cursor/commands/rme_commands.json"
     cmd_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(cmd_path, 'w', encoding='utf-8') as f:
+    with open(cmd_path, "w", encoding="utf-8") as f:
         json.dump(COMMANDS_JSON, f, indent=2)
     print_success(f"Generated: {cmd_path}")
 
@@ -349,7 +354,10 @@ All agents follow a 3-Phase process: **Analysis -> Implementation -> Reflection*
 """
     write_file(root / "PY_RME_ENV.md", readme)
 
-    print(f"\n{Colors.GREEN}Setup Complete! AI agents configured with Linear Reasoning & Zero Fallback policies.{Colors.RESET}")
+    print(
+        f"\n{Colors.GREEN}Setup Complete! AI agents configured with Linear Reasoning & Zero Fallback policies.{Colors.RESET}"
+    )
+
 
 if __name__ == "__main__":
     main()

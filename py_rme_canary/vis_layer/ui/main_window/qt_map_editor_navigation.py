@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QSpinBox
 
 from py_rme_canary.logic_layer.editor_session import EditorSession
+from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -28,6 +29,11 @@ class QtMapEditorNavigationMixin:
         self.viewport.origin_x = int(new_origin_x)
         self.viewport.origin_y = int(new_origin_y)
         self._set_z(int(z))
+        try:
+            if hasattr(self, "map_drawer") and self.map_drawer is not None:
+                self.map_drawer.set_highlight_tile(int(x), int(y), int(z))
+        except Exception:
+            pass
         self.canvas.update()
         if self.minimap_widget is not None:
             self.minimap_widget.update()
@@ -97,6 +103,10 @@ class QtMapEditorNavigationMixin:
         self.status.showMessage(
             f"x={x} y={y} z={z} | tile_id={sid if sid is not None else '-'} | origin=({self.viewport.origin_x},{self.viewport.origin_y})"
         )
+        try:
+            self.session.send_live_cursor_update(x=int(x), y=int(y), z=int(z))
+        except Exception:
+            pass
 
     def _jump_to_brush(self: "QtMapEditor", _checked: bool = False) -> None:
         try:
@@ -132,11 +142,73 @@ class QtMapEditorNavigationMixin:
         w.show()
         self._extra_views.append(w)
 
+    def _new_instance(self: "QtMapEditor") -> None:
+        """Open a new independent editor instance.
+
+        The new window starts with a fresh map and independent assets/session.
+        """
+        w = type(self)()
+        w.show()
+        self._extra_views.append(w)
+
     def _toggle_selection_mode(self: "QtMapEditor") -> None:
         self.selection_mode = bool(self.act_selection_mode.isChecked())
         # Cancel any active paint gesture if user toggles modes mid-drag.
         if self.selection_mode:
             self.session.cancel_gesture()
+        else:
+            if bool(getattr(self, "lasso_enabled", False)) and hasattr(self, "act_lasso_select"):
+                try:
+                    self.act_lasso_select.blockSignals(True)
+                    self.act_lasso_select.setChecked(False)
+                    self.act_lasso_select.blockSignals(False)
+                except Exception:
+                    pass
+                self.lasso_enabled = False
+                if hasattr(self, "canvas"):
+                    try:
+                        self.canvas.cancel_lasso()
+                    except Exception:
+                        pass
         self.session.cancel_box_selection()
         self.canvas.update()
         self._update_action_enabled_states()
+
+    def _toggle_lasso(self: "QtMapEditor", enabled: bool) -> None:
+        self.lasso_enabled = bool(enabled)
+        if self.lasso_enabled and not bool(self.selection_mode):
+            if hasattr(self, "act_selection_mode"):
+                try:
+                    self.act_selection_mode.blockSignals(True)
+                    self.act_selection_mode.setChecked(True)
+                    self.act_selection_mode.blockSignals(False)
+                except Exception:
+                    pass
+            self.selection_mode = True
+            self.session.cancel_gesture()
+        if not self.lasso_enabled and hasattr(self, "canvas"):
+            try:
+                self.canvas.cancel_lasso()
+            except Exception:
+                pass
+        self.canvas.update()
+        self._update_action_enabled_states()
+
+    def _set_selection_depth_mode(self: "QtMapEditor", mode: SelectionDepthMode | str) -> None:
+        self.session.set_selection_depth_mode(mode)
+        current = self.session.get_selection_depth_mode()
+        mapping = {
+            SelectionDepthMode.COMPENSATE: "act_selection_depth_compensate",
+            SelectionDepthMode.CURRENT: "act_selection_depth_current",
+            SelectionDepthMode.LOWER: "act_selection_depth_lower",
+            SelectionDepthMode.VISIBLE: "act_selection_depth_visible",
+        }
+        for depth_mode, attr in mapping.items():
+            if hasattr(self, attr):
+                act = getattr(self, attr)
+                try:
+                    act.blockSignals(True)
+                    act.setChecked(current == depth_mode)
+                    act.blockSignals(False)
+                except Exception:
+                    pass

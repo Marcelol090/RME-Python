@@ -3,6 +3,7 @@
 Places monsters on tiles within spawn areas.
 Mirrors legacy C++ MonsterBrush from monster_brush.cpp.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -46,7 +47,7 @@ class MonsterBrush:
         """Get brush name."""
         return self.monster_name
 
-    def can_draw(self, game_map: "GameMap", pos: "Position") -> bool:
+    def can_draw(self, game_map: GameMap, pos: Position) -> bool:
         """Check if monster can be placed at position.
 
         Placement requires:
@@ -75,18 +76,13 @@ class MonsterBrush:
             return False
 
         # Check spawn exists or auto-create enabled
-        if tile.spawn_monster is None and not self.auto_create_spawn:
-            # Check if within any spawn area
-            if not self._is_in_spawn_area(game_map, pos):
-                return False
-
-        return True
+        return bool(tile.spawn_monster is not None or self.auto_create_spawn or self._is_in_spawn_area(game_map, pos))
 
     def draw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Place monster at position.
 
         If no spawn exists and auto_create_spawn is True, creates a new
@@ -147,9 +143,9 @@ class MonsterBrush:
 
     def undraw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Remove monster from position.
 
         Args:
@@ -192,7 +188,7 @@ class MonsterBrush:
         # PZ flag is typically bit 0x01 in map_flags
         return (tile.map_flags & 0x01) != 0
 
-    def _is_in_spawn_area(self, game_map: "GameMap", pos: "Position") -> bool:
+    def _is_in_spawn_area(self, game_map: GameMap, pos: Position) -> bool:
         """Check if position is within any monster spawn area."""
         for spawn in game_map.monster_spawns:
             cx, cy, cz = spawn.center.x, spawn.center.y, spawn.center.z

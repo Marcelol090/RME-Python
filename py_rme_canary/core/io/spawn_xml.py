@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -13,9 +12,11 @@ from py_rme_canary.core.data.spawns import (
 )
 from py_rme_canary.core.exceptions.io import SpawnXmlError
 from py_rme_canary.core.io.xml.base import as_int
+from py_rme_canary.core.io.xml.safe import Element, ElementTree
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
-def _require_tag(root: ET.Element, expected_lower: str) -> None:
+def _require_tag(root: Element, expected_lower: str) -> None:
     if (root.tag or "").strip().lower() != expected_lower:
         raise SpawnXmlError(f"Invalid root tag: expected <{expected_lower}>")
 
@@ -171,7 +172,7 @@ def parse_npc_spawns_xml(xml_text: str) -> tuple[NpcSpawnArea, ...]:
     return tuple(areas)
 
 
-def _xml_bytes(doc: ET.ElementTree) -> bytes:
+def _xml_bytes(doc: ElementTree) -> bytes:
     # Matches legacy in spirit: UTF-8 + XML declaration.
     root = doc.getroot()
     if root is None:
@@ -179,7 +180,7 @@ def _xml_bytes(doc: ET.ElementTree) -> bytes:
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
-def _indent(elem: ET.Element, level: int = 0) -> None:
+def _indent(elem: Element, level: int = 0) -> None:
     # Pretty-print (ElementTree has no default pretty printer).
     i = "\n" + level * "\t"
     if len(elem):

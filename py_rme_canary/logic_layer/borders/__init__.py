@@ -12,6 +12,9 @@ from .alignment import (
     select_border_alignment_when_present,
     select_border_id_from_definition,
 )
+from .border_friends import FRIEND_ALL, brushes_are_friends, friend_of
+from .border_groups import BorderGroupRegistry
+from .ground_equivalents import GroundEquivalentRegistry
 from .neighbor_mask import (
     NEIGHBOR_OFFSETS,
     compute_neighbor_mask_for_ground,
@@ -30,6 +33,12 @@ from .tile_utils import (
 )
 
 __all__ = [
+    # friends/groups/equivalents
+    "FRIEND_ALL",
+    "friend_of",
+    "brushes_are_friends",
+    "BorderGroupRegistry",
+    "GroundEquivalentRegistry",
     # Neighbor mask
     "NEIGHBOR_OFFSETS",
     "compute_neighbor_mask_for_ground",

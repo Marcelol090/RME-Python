@@ -5,6 +5,10 @@ def new_view(editor) -> None:
     editor._new_view()
 
 
+def new_instance(editor) -> None:
+    editor._new_instance()
+
+
 def toggle_fullscreen(editor) -> None:
     editor._toggle_fullscreen()
 
@@ -47,3 +51,13 @@ def toggle_minimap_dock(editor, value: bool) -> None:
 
 def toggle_actions_history_dock(editor, value: bool) -> None:
     editor._toggle_actions_history_dock(bool(value))
+
+
+def toggle_dark_mode(editor, value: bool) -> None:
+    """Toggle dark mode theme."""
+    editor._toggle_dark_mode(bool(value))
+
+
+
+def toggle_live_log_dock(editor, value: bool) -> None:
+    editor._toggle_live_log_dock(bool(value))

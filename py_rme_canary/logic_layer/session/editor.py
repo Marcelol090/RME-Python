@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import os
 import random
+import time
 from collections.abc import Callable
+from typing import Any
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 
+from py_rme_canary.core.data.door import DoorType
 from py_rme_canary.core.data.gamemap import GameMap
 from py_rme_canary.core.data.houses import House
 from py_rme_canary.core.data.item import Item, Position
@@ -23,7 +26,19 @@ from py_rme_canary.core.database.door_catalog import load_default_closed_doors
 from py_rme_canary.core.database.door_pairs import load_door_pairs
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.protocols.live_client import LiveClient
-from py_rme_canary.core.protocols.live_packets import PacketType
+from py_rme_canary.core.protocols.live_packets import (
+    ConnectionState,
+    PacketType,
+    decode_chat,
+    decode_client_list,
+    decode_cursor,
+)
+from py_rme_canary.core.protocols.live_server import LiveServer
+from py_rme_canary.core.protocols.tile_serializer import (
+    decode_map_chunk,
+    decode_tile_update,
+    encode_tile_update,
+)
 
 from ..brush_definitions import (
     VIRTUAL_DOOR_TOOL_HATCH,
@@ -47,6 +62,7 @@ from ..brush_definitions import (
     npc_name_for_virtual_id,
     waypoint_virtual_id,
 )
+from ..door_brush import DoorBrush
 from ..map_metadata_actions import (
     HouseAction,
     HouseEntryAction,
@@ -64,11 +80,14 @@ from ..transactional_brush import (
     LabeledPaintAction,
     PaintAction,
 )
+from ..networked_action_queue import NetworkedActionQueue, decode_tile_positions
 from .action_queue import ActionType, SessionAction, SessionActionQueue
 from .clipboard import ClipboardManager
+from py_rme_canary.logic_layer.clipboard import ClipboardManager as SystemClipboardManager, tiles_from_entry
 from .gestures import GestureHandler
 from .move import MoveHandler
 from .selection import SelectionApplyMode, SelectionManager, TileKey, tile_is_nonempty
+from .selection_modes import SelectionDepthMode, apply_compensation_offset
 
 TilesChangedCallback = Callable[[set[TileKey]], None]
 
@@ -171,10 +190,14 @@ class EditorSession:
     doodad_custom_thickness_low: int = 1
     doodad_custom_thickness_ceil: int = 100
 
+    # Legacy-inspired: doodad erase behavior + eraser unique protection.
+    doodad_erase_like: bool = False
+    eraser_leave_unique: bool = True
+
     # Legacy-inspired: recent brushes (most-recent-first). Updated whenever the
     # selected brush changes.
     recent_brushes: list[int] = field(default_factory=list)
-    recent_brushes_max: int = 30
+    recent_brushes_max: int = 20
 
     # Legacy-inspired: BORDERIZE_DRAG + threshold, gated by USE_AUTOMAGIC.
     borderize_drag_enabled: bool = True
@@ -219,6 +242,15 @@ class EditorSession:
 
     # Live Editing Client (optional)
     _live_client: LiveClient | None = field(default=None, init=False, repr=False)
+    _live_server: LiveServer | None = field(default=None, init=False, repr=False)
+    _live_action_queue: NetworkedActionQueue = field(init=False, repr=False)
+    _live_clients: dict[int, dict[str, object]] = field(default_factory=dict, init=False, repr=False)
+    _live_cursors: dict[int, tuple[int, int, int]] = field(default_factory=dict, init=False, repr=False)
+    _live_sync_started: bool = field(default=False, init=False, repr=False)
+    _live_cursor_last_sent: float = field(default=0.0, init=False, repr=False)
+    _on_live_chat: Callable[[int, str, str], None] | None = field(default=None, init=False, repr=False)
+    _on_live_client_list: Callable[[list[dict[str, object]]], None] | None = field(default=None, init=False, repr=False)
+    _on_live_cursor: Callable[[int, int, int, int], None] | None = field(default=None, init=False, repr=False)
 
     def _door_kind_for_tool_id(self, sid: int) -> str | None:
         s = int(sid)
@@ -231,6 +263,26 @@ class EditorSession:
             int(VIRTUAL_DOOR_TOOL_HATCH): "hatch",
         }
         return mapping.get(int(s))
+
+    def _door_type_for_kind(self, kind: str) -> DoorType | None:
+        k = (kind or "").strip().lower()
+        mapping = {
+            "normal": DoorType.NORMAL,
+            "locked": DoorType.LOCKED,
+            "magic": DoorType.MAGIC,
+            "quest": DoorType.QUEST,
+            "window": DoorType.WINDOW,
+            "hatch": DoorType.HATCH,
+        }
+        return mapping.get(str(k))
+
+    def _is_door_item(self, item: Item, *, door_pairs: dict[int, int] | None = None) -> bool:
+        brush = self.brush_manager.get_brush_any(int(item.id))
+        spec = brush.door_spec if brush is not None else None
+        if spec is not None and spec.entry_for_item(int(item.id)) is not None:
+            return True
+        pairs = door_pairs if door_pairs is not None else self._ensure_door_pairs_loaded()
+        return int(item.id) in pairs
 
     def _resolve_waypoint_name_for_virtual_id(self, sid: int) -> str | None:
         """Reverse-map a waypoint virtual id back to an existing waypoint name."""
@@ -267,11 +319,15 @@ class EditorSession:
             low=int(self.doodad_custom_thickness_low),
             ceil=int(self.doodad_custom_thickness_ceil),
         )
+        self._gestures.set_doodad_erase_like(bool(self.doodad_erase_like))
+        self._gestures.set_eraser_leave_unique(bool(self.eraser_leave_unique))
         self._move = MoveHandler(
             game_map=self.game_map,
             brush_manager=self.brush_manager,
             merge_move_enabled=self.merge_move_enabled,
         )
+        self._live_action_queue = NetworkedActionQueue(session=self)
+        self._live_action_queue.set_broadcast_callback(self._broadcast_live_tiles)
 
     def set_brush_variation(self, variation: int) -> None:
         self.brush_variation = int(variation)
@@ -288,6 +344,16 @@ class EditorSession:
                 low=int(self.doodad_custom_thickness_low),
                 ceil=int(self.doodad_custom_thickness_ceil),
             )
+
+    def set_doodad_erase_like(self, enabled: bool) -> None:
+        self.doodad_erase_like = bool(enabled)
+        with suppress(Exception):
+            self._gestures.set_doodad_erase_like(bool(self.doodad_erase_like))
+
+    def set_eraser_leave_unique(self, enabled: bool) -> None:
+        self.eraser_leave_unique = bool(enabled)
+        with suppress(Exception):
+            self._gestures.set_eraser_leave_unique(bool(self.eraser_leave_unique))
 
     def _ensure_door_pairs_loaded(self) -> dict[int, int]:
         if self._door_pairs is not None:
@@ -372,22 +438,19 @@ class EditorSession:
         door_kind: str,
         alt: bool = False,
     ) -> EditorAction | None:
-        """Apply DoorBrush MVP over multiple tiles as one undoable action."""
+        """Apply DoorBrush over multiple tiles as one undoable action."""
 
         if not positions:
             return None
 
         pairs = self._ensure_door_pairs_loaded()
-        if not pairs:
-            return None
-
         defaults = self._ensure_door_defaults_loaded()
         kind = (door_kind or "").strip().lower()
+        door_type = self._door_type_for_kind(kind)
+        door_brush = DoorBrush(door_type) if door_type is not None else None
         door_id: int | None = None
         if not bool(alt):
             door_id = defaults.get(kind) or defaults.get("normal")
-            if door_id is None:
-                return None
 
         items_xml = self._ensure_items_xml_loaded()
 
@@ -407,7 +470,7 @@ class EditorSession:
                 idx: int | None = None
                 for i in range(len(before.items) - 1, -1, -1):
                     it = before.items[i]
-                    if int(it.id) in pairs:
+                    if self._is_door_item(it, door_pairs=pairs):
                         idx = int(i)
                         break
                 if idx is None:
@@ -416,38 +479,20 @@ class EditorSession:
                 new_items.pop(int(idx))
                 after = replace(before, items=new_items, modified=True)
             else:
-                # Toggle if there's a pairable door; else place the default closed door.
-                toggle_idx: int | None = None
-                for i in range(len(before.items) - 1, -1, -1):
-                    it = before.items[i]
-                    if int(it.id) in pairs:
-                        toggle_idx = int(i)
-                        break
+                door_attempted = False
+                if door_brush is not None:
+                    pos = Position(x=int(x), y=int(y), z=int(z))
+                    if door_brush.can_draw(self.game_map, pos, brush_manager=self.brush_manager):
+                        door_attempted = True
+                        changes = door_brush.draw(
+                            self.game_map,
+                            pos,
+                            brush_manager=self.brush_manager,
+                        )
+                        if changes:
+                            after = changes[0][1]
 
-                if toggle_idx is not None:
-                    old_item = before.items[int(toggle_idx)]
-                    new_id = pairs.get(int(old_item.id))
-                    if new_id is None or int(new_id) == int(old_item.id):
-                        continue
-                    new_items = list(before.items)
-                    new_items[int(toggle_idx)] = Item(
-                        id=int(new_id),
-                        client_id=None,
-                        raw_unknown_id=old_item.raw_unknown_id,
-                        subtype=old_item.subtype,
-                        count=old_item.count,
-                        text=old_item.text,
-                        description=old_item.description,
-                        action_id=old_item.action_id,
-                        unique_id=old_item.unique_id,
-                        destination=old_item.destination,
-                        items=old_item.items,
-                        attribute_map=old_item.attribute_map,
-                        depot_id=old_item.depot_id,
-                        house_door_id=old_item.house_door_id,
-                    )
-                    after = replace(before, items=new_items, modified=True)
-                else:
+                if after is None and not door_attempted:
                     repl_idx: int | None = None
                     if items_xml is not None and before.items:
                         for i in range(len(before.items) - 1, -1, -1):
@@ -488,22 +533,19 @@ class EditorSession:
         return action
 
     def place_or_toggle_door_at(self, *, x: int, y: int, z: int, door_kind: str) -> EditorAction | None:
-        """DoorBrush MVP: toggle an existing door, otherwise place a default closed door."""
+        """DoorBrush: place a door based on wall definitions or fall back to defaults."""
 
-        # If there's already a pairable door here, reuse the existing Switch Door logic.
-        toggled = self.switch_door_at(x=int(x), y=int(y), z=int(z))
-        if toggled is not None:
-            return toggled
-
-        pairs = self._ensure_door_pairs_loaded()
         defaults = self._ensure_door_defaults_loaded()
-        if not pairs or not defaults:
-            return None
+        if not defaults:
+            defaults = {}
 
         kind = (door_kind or "").strip().lower()
         door_id = defaults.get(kind) or defaults.get("normal")
         if door_id is None:
             return None
+
+        door_type = self._door_type_for_kind(kind)
+        door_brush = DoorBrush(door_type) if door_type is not None else None
 
         x, y, z = int(x), int(y), int(z)
         key: TileKey = (x, y, z)
@@ -512,7 +554,36 @@ class EditorSession:
         if before is None:
             return None
 
+        door_attempted = False
+        if door_brush is not None:
+            pos = Position(x=int(x), y=int(y), z=int(z))
+            if door_brush.can_draw(self.game_map, pos, brush_manager=self.brush_manager):
+                door_attempted = True
+                changes = door_brush.draw(
+                    self.game_map,
+                    pos,
+                    brush_manager=self.brush_manager,
+                )
+                if changes:
+                    after = changes[0][1]
+                    action = LabeledPaintAction(brush_id=0, label="Door Brush")
+                    action.record_tile_change(key, before, after)
+                    action.redo(self.game_map)
+                    self.history.commit_action(action)
+                    self.action_queue.push(
+                        SessionAction(
+                            type=ActionType.SWITCH_DOOR,
+                            action=action,
+                            label="Door Brush",
+                            details={"x": int(x), "y": int(y), "z": int(z), "kind": str(kind)},
+                        )
+                    )
+                    self._emit_tiles_changed({key})
+                    return action
+
         # Best-effort: replace the topmost wall/door-like item, otherwise append.
+        if door_attempted:
+            return None
         idx: int | None = None
         items_xml = self._ensure_items_xml_loaded()
         if items_xml is not None and before.items:
@@ -531,9 +602,9 @@ class EditorSession:
         else:
             new_items[int(idx)] = new_item
 
-        after: Tile | None = replace(before, items=new_items, modified=True)
+        new_tile: Tile | None = replace(before, items=new_items, modified=True)
         action = LabeledPaintAction(brush_id=0, label="Door Brush")
-        action.record_tile_change(key, before, after)
+        action.record_tile_change(key, before, new_tile)
         action.redo(self.game_map)
         self.history.commit_action(action)
         self.action_queue.push(
@@ -551,8 +622,6 @@ class EditorSession:
         """Toggle the topmost door item on a tile (open <-> closed), undoable."""
 
         pairs = self._ensure_door_pairs_loaded()
-        if not pairs:
-            return None
 
         x, y, z = int(x), int(y), int(z)
         key: TileKey = (x, y, z)
@@ -563,8 +632,15 @@ class EditorSession:
 
         # Find the topmost door-like item that has a known pair.
         idx: int | None = None
+        door_spec = None
         for i in range(len(before.items) - 1, -1, -1):
             it = before.items[i]
+            brush = self.brush_manager.get_brush_any(int(it.id))
+            spec = brush.door_spec if brush is not None else None
+            if spec is not None and spec.entry_for_item(int(it.id)) is not None:
+                idx = int(i)
+                door_spec = spec
+                break
             if int(it.id) in pairs:
                 idx = int(i)
                 break
@@ -573,7 +649,7 @@ class EditorSession:
             return None
 
         old_item = before.items[idx]
-        new_id = pairs.get(int(old_item.id))
+        new_id = door_spec.toggle_item_id(int(old_item.id)) if door_spec is not None else pairs.get(int(old_item.id))
         if new_id is None or int(new_id) == int(old_item.id):
             return None
 
@@ -2251,10 +2327,12 @@ class EditorSession:
         *,
         toggle_if_single: bool = False,
         mode: SelectionApplyMode | None = None,
+        visible_floors: list[int] | None = None,
     ) -> None:
         self._selection.finish_box_selection(
             toggle_if_single=toggle_if_single,
             mode=SelectionApplyMode.ADD if mode is None else mode,
+            visible_floors=visible_floors,
         )
 
     def cancel_box_selection(self) -> None:
@@ -2263,18 +2341,146 @@ class EditorSession:
     def get_selection_box(self) -> tuple[TileKey, TileKey] | None:
         return self._selection.get_selection_box()
 
+    def set_selection_depth_mode(self, mode: SelectionDepthMode | str) -> None:
+        if not isinstance(mode, SelectionDepthMode):
+            mode = SelectionDepthMode(str(mode))
+        self._selection.selection_mode = mode
+
+    def get_selection_depth_mode(self) -> SelectionDepthMode:
+        return self._selection.selection_mode
+
+    def apply_lasso_selection(
+        self,
+        *,
+        tiles: list[TileKey],
+        mode: SelectionApplyMode | None = None,
+        visible_floors: list[int] | None = None,
+    ) -> None:
+        """Apply a lasso selection to the current selection set."""
+        if not tiles:
+            return
+
+        base_z = int(tiles[0][2])
+        depth_mode = self.get_selection_depth_mode()
+
+        floors: list[int] = [base_z]
+        if visible_floors:
+            visible_sorted = sorted({int(z) for z in visible_floors})
+        else:
+            visible_sorted = [base_z]
+
+        if depth_mode is SelectionDepthMode.CURRENT:
+            floors = [base_z]
+        elif depth_mode is SelectionDepthMode.VISIBLE:
+            floors = list(visible_sorted)
+        elif depth_mode in (SelectionDepthMode.LOWER, SelectionDepthMode.COMPENSATE):
+            floors = list(range(base_z, max(visible_sorted) + 1))
+
+        selection_tiles: set[TileKey] = set()
+        for x, y, _z in tiles:
+            for z in floors:
+                tx, ty = int(x), int(y)
+                if depth_mode is SelectionDepthMode.COMPENSATE:
+                    tx, ty = apply_compensation_offset(x=tx, y=ty, z=int(z), base_z=base_z)
+                if not (0 <= tx < int(self.game_map.header.width) and 0 <= ty < int(self.game_map.header.height)):
+                    continue
+                t = self.game_map.get_tile(int(tx), int(ty), int(z))
+                if not tile_is_nonempty(t):
+                    continue
+                selection_tiles.add((int(tx), int(ty), int(z)))
+
+        if not isinstance(mode, SelectionApplyMode):
+            mode = SelectionApplyMode.ADD if mode is None else SelectionApplyMode(str(mode))
+
+        current = self._selection.get_selection_tiles()
+        if mode is SelectionApplyMode.REPLACE:
+            new_sel = set(selection_tiles)
+        elif mode is SelectionApplyMode.SUBTRACT:
+            new_sel = set(current)
+            new_sel.difference_update(selection_tiles)
+        elif mode is SelectionApplyMode.TOGGLE:
+            new_sel = set(current)
+            new_sel.symmetric_difference_update(selection_tiles)
+        else:
+            new_sel = set(current)
+            new_sel.update(selection_tiles)
+
+        self._selection.set_selection(new_sel)
+
     # === Clipboard API ===
 
     def can_paste(self) -> bool:
         return self._clipboard.can_paste()
 
-    def copy_selection(self) -> bool:
-        """Copy selected tiles into the internal buffer."""
-        return self._clipboard.copy_tiles(self._selection.get_selection_tiles())
+    def copy_selection(self, client_version: str | None = None) -> bool:
+        """Copy selected tiles into the internal buffer and system clipboard."""
+        # Prepare name lookup
+        def name_lookup(server_id: int) -> str | None:
+            xml = self._ensure_items_xml_loaded()
+            if xml:
+                it = xml.get(server_id)
+                if it:
+                    return it.name
+            return None
 
-    def cut_selection(self) -> PaintAction | None:
+        selection_tiles = self._selection.get_selection_tiles()
+        if not self._clipboard.copy_tiles(selection_tiles):
+            return False
+
+        tiles: list[Tile] = []
+        for key in sorted(selection_tiles):
+            t = self.game_map.get_tile(*key)
+            if t is None or not tile_is_nonempty(t):
+                continue
+            tiles.append(t)
+
+        if not tiles:
+            return False
+        
+        # Determine origin version
+        origin_x = min(int(t.x) for t in tiles)
+        origin_y = min(int(t.y) for t in tiles)
+        origin_z = min(int(t.z) for t in tiles)
+
+        system_clipboard = SystemClipboardManager.instance()
+        system_clipboard.copy_tiles(tiles, (origin_x, origin_y, origin_z), name_lookup=name_lookup)
+        if client_version:
+            system_clipboard.to_system_clipboard(client_version)
+        else:
+            system_clipboard.to_system_clipboard()
+            
+        return True
+
+    def import_from_system_clipboard(self, target_version: str | None = None) -> bool:
+        """Try to import content from the system clipboard."""
+        
+        def name_resolver(name: str) -> int | None:
+            xml = self._ensure_items_xml_loaded()
+            if xml:
+                return xml.get_server_id_by_name(name)
+            return None
+
+        system_clipboard = SystemClipboardManager.instance()
+        if not system_clipboard.from_system_clipboard(
+            target_version=target_version,
+            name_resolver=name_resolver if target_version else None,
+        ):
+            return False
+
+        entry = system_clipboard.get_current()
+        if entry is None:
+            return False
+
+        result = tiles_from_entry(entry)
+        if result is None:
+            return False
+
+        tiles, origin = result
+        return self._clipboard.load_tiles(tiles, origin)
+
+    def cut_selection(self, client_version: str | None = None) -> PaintAction | None:
         """Cut selection into buffer and remove from map (atomic)."""
-        if not self.copy_selection():
+        if not self.copy_selection(client_version):
             return None
         return self.delete_selection(borderize=bool(self.auto_border_enabled))
 
@@ -2660,6 +2866,38 @@ class EditorSession:
         limit: int = 500,
     ) -> tuple[int, bool, PaintAction | None]:
         """Replace items by server id across the map."""
+        selection_tiles = self.get_selection_tiles() if bool(selection_only) else None
+        return self._replace_items_with_tiles(
+            from_id=int(from_id),
+            to_id=int(to_id),
+            selection_tiles=set(selection_tiles) if selection_tiles is not None else None,
+            limit=int(limit),
+        )
+
+    def replace_items_on_tiles(
+        self,
+        *,
+        from_id: int,
+        to_id: int,
+        tiles: set[TileKey],
+        limit: int = 500,
+    ) -> tuple[int, bool, PaintAction | None]:
+        """Replace items by server id on an explicit tile set."""
+        return self._replace_items_with_tiles(
+            from_id=int(from_id),
+            to_id=int(to_id),
+            selection_tiles=set(tiles),
+            limit=int(limit),
+        )
+
+    def _replace_items_with_tiles(
+        self,
+        *,
+        from_id: int,
+        to_id: int,
+        selection_tiles: set[TileKey] | None,
+        limit: int,
+    ) -> tuple[int, bool, PaintAction | None]:
         from_id_i = int(from_id)
         to_id_i = int(to_id)
         if from_id_i <= 0 or to_id_i <= 0 or from_id_i == to_id_i:
@@ -2668,13 +2906,12 @@ class EditorSession:
         if self._gestures.is_active:
             self.cancel_gesture()
 
-        selection_tiles = self.get_selection_tiles() if bool(selection_only) else None
         changed_tiles, summary = replace_items_in_map(
             self.game_map,
             from_id=from_id_i,
             to_id=to_id_i,
             limit=int(limit),
-            selection_only=bool(selection_only),
+            selection_only=selection_tiles is not None,
             selection_tiles=set(selection_tiles) if selection_tiles is not None else None,
         )
 
@@ -2774,22 +3011,62 @@ class EditorSession:
             cb(set(changed))
 
         # Live Editing Broadcast
-        if broadcast and self._live_client and self._live_client.state.value >= 2:  # CONNECTED
-            # Simplified MVP: Send one packet per changed tile (inefficient but safe).
-            # In production, we'd batch this.
-            # Payload format: x(2) y(2) z(1) + serialized tile data (omitted for MVP)
-            # Just sending "Ping" or coordinates to prove connectivity.
+        if broadcast and (self._live_client or self._live_server):
             for x, y, z in changed:
-                # Minimal payload: x, y, z
-                payload = x.to_bytes(2, "little") + y.to_bytes(2, "little") + z.to_bytes(1, "little")
-                self._live_client.send_packet(PacketType.TILE_UPDATE, payload)
+                self._live_action_queue.mark_dirty(int(x), int(y), int(z))
+            self._live_action_queue.broadcast_dirty()
 
-    def connect_live(self, host: str, port: int) -> bool:
+    def set_live_chat_callback(self, callback: Callable[[int, str, str], None] | None) -> None:
+        self._on_live_chat = callback
+
+    def set_live_client_list_callback(self, callback: Callable[[list[dict[str, object]]], None] | None) -> None:
+        self._on_live_client_list = callback
+
+    def set_live_cursor_callback(self, callback: Callable[[int, int, int, int], None] | None) -> None:
+        self._on_live_cursor = callback
+
+    def _broadcast_live_tiles(self, dirty_list: "object") -> None:
+        if not (self._live_client or self._live_server):
+            return
+        positions = list(getattr(dirty_list, "positions", []) or [])
+        if not positions:
+            return
+        tiles: list[Tile] = []
+        for x, y, z in positions:
+            tile = self.game_map.get_tile(int(x), int(y), int(z))
+            if tile is None:
+                tile = Tile(x=int(x), y=int(y), z=int(z))
+            tiles.append(tile)
+        payload = encode_tile_update(tiles)
+        if self._live_client is not None:
+            self._live_client.send_packet(PacketType.TILE_UPDATE, payload)
+        if self._live_server is not None:
+            self._live_server.broadcast(PacketType.TILE_UPDATE, payload)
+
+    def _live_map_provider(self, x_min: int, y_min: int, x_max: int, y_max: int, z: int) -> list[Tile]:
+        tiles: list[Tile] = []
+        for (tx, ty, tz), tile in (self.game_map.tiles or {}).items():
+            if int(tz) != int(z):
+                continue
+            if int(tx) < int(x_min) or int(tx) > int(x_max):
+                continue
+            if int(ty) < int(y_min) or int(ty) > int(y_max):
+                continue
+            tiles.append(tile)
+        return tiles
+
+    def connect_live(self, host: str, port: int, *, name: str = "", password: str = "") -> bool:
         """Connect to a Live Editing server."""
         if self._live_client is not None:
             self.disconnect_live()
 
         self._live_client = LiveClient(host=host, port=port)
+        if name:
+            self._live_client.set_name(str(name))
+        if password:
+            self._live_client.set_password(str(password))
+        self._live_action_queue.set_live_client(self._live_client)
+        self._live_sync_started = False
         return self._live_client.connect()
 
     def disconnect_live(self) -> None:
@@ -2797,6 +3074,137 @@ class EditorSession:
         if self._live_client:
             self._live_client.disconnect()
             self._live_client = None
+        self._live_action_queue.set_live_client(None)
+        self._live_sync_started = False
+
+    def start_live_server(self, *, host: str = "127.0.0.1", port: int = 7171, name: str = "", password: str = "") -> bool:
+        """Start hosting a Live Editing server."""
+        if self._live_server is not None:
+            return True
+        self._live_server = LiveServer(host=host, port=port)
+        if name:
+            self._live_server.set_name(str(name))
+        if password:
+            self._live_server.set_password(str(password))
+        self._live_server.set_map_provider(self._live_map_provider)
+        self._live_action_queue.set_live_server(self._live_server)
+        ok = self._live_server.start()
+        if not ok:
+            self._live_action_queue.set_live_server(None)
+            self._live_server = None
+        return ok
+
+    def stop_live_server(self) -> None:
+        """Stop hosting a Live Editing server."""
+        if self._live_server is None:
+            return
+        self._live_server.stop()
+        self._live_server = None
+        self._live_action_queue.set_live_server(None)
+
+    def kick_live_client(self, client_id: int, *, reason: str = "Disconnected by host") -> bool:
+        server = self._live_server
+        if server is None:
+            return False
+        return bool(server.kick_client(int(client_id), reason=str(reason)))
+
+    def ban_live_client(self, client_id: int, *, reason: str = "Banned by host") -> bool:
+        server = self._live_server
+        if server is None:
+            return False
+        return bool(server.ban_client(int(client_id), reason=str(reason)))
+
+    def send_live_chat(self, message: str) -> bool:
+        if self._live_client is None:
+            return False
+        return bool(self._live_client.send_chat_message(str(message)))
+
+    def send_live_cursor_update(self, *, x: int, y: int, z: int, throttle_ms: int = 50) -> None:
+        if self._live_client is None:
+            return
+        now = time.monotonic()
+        if (now - float(self._live_cursor_last_sent)) < (int(throttle_ms) / 1000.0):
+            return
+        self._live_cursor_last_sent = now
+        self._live_client.send_cursor_update(int(x), int(y), int(z))
+
+    def get_live_cursor_overlays(self) -> list[dict[str, object]]:
+        overlays: list[dict[str, object]] = []
+        for client_id, (x, y, z) in self._live_cursors.items():
+            if self._live_client and self._live_client.client_id == int(client_id):
+                continue
+            info = self._live_clients.get(int(client_id), {})
+            name = str(info.get("name", "")) if isinstance(info, dict) else ""
+            color = info.get("color", (255, 255, 255)) if isinstance(info, dict) else (255, 255, 255)
+            overlays.append(
+                {
+                    "client_id": int(client_id),
+                    "x": int(x),
+                    "y": int(y),
+                    "z": int(z),
+                    "name": name or f"#{int(client_id)}",
+                    "color": color,
+                }
+            )
+        return overlays
+
+    def _apply_live_tiles(self, tiles: list[dict[str, Any]]) -> set[TileKey]:
+        changed: set[TileKey] = set()
+        for raw in tiles:
+            if not raw:
+                continue
+            x = int(raw.get("x", 0))
+            y = int(raw.get("y", 0))
+            z = int(raw.get("z", 0))
+            items: list[Item] = []
+            for entry in list(raw.get("items", []) or []):
+                try:
+                    item_id = int(entry.get("id", 0))
+                except Exception:
+                    continue
+                if item_id <= 0:
+                    continue
+                subtype_val = entry.get("subtype", None)
+                subtype = int(subtype_val) if subtype_val is not None else None
+                items.append(Item(id=item_id, subtype=subtype))
+
+            ground_id = int(raw.get("ground_id", 0))
+            ground = Item(id=ground_id) if ground_id > 0 else None
+            house_id = raw.get("house_id", None)
+            house = int(house_id) if house_id is not None and int(house_id) > 0 else None
+            flags = int(raw.get("flags", 0))
+
+            tile = Tile(
+                x=int(x),
+                y=int(y),
+                z=int(z),
+                ground=ground,
+                items=list(items),
+                house_id=house,
+                map_flags=flags,
+            )
+
+            if _tile_is_truly_empty(tile):
+                self.game_map.delete_tile(int(x), int(y), int(z))
+            else:
+                self.game_map.set_tile(tile)
+            changed.add((int(x), int(y), int(z)))
+        return changed
+
+    @staticmethod
+    def _decode_live_positions(payload: bytes) -> list[TileKey]:
+        if len(payload) == 5:
+            x = int.from_bytes(payload[0:2], "little", signed=False)
+            y = int.from_bytes(payload[2:4], "little", signed=False)
+            z = int(payload[4])
+            return [(int(x), int(y), int(z))]
+        positions: list[TileKey] = []
+        for pos in decode_tile_positions(payload):
+            try:
+                positions.append((int(pos[0]), int(pos[1]), int(pos[2])))
+            except Exception:
+                continue
+        return positions
 
     def process_live_events(self) -> int:
         """Poll incoming packets from Live Client and apply them.
@@ -2804,22 +3212,103 @@ class EditorSession:
         Returns:
             Number of packets processed.
         """
-        if not self._live_client:
+        if not self._live_client and not self._live_server:
             return 0
 
         count = 0
-        while True:
-            pkt = self._live_client.pop_packet()
-            if not pkt:
-                break
+        if self._live_client is not None:
+            while True:
+                pkt = self._live_client.pop_packet()
+                if not pkt:
+                    break
 
-            pkt_type, payload = pkt
-            if int(pkt_type) == int(PacketType.TILE_UPDATE) and len(payload) >= 5:
-                x = int.from_bytes(payload[0:2], "little", signed=False)
-                y = int.from_bytes(payload[2:4], "little", signed=False)
-                z = int(payload[4])
-                self._emit_tiles_changed({(int(x), int(y), int(z))}, broadcast=False)
-            count += 1
+                pkt_type, payload = pkt
+                if int(pkt_type) == int(PacketType.LOGIN_SUCCESS):
+                    if len(payload) >= 4:
+                        self._live_client.client_id = int.from_bytes(payload[0:4], "little", signed=False)
+                    self._live_client.state = ConnectionState.AUTHENTICATED
+                    if not self._live_sync_started:
+                        self._live_sync_started = True
+                        self.game_map.tiles.clear()
+                        width = max(1, int(self.game_map.header.width))
+                        height = max(1, int(self.game_map.header.height))
+                        for z in range(0, 16):
+                            self._live_client.request_map(
+                                x_min=0,
+                                y_min=0,
+                                x_max=width - 1,
+                                y_max=height - 1,
+                                z=int(z),
+                            )
+                elif int(pkt_type) == int(PacketType.LOGIN_ERROR):
+                    self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
+                    self.disconnect_live()
+                elif int(pkt_type) == int(PacketType.KICK):
+                    self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
+                    self.disconnect_live()
+                elif int(pkt_type) == int(PacketType.CLIENT_LIST):
+                    clients = decode_client_list(payload)
+                    self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
+                    if self._on_live_client_list:
+                        self._on_live_client_list(list(clients))
+                elif int(pkt_type) == int(PacketType.MESSAGE):
+                    client_id, name, message = decode_chat(payload)
+                    if self._on_live_chat:
+                        self._on_live_chat(int(client_id), str(name), str(message))
+                elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
+                    client_id, x, y, z = decode_cursor(payload)
+                    self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
+                    if self._on_live_cursor:
+                        self._on_live_cursor(int(client_id), int(x), int(y), int(z))
+                elif int(pkt_type) == int(PacketType.TILE_UPDATE):
+                    tiles, ok = decode_tile_update(payload)
+                    if ok and tiles:
+                        changed = self._apply_live_tiles(tiles)
+                        if changed:
+                            self._emit_tiles_changed(changed, broadcast=False)
+                    else:
+                        positions = self._decode_live_positions(payload)
+                        if positions:
+                            self._emit_tiles_changed(set(positions), broadcast=False)
+                elif int(pkt_type) == int(PacketType.MAP_CHUNK):
+                    chunk = decode_map_chunk(payload)
+                    tiles = chunk.get("tiles", [])
+                    changed = self._apply_live_tiles(list(tiles))
+                    if changed:
+                        self._emit_tiles_changed(changed, broadcast=False)
+                count += 1
+
+        if self._live_server is not None:
+            while True:
+                pkt = self._live_server.pop_packet()
+                if not pkt:
+                    break
+                pkt_type, payload = pkt
+                if int(pkt_type) == int(PacketType.MESSAGE):
+                    client_id, name, message = decode_chat(payload)
+                    if self._on_live_chat:
+                        self._on_live_chat(int(client_id), str(name), str(message))
+                elif int(pkt_type) == int(PacketType.CLIENT_LIST):
+                    clients = decode_client_list(payload)
+                    self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
+                    if self._on_live_client_list:
+                        self._on_live_client_list(list(clients))
+                elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
+                    client_id, x, y, z = decode_cursor(payload)
+                    self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
+                    if self._on_live_cursor:
+                        self._on_live_cursor(int(client_id), int(x), int(y), int(z))
+                elif int(pkt_type) == int(PacketType.TILE_UPDATE):
+                    tiles, ok = decode_tile_update(payload)
+                    if ok and tiles:
+                        changed = self._apply_live_tiles(tiles)
+                        if changed:
+                            self._emit_tiles_changed(changed, broadcast=False)
+                    else:
+                        positions = self._decode_live_positions(payload)
+                        if positions:
+                            self._emit_tiles_changed(set(positions), broadcast=False)
+                count += 1
 
         return count
 

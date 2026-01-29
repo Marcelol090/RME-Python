@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from PyQt6.QtCore import QPoint, Qt, QRect, QElapsedTimer, QTimer
-from PyQt6.QtGui import QColor, QPainter, QPen
+from PyQt6.QtGui import QColor, QPainter, QPen, QPolygon
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
+from py_rme_canary.logic_layer.lasso_selection import get_lasso_tool
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
@@ -44,6 +45,12 @@ class MapCanvasWidget(QWidget):
 
         # Selection box apply mode (captured on press)
         self._selection_box_mode: Optional[SelectionApplyMode] = None
+        self._lasso_active = False
+        self._lasso_apply_mode: Optional[SelectionApplyMode] = None
+
+        # Hover tracking for tooltips (synced into MapDrawer)
+        self._hover_tile: Optional[tuple[int, int, int]] = None
+        self._hover_stack: list[int] = []
 
     def sizeHint(self):  # noqa: N802 (Qt style)
         return super().sizeHint()
@@ -73,6 +80,8 @@ class MapCanvasWidget(QWidget):
     def _on_animation_tick(self) -> None:
         if not bool(getattr(self._editor, "show_preview", False)):
             return
+        if hasattr(self._editor, "advance_animation_clock"):
+            self._editor.advance_animation_clock(self.ANIMATION_INTERVAL_MS)
         tile_px = int(getattr(self._editor.viewport, "tile_px", 32))
         zoom = 32.0 / float(tile_px) if tile_px > 0 else 1.0
         if zoom <= 2.0:
@@ -122,6 +131,53 @@ class MapCanvasWidget(QWidget):
         if t.ground is not None:
             return int(t.ground.id)
         return None
+
+    def _open_context_menu_at(self, pos: QPoint) -> None:
+        editor = self._editor
+        x, y = self._tile_at(int(pos.x()), int(pos.y()))
+        z = int(editor.viewport.z)
+        try:
+            tile = editor.map.get_tile(int(x), int(y), int(z))
+        except Exception:
+            tile = None
+        if tile is None:
+            return
+
+        item = tile.items[-1] if getattr(tile, "items", None) else None
+        if item is None:
+            item = getattr(tile, "ground", None)
+        if item is None:
+            return
+
+        try:
+            from py_rme_canary.vis_layer.ui.menus.context_menus import ItemContextMenu
+
+            menu = ItemContextMenu(self)
+
+            def _set_find() -> None:
+                editor._set_quick_replace_source(int(item.id))
+
+            def _set_replace() -> None:
+                editor._set_quick_replace_target(int(item.id))
+
+            def _find_all() -> None:
+                editor._find_item_by_id(int(item.id))
+
+            def _replace_all() -> None:
+                editor._set_quick_replace_source(int(item.id))
+                editor._open_replace_items_dialog()
+
+            menu.set_callbacks(
+                {
+                    "set_find": _set_find,
+                    "set_replace": _set_replace,
+                    "find_all": _find_all,
+                    "replace_all": _replace_all,
+                }
+            )
+            menu.show_for_item(item, tile)
+        except Exception:
+            return
 
     def _paint_footprint_at(self, px: int, py: int, *, alt: bool = False) -> None:
         editor = self._editor
@@ -191,6 +247,11 @@ class MapCanvasWidget(QWidget):
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
+        self._sync_hover_to_drawer(drawer)
+        try:
+            drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
+        except Exception:
+            pass
 
         backend = QPainterRenderBackend(
             painter,
@@ -410,6 +471,21 @@ class MapCanvasWidget(QWidget):
                 p.setPen(dash_pen)
                 p.drawRect(QRect(px0, py0, pw, ph))
 
+        if self._lasso_active:
+            tool = get_lasso_tool()
+            if len(tool.points) >= 2:
+                lasso_pen = QPen(QColor(255, 200, 0))
+                lasso_pen.setStyle(Qt.PenStyle.DashLine)
+                lasso_pen.setWidth(2)
+                p.setPen(lasso_pen)
+                pts = QPolygon()
+                for lx, ly in tool.points:
+                    px = (int(lx) - x0) * s + (s // 2)
+                    py = (int(ly) - y0) * s + (s // 2)
+                    pts.append(QPoint(int(px), int(py)))
+                if pts:
+                    p.drawPolyline(pts)
+
         p.end()
         self._is_rendering = False
         if self._render_pending:
@@ -419,9 +495,14 @@ class MapCanvasWidget(QWidget):
     def mousePressEvent(self, event):  # noqa: N802
         editor = self._editor
 
-        if event.button() == Qt.MouseButton.RightButton:
+        if event.button() == Qt.MouseButton.MiddleButton:
             self._panning = True
             self._pan_anchor = (event.position().toPoint(), editor.viewport.origin_x, editor.viewport.origin_y)
+            event.accept()
+            return
+
+        if event.button() == Qt.MouseButton.RightButton:
+            self._open_context_menu_at(event.position().toPoint())
             event.accept()
             return
 
@@ -465,6 +546,24 @@ class MapCanvasWidget(QWidget):
             shift = bool(mods & Qt.KeyboardModifier.ShiftModifier)
             ctrl = bool(mods & Qt.KeyboardModifier.ControlModifier)
             alt = bool(mods & Qt.KeyboardModifier.AltModifier)
+
+            if bool(getattr(editor, "lasso_enabled", False)) and shift:
+                mode: SelectionApplyMode
+                if ctrl and alt:
+                    mode = SelectionApplyMode.TOGGLE
+                elif alt:
+                    mode = SelectionApplyMode.SUBTRACT
+                elif ctrl:
+                    mode = SelectionApplyMode.ADD
+                else:
+                    mode = SelectionApplyMode.REPLACE
+
+                tool = get_lasso_tool()
+                tool.start(int(x), int(y), int(z))
+                self._lasso_active = True
+                self._lasso_apply_mode = mode
+                self.request_render()
+                return
 
             selected = editor.session.get_selection_tiles()
             if (not shift) and (not ctrl) and ((int(x), int(y), int(z)) in selected):
@@ -548,9 +647,19 @@ class MapCanvasWidget(QWidget):
             editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
             return
 
+        if self._lasso_active:
+            x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+            tool = get_lasso_tool()
+            if tool.add_point(int(x), int(y)):
+                self.request_render()
+            editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
+            self._set_hover_from_pos(int(event.position().x()), int(event.position().y()))
+            return
+
         if getattr(editor, "selection_mode", False) and self._mouse_down:
             if self._selection_dragging and self._selection_drag_start is not None:
                 editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
+                self._set_hover_from_pos(int(event.position().x()), int(event.position().y()))
                 return
             box = editor.session.get_selection_box()
             if box is not None:
@@ -559,6 +668,7 @@ class MapCanvasWidget(QWidget):
                 editor.session.update_box_selection(x=x, y=y, z=z)
                 self.request_render()
             editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
+            self._set_hover_from_pos(int(event.position().x()), int(event.position().y()))
             return
 
         if self._mouse_down:
@@ -566,9 +676,10 @@ class MapCanvasWidget(QWidget):
             self._paint_footprint_at(int(event.position().x()), int(event.position().y()), alt=alt)
 
         editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
+        self._set_hover_from_pos(int(event.position().x()), int(event.position().y()))
 
     def mouseReleaseEvent(self, event):  # noqa: N802
-        if event.button() == Qt.MouseButton.RightButton:
+        if event.button() == Qt.MouseButton.MiddleButton:
             self._panning = False
             self._pan_anchor = None
             event.accept()
@@ -583,6 +694,20 @@ class MapCanvasWidget(QWidget):
         self._mouse_down = False
 
         editor = self._editor
+        if self._lasso_active:
+            tool = get_lasso_tool()
+            tiles = tool.finish()
+            self._lasso_active = False
+            editor.session.apply_lasso_selection(
+                tiles=tiles,
+                mode=self._lasso_apply_mode,
+                visible_floors=editor._visible_floors_for_selection(),
+            )
+            self._lasso_apply_mode = None
+            self.request_render()
+            editor._update_action_enabled_states()
+            return
+
         if getattr(editor, "selection_mode", False):
             mods = event.modifiers()
             ctrl = bool(mods & Qt.KeyboardModifier.ControlModifier)
@@ -605,6 +730,7 @@ class MapCanvasWidget(QWidget):
                 editor.session.finish_box_selection(
                     toggle_if_single=bool(ctrl),
                     mode=self._selection_box_mode,
+                    visible_floors=editor._visible_floors_for_selection(),
                 )
             editor.session.cancel_box_selection()
             self._selection_box_mode = None
@@ -622,7 +748,43 @@ class MapCanvasWidget(QWidget):
         self._pan_anchor = None
         self._selection_dragging = False
         self._selection_drag_start = None
+        self._hover_tile = None
+        self._hover_stack = []
+        self.cancel_lasso()
         self.request_render()
+
+    def cancel_lasso(self) -> None:
+        self._lasso_active = False
+        self._lasso_apply_mode = None
+        try:
+            get_lasso_tool().cancel()
+        except Exception:
+            pass
+
+    def _set_hover_from_pos(self, px: int, py: int) -> None:
+        """Capture hover tile for MapDrawer tooltips."""
+        editor = self._editor
+        x, y = self._tile_at(int(px), int(py))
+        z = int(editor.viewport.z)
+        if not (0 <= x < editor.map.header.width and 0 <= y < editor.map.header.height):
+            self._hover_tile = None
+            self._hover_stack = []
+            return
+        stack = self._server_ids_for_tile_stack(int(x), int(y), z)
+        self._hover_tile = (int(x), int(y), z)
+        self._hover_stack = stack
+
+    def _sync_hover_to_drawer(self, drawer) -> None:
+        """Push current hover tile/stack into MapDrawer before drawing."""
+        try:
+            pos = self.mapFromGlobal(self.cursor().pos())
+            self._set_hover_from_pos(int(pos.x()), int(pos.y()))
+        except Exception:
+            pass
+        if self._hover_tile is None:
+            return
+        hx, hy, hz = self._hover_tile
+        drawer.set_hover_tile(hx, hy, hz, list(self._hover_stack))
 
     def wheelEvent(self, event):  # noqa: N802
         delta = event.angleDelta().y()

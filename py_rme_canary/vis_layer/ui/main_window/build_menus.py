@@ -17,6 +17,23 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_file.addAction(editor.act_save)
     m_file.addAction(editor.act_save_as)
     m_file.addSeparator()
+
+    if hasattr(editor, "act_import_monsters_npcs") or hasattr(editor, "act_import_monster_folder") or hasattr(editor, "act_import_map"):
+        m_import = m_file.addMenu("Import")
+        if hasattr(editor, "act_import_map"):
+            m_import.addAction(editor.act_import_map)
+        if hasattr(editor, "act_import_monsters_npcs"):
+            m_import.addAction(editor.act_import_monsters_npcs)
+        if hasattr(editor, "act_import_monster_folder"):
+            m_import.addAction(editor.act_import_monster_folder)
+        m_file.addSeparator()
+
+    # Export submenu
+    if hasattr(editor, "act_export_png"):
+        m_export = m_file.addMenu("Export")
+        m_export.addAction(editor.act_export_png)
+        m_file.addSeparator()
+
     m_file.addAction(editor.act_exit)
 
     m_edit = mb.addMenu("Edit")
@@ -65,6 +82,16 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_border.addAction(editor.act_automagic)
     m_border.addSeparator()
     m_border.addAction(editor.act_borderize_selection)
+    if hasattr(editor, "act_border_builder"):
+        m_border.addSeparator()
+        m_border.addAction(editor.act_border_builder)
+
+    # Symmetry submenu
+    if hasattr(editor, "act_symmetry_vertical"):
+        m_symmetry = m_edit.addMenu("Symmetry")
+        m_symmetry.addAction(editor.act_symmetry_vertical)
+        m_symmetry.addAction(editor.act_symmetry_horizontal)
+
 
     if hasattr(editor, "menu_tools"):
         m_edit.addSeparator()
@@ -105,12 +132,19 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
 
     m_mode = mb.addMenu("Mode")
     m_mode.addAction(editor.act_selection_mode)
+    m_selection_depth = m_mode.addMenu("Selection Depth")
+    m_selection_depth.addAction(editor.act_selection_depth_compensate)
+    m_selection_depth.addAction(editor.act_selection_depth_current)
+    m_selection_depth.addAction(editor.act_selection_depth_lower)
+    m_selection_depth.addAction(editor.act_selection_depth_visible)
 
     # Map Menu (Legacy Parity)
     m_map = mb.addMenu("Map")
     if hasattr(editor, "act_remove_monsters_selection"):
         m_map.addAction(editor.act_remove_monsters_selection)
-    
+    if hasattr(editor, "act_convert_map_format"):
+        m_map.addAction(editor.act_convert_map_format)
+
     # We can also add other map-wide tools here later (e.g. Map Properties, Cleanup)
 
     m_view = mb.addMenu("View")
@@ -119,6 +153,8 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_view.addAction(editor.act_zoom_normal)
     m_view.addSeparator()
     m_view.addAction(editor.act_show_grid)
+    if hasattr(editor, "act_ingame_preview"):
+        m_view.addAction(editor.act_ingame_preview)
 
     m_mirror = mb.addMenu("Mirror")
     m_mirror.addAction(editor.act_toggle_mirror)
@@ -134,16 +170,30 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_assets.addAction(editor.act_set_assets_dir)
 
     m_live = mb.addMenu("Live")
+    if hasattr(editor, "act_live_host"):
+        m_live.addAction(editor.act_live_host)
+    if hasattr(editor, "act_live_stop"):
+        m_live.addAction(editor.act_live_stop)
+    if hasattr(editor, "act_live_host") or hasattr(editor, "act_live_stop"):
+        m_live.addSeparator()
     if hasattr(editor, "act_src_connect"):
         m_live.addAction(editor.act_src_connect)
     if hasattr(editor, "act_src_disconnect"):
         m_live.addAction(editor.act_src_disconnect)
+    if hasattr(editor, "act_live_kick") or hasattr(editor, "act_live_ban"):
+        m_live.addSeparator()
+    if hasattr(editor, "act_live_kick"):
+        m_live.addAction(editor.act_live_kick)
+    if hasattr(editor, "act_live_ban"):
+        m_live.addAction(editor.act_live_ban)
 
     # Window menu: keep legacy view toggles block + palettes/docks
     m_window = mb.addMenu("Window")
 
     m_toolbars = m_window.addMenu("Toolbars")
     m_window.addAction(editor.act_new_view)
+    if hasattr(editor, "act_new_instance"):
+        m_window.addAction(editor.act_new_instance)
     m_window.addAction(editor.act_fullscreen)
     m_window.addAction(editor.act_take_screenshot)
     m_window.addSeparator()
@@ -186,6 +236,11 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_window.addAction(editor.act_clear_modified_state)
     m_window.addSeparator()
 
+    # Appearance
+    if hasattr(editor, "act_toggle_dark_mode"):
+        m_window.addAction(editor.act_toggle_dark_mode)
+        m_window.addSeparator()
+
     m_window.addAction(editor.act_show_houses)
     m_window.addAction(editor.act_show_pathing)
     m_window.addAction(editor.act_show_tooltips)
@@ -201,9 +256,11 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_window.addSeparator()
     m_window.addAction(editor.act_window_minimap)
     m_window.addAction(editor.act_window_actions_history)
+    m_window.addAction(editor.act_window_live_log)
 
     m_window.addSeparator()
     m_window.addAction(editor.act_new_palette)
+    m_window.addAction(editor.act_palette_large_icons)
     m_window.addSeparator()
     m_window.addAction(editor.act_palette_terrain)
     m_window.addAction(editor.act_palette_doodad)

@@ -57,6 +57,7 @@ from ...constants.otbm import (
 from ...data.gamemap import GameMap
 from ...data.item import Item, ItemAttribute
 from ...data.tile import Tile
+from ...database.id_mapper import IdMapper
 from ...database.items_xml import ItemsXML
 from ..atomic_io import save_bytes_atomic
 from ..houses_xml import save_houses
@@ -150,6 +151,22 @@ def _is_compact_ground_item(item: Item) -> bool:
         and not item.items
         and not item.attribute_map
     )
+
+
+def _resolve_item_id_for_save(
+    item_id: int,
+    *,
+    id_mapper: IdMapper | None,
+    otbm_version: int,
+) -> int:
+    if int(otbm_version) >= 5:
+        if id_mapper is None:
+            raise ValueError("id_mapper is required to save ClientID OTBM (version >= 5)")
+        mapped = id_mapper.get_client_id(int(item_id))
+        if mapped is None:
+            raise ValueError(f"No client id mapping for server id {item_id}")
+        return int(mapped)
+    return int(item_id)
 
 
 # =============================================================================
@@ -255,14 +272,21 @@ def _merge_attribute_map_with_derived(item: Item) -> tuple[ItemAttribute, ...]:
 # =============================================================================
 
 
-def _build_item_payload(item: Item, items_db: ItemsXML | None, *, otbm_version: int) -> bytes:
+def _build_item_payload(
+    item: Item,
+    items_db: ItemsXML | None,
+    *,
+    otbm_version: int,
+    id_mapper: IdMapper | None,
+) -> bytes:
     """Build the binary payload for an item node."""
-    # OTBM stores the ServerID / logical id.
+    # OTBM stores the ServerID / logical id (or ClientID for v5+).
     if int(item.id) == 0:
         raise ValueError(
             "Refusing to serialize Item with server id 0 (likely an unknown-id placeholder from the loader)"
         )
-    payload = bytearray(struct.pack("<H", _u16(int(item.id))))
+    resolved_id = _resolve_item_id_for_save(int(item.id), id_mapper=id_mapper, otbm_version=int(otbm_version))
+    payload = bytearray(struct.pack("<H", _u16(int(resolved_id))))
 
     # Legacy parity (RME): in OTBM v1, stackable/fluid/splash write subtype as a raw u8
     # directly after the item id.
@@ -342,12 +366,21 @@ def _build_item_payload(item: Item, items_db: ItemsXML | None, *, otbm_version: 
     return bytes(payload)
 
 
-def _build_item_node(item: Item, items_db: ItemsXML | None, *, otbm_version: int) -> bytes:
+def _build_item_node(
+    item: Item,
+    items_db: ItemsXML | None,
+    *,
+    otbm_version: int,
+    id_mapper: IdMapper | None,
+) -> bytes:
     """Build a complete OTBM_ITEM node including children (container contents)."""
-    payload = _build_item_payload(item, items_db, otbm_version=int(otbm_version))
+    payload = _build_item_payload(item, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper)
     children: tuple[bytes, ...] = ()
     if item.items:
-        children = tuple(_build_item_node(ch, items_db, otbm_version=int(otbm_version)) for ch in item.items)
+        children = tuple(
+            _build_item_node(ch, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper)
+            for ch in item.items
+        )
     return _node_bytes(OTBM_ITEM, payload, children)
 
 
@@ -356,7 +389,14 @@ def _build_item_node(item: Item, items_db: ItemsXML | None, *, otbm_version: int
 # =============================================================================
 
 
-def _build_tile_node(*, base_x: int, base_y: int, tile: Tile, otbm_version: int) -> bytes:
+def _build_tile_node(
+    *,
+    base_x: int,
+    base_y: int,
+    tile: Tile,
+    otbm_version: int,
+    id_mapper: IdMapper | None,
+) -> bytes:
     """Build a complete tile node (without items_db semantics)."""
     rel_x = tile.x - base_x
     rel_y = tile.y - base_y
@@ -376,13 +416,20 @@ def _build_tile_node(*, base_x: int, base_y: int, tile: Tile, otbm_version: int)
     children_items: list[Item] = []
     if tile.ground is not None:
         if int(otbm_version) >= 2 and _is_compact_ground_item(tile.ground):
-            payload += struct.pack("<BH", _u8(OTBM_ATTR_ITEM), _u16(int(tile.ground.id)))
+            resolved_id = _resolve_item_id_for_save(
+                int(tile.ground.id),
+                id_mapper=id_mapper,
+                otbm_version=int(otbm_version),
+            )
+            payload += struct.pack("<BH", _u8(OTBM_ATTR_ITEM), _u16(int(resolved_id)))
         else:
             children_items.append(tile.ground)
 
     children_items.extend(tile.items)
 
-    children: list[bytes] = [_build_item_node(it, None, otbm_version=int(otbm_version)) for it in children_items]
+    children: list[bytes] = [
+        _build_item_node(it, None, otbm_version=int(otbm_version), id_mapper=id_mapper) for it in children_items
+    ]
     if tile.zones:
         zones_sorted = sorted(int(z) for z in tile.zones)
         zp = bytearray(struct.pack("<H", _u16(len(zones_sorted))))
@@ -399,6 +446,7 @@ def _build_tile_node_with_items_db(
     tile: Tile,
     items_db: ItemsXML,
     otbm_version: int,
+    id_mapper: IdMapper | None,
 ) -> bytes:
     """Build a complete tile node with items_db semantics."""
     rel_x = tile.x - base_x
@@ -418,13 +466,21 @@ def _build_tile_node_with_items_db(
     children_items: list[Item] = []
     if tile.ground is not None:
         if int(otbm_version) >= 2 and _is_compact_ground_item(tile.ground):
-            payload += struct.pack("<BH", _u8(OTBM_ATTR_ITEM), _u16(int(tile.ground.id)))
+            resolved_id = _resolve_item_id_for_save(
+                int(tile.ground.id),
+                id_mapper=id_mapper,
+                otbm_version=int(otbm_version),
+            )
+            payload += struct.pack("<BH", _u8(OTBM_ATTR_ITEM), _u16(int(resolved_id)))
         else:
             children_items.append(tile.ground)
 
     children_items.extend(tile.items)
 
-    children: list[bytes] = [_build_item_node(it, items_db, otbm_version=int(otbm_version)) for it in children_items]
+    children: list[bytes] = [
+        _build_item_node(it, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper)
+        for it in children_items
+    ]
     if tile.zones:
         zones_sorted = sorted(int(z) for z in tile.zones)
         zp = bytearray(struct.pack("<H", _u16(len(zones_sorted))))
@@ -481,7 +537,12 @@ def _build_map_data_payload(game_map: GameMap) -> bytes:
 # =============================================================================
 
 
-def serialize(game_map: GameMap, *, items_db: ItemsXML | None = None) -> bytes:
+def serialize(
+    game_map: GameMap,
+    *,
+    items_db: ItemsXML | None = None,
+    id_mapper: IdMapper | None = None,
+) -> bytes:
     """Serialize a GameMap to OTBM binary format.
 
     Args:
@@ -515,6 +576,7 @@ def serialize(game_map: GameMap, *, items_db: ItemsXML | None = None) -> bytes:
                     base_y=key.base_y,
                     tile=t,
                     otbm_version=int(h.otbm_version),
+                    id_mapper=id_mapper,
                 )
                 for t in tiles_sorted
             )
@@ -526,6 +588,7 @@ def serialize(game_map: GameMap, *, items_db: ItemsXML | None = None) -> bytes:
                     tile=t,
                     items_db=items_db,
                     otbm_version=int(h.otbm_version),
+                    id_mapper=id_mapper,
                 )
                 for t in tiles_sorted
             )
@@ -570,14 +633,20 @@ def serialize(game_map: GameMap, *, items_db: ItemsXML | None = None) -> bytes:
     return MAGIC_OTBM + root_node
 
 
-def save_game_map_atomic(path: str, game_map: GameMap) -> None:
+def save_game_map_atomic(path: str, game_map: GameMap, *, id_mapper: IdMapper | None = None) -> None:
     """Save a GameMap atomically (no items_db)."""
-    save_bytes_atomic(path, serialize(game_map))
+    save_bytes_atomic(path, serialize(game_map, id_mapper=id_mapper))
 
 
-def save_game_map_atomic_with_items_db(path: str, game_map: GameMap, *, items_db: ItemsXML) -> None:
+def save_game_map_atomic_with_items_db(
+    path: str,
+    game_map: GameMap,
+    *,
+    items_db: ItemsXML,
+    id_mapper: IdMapper | None = None,
+) -> None:
     """Save a GameMap atomically with items_db semantics."""
-    save_bytes_atomic(path, serialize(game_map, items_db=items_db))
+    save_bytes_atomic(path, serialize(game_map, items_db=items_db, id_mapper=id_mapper))
 
 
 def save_game_map_bundle_atomic(
@@ -585,6 +654,7 @@ def save_game_map_bundle_atomic(
     game_map: GameMap,
     *,
     items_db: ItemsXML | None = None,
+    id_mapper: IdMapper | None = None,
     save_externals: bool = True,
 ) -> None:
     """Save an OTBM and its referenced external XML files.
@@ -592,7 +662,7 @@ def save_game_map_bundle_atomic(
     External files are saved only when their filename is present in the header.
     Paths are resolved relative to the OTBM location unless already absolute.
     """
-    save_bytes_atomic(path, serialize(game_map, items_db=items_db))
+    save_bytes_atomic(path, serialize(game_map, items_db=items_db, id_mapper=id_mapper))
 
     if not save_externals:
         return

@@ -31,7 +31,7 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Canceled")
 
     def _copy_selection(self: "QtMapEditor") -> None:
-        if not self.session.copy_selection():
+        if not self.session.copy_selection(client_version=str(self.client_version)):
             self.status.showMessage("Copy: nothing selected")
             self._update_action_enabled_states()
             return
@@ -39,7 +39,7 @@ class QtMapEditorEditMixin:
         self._update_action_enabled_states()
 
     def _cut_selection(self: "QtMapEditor") -> None:
-        action = self.session.cut_selection()
+        action = self.session.cut_selection(client_version=str(self.client_version))
         if action is None:
             self.status.showMessage("Cut: nothing selected")
             self._update_action_enabled_states()
@@ -59,6 +59,9 @@ class QtMapEditorEditMixin:
         self._update_action_enabled_states()
 
     def _arm_paste(self: "QtMapEditor") -> None:
+        # Try importing from system clipboard first (handling any version conversion)
+        self.session.import_from_system_clipboard(target_version=str(self.client_version))
+
         if not self.session.can_paste():
             self.status.showMessage("Paste: buffer empty")
             self._update_action_enabled_states()

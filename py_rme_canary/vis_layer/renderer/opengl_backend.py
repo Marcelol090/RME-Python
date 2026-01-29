@@ -13,6 +13,18 @@ logger = logging.getLogger(__name__)
 SpriteLookup = Callable[[int], tuple[int, int, int, bytes] | None]
 
 
+def _placeholder_color(sprite_id: int) -> tuple[int, int, int, int]:
+    v = int(sprite_id) & 0xFFFFFFFF
+    r = (v * 2654435761) & 0xFF
+    g = (v * 2246822519) & 0xFF
+    b = (v * 3266489917) & 0xFF
+
+    def clamp(c: int) -> int:
+        return 48 + (int(c) % 160)
+
+    return (clamp(r), clamp(g), clamp(b), 255)
+
+
 @dataclass(slots=True)
 class _SpriteRun:
     texture_id: int
@@ -278,6 +290,7 @@ class OpenGLRenderBackend(RenderBackend):
         self._viewport_height = int(max(1, viewport_height))
         self._sprite_lookup = sprite_lookup
         self._batcher = _OpenGLBatcher()
+        self.text_calls: list[tuple[int, int, str, int, int, int, int]] = []
 
     def clear(self, r: int, g: int, b: int, a: int = 255) -> None:
         self._gl.glClearColor(float(r) / 255.0, float(g) / 255.0, float(b) / 255.0, float(a) / 255.0)
@@ -289,6 +302,7 @@ class OpenGLRenderBackend(RenderBackend):
     def draw_tile_sprite(self, x: int, y: int, size: int, sprite_id: int) -> None:
         sprite = self._sprite_lookup(int(sprite_id))
         if sprite is None:
+            self._batcher.add_color_rect(int(x), int(y), int(size), int(size), _placeholder_color(int(sprite_id)))
             return
 
         client_id, w, h, bgra = sprite
@@ -346,8 +360,7 @@ class OpenGLRenderBackend(RenderBackend):
         return
 
     def draw_text(self, x: int, y: int, text: str, r: int, g: int, b: int, a: int = 255) -> None:
-        # Text rendering is not implemented in the OpenGL backend yet.
-        return
+        self.text_calls.append((int(x), int(y), str(text), int(r), int(g), int(b), int(a)))
 
     def draw_shade_overlay(self, x: int, y: int, w: int, h: int, alpha: int) -> None:
         self._batcher.add_color_rect(int(x), int(y), int(w), int(h), (0, 0, 0, int(alpha)))
@@ -388,4 +401,3 @@ class OpenGLRenderBackend(RenderBackend):
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
-

@@ -13,6 +13,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from py_rme_canary.core.data.gamemap import GameMap
+from py_rme_canary.logic_layer.session.selection_modes import (
+    SelectionDepthMode,
+    apply_compensation_offset,
+    get_floors_for_selection,
+)
 
 TileKey = tuple[int, int, int]
 
@@ -57,6 +62,9 @@ class SelectionManager:
     _selection_box_active: bool = False
     _selection_box_start: TileKey | None = None
     _selection_box_end: TileKey | None = None
+
+    # Selection depth mode (for multi-floor selection)
+    selection_mode: SelectionDepthMode = SelectionDepthMode.COMPENSATE
 
     # === Basic Selection API ===
 
@@ -129,35 +137,61 @@ class SelectionManager:
         *,
         toggle_if_single: bool = False,
         mode: SelectionApplyMode | str = SelectionApplyMode.ADD,
+        visible_floors: list[int] | None = None,
     ) -> None:
         """Apply the current selection box.
 
-        - Applies any non-empty tiles in the rectangle (current floor only).
+        - Applies tiles in rectangle according to selection_mode depth
         - If `toggle_if_single` and the rectangle is 1 tile, toggles it.
+        - Supports multi-floor selection via selection_mode
+
+        Args:
+            toggle_if_single: Toggle if selection is single tile
+            mode: How to apply selection (ADD/SUBTRACT/TOGGLE/REPLACE)
+            visible_floors: List of visible floors (for VISIBLE mode)
         """
         if not self._selection_box_active or self._selection_box_start is None or self._selection_box_end is None:
             self.cancel_box_selection()
             return
 
         sx, sy, sz = self._selection_box_start
-        ex, ey, _ez = self._selection_box_end
-        z = int(sz)
+        ex, ey, ez = self._selection_box_end
+        base_z = int(sz)
 
         x0, x1 = (int(sx), int(ex)) if sx <= ex else (int(ex), int(sx))
         y0, y1 = (int(sy), int(ey)) if sy <= ey else (int(ey), int(sy))
+        z_min = min(int(sz), int(ez))
+        z_max = max(int(sz), int(ez))
 
         if toggle_if_single and x0 == x1 and y0 == y1:
-            self.toggle_select_tile(x=x0, y=y0, z=z)
+            self.toggle_select_tile(x=x0, y=y0, z=base_z)
             self.cancel_box_selection()
             return
 
+        # Get floors to select based on depth mode
+        floors_to_select = get_floors_for_selection(
+            start_z=z_min,
+            end_z=z_max,
+            mode=self.selection_mode,
+            visible_floors=visible_floors,
+        )
+
         box_tiles: set[TileKey] = set()
-        for xx in range(int(x0), int(x1) + 1):
-            for yy in range(int(y0), int(y1) + 1):
-                t = self.game_map.get_tile(int(xx), int(yy), int(z))
-                if not tile_is_nonempty(t):
-                    continue
-                box_tiles.add((int(xx), int(yy), int(z)))
+        for z in floors_to_select:
+            # Apply compensation offset if using COMPENSATE mode
+            if self.selection_mode == SelectionDepthMode.COMPENSATE:
+                comp_x0, comp_y0 = apply_compensation_offset(x=x0, y=y0, z=z, base_z=base_z)
+                comp_x1, comp_y1 = apply_compensation_offset(x=x1, y=y1, z=z, base_z=base_z)
+            else:
+                comp_x0, comp_y0 = x0, y0
+                comp_x1, comp_y1 = x1, y1
+
+            for xx in range(int(comp_x0), int(comp_x1) + 1):
+                for yy in range(int(comp_y0), int(comp_y1) + 1):
+                    t = self.game_map.get_tile(int(xx), int(yy), int(z))
+                    if not tile_is_nonempty(t):
+                        continue
+                    box_tiles.add((int(xx), int(yy), int(z)))
 
         # `mode` is usually already a SelectionApplyMode (default arg). Avoid
         # converting it via `str(mode)` because Enum(str, Enum) renders like

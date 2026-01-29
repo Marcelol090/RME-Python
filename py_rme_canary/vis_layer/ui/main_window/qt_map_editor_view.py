@@ -17,6 +17,22 @@ class QtMapEditorViewMixin:
             return
         coordinator.sync_from_editor()
 
+    def _visible_floors_for_selection(self) -> list[int]:
+        editor = cast("QtMapEditor", self)
+        floor = int(editor.viewport.z)
+        show_all = bool(getattr(editor, "show_all_floors", False))
+        if show_all:
+            if floor < 8:
+                start_z = 7
+            else:
+                start_z = min(15, floor + 2)
+        else:
+            start_z = floor
+        end_z = floor
+        if start_z >= end_z:
+            return list(range(start_z, end_z - 1, -1))
+        return list(range(start_z, end_z + 1))
+
     def _set_view_flag(self, name: str, value: bool) -> None:
         editor = cast("QtMapEditor", self)
         try:
@@ -78,6 +94,28 @@ class QtMapEditorViewMixin:
                 dock.raise_()
         except Exception:
             pass
+
+    def _toggle_ingame_preview(self, checked: bool) -> None:
+        editor = cast("QtMapEditor", self)
+        if not hasattr(editor, "ingame_preview_enabled"):
+            editor.ingame_preview_enabled = False
+        if checked:
+            try:
+                from py_rme_canary.vis_layer.preview.preview_controller import PreviewController
+            except Exception as exc:
+                QMessageBox.warning(editor, "In-Game Preview", f"Failed to import preview window: {exc}")
+                return
+            controller = getattr(editor, "ingame_preview_controller", None)
+            if controller is None:
+                controller = PreviewController(editor)
+                editor.ingame_preview_controller = controller
+            controller.start()
+            editor.ingame_preview_enabled = True
+        else:
+            controller = getattr(editor, "ingame_preview_controller", None)
+            if controller is not None:
+                controller.stop()
+            editor.ingame_preview_enabled = False
 
     def _sync_dock_action(self, act: QAction, visible: bool) -> None:
         try:

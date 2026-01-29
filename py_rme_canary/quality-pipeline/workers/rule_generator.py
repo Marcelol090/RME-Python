@@ -12,7 +12,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import requests
 import yaml
@@ -69,19 +69,19 @@ class CodebaseAnalyzer:
             # Mutable default arguments
             if isinstance(node, ast.FunctionDef):
                 for default in node.args.defaults:
-                    if isinstance(default, (ast.List, ast.Dict, ast.Set)):
+                    if isinstance(default, ast.List | ast.Dict | ast.Set):
                         patterns["mutable_defaults"].append(
                             {"file": str(file_path), "line": node.lineno, "function": node.name}
                         )
 
             # Type comparisons (type(x) == Y)
-            if isinstance(node, ast.Compare):
-                if (
-                    isinstance(node.left, ast.Call)
-                    and isinstance(node.left.func, ast.Name)
-                    and node.left.func.id == "type"
-                ):
-                    patterns["type_comparisons"].append({"file": str(file_path), "line": node.lineno})
+            if (
+                isinstance(node, ast.Compare)
+                and isinstance(node.left, ast.Call)
+                and isinstance(node.left.func, ast.Name)
+                and node.left.func.id == "type"
+            ):
+                patterns["type_comparisons"].append({"file": str(file_path), "line": node.lineno})
 
             # Global keyword
             if isinstance(node, ast.Global):
@@ -115,7 +115,6 @@ class CopilotProvider(LLMProvider):
         """Generate rules via Copilot"""
 
         summary = analysis["summary"]
-        patterns = analysis["patterns"]
 
         prompt = f"""Generate ast-grep rules (YAML format) to detect and fix these Python anti-patterns:
 
@@ -243,7 +242,11 @@ Output {max_rules} rules in valid YAML format. Include pattern matching and fixe
 class RuleGenerator:
     """Main rule generation orchestrator"""
 
-    PROVIDERS = {"copilot": CopilotProvider, "antigravity": AntiGravityProvider, "claude": ClaudeProvider}
+    PROVIDERS: ClassVar[dict[str, type[LLMProvider]]] = {
+        "copilot": CopilotProvider,
+        "antigravity": AntiGravityProvider,
+        "claude": ClaudeProvider,
+    }
 
     def __init__(self, provider: str):
         if provider not in self.PROVIDERS:

@@ -40,6 +40,33 @@ class ClipboardManager:
         self._buffer_tiles.clear()
         self._buffer_pos = None
 
+    def load_tiles(self, tiles: list[Tile], origin: TileKey | None = None) -> bool:
+        """Load external tiles into the buffer.
+
+        Args:
+            tiles: List of tiles to load
+            origin: Optional buffer origin; if None, min position is used
+
+        Returns:
+            True if any tiles were loaded.
+        """
+        if not tiles:
+            return False
+
+        buffer_tiles: dict[TileKey, Tile] = {}
+        min_x = min(int(t.x) for t in tiles)
+        min_y = min(int(t.y) for t in tiles)
+        min_z = min(int(t.z) for t in tiles)
+        for t in tiles:
+            buffer_tiles[(int(t.x), int(t.y), int(t.z))] = t
+
+        self._buffer_tiles = buffer_tiles
+        if origin is None:
+            self._buffer_pos = (int(min_x), int(min_y), int(min_z))
+        else:
+            self._buffer_pos = (int(origin[0]), int(origin[1]), int(origin[2]))
+        return True
+
     def copy_tiles(self, selection: set[TileKey]) -> bool:
         """Copy selected tiles into the buffer.
 
@@ -122,6 +149,10 @@ class ClipboardManager:
                 map_flags=int(buffer_tile.map_flags),
                 zones=buffer_tile.zones,
                 modified=True,
+                monsters=list(buffer_tile.monsters),
+                npc=buffer_tile.npc,
+                spawn_monster=buffer_tile.spawn_monster,
+                spawn_npc=buffer_tile.spawn_npc,
             )
 
             after: Tile
@@ -133,6 +164,16 @@ class ClipboardManager:
                     before_house = int(before.house_id or 0)
                     moved_flags = int(getattr(moved, "map_flags", 0) or 0)
                     before_flags = int(getattr(before, "map_flags", 0) or 0)
+                    merged_monsters = list(before.monsters)
+                    if moved.monsters:
+                        merged_monsters.extend(moved.monsters)
+                    merged_npc = moved.npc if moved.npc is not None else before.npc
+                    merged_spawn_monster = (
+                        moved.spawn_monster if moved.spawn_monster is not None else before.spawn_monster
+                    )
+                    merged_spawn_npc = moved.spawn_npc if moved.spawn_npc is not None else before.spawn_npc
+                    merged_zones = before.zones | moved.zones
+
                     after = Tile(
                         x=int(dst[0]),
                         y=int(dst[1]),
@@ -141,8 +182,12 @@ class ClipboardManager:
                         items=list(before.items) + list(moved.items),
                         house_id=before_house if moved_house == 0 else moved_house,
                         map_flags=before_flags | moved_flags,
-                        zones=before.zones,
+                        zones=merged_zones,
                         modified=True,
+                        monsters=merged_monsters,
+                        npc=merged_npc,
+                        spawn_monster=merged_spawn_monster,
+                        spawn_npc=merged_spawn_npc,
                     )
             else:
                 after = moved

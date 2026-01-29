@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -8,6 +7,8 @@ from py_rme_canary.core.data.houses import House
 from py_rme_canary.core.data.item import Position
 from py_rme_canary.core.exceptions.io import HousesXmlError
 from py_rme_canary.core.io.xml.base import as_bool, as_int
+from py_rme_canary.core.io.xml.safe import Element
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 def parse_houses_xml(xml_text: str) -> dict[int, House]:
@@ -66,7 +67,7 @@ def parse_houses_xml(xml_text: str) -> dict[int, House]:
     return out
 
 
-def _indent(elem: ET.Element, level: int = 0) -> None:
+def _indent(elem: Element, level: int = 0) -> None:
     i = "\n" + level * "\t"
     if len(elem):
         if not elem.text or not elem.text.strip():

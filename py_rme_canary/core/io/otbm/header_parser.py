@@ -63,7 +63,7 @@ def read_root_header(stream: BinaryIO, *, allow_unsupported_versions: bool = Fal
     version_bytes = root_payload.read_escaped_bytes(4)
     otbm_version = struct.unpack("<I", version_bytes)[0]
 
-    if not allow_unsupported_versions and otbm_version not in (1, 2):
+    if not allow_unsupported_versions and otbm_version not in (1, 2, 5, 6):
         raise OTBMParseError(f"Unsupported OTBM version: {otbm_version}")
 
     # Read dimensions

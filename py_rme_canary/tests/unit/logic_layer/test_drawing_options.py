@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from py_rme_canary.logic_layer.drawing_options import DrawingOptions, TransparencyMode
+from py_rme_canary.logic_layer.settings import LIGHT_PRESETS
 
 
 class TestDrawingOptions:
@@ -79,6 +80,33 @@ class TestDrawingOptions:
         assert opts.show_items is True
         assert opts.show_monsters is True
         assert opts.show_npcs is True
+
+    def test_show_lights_toggles_presets(self):
+        """Show lights should enable/disable the default presets."""
+        opts = DrawingOptions()
+
+        opts.set_show_lights(True)
+        assert opts.light_settings == LIGHT_PRESETS["twilight"]
+        assert opts.show_lights is True
+
+        opts.set_show_lights(False)
+        assert opts.light_settings == LIGHT_PRESETS["editor_default"]
+        assert opts.show_lights is False
+
+    def test_set_light_settings_notify_flag(self):
+        """set_light_settings should respect the notify flag."""
+        opts = DrawingOptions()
+        notifications: list[None] = []
+
+        def on_change() -> None:
+            notifications.append(None)
+
+        opts._on_change = on_change
+        opts.set_light_settings(LIGHT_PRESETS["night"], notify=False)
+        assert len(notifications) == 0
+
+        opts.set_light_settings(LIGHT_PRESETS["night"], notify=True)
+        assert len(notifications) == 1
 
     def test_is_only_colors(self):
         """Test is_only_colors() helper method."""

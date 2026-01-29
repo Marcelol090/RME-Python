@@ -8,24 +8,22 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import replace
-from typing import Any
+from typing import Any, cast
 
 from py_rme_canary.core.data.gamemap import GameMap
 from py_rme_canary.core.data.item import Item
 from py_rme_canary.core.data.tile import Tile
 
 from ..brush_definitions import BrushDefinition
-
 from .alignment import (
     select_border_alignment_when_present,
     select_border_id_from_definition,
     transition_alignment_weight,
 )
-from .neighbor_mask import (
-    NEIGHBOR_OFFSETS,
-    compute_neighbor_mask_for_ground,
-    compute_neighbor_mask_for_target_ground,
-)
+from .border_friends import SupportsFriends, brushes_are_friends, friend_of
+from .border_groups import BorderGroupRegistry
+from .ground_equivalents import GroundEquivalentRegistry
+from .neighbor_mask import NEIGHBOR_OFFSETS
 from .tile_utils import (
     Placement,
     get_relevant_item_id,
@@ -146,6 +144,72 @@ class AutoBorderProcessor:
         self.game_map = game_map
         self.brush_mgr = brush_manager
         self._change_recorder = change_recorder
+
+    def _border_groups_registry(self) -> BorderGroupRegistry | None:
+        reg = getattr(self.brush_mgr, "border_groups", None)
+        if callable(reg):
+            return reg()
+        return getattr(self.brush_mgr, "_border_groups", None)
+
+    def _ground_equivalents_registry(self) -> GroundEquivalentRegistry | None:
+        reg = getattr(self.brush_mgr, "ground_equivalents", None)
+        if callable(reg):
+            return reg()
+        return getattr(self.brush_mgr, "_ground_equivalents", None)
+
+    def _resolve_ground_id(self, tile: Tile | None) -> int | None:
+        reg = self._ground_equivalents_registry()
+        if reg is None:
+            return None if tile is None or tile.ground is None else int(tile.ground.id)
+        return reg.resolve_ground_id(tile)
+
+    def _brush_for_ground_id(self, ground_id: int) -> BrushDefinition | None:
+        getter = getattr(self.brush_mgr, "get_brush_any", None)
+        if callable(getter):
+            return getter(int(ground_id))
+        getter = getattr(self.brush_mgr, "get_brush", None)
+        if callable(getter):
+            return getter(int(ground_id))
+        return None
+
+    def _is_same_ground_tile(self, tile: Tile | None, brush_def: BrushDefinition) -> bool:
+        ground_id = self._resolve_ground_id(tile)
+        if ground_id is None:
+            return False
+        if int(ground_id) == int(brush_def.server_id):
+            return True
+        if int(ground_id) in {int(v) for v in brush_def.randomize_ids}:
+            return True
+        other = self._brush_for_ground_id(int(ground_id))
+        if other is None:
+            return friend_of(
+                friends=brush_def.friends,
+                hate_friends=brush_def.hate_friends,
+                other_id=int(ground_id),
+            )
+        if brush_def.border_group is not None and other.border_group == brush_def.border_group:
+            return True
+        return brushes_are_friends(
+            cast(SupportsFriends, brush_def),
+            cast(SupportsFriends, other),
+        ).is_friend
+
+    def _compute_ground_neighbor_mask(self, x: int, y: int, z: int, brush_def: BrushDefinition) -> int:
+        mask = 0
+        for bit, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+            t = self.game_map.get_tile(int(x + dx), int(y + dy), int(z))
+            if self._is_same_ground_tile(t, brush_def):
+                mask |= 1 << bit
+        return int(mask)
+
+    def _compute_target_neighbor_mask(self, x: int, y: int, z: int, target_ids: set[int]) -> int:
+        mask = 0
+        for bit, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+            t = self.game_map.get_tile(int(x + dx), int(y + dy), int(z))
+            gid = self._resolve_ground_id(t)
+            if gid is not None and int(gid) in target_ids:
+                mask |= 1 << bit
+        return int(mask)
 
     def _set_tile(self, tile: Tile) -> None:
         """Set tile and record change if recorder is present."""
@@ -437,26 +501,18 @@ class AutoBorderProcessor:
         if int(tile.ground.id) != int(brush_def.server_id):
             return
 
-        mask = compute_neighbor_mask_for_ground(
-            self.game_map,
-            x=int(x),
-            y=int(y),
-            z=int(z),
-            same_ground_ids=(int(brush_def.server_id),),
-        )
+        mask = self._compute_ground_neighbor_mask(int(x), int(y), int(z), brush_def)
 
         # 1) Prefer an inner transition border if any target neighbors exist.
         transition_selected_id: int | None = None
         transition_best_score: int = -1
         for to_server_id, tborders in brush_def.transition_borders.items():
             to_server_id = int(to_server_id)
-            mask_t = compute_neighbor_mask_for_target_ground(
-                self.game_map,
-                x=int(x),
-                y=int(y),
-                z=int(z),
-                target_ground_ids=(to_server_id,),
-            )
+            target_ids = {int(to_server_id)}
+            target_brush = self._brush_for_ground_id(int(to_server_id))
+            if target_brush is not None:
+                target_ids.update(int(v) for v in target_brush.randomize_ids)
+            mask_t = self._compute_target_neighbor_mask(int(x), int(y), int(z), target_ids)
             if mask_t == 0:
                 continue
             alignment_t = select_border_alignment_when_present(mask_t, borders=tborders)
@@ -480,6 +536,9 @@ class AutoBorderProcessor:
 
         border_ids = {int(v) for v in brush_def.family_ids}
         border_ids.discard(int(brush_def.server_id))
+        border_groups = self._border_groups_registry()
+        if border_groups is not None and brush_def.border_group is not None:
+            border_ids.update(border_groups.items_for_group(int(brush_def.border_group)))
         new_items = [it for it in tile.items if int(it.id) not in border_ids]
         new_items.insert(0, Item(id=int(selected_id)))
         if new_items == tile.items:
@@ -528,9 +587,6 @@ def paint_with_optional_autoborder(
     AutoBorderProcessor(game_map, brush_manager).update_tile(int(x), int(y), int(z), selected_server_id)
 
 
-
-
-
 def apply_brush_definition_around_positions(
     game_map: GameMap,
     *,
@@ -538,6 +594,8 @@ def apply_brush_definition_around_positions(
     positions: Iterable[tuple[int, int, int]],
     placement: Placement = "border_item",
     clean_existing: bool = True,
+    border_groups: BorderGroupRegistry | None = None,
+    ground_equivalents: GroundEquivalentRegistry | None = None,
 ) -> list[tuple[int, int, int]]:
     """Apply a `BrushDefinition` (from brushes.json) to positions and neighbors."""
     expanded: set[tuple[int, int, int]] = set()
@@ -546,11 +604,21 @@ def apply_brush_definition_around_positions(
         for dx, dy in NEIGHBOR_OFFSETS:
             expanded.add((int(x + dx), int(y + dy), int(z)))
 
-    same_ids = (int(brush.server_id),)
+    same_ids: set[int] = {int(brush.server_id), *[int(v) for v in brush.randomize_ids]}
     border_ids = {int(v) for v in brush.family_ids}
     border_ids.discard(int(brush.server_id))
+    if border_groups is not None and brush.border_group is not None:
+        border_ids.update(border_groups.items_for_group(int(brush.border_group)))
 
     modified: list[tuple[int, int, int]] = []
+
+    def resolve_ground_id(tile: Tile | None) -> int | None:
+        if tile is None:
+            return None
+        if ground_equivalents is None:
+            return None if tile.ground is None else int(tile.ground.id)
+        return ground_equivalents.resolve_ground_id(tile)
+
     for x, y, z in sorted(expanded):
         tile = game_map.get_tile(int(x), int(y), int(z))
         if tile is None or tile.ground is None:
@@ -558,18 +626,23 @@ def apply_brush_definition_around_positions(
         if int(tile.ground.id) != int(brush.server_id):
             continue
 
-        mask = compute_neighbor_mask_for_ground(game_map, x=int(x), y=int(y), z=int(z), same_ground_ids=same_ids)
+        mask = 0
+        for bit, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+            neighbor = game_map.get_tile(int(x + dx), int(y + dy), int(z))
+            gid = resolve_ground_id(neighbor)
+            if gid is not None and int(gid) in same_ids:
+                mask |= 1 << bit
 
         selected_id: int | None = None
         transition_best_score: int = -1
         for to_server_id, tborders in brush.transition_borders.items():
-            mask_t = compute_neighbor_mask_for_target_ground(
-                game_map,
-                x=int(x),
-                y=int(y),
-                z=int(z),
-                target_ground_ids=(int(to_server_id),),
-            )
+            mask_t = 0
+            target_id = int(to_server_id)
+            for bit, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+                neighbor = game_map.get_tile(int(x + dx), int(y + dy), int(z))
+                gid = resolve_ground_id(neighbor)
+                if gid is not None and int(gid) == target_id:
+                    mask_t |= 1 << bit
             if mask_t == 0:
                 continue
             alignment_t = select_border_alignment_when_present(mask_t, borders=tborders)

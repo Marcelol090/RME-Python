@@ -3,6 +3,7 @@
 Removes items, creatures, and spawn markers from tiles.
 Mirrors legacy C++ EraserBrush from brush.cpp (included in main brush file).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -52,7 +53,7 @@ class EraserBrush:
         """Get brush name."""
         return "Eraser"
 
-    def can_draw(self, game_map: "GameMap", pos: "Position") -> bool:
+    def can_draw(self, game_map: GameMap, pos: Position) -> bool:
         """Check if there's something to erase."""
         tile = game_map.get_tile(pos.x, pos.y, pos.z)
         if tile is None:
@@ -67,18 +68,13 @@ class EraserBrush:
             return True
         if EraserMode.NPCS in self.mode and tile.npc is not None:
             return True
-        if EraserMode.SPAWNS in self.mode and (
-            tile.spawn_monster is not None or tile.spawn_npc is not None
-        ):
-            return True
-
-        return False
+        return bool(EraserMode.SPAWNS in self.mode and (tile.spawn_monster is not None or tile.spawn_npc is not None))
 
     def draw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Erase elements from tile based on mode."""
         tile = game_map.get_tile(pos.x, pos.y, pos.z)
         if tile is None:
@@ -89,9 +85,7 @@ class EraserBrush:
         new_items = tile.items if EraserMode.ITEMS not in self.mode else []
         new_monsters = tile.monsters if EraserMode.MONSTERS not in self.mode else []
         new_npc = tile.npc if EraserMode.NPCS not in self.mode else None
-        new_spawn_monster = (
-            tile.spawn_monster if EraserMode.SPAWNS not in self.mode else None
-        )
+        new_spawn_monster = tile.spawn_monster if EraserMode.SPAWNS not in self.mode else None
         new_spawn_npc = tile.spawn_npc if EraserMode.SPAWNS not in self.mode else None
 
         # Check if anything changed

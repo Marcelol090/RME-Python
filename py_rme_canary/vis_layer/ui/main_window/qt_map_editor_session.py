@@ -36,6 +36,51 @@ class QtMapEditorSessionMixin:
         self.apply_ui_state_to_session()
         self.status.showMessage(f"Automagic {'enabled' if enabled else 'disabled'}")
 
+    def _toggle_symmetry_vertical(self, enabled: bool) -> None:
+        """Toggle vertical symmetry mode."""
+        from py_rme_canary.logic_layer.symmetry_manager import get_symmetry_manager
+
+        manager = get_symmetry_manager()
+        manager.vertical_enabled = bool(enabled)
+
+        # Initialize center if not set
+        if manager.center_x == 0 and hasattr(self, "session"):
+            try:
+                w = getattr(self.session, "map_width", 2048) or 2048
+                manager.center_x = w // 2
+            except Exception:
+                manager.center_x = 1024
+
+        self.status.showMessage(f"Symmetry Vertical {'enabled' if enabled else 'disabled'}")
+        self._update_symmetry_overlay()
+
+    def _toggle_symmetry_horizontal(self, enabled: bool) -> None:
+        """Toggle horizontal symmetry mode."""
+        from py_rme_canary.logic_layer.symmetry_manager import get_symmetry_manager
+
+        manager = get_symmetry_manager()
+        manager.horizontal_enabled = bool(enabled)
+
+        # Initialize center if not set
+        if manager.center_y == 0 and hasattr(self, "session"):
+            try:
+                h = getattr(self.session, "map_height", 2048) or 2048
+                manager.center_y = h // 2
+            except Exception:
+                manager.center_y = 1024
+
+        self.status.showMessage(f"Symmetry Horizontal {'enabled' if enabled else 'disabled'}")
+        self._update_symmetry_overlay()
+
+    def _update_symmetry_overlay(self) -> None:
+        """Update symmetry overlay widget if present."""
+        if hasattr(self, "symmetry_overlay"):
+            try:
+                self.symmetry_overlay.update()
+            except Exception:
+                pass
+
+
     def _borderize_selection(self, _checked: bool = False) -> None:
         if not self.session.has_selection():
             self.status.showMessage("Borderize selection: nothing selected")
@@ -53,6 +98,52 @@ class QtMapEditorSessionMixin:
             self.canvas.update()
             self.status.showMessage("Borderize selection: done")
         self._update_action_enabled_states()
+
+    def _open_border_builder(self) -> None:
+        from py_rme_canary.vis_layer.ui.dialogs.border_builder_dialog import BorderBuilderDialog
+
+        brush_manager = getattr(self.session, "brush_manager", None)
+        if brush_manager is None:
+            brush_manager = getattr(self, "brush_manager", None)
+
+        dialog = BorderBuilderDialog(brush_manager, parent=self._as_editor())
+        dialog.exec()
+
+    def _export_png(self) -> None:
+        """Open PNG export dialog."""
+        from py_rme_canary.vis_layer.ui.dialogs.png_export_dialog import PNGExportDialog
+
+        dialog = PNGExportDialog(parent=self._as_editor(), session=self.session)
+        dialog.exec()
+
+    def _toggle_dark_mode(self, enabled: bool) -> None:
+        """Toggle dark mode theme."""
+        from py_rme_canary.logic_layer.theme_manager import ThemeMode, get_theme_manager
+        from PyQt6.QtWidgets import QApplication
+
+        manager = get_theme_manager()
+        manager.set_theme(ThemeMode.DARK if enabled else ThemeMode.LIGHT)
+
+        app = QApplication.instance()
+        if app:
+            app.setStyleSheet(manager.get_stylesheet())
+
+        self.status.showMessage(f"Dark Mode {'enabled' if enabled else 'disabled'}")
+
+    def _replace_items(self) -> None:
+        """Open Replace Items dialog."""
+        from py_rme_canary.vis_layer.ui.dialogs.replace_items_dialog import ReplaceItemsDialog
+
+        dialog = ReplaceItemsDialog(parent=self._as_editor(), session=self.session)
+        dialog.exec()
+
+    def _check_uid(self) -> None:
+        """Open UID Report dialog."""
+        from py_rme_canary.vis_layer.ui.dialogs.uid_report_dialog import UIDReportDialog
+
+        dialog = UIDReportDialog(parent=self._as_editor(), session=self.session)
+        dialog.show()  # Non-modal for navigation while dialog is open
+
 
     def _clear_modified_state(self) -> None:
         ret = QMessageBox.question(
@@ -884,3 +975,25 @@ class QtMapEditorSessionMixin:
         except Exception:
             pass
         self._update_action_enabled_states()
+
+    def _poll_live_events(self) -> None:
+        try:
+            count = int(self.session.process_live_events())
+        except Exception:
+            return
+        if count > 0:
+            self.canvas.update()
+
+    def _handle_live_chat(self, client_id: int, name: str, message: str) -> None:
+        if not hasattr(self, "dock_live_log") or self.dock_live_log is None:
+            return
+        label = str(name or f"#{int(client_id)}")
+        self.dock_live_log.add_message(label, str(message))
+
+    def _handle_live_client_list(self, clients: list[dict[str, object]]) -> None:
+        if not hasattr(self, "dock_live_log") or self.dock_live_log is None:
+            return
+        self.dock_live_log.update_user_list(clients)
+
+    def _handle_live_cursor(self, _client_id: int, _x: int, _y: int, _z: int) -> None:
+        self.canvas.update()

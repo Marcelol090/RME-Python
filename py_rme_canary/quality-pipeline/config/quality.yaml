@@ -7,11 +7,11 @@ global:
   mode: dry-run  # dry-run | apply
   verbose: false
   workers: 1  # Number of parallel workers (v2.2+)
-  
+
   # Dashboard
   enable_dashboard: true  # Requires gum
   dashboard_refresh: 2  # seconds
-  
+
   # Telemetry
   enable_telemetry: false  # OpenTelemetry integration
   telemetry_endpoint: ""  # Leave empty for local file
@@ -24,50 +24,50 @@ modules:
     select: "F,E,W,I,N,UP,B,C4,SIM,PERF,PL,RUF,S"
     fix: true
     format: true
-  
+
   mypy:
     enabled: true
     strict_mode: true
     cache_dir: .quality_cache/mypy_cache
-  
+
   radon:
     enabled: true
     cc_threshold: 10  # Cyclomatic complexity
     mi_threshold: 20  # Maintainability index
-  
+
   astgrep:
     enabled: true
     rules_dir: tools/ast_rules/python
     auto_rewrite: false  # Only with mode: apply
-  
+
   libcst:
     enabled: false  # Opt-in (complex transforms)
     transforms_dir: tools/libcst_transforms
-  
+
   # v2.1 AI Integrations
   copilot_integration:
     enabled: false  # Requires GITHUB_TOKEN
     max_files: 50
     auto_apply: false  # Auto-apply high-confidence fixes
     confidence_threshold: 0.9
-  
+
   antigravity_integration:
     enabled: false  # Requires ANTIGRAVITY_API_KEY
     mode: refactor  # refactor | review | security
     max_files: 100
-  
+
   llm_rule_generator:
     enabled: false  # Requires LLM provider
     provider: auto  # auto | copilot | antigravity | claude
     max_rules: 20
     auto_apply: false  # Auto-apply generated rules
-  
+
   # Security & Quality
   sonar:
     enabled: false  # Requires sonar-scanner
     project_key: py-rme-canary
     host_url: http://localhost:9000
-  
+
   # Testing
   pytest:
     enabled: true
@@ -78,22 +78,22 @@ modules:
 llm:
   # Provider selection (auto-detect if not specified)
   provider: auto  # auto | copilot | antigravity | claude
-  
+
   # Rate limiting
   max_requests_per_minute: 10
   retry_attempts: 3
   retry_backoff: exponential  # exponential | linear
-  
+
   # Model configuration
   copilot:
     model: gpt-4
     temperature: 0.3
     max_tokens: 2000
-  
+
   antigravity:
     timeout: 60  # seconds
     include_fixes: true
-  
+
   claude:
     model: claude-3-5-sonnet-20241022
     max_tokens: 4000
@@ -104,11 +104,11 @@ reports:
   formats:
     - json
     - markdown
-  
+
   # Consolidated report
   generate_summary: true
   include_diffs: true
-  
+
   # Notifications (future: Slack, email)
   notify_on_failure: false
   notify_webhook: ""
@@ -118,7 +118,7 @@ cache:
   enabled: true
   dir: .quality_cache
   ttl: 86400  # seconds (24h)
-  
+
   # v2.2: Redis distributed cache
   redis:
     enabled: false
@@ -136,17 +136,17 @@ advanced:
         config: config/core.yaml
       - path: packages/ui
         config: config/ui.yaml
-  
+
   # Parallel execution
   parallel:
     enabled: false  # v2.2+
     max_workers: 4
     backend: multiprocessing  # multiprocessing | threading
-  
+
   # Rollback
   auto_rollback: true
   rollback_on_test_failure: true
-  
+
   # Git integration
   git:
     auto_commit: false

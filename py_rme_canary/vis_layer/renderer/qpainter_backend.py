@@ -7,6 +7,18 @@ from PyQt6.QtCore import QRect
 from PyQt6.QtGui import QColor, QPainter, QPen, QPixmap
 
 
+def _color_from_id(sprite_id: int) -> QColor:
+    v = int(sprite_id) & 0xFFFFFFFF
+    r = (v * 2654435761) & 0xFF
+    g = (v * 2246822519) & 0xFF
+    b = (v * 3266489917) & 0xFF
+
+    def clamp(c: int) -> int:
+        return 48 + (int(c) % 160)
+
+    return QColor(clamp(r), clamp(g), clamp(b))
+
+
 class QPainterRenderBackend:
     """RenderBackend implementation that draws using QPainter."""
 
@@ -33,6 +45,8 @@ class QPainterRenderBackend:
     def draw_tile_sprite(self, x: int, y: int, size: int, sprite_id: int) -> None:
         pm = self._sprite_lookup(int(sprite_id), int(size))
         if pm is None or pm.isNull():
+            rect = QRect(int(x), int(y), int(size), int(size))
+            self._painter.fillRect(rect, _color_from_id(int(sprite_id)))
             return
         self._painter.drawPixmap(int(x), int(y), pm)
 

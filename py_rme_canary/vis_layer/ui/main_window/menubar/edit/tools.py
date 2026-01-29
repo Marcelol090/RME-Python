@@ -61,6 +61,10 @@ def borderize_selection(editor) -> None:
     editor._borderize_selection()
 
 
+def open_border_builder(editor) -> None:
+    editor._open_border_builder()
+
+
 def arm_fill(editor) -> None:
     editor._arm_fill()
 
@@ -83,3 +87,28 @@ def create_additional_palette(editor) -> None:
 
 def select_palette(editor, key: str) -> None:
     editor._select_palette(str(key))
+
+
+def toggle_symmetry_vertical(editor, enabled: bool) -> None:
+    editor._toggle_symmetry_vertical(bool(enabled))
+
+
+def toggle_symmetry_horizontal(editor, enabled: bool) -> None:
+    editor._toggle_symmetry_horizontal(bool(enabled))
+
+
+def replace_items(editor) -> None:
+    """Open Replace Items dialog."""
+    editor._replace_items()
+
+
+def check_uid(editor) -> None:
+    """Open UID Report dialog."""
+    editor._check_uid()
+
+
+def toggle_lasso(editor, enabled: bool) -> None:
+    """Toggle lasso selection tool."""
+    editor._toggle_lasso(bool(enabled))
+
+

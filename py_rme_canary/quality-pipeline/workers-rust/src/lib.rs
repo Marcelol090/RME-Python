@@ -16,13 +16,13 @@ use walkdir::WalkDir;
 pub struct AnalysisResult {
     #[pyo3(get, set)]
     pub file: String,
-    
+
     #[pyo3(get, set)]
     pub issues: Vec<Issue>,
-    
+
     #[pyo3(get, set)]
     pub complexity: u32,
-    
+
     #[pyo3(get, set)]
     pub duration_ms: u64,
 }
@@ -38,7 +38,7 @@ impl AnalysisResult {
             duration_ms,
         }
     }
-    
+
     fn __repr__(&self) -> String {
         format!(
             "AnalysisResult(file='{}', issues={}, complexity={})",
@@ -55,16 +55,16 @@ impl AnalysisResult {
 pub struct Issue {
     #[pyo3(get, set)]
     pub line: usize,
-    
+
     #[pyo3(get, set)]
     pub column: usize,
-    
+
     #[pyo3(get, set)]
     pub severity: String,
-    
+
     #[pyo3(get, set)]
     pub message: String,
-    
+
     #[pyo3(get, set)]
     pub rule_id: String,
 }
@@ -87,19 +87,19 @@ impl Issue {
 #[pyfunction]
 fn scan_python_files(root_path: String, exclude_patterns: Vec<String>) -> PyResult<Vec<String>> {
     let root = Path::new(&root_path);
-    
+
     let files: Vec<String> = WalkDir::new(root)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| {
             let path = e.path();
-            
+
             // Check if file is .py
             if !path.extension().map_or(false, |ext| ext == "py") {
                 return false;
             }
-            
+
             // Check exclusion patterns
             let path_str = path.to_string_lossy();
             for pattern in &exclude_patterns {
@@ -107,12 +107,12 @@ fn scan_python_files(root_path: String, exclude_patterns: Vec<String>) -> PyResu
                     return false;
                 }
             }
-            
+
             true
         })
         .map(|e| e.path().to_string_lossy().into_owned())
         .collect();
-    
+
     Ok(files)
 }
 
@@ -120,7 +120,7 @@ fn scan_python_files(root_path: String, exclude_patterns: Vec<String>) -> PyResu
 #[pyfunction]
 fn hash_files(file_paths: Vec<String>) -> PyResult<HashMap<String, String>> {
     use sha2::{Digest, Sha256};
-    
+
     let hashes: HashMap<String, String> = file_paths
         .par_iter()
         .filter_map(|path| {
@@ -131,7 +131,7 @@ fn hash_files(file_paths: Vec<String>) -> PyResult<HashMap<String, String>> {
             Some((path.clone(), hash))
         })
         .collect();
-    
+
     Ok(hashes)
 }
 
@@ -141,17 +141,17 @@ fn analyze_complexity(source: String) -> PyResult<u32> {
     // Simplified complexity metric:
     // Count control flow keywords
     let keywords = [
-        "if", "elif", "else", "for", "while", 
+        "if", "elif", "else", "for", "while",
         "try", "except", "finally", "with", "match", "case"
     ];
-    
+
     let mut complexity = 1; // Base complexity
-    
+
     for keyword in &keywords {
         let count = source.matches(keyword).count();
         complexity += count as u32;
     }
-    
+
     Ok(complexity)
 }
 
@@ -162,30 +162,30 @@ fn analyze_files_batch(
     max_workers: Option<usize>
 ) -> PyResult<Vec<AnalysisResult>> {
     use std::time::Instant;
-    
+
     // Configure thread pool
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(max_workers.unwrap_or_else(num_cpus::get))
         .build()
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-    
+
     let results: Vec<AnalysisResult> = pool.install(|| {
         file_paths
             .par_iter()
             .filter_map(|path| {
                 let start = Instant::now();
-                
+
                 // Read file
                 let source = fs::read_to_string(path).ok()?;
-                
+
                 // Analyze
                 let complexity = analyze_complexity(source.clone()).ok()?;
-                
+
                 // Detect issues (simplified)
                 let issues = detect_issues(&source, path);
-                
+
                 let duration_ms = start.elapsed().as_millis() as u64;
-                
+
                 Some(AnalysisResult {
                     file: path.clone(),
                     issues,
@@ -195,14 +195,14 @@ fn analyze_files_batch(
             })
             .collect()
     });
-    
+
     Ok(results)
 }
 
 /// Simple issue detection (proof-of-concept)
 fn detect_issues(source: &str, file_path: &str) -> Vec<Issue> {
     let mut issues = Vec::new();
-    
+
     for (line_num, line) in source.lines().enumerate() {
         // Detect bare except
         if line.trim() == "except:" {
@@ -214,7 +214,7 @@ fn detect_issues(source: &str, file_path: &str) -> Vec<Issue> {
                 rule_id: "E722".to_string(),
             });
         }
-        
+
         // Detect mutable defaults (simplified)
         if line.contains("def ") && line.contains("=[]") {
             issues.push(Issue {
@@ -225,7 +225,7 @@ fn detect_issues(source: &str, file_path: &str) -> Vec<Issue> {
                 rule_id: "B006".to_string(),
             });
         }
-        
+
         // Detect print statements
         if line.contains("print(") && !line.trim_start().starts_with('#') {
             issues.push(Issue {
@@ -237,7 +237,7 @@ fn detect_issues(source: &str, file_path: &str) -> Vec<Issue> {
             });
         }
     }
-    
+
     issues
 }
 
@@ -245,12 +245,12 @@ fn detect_issues(source: &str, file_path: &str) -> Vec<Issue> {
 #[pyfunction]
 fn generate_cache_key(file_path: String, config_hash: String) -> PyResult<String> {
     use sha2::{Digest, Sha256};
-    
+
     let input = format!("{}:{}", file_path, config_hash);
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
     let hash = format!("{:x}", hasher.finalize());
-    
+
     Ok(hash[..16].to_string())
 }
 
@@ -262,24 +262,24 @@ fn quality_worker_rust(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(analyze_complexity, m)?)?;
     m.add_function(wrap_pyfunction!(analyze_files_batch, m)?)?;
     m.add_function(wrap_pyfunction!(generate_cache_key, m)?)?;
-    
+
     m.add_class::<AnalysisResult>()?;
     m.add_class::<Issue>()?;
-    
+
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_complexity_simple() {
         let source = "def foo():\n    if x:\n        return 1".to_string();
         let complexity = analyze_complexity(source).unwrap();
         assert_eq!(complexity, 2); // Base 1 + if 1
     }
-    
+
     #[test]
     fn test_detect_bare_except() {
         let source = "try:\n    pass\nexcept:\n    pass";

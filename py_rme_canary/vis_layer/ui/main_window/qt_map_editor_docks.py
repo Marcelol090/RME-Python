@@ -38,3 +38,13 @@ class QtMapEditorDocksMixin:
                 pass
         else:
             editor.dock_actions_history.hide()
+
+    def _toggle_live_log_dock(self, checked: bool) -> None:
+        editor = cast("QtMapEditor", self)
+        if editor.dock_live_log is None:
+            return
+        if bool(checked):
+            editor.dock_live_log.show()
+            editor.dock_live_log.raise_()
+        else:
+            editor.dock_live_log.hide()

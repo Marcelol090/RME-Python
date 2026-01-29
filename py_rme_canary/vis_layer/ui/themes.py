@@ -57,9 +57,9 @@ def apply_dark_theme(app: QApplication):
 
     # Additional stylesheet for specific controls if needed
     app.setStyleSheet("""
-        QToolTip { 
-            color: #ffffff; 
-            background-color: #2a82da; 
-            border: 1px solid white; 
+        QToolTip {
+            color: #ffffff;
+            background-color: #2a82da;
+            border: 1px solid white;
         }
     """)

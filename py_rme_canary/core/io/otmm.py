@@ -546,9 +546,10 @@ class OTMMLoader:
         house_id: int | None = None
 
         if tile_type == OTMM_HOUSETILE:
-            house_id = struct.unpack("<I", payload.read_escaped_bytes(4))[0]
+            raw_house_id = struct.unpack("<I", payload.read_escaped_bytes(4))[0]
+            house_id = int(raw_house_id)
             if house_id not in houses:
-                houses[int(house_id)] = House(id=int(house_id))
+                houses[house_id] = House(id=house_id)
 
         ground_id = struct.unpack("<H", payload.read_escaped_bytes(2))[0]
         ground: Item | None = None

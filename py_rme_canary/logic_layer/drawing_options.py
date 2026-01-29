@@ -17,6 +17,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
+from py_rme_canary.logic_layer.settings import LIGHT_PRESETS, LightSettings
+
 
 class TransparencyMode(Enum):
     """Transparency rendering mode for floors/items."""
@@ -162,6 +164,9 @@ class DrawingOptions:
     # Lights
     show_lights: bool = False
     show_light_strength: bool = True
+    light_settings: LightSettings = field(
+        default_factory=lambda: LIGHT_PRESETS["editor_default"]
+    )
 
     # Client View
     show_ingame_box: bool = False
@@ -185,6 +190,7 @@ class DrawingOptions:
         self.show_ingame_box = False
         self.show_lights = False
         self.show_light_strength = True
+        self.light_settings = LIGHT_PRESETS["editor_default"]
         self.ingame = False
         self.dragging = False
 
@@ -224,6 +230,7 @@ class DrawingOptions:
         self.show_ingame_box = False
         self.show_lights = False
         self.show_light_strength = False
+        self.light_settings = LIGHT_PRESETS["editor_default"]
         self.ingame = True
         self.dragging = False
 
@@ -347,7 +354,19 @@ class DrawingOptions:
 
     def set_show_lights(self, value: bool) -> None:
         self.show_lights = bool(value)
+        if self.show_lights:
+            if not self.light_settings.enabled:
+                self.light_settings = LIGHT_PRESETS["twilight"]
+        else:
+            self.light_settings = LIGHT_PRESETS["editor_default"]
         self._notify_change()
+
+    def set_light_settings(self, settings: LightSettings, *, notify: bool = True) -> None:
+        """Set the current light rendering configuration."""
+
+        self.light_settings = settings
+        if notify:
+            self._notify_change()
 
     def set_show_as_minimap(self, value: bool) -> None:
         self.show_as_minimap = bool(value)

@@ -2,7 +2,7 @@
 applyTo: '**'
 priority: critical
 type: documentation-index
-lastUpdated: 2026-01-14
+lastUpdated: 2026-01-27
 ---
 
 # Documentation Index - py_rme_canary
@@ -13,188 +13,188 @@ Welcome to the py_rme_canary documentation! This index provides quick access to 
 
 ---
 
-## ��� Core Documentation
+## 🏗️ Core Documentation
 
-### ��� Project Overview
-- **[PRD.md](PRD.md)** - Product Requirements Document
+### 🔎 Project Overview
+- **[PRD.md](architecture/PRD.md)** - Product Requirements Document
   - Complete product vision, features, and requirements
   - Target users and success metrics
   - Technical architecture and dependencies
   - Release strategy and milestones
 
-- **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Project Structure Guide
+- **[PROJECT_STRUCTURE.md](architecture/PROJECT_STRUCTURE.md)** - Project Structure Guide
   - Ideal directory organization
   - File naming conventions
   - Module boundaries and dependency rules
   - Best practices and examples
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architecture Guide
+- **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** - Architecture Guide
   - Layer overview (core/logic/vis)
   - Import patterns and dependencies
   - Common usage examples
 
 ---
 
-## ��� Implementation & Status
+## 🚦 Implementation & Status
 
-### ��� Status Tracking
-- **[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)** - Feature Parity Checklist
+### 📊 Status Tracking
+- **[IMPLEMENTATION_STATUS.md](tracking/IMPLEMENTATION_STATUS.md)** - Feature Parity Checklist
   - Master checklist for C++ to Python porting
   - Status icons for all features
   - Parity table with percentages
 
-- **[IMPLEMENTATION_TODO.md](IMPLEMENTATION_TODO.md)** - Actionable TODOs
+- **[IMPLEMENTATION_TODO.md](tracking/IMPLEMENTATION_TODO.md)** - Actionable TODOs
   - Professional TODO tracking
   - Stub identification
   - Structure analysis
 
 
 
-### ��� Analysis Reports
+### 📋 Analysis Reports
 
 
-- **[ANALISE_FALTANTE.md](ANALISE_FALTANTE.md)** - Missing Features Analysis
+- **[ANALISE_FALTANTE.md](analysis/ANALISE_FALTANTE.md)** - Missing Features Analysis
   - Comparative analysis with legacy C++
   - Feature-by-feature breakdown
 
-- **[TECHNOLOGY_IMPLEMENTATION_DETAILS.md](TECHNOLOGY_IMPLEMENTATION_DETAILS.md)** - Technology Implementation Details
+- **[TECHNOLOGY_IMPLEMENTATION_DETAILS.md](architecture/TECHNOLOGY_IMPLEMENTATION_DETAILS.md)** - Technology Implementation Details
   - Deep-dive into implementation specifics
 
 ---
 
-## ���️ Development Guides
+## 🛠️ Development Guides
 
-### ��� Development Process
-- **[WALKTHROUGH.md](WALKTHROUGH.md)** - Development Walkthrough
+### 🔄 Development Process
+- **[WALKTHROUGH.md](guides/WALKTHROUGH.md)** - Development Walkthrough
   - Modernization phases (1-5)
   - Quality pipeline setup
   - Rollout verification
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contributing Guide
+- **[CONTRIBUTING.md](guides/CONTRIBUTING.md)** - Contributing Guide
   - How to contribute code
   - Code review process
   - Development workflow
 
-- **[TODO_EXPENSIVE.md](TODO_EXPENSIVE.md)** - Technical Debt
+- **[TODO_EXPENSIVE.md](tracking/TODO_EXPENSIVE.md)** - Technical Debt
   - High-priority technical debt
   - Expensive refactoring tasks
   - Long-term improvement items
 
 ---
 
-## ��� Quality Assurance
+## 🛡️ Quality Assurance
 
 ### ✅ Quality Standards
-- **[QUALITY_CHECKLIST.md](QUALITY_CHECKLIST.md)** - Quality Checklist
+- **[QUALITY_CHECKLIST.md](tracking/QUALITY_CHECKLIST.md)** - Quality Checklist
   - Quality gates and standards
   - Testing requirements
   - Code quality metrics
 
-- **[quality_pipeline_guide.md](quality_pipeline_guide.md)** - Quality Pipeline Guide
+- **[quality_pipeline_guide.md](guides/quality_pipeline_guide.md)** - Quality Pipeline Guide
   - Pipeline architecture (v2.1)
   - Tool integration
   - Automated workflows
 
-- **[quality_improvements_changelog.md](quality_improvements_changelog.md)** - Quality Improvements
+- **[quality_improvements_changelog.md](tracking/quality_improvements_changelog.md)** - Quality Improvements
   - History of quality improvements
   - Changelog of quality-related changes
 
 ---
 
-## ��� Release & Migration
+## 🚀 Release & Migration
 
-### ��� Release Planning
-- **[ROLLOUT_PLAN.md](ROLLOUT_PLAN.md)** - Rollout Plan
+### 📦 Release Planning
+- **[ROLLOUT_PLAN.md](tracking/ROLLOUT_PLAN.md)** - Rollout Plan
   - Release stages (Alpha → Beta → RC → GA)
   - Verification checklists
   - Timeline and milestones
 
-- **[MIGRATION_GUIDE_v2.1.md](MIGRATION_GUIDE_v2.1.md)** - Migration Guide
+- **[MIGRATION_GUIDE_v2.1.md](guides/MIGRATION_GUIDE_v2.1.md)** - Migration Guide
   - Migration from previous versions
   - Breaking changes
   - Upgrade instructions
 
-- **[CHANGELOG.md](CHANGELOG.md)** - Changelog
+- **[CHANGELOG.md](tracking/CHANGELOG.md)** - Changelog
   - Version history
   - Feature additions and bug fixes
 
 ---
 
-## ��� UI/UX & Legacy
+## 🖥️ UI/UX & Legacy
 
-### ���️ User Interface
-- **[LEGACY_GUI_MAPPING.md](LEGACY_GUI_MAPPING.md)** - Legacy GUI Mapping
+### 🖼️ User Interface
+- **[LEGACY_GUI_MAPPING.md](legacy/LEGACY_GUI_MAPPING.md)** - Legacy GUI Mapping
   - Mapping from C++ wxWidgets to PyQt6
   - UI component equivalents
 
-- **[agents.md](agents.md)** - AI Agents Documentation
+- **[agents.md](guides/agents.md)** - AI Agents Documentation
   - AI agent integration
   - Automation workflows
 
-### ��� System Design
-- **[memory_instruction.md](memory_instruction.md)** - Memory System
+### 📐 System Design
+- **[memory_instruction.md](guides/memory_instruction.md)** - Memory System
   - Memory guard system
   - Resource limits
   - Configuration
 
-- **[LEGACY_RME_OVERVIEW.md](LEGACY_RME_OVERVIEW.md)** - Legacy RME Overview
+- **[LEGACY_RME_OVERVIEW.md](legacy/LEGACY_RME_OVERVIEW.md)** - Legacy RME Overview
   - Legacy system design and mapping
 
 ---
 
-## ���️ Documentation by Audience
+## 🎯 Documentation by Audience
 
 ### For Product Managers
-1. [PRD.md](PRD.md) - Complete product vision
-2. [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) - Feature status
-3. [ROLLOUT_PLAN.md](ROLLOUT_PLAN.md) - Release plan
+1. [PRD.md](architecture/PRD.md) - Complete product vision
+2. [IMPLEMENTATION_STATUS.md](tracking/IMPLEMENTATION_STATUS.md) - Feature status
+3. [ROLLOUT_PLAN.md](tracking/ROLLOUT_PLAN.md) - Release plan
 
 ### For Developers
-1. [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture overview
-2. [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - File organization
-3. [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute
-4. [IMPLEMENTATION_TODO.md](IMPLEMENTATION_TODO.md) - What to work on
+1. [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Architecture overview
+2. [PROJECT_STRUCTURE.md](architecture/PROJECT_STRUCTURE.md) - File organization
+3. [CONTRIBUTING.md](guides/CONTRIBUTING.md) - How to contribute
+4. [IMPLEMENTATION_TODO.md](tracking/IMPLEMENTATION_TODO.md) - What to work on
 
 ### For QA/Testers
-1. [QUALITY_CHECKLIST.md](QUALITY_CHECKLIST.md) - Quality standards
-2. [quality_pipeline_guide.md](quality_pipeline_guide.md) - Testing pipeline
-3. [WALKTHROUGH.md](WALKTHROUGH.md) - Testing phases
+1. [QUALITY_CHECKLIST.md](tracking/QUALITY_CHECKLIST.md) - Quality standards
+2. [quality_pipeline_guide.md](guides/quality_pipeline_guide.md) - Testing pipeline
+3. [WALKTHROUGH.md](guides/WALKTHROUGH.md) - Testing phases
 
 ### For Architects
-1. [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
-2. [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Code organization
-3. [TODO_EXPENSIVE.md](TODO_EXPENSIVE.md) - Technical debt
+1. [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - System architecture
+2. [PROJECT_STRUCTURE.md](architecture/PROJECT_STRUCTURE.md) - Code organization
+3. [TODO_EXPENSIVE.md](tracking/TODO_EXPENSIVE.md) - Technical debt
 
 ### For Users
-1. [MIGRATION_GUIDE_v2.1.md](MIGRATION_GUIDE_v2.1.md) - How to migrate
-2. [CHANGELOG.md](CHANGELOG.md) - What's new
-3. [ROLLOUT_PLAN.md](ROLLOUT_PLAN.md) - Release timeline
+1. [MIGRATION_GUIDE_v2.1.md](guides/MIGRATION_GUIDE_v2.1.md) - How to migrate
+2. [CHANGELOG.md](tracking/CHANGELOG.md) - What's new
+3. [ROLLOUT_PLAN.md](tracking/ROLLOUT_PLAN.md) - Release timeline
 
 ---
 
-## ��� Quick Start
+## ⚡ Quick Start
 
 ### New to the Project?
-1. Start with [PRD.md](PRD.md) to understand the product vision
-2. Read [ARCHITECTURE.md](ARCHITECTURE.md) to understand the system
-3. Review [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for code organization
-4. Check [CONTRIBUTING.md](CONTRIBUTING.md) before making changes
+1. Start with [PRD.md](architecture/PRD.md) to understand the product vision
+2. Read [ARCHITECTURE.md](architecture/ARCHITECTURE.md) to understand the system
+3. Review [PROJECT_STRUCTURE.md](architecture/PROJECT_STRUCTURE.md) for code organization
+4. Check [CONTRIBUTING.md](guides/CONTRIBUTING.md) before making changes
 
 ### Want to Contribute?
-1. Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
-2. Check [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for what needs work
-3. Review [IMPLEMENTATION_TODO.md](IMPLEMENTATION_TODO.md) for specific tasks
-4. Follow [QUALITY_CHECKLIST.md](QUALITY_CHECKLIST.md) for quality standards
+1. Read [CONTRIBUTING.md](guides/CONTRIBUTING.md) for guidelines
+2. Check [IMPLEMENTATION_STATUS.md](tracking/IMPLEMENTATION_STATUS.md) for what needs work
+3. Review [IMPLEMENTATION_TODO.md](tracking/IMPLEMENTATION_TODO.md) for specific tasks
+4. Follow [QUALITY_CHECKLIST.md](tracking/QUALITY_CHECKLIST.md) for quality standards
 
 ### Planning a Release?
-1. Review [ROLLOUT_PLAN.md](ROLLOUT_PLAN.md) for release strategy
-2. Check [QUALITY_CHECKLIST.md](QUALITY_CHECKLIST.md) for quality gates
-3. Update [CHANGELOG.md](CHANGELOG.md) with changes
-4. Follow [MIGRATION_GUIDE_v2.1.md](MIGRATION_GUIDE_v2.1.md) for breaking changes
+1. Review [ROLLOUT_PLAN.md](tracking/ROLLOUT_PLAN.md) for release strategy
+2. Check [QUALITY_CHECKLIST.md](tracking/QUALITY_CHECKLIST.md) for quality gates
+3. Update [CHANGELOG.md](tracking/CHANGELOG.md) with changes
+4. Follow [MIGRATION_GUIDE_v2.1.md](guides/MIGRATION_GUIDE_v2.1.md) for breaking changes
 
 ---
 
-## ��� Document Status
+## 📊 Document Status
 
 | Document | Status | Last Updated | Completeness |
 |----------|--------|--------------|--------------|
@@ -209,7 +209,7 @@ Welcome to the py_rme_canary documentation! This index provides quick access to 
 
 ---
 
-## ��� Maintenance
+## 🔄 Maintenance
 
 ### Document Owners
 - **PRD.md:** Product Team
@@ -226,7 +226,7 @@ Welcome to the py_rme_canary documentation! This index provides quick access to 
 
 ---
 
-## ��� Contributing to Documentation
+## 📝 Contributing to Documentation
 
 Found an issue or want to improve documentation?
 
@@ -237,7 +237,7 @@ Found an issue or want to improve documentation?
 
 ---
 
-## ��� Support
+## 🆘 Support
 
 - **Issues:** [GitHub Issues](https://github.com/your-org/py_rme_canary/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/your-org/py_rme_canary/discussions)
@@ -249,8 +249,8 @@ Found an issue or want to improve documentation?
 ### Mandatory Reading Order (Every Session)
 
 1. **First:** [README.md](README.md) (this file) - Get navigation map
-2. **Second:** [memory_instruction.md](memory_instruction.md) - Get current project state
-3. **Third:** [agents.md](agents.md) - Get coding standards and policies
+2. **Second:** [memory_instruction.md](guides/memory_instruction.md) - Get current project state
+3. **Third:** [agents.md](guides/agents.md) - Get coding standards and policies
 4. **Context-Specific:** Refer to index above based on task
 
 ### Quick Context Lookup
@@ -297,14 +297,14 @@ bandit -r . -ll -i
 ### Recovery Protocol (If Lost)
 
 **If you don't know what to do:**
-1. Re-read [memory_instruction.md](memory_instruction.md) "ACTIVE WORK" section
-2. Check [IMPLEMENTATION_TODO.md](IMPLEMENTATION_TODO.md) for next task
-3. Review [agents.md](agents.md) for coding standards
+1. Re-read [memory_instruction.md](guides/memory_instruction.md) "ACTIVE WORK" section
+2. Check [IMPLEMENTATION_TODO.md](tracking/IMPLEMENTATION_TODO.md) for next task
+3. Review [agents.md](guides/agents.md) for coding standards
 4. If still unclear: ASK before proceeding
 
 **Never guess. Always verify.**
 
 ---
-**Last Updated:** January 14, 2026  
-**Maintainer:** Documentation Team  
-**Version:** 1.0.0
+**Last Updated:** January 27, 2026
+**Maintainer:** Documentation Team
+**Version:** 1.0.1

@@ -11,8 +11,16 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+from py_rme_canary.core.config.configuration_manager import ConfigurationManager
+from py_rme_canary.core.config.project import (
+    MapMetadata,
+    find_project_for_otbm,
+    load_project_json,
+    resolve_map_file,
+)
 from py_rme_canary.core.data.gamemap import GameMap
 from py_rme_canary.core.database.id_mapper import IdMapper
+from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.exceptions.io import HousesXmlError, SpawnXmlError, ZonesXmlError
 from py_rme_canary.core.io.houses_xml import load_houses
@@ -93,13 +101,22 @@ class OTBMLoader:
         allow_unsupported_versions: bool = False,
         memory_guard: MemoryGuard | None = None,
     ) -> None:
+        self._memory_guard = memory_guard or default_memory_guard()
+        self._unknown_item_policy = unknown_item_policy
+        self._allow_unsupported_versions = allow_unsupported_versions
+
         self._inner = _ModularOTBMLoader(
             items_db=items_db,
             id_mapper=id_mapper,
-            unknown_item_policy=unknown_item_policy,
-            allow_unsupported_versions=allow_unsupported_versions,
-            memory_guard=memory_guard or default_memory_guard(),
+            unknown_item_policy=self._unknown_item_policy,
+            allow_unsupported_versions=self._allow_unsupported_versions,
+            memory_guard=self._memory_guard,
         )
+
+        self.last_id_mapper: IdMapper | None = None
+        self.last_items_db: ItemsXML | None = None
+        self.last_config: ConfigurationManager | None = None
+        self.last_otbm_path: Path | None = None
 
     @property
     def warnings(self) -> list[LoadWarning]:
@@ -115,3 +132,77 @@ class OTBMLoader:
                 gm.load_report["warnings"] = list(self._inner.warnings)
 
         return gm
+
+    def load_with_detection(self, path: str, *, workspace_root: str | Path | None = None) -> GameMap:
+        """Load a map with project/definition resolution.
+
+        Priority:
+        - Project wrapper JSON (sidecar or explicit)
+        - Fallback sniff (repo defaults)
+        """
+        p = Path(path)
+        project_path = p if p.suffix.lower() == ".json" else find_project_for_otbm(p)
+
+        cfg: ConfigurationManager
+        map_path: Path
+
+        if project_path is not None:
+            project = load_project_json(project_path, allow_missing_map_file=True)
+            cfg = ConfigurationManager.from_project(project, project_path=project_path)
+            map_path = resolve_map_file(project, project_path=project_path, fallback_otbm=p)
+        else:
+            md = MapMetadata(engine="unknown", client_version=0, otbm_version=0, source="sniff")
+            root = Path(workspace_root) if workspace_root is not None else Path.cwd()
+            cfg = ConfigurationManager.from_sniff(md, workspace_root=root)
+            map_path = p
+
+        items_db, id_mapper, warnings = _load_items_definitions(cfg)
+
+        self.last_items_db = items_db
+        self.last_id_mapper = id_mapper
+        self.last_config = cfg
+        self.last_otbm_path = map_path
+
+        self._inner = _ModularOTBMLoader(
+            items_db=items_db,
+            id_mapper=id_mapper,
+            unknown_item_policy=self._unknown_item_policy,
+            allow_unsupported_versions=self._allow_unsupported_versions,
+            memory_guard=self._memory_guard,
+        )
+
+        gm = self.load(str(map_path))
+        if warnings:
+            self._inner.warnings.extend(warnings)
+            if hasattr(gm, "load_report") and isinstance(gm.load_report, dict):
+                gm.load_report.setdefault("warnings", [])
+                gm.load_report["warnings"].extend(warnings)
+        return gm
+
+
+def _load_items_definitions(
+    cfg: ConfigurationManager,
+) -> tuple[ItemsXML | None, IdMapper | None, list[LoadWarning]]:
+    warnings: list[LoadWarning] = []
+
+    items_db: ItemsXML | None = None
+    if cfg.definitions.items_xml is not None:
+        try:
+            items_db = ItemsXML.load(cfg.definitions.items_xml, strict_mapping=False)
+        except Exception as e:
+            warnings.append(LoadWarning(code="items_xml_error", message=str(e)))
+
+    id_mapper: IdMapper | None = None
+    if cfg.definitions.items_otb is not None:
+        try:
+            items_otb = ItemsOTB.load(cfg.definitions.items_otb)
+            id_mapper = IdMapper.from_items_otb(items_otb)
+        except ItemsOTBError as e:
+            warnings.append(LoadWarning(code="items_otb_error", message=str(e)))
+        except Exception as e:
+            warnings.append(LoadWarning(code="items_otb_error", message=str(e)))
+
+    if id_mapper is None and items_db is not None:
+        id_mapper = IdMapper.from_items_xml(items_db)
+
+    return items_db, id_mapper, warnings

@@ -15,6 +15,7 @@ from py_rme_canary.logic_layer.mirroring import union_with_mirrored
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
 from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
+from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay, BrushPreviewOverlay
 
 # Try importing OpenGL support
 try:
@@ -59,6 +60,8 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self._mouse_down = False
         self._panning = False
         self._pan_anchor: Optional[tuple[QPoint, int, int]] = None
+        self._right_click_moved = False
+        self._right_click_threshold = 4
         self._selection_dragging = False
         self._selection_drag_start: Optional[tuple[int, int, int]] = None
         self._selection_box_mode: Optional[SelectionApplyMode] = None
@@ -70,10 +73,16 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self._pending_zoom_step = 0
         self._refresh_watch = QElapsedTimer()
         self._refresh_watch.start()
+        self._overlay_text_calls: list[tuple[int, int, str, int, int, int, int]] = []
         self._animation_timer = QTimer(self)
         self._animation_timer.setInterval(self.ANIMATION_INTERVAL_MS)
         self._animation_timer.timeout.connect(self._on_animation_tick)
         self._sync_animation_timer()
+
+        self._brush_cursor_overlay = BrushCursorOverlay(self)
+        self._brush_cursor_overlay.set_visible(False)
+        self._brush_preview_overlay = BrushPreviewOverlay(self)
+        self._brush_preview_overlay.hide()
 
         # Performance tracking
         self._frame_count = 0
@@ -155,6 +164,53 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         if t.ground is not None:
             return int(t.ground.id)
         return None
+
+    def _open_context_menu_at(self, pos: QPoint) -> None:
+        editor = self._editor
+        x, y = self._tile_at(int(pos.x()), int(pos.y()))
+        z = int(editor.viewport.z)
+        try:
+            tile = editor.map.get_tile(int(x), int(y), int(z))
+        except Exception:
+            tile = None
+        if tile is None:
+            return
+
+        item = tile.items[-1] if getattr(tile, "items", None) else None
+        if item is None:
+            item = getattr(tile, "ground", None)
+        if item is None:
+            return
+
+        try:
+            from py_rme_canary.vis_layer.ui.menus.context_menus import ItemContextMenu
+
+            menu = ItemContextMenu(self)
+
+            def _set_find() -> None:
+                editor._set_quick_replace_source(int(item.id))
+
+            def _set_replace() -> None:
+                editor._set_quick_replace_target(int(item.id))
+
+            def _find_all() -> None:
+                editor._find_item_by_id(int(item.id))
+
+            def _replace_all() -> None:
+                editor._set_quick_replace_source(int(item.id))
+                editor._open_replace_items_dialog()
+
+            menu.set_callbacks(
+                {
+                    "set_find": _set_find,
+                    "set_replace": _set_replace,
+                    "find_all": _find_all,
+                    "replace_all": _replace_all,
+                }
+            )
+            menu.show_for_item(item, tile)
+        except Exception:
+            return
 
     def _paint_footprint_at(self, px: int, py: int, *, alt: bool = False) -> None:
         editor = self._editor
@@ -244,6 +300,12 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         except ImportError:
             pass
 
+        self._update_preview_overlay_geometry()
+
+    def resizeEvent(self, event) -> None:  # type: ignore[override]
+        super().resizeEvent(event)
+        self._update_preview_overlay_geometry()
+
     def paintGL(self) -> None:
         """Render the scene using OpenGL."""
         if not self._opengl_initialized or self._gl_resources is None:
@@ -305,6 +367,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         editor = self._editor
         drawer = getattr(editor, "map_drawer", None)
         if drawer is None or not hasattr(editor, "drawing_options_coordinator"):
+            self._overlay_text_calls = []
             return False
 
         editor.drawing_options_coordinator.sync_from_editor()
@@ -315,6 +378,10 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
+        try:
+            drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
+        except Exception:
+            pass
 
         backend = QPainterRenderBackend(
             painter,
@@ -322,6 +389,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             sprite_lookup=lambda sid, size: editor._sprite_pixmap_for_server_id(int(sid), tile_px=int(size)),
             indicator_lookup=editor.indicators.icon,
         )
+        self._overlay_text_calls = []
         drawer.draw(backend)
         return True
 
@@ -402,6 +470,11 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
                             "A",
                         )
 
+        if self._overlay_text_calls and self._use_opengl and self._opengl_initialized:
+            for x, y, text, r, g, b, a in self._overlay_text_calls:
+                p.setPen(QPen(QColor(int(r), int(g), int(b), int(a))))
+                p.drawText(int(x), int(y), str(text))
+
         sel_pen = QPen(QColor(230, 230, 230))
         sel_pen.setWidth(2)
         p.setPen(sel_pen)
@@ -438,6 +511,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         editor = self._editor
         drawer = getattr(editor, "map_drawer", None)
         if drawer is None or not hasattr(editor, "drawing_options_coordinator"):
+            self._overlay_text_calls = []
             return False
 
         editor.drawing_options_coordinator.sync_from_editor()
@@ -448,6 +522,10 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
+        try:
+            drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
+        except Exception:
+            pass
 
         backend = OpenGLRenderBackend(
             gl,
@@ -457,6 +535,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             sprite_lookup=lambda sid: editor._sprite_bgra_for_server_id(int(sid)),
         )
         drawer.draw(backend)
+        self._overlay_text_calls = list(getattr(backend, "text_calls", []))
         backend.flush()
         return True
 
@@ -468,6 +547,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         if event.button() == Qt.MouseButton.RightButton:
             self._panning = True
             self._pan_anchor = (event.position().toPoint(), editor.viewport.origin_x, editor.viewport.origin_y)
+            self._right_click_moved = False
             event.accept()
             return
 
@@ -572,11 +652,18 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
     def mouseMoveEvent(self, event):  # noqa: N802
         editor = self._editor
 
+        self._update_brush_preview(event.position().toPoint())
+
         if self._panning and self._pan_anchor is not None:
             anchor_pt, ox, oy = self._pan_anchor
             cur = event.position().toPoint()
             dx_px = int(cur.x() - anchor_pt.x())
             dy_px = int(cur.y() - anchor_pt.y())
+            if not self._right_click_moved:
+                if abs(dx_px) < self._right_click_threshold and abs(dy_px) < self._right_click_threshold:
+                    editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
+                    return
+                self._right_click_moved = True
             dx_tiles = -dx_px // editor.viewport.tile_px
             dy_tiles = -dy_px // editor.viewport.tile_px
             editor.viewport.origin_x = max(0, int(ox + dx_tiles))
@@ -606,8 +693,12 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
     def mouseReleaseEvent(self, event):  # noqa: N802
         if event.button() == Qt.MouseButton.RightButton:
+            was_moved = bool(self._right_click_moved)
             self._panning = False
             self._pan_anchor = None
+            self._right_click_moved = False
+            if not was_moved:
+                self._open_context_menu_at(event.position().toPoint())
             event.accept()
             return
 
@@ -642,6 +733,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
                 editor.session.finish_box_selection(
                     toggle_if_single=bool(ctrl),
                     mode=self._selection_box_mode,
+                    visible_floors=editor._visible_floors_for_selection(),
                 )
             editor.session.cancel_box_selection()
             self._selection_box_mode = None
@@ -653,6 +745,10 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
         editor.session.mouse_up()
 
+    def leaveEvent(self, event) -> None:  # type: ignore[override]
+        self._hide_brush_preview()
+        super().leaveEvent(event)
+
     def cancel_interaction(self) -> None:
         self._mouse_down = False
         self._panning = False
@@ -660,6 +756,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self._selection_dragging = False
         self._selection_drag_start = None
         self.request_render()
+        self._hide_brush_preview()
 
     def wheelEvent(self, event):  # noqa: N802
         delta = event.angleDelta().y()
@@ -672,6 +769,69 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
     def is_opengl_enabled(self) -> bool:
         """Check if OpenGL rendering is active."""
         return self._use_opengl and self._opengl_initialized
+
+    def _update_preview_overlay_geometry(self) -> None:
+        if self._brush_preview_overlay is None:
+            return
+        self._brush_preview_overlay.setGeometry(0, 0, self.width(), self.height())
+
+    def _should_show_brush_preview(self) -> bool:
+        editor = self._editor
+        if not bool(getattr(editor, "show_preview", False)):
+            return False
+        if getattr(editor, "selection_mode", False):
+            return False
+        if getattr(editor, "paste_armed", False) or getattr(editor, "fill_armed", False):
+            return False
+        return True
+
+    def _update_brush_preview(self, point: QPoint) -> None:
+        if not self._should_show_brush_preview():
+            self._hide_brush_preview()
+            return
+
+        editor = self._editor
+        tile_px = int(editor.viewport.tile_px)
+        if tile_px <= 0:
+            self._hide_brush_preview()
+            return
+
+        self._brush_cursor_overlay.set_tile_size(tile_px)
+        brush_size = max(1, int(getattr(editor, "brush_size", 1) or 1))
+        self._brush_cursor_overlay.set_brush_size(brush_size)
+        self._brush_cursor_overlay.set_circle_shape(str(getattr(editor, "brush_shape", "square")) == "circle")
+
+        x, y = self._tile_at(int(point.x()), int(point.y()))
+        x0, y0, x1, y1 = self._visible_bounds()
+
+        center_x = (x - x0) * tile_px + tile_px // 2
+        center_y = (y - y0) * tile_px + tile_px // 2
+        self._brush_cursor_overlay.set_position(QPoint(int(center_x), int(center_y)))
+        self._brush_cursor_overlay.set_visible(True)
+
+        preview_tiles: list[QRect] = []
+        for dx, dy in iter_brush_offsets(brush_size, str(getattr(editor, "brush_shape", "square"))):
+            tx = int(x + dx)
+            ty = int(y + dy)
+            if not (x0 <= tx < x1 and y0 <= ty < y1):
+                continue
+            px0 = (tx - x0) * tile_px
+            py0 = (ty - y0) * tile_px
+            preview_tiles.append(QRect(int(px0), int(py0), int(tile_px), int(tile_px)))
+
+        if preview_tiles:
+            self._brush_preview_overlay.set_preview_tiles(preview_tiles)
+            self._brush_preview_overlay.show()
+        else:
+            self._brush_preview_overlay.clear_preview()
+            self._brush_preview_overlay.hide()
+
+    def _hide_brush_preview(self) -> None:
+        if self._brush_cursor_overlay is not None:
+            self._brush_cursor_overlay.set_visible(False)
+        if self._brush_preview_overlay is not None:
+            self._brush_preview_overlay.clear_preview()
+            self._brush_preview_overlay.hide()
 
 
 # Export availability check

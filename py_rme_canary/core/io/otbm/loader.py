@@ -7,8 +7,8 @@ to construct the full GameMap data structure.
 
 from __future__ import annotations
 
-import struct
 import os
+import struct
 from dataclasses import dataclass
 from typing import BinaryIO
 
@@ -38,6 +38,7 @@ from ...database.id_mapper import IdMapper
 from ...database.items_xml import ItemsXML
 from ...exceptions.io import OTBMParseError
 from ...memory_guard import MemoryGuard, MemoryGuardError, default_memory_guard
+from ..xml.spawns_loader import load_spawns_xml
 from .header_parser import RootHeader, read_root_header
 from .item_parser import ItemParser
 from .streaming import (
@@ -48,7 +49,6 @@ from .streaming import (
     read_u8,
 )
 from .tile_parser import TileParser
-from ..xml.spawns_loader import load_spawns_xml
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,7 +228,7 @@ class OTBMLoader:
             # Try to resolve path relative to map file
             spawn_path = os.path.join(map_dir, spawnmonsterfile)
             load_spawns_xml(km, spawn_path, is_npc=False)
-        
+
         if spawnnpcfile:
             spawn_path = os.path.join(map_dir, spawnnpcfile)
             load_spawns_xml(km, spawn_path, is_npc=True)

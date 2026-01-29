@@ -2,6 +2,7 @@
 
 Places NPCs on tiles. Mirrors legacy C++ NpcBrush from npc_brush.cpp.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -35,7 +36,7 @@ class NpcBrush:
         """Get brush name."""
         return self.npc_name
 
-    def can_draw(self, game_map: "GameMap", pos: "Position") -> bool:
+    def can_draw(self, game_map: GameMap, pos: Position) -> bool:
         """Check if NPC can be placed at position."""
         tile = game_map.get_tile(pos.x, pos.y, pos.z)
         if tile is None:
@@ -45,16 +46,13 @@ class NpcBrush:
             return False
 
         # NPC already exists
-        if tile.npc is not None:
-            return False
-
-        return True
+        return tile.npc is None
 
     def draw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Place NPC at position."""
         tile = game_map.get_tile(pos.x, pos.y, pos.z)
         if tile is None or not self.can_draw(game_map, pos):
@@ -92,9 +90,9 @@ class NpcBrush:
 
     def undraw(
         self,
-        game_map: "GameMap",
-        pos: "Position",
-    ) -> list[tuple["Position", Tile]]:
+        game_map: GameMap,
+        pos: Position,
+    ) -> list[tuple[Position, Tile]]:
         """Remove NPC from position."""
         tile = game_map.get_tile(pos.x, pos.y, pos.z)
         if tile is None or tile.npc is None:

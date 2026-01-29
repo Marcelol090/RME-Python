@@ -29,6 +29,8 @@ class SpriteSheet:
     last_id: int
     sprite_type: int  # legacy SpriteLayout enum value
     path: str
+    sheet_width: int = SPRITE_SHEET_WIDTH
+    sheet_height: int = SPRITE_SHEET_HEIGHT
     loaded: bool = False
     data: bytes | None = None  # BGRA bytes, 384*384*4
 
@@ -123,6 +125,14 @@ class SpriteAppearances:
         if not p.exists():
             raise SpriteAppearancesError(f"Sprite sheet not found: {p}")
 
+        if p.suffix.lower() in (".png", ".bmp"):
+            sheet_width, sheet_height, pixel_data = _load_image_sheet(p)
+            sheet.data = pixel_data
+            sheet.sheet_width = int(sheet_width)
+            sheet.sheet_height = int(sheet_height)
+            sheet.loaded = True
+            return
+
         blob = p.read_bytes()
         if not blob:
             raise SpriteAppearancesError(f"Sprite sheet empty: {p}")
@@ -200,6 +210,8 @@ class SpriteAppearances:
             pixel_data[b0 : b0 + row_bytes] = tmp
 
         sheet.data = bytes(pixel_data)
+        sheet.sheet_width = SPRITE_SHEET_WIDTH
+        sheet.sheet_height = SPRITE_SHEET_HEIGHT
         sheet.loaded = True
 
     def get_sprite_rgba(self, sprite_id: int) -> tuple[int, int, bytes]:
@@ -226,7 +238,10 @@ class SpriteAppearances:
         if sprite_offset < 0 or sid > int(sheet.last_id):
             raise SpriteAppearancesError("Sprite id out of sheet bounds")
 
-        all_columns = 12 if int(sprite_w) == 32 else 6  # matches legacy
+        sheet_width_bytes = int(sheet.sheet_width) * BYTES_PER_PIXEL
+        all_columns = int(sheet.sheet_width // sprite_w) if int(sprite_w) > 0 else 0
+        if all_columns <= 0:
+            raise SpriteAppearancesError("Invalid sheet dimensions for sprite extraction")
         sprite_row = int(sprite_offset // all_columns)
         sprite_col = int(sprite_offset % all_columns)
 
@@ -239,7 +254,7 @@ class SpriteAppearances:
 
         for y in range(int(sprite_h)):
             src_row = sprite_row * int(sprite_h) + y
-            src_start = src_row * SPRITE_SHEET_WIDTH_BYTES + (sprite_col * sprite_w_bytes)
+            src_start = src_row * sheet_width_bytes + (sprite_col * sprite_w_bytes)
             dst_start = y * sprite_w_bytes
             out[dst_start : dst_start + sprite_w_bytes] = src[src_start : src_start + sprite_w_bytes]
 
@@ -289,3 +304,27 @@ def resolve_assets_dir(path: str | os.PathLike[str]) -> str:
         "Invalid assets path. Select the Tibia client folder (with assets/) or "
         "the assets folder (with catalog-content.json)."
     )
+
+
+def _load_image_sheet(path: Path) -> tuple[int, int, bytes]:
+    try:
+        from PIL import Image  # optional dependency
+    except Exception as e:
+        raise SpriteAppearancesError("Pillow is required to load PNG/BMP sprite sheets") from e
+
+    try:
+        img = Image.open(path).convert("RGBA")
+    except Exception as e:
+        raise SpriteAppearancesError(f"Failed to decode sprite sheet image: {e}") from e
+
+    width, height = img.size
+    raw = img.tobytes()
+
+    bgra = bytearray(len(raw))
+    for i in range(0, len(raw), 4):
+        r = raw[i]
+        g = raw[i + 1]
+        b = raw[i + 2]
+        a = raw[i + 3]
+        bgra[i : i + 4] = bytes([b, g, r, a])
+    return int(width), int(height), bytes(bgra)

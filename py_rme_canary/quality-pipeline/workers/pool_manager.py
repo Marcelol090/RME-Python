@@ -5,6 +5,8 @@ Parallel execution with Redis coordination (optional)
 Future: Rust worker backend (v3.0)
 """
 
+import argparse
+import hashlib
 import logging
 import multiprocessing as mp
 import time
@@ -12,6 +14,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -116,8 +119,8 @@ class RedisCache(CacheBackend):
         try:
             self.client.ping()
             log.info(f"Redis connected: {host}:{port}")
-        except redis.ConnectionError:
-            raise RuntimeError(f"Redis connection failed: {host}:{port}")
+        except redis.ConnectionError as err:
+            raise RuntimeError(f"Redis connection failed: {host}:{port}") from err
 
     def get(self, key: str) -> str | None:
         try:
@@ -244,8 +247,6 @@ class WorkerPool:
 
     def _hash_file(self, path: Path) -> str:
         """Fast file hash for cache invalidation"""
-        import hashlib
-
         if not path.exists():
             return "missing"
 
@@ -253,15 +254,13 @@ class WorkerPool:
         stat = path.stat()
         signature = f"{stat.st_mtime}:{stat.st_size}"
 
-        return hashlib.md5(signature.encode()).hexdigest()[:8]
+        return hashlib.sha256(signature.encode()).hexdigest()[:8]
 
 
 # Example worker function (v2.2 - Python)
 # v3.0 will call Rust binary via subprocess
 def example_worker(task: WorkerTask) -> WorkerResult:
     """Example worker - analyze single file"""
-
-    from datetime import datetime
 
     start_time = time.time()
 
@@ -316,9 +315,6 @@ def create_cache_backend(config: dict[str, Any]) -> CacheBackend:
 
 def main():
     """Demo: parallel file analysis"""
-
-    import argparse
-    from pathlib import Path
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", type=Path, required=True)

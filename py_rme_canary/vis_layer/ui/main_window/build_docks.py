@@ -37,6 +37,19 @@ def build_docks(editor: "QtMapEditor") -> None:
     )
     editor.act_window_actions_history.setChecked(False)
 
+    # Live Log dock
+    from py_rme_canary.vis_layer.ui.docks.live_log_panel import LiveLogPanel
+
+    editor.dock_live_log = LiveLogPanel(editor)
+    editor.dock_live_log.message_sent.connect(lambda msg: editor.session.send_live_chat(msg))
+    editor.dock_live_log.set_input_enabled(False)
+    editor.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, editor.dock_live_log)
+    editor.dock_live_log.hide()
+    editor.dock_live_log.visibilityChanged.connect(
+        lambda v: editor._sync_dock_action(editor.act_window_live_log, v)
+    )
+    editor.act_window_live_log.setChecked(False)
+
     # Sprite preview dock
     asset_dock = QDockWidget("Sprite Preview", editor)
     editor.dock_sprite_preview = asset_dock

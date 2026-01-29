@@ -4,10 +4,11 @@
 
 run_llm_rule_generator() {
   log INFO "LLM Rule Generator: Creating ast-grep rules"
-  
+
   # Determine provider
-  local provider="${QUALITY_LLM_PROVIDER:-auto}"
-  
+  local provider
+  provider="${QUALITY_LLM_PROVIDER:-auto}"
+
   if [[ "$provider" == "auto" ]]; then
     # Auto-detect based on available API keys
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
@@ -21,28 +22,30 @@ run_llm_rule_generator() {
       return 1
     fi
   fi
-  
+
   log INFO "Using provider: $provider"
-  
+
   # Analyze codebase for anti-patterns
-  local analysis_file="$CACHE_DIR/codebase_analysis.json"
-  
+  local analysis_file
+  analysis_file="$CACHE_DIR/codebase_analysis.json"
+
   log INFO "Analyzing codebase for patterns..."
   python3 "$WORKERS_DIR/rule_generator.py" \
     --analyze "$ROOT_DIR" \
     --output "$analysis_file"
-  
+
   # Generate rules via LLM
-  local rules_output="$ROOT_DIR/tools/ast_rules/python/generated_rules.yml"
-  
+  local rules_output
+  rules_output="$ROOT_DIR/tools/ast_rules/python/generated_rules.yml"
+
   log INFO "Generating ast-grep rules via LLM ($provider)..."
-  
+
   if python3 "$WORKERS_DIR/rule_generator.py" \
     --provider "$provider" \
     --analysis "$analysis_file" \
     --output "$rules_output" \
     --max-rules "${QUALITY_LLM_MAX_RULES:-20}"; then
-    
+
     # Validate generated rules
     if command -v sg &>/dev/null; then
       log INFO "Validating generated rules..."
@@ -52,16 +55,17 @@ run_llm_rule_generator() {
         log WARN "Some generated rules failed validation - review manually"
       fi
     fi
-    
-    local rule_count=$(yq eval '.rules | length' "$rules_output" 2>/dev/null || echo "?")
+
+    local rule_count
+    rule_count=$(yq eval '.rules | length' "$rules_output" 2>/dev/null || echo \"?\")
     log OK "Generated $rule_count ast-grep rule(s)"
-    
+
     # Optional: auto-apply generated rules
     if [[ "${QUALITY_LLM_AUTO_APPLY:-false}" == "true" ]]; then
       log INFO "Auto-applying generated rules..."
       sg scan --rule "$rules_output" --rewrite "$ROOT_DIR" || log WARN "Some rewrites failed"
     fi
-    
+
     return 0
   else
     log ERROR "Rule generation failed"

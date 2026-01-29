@@ -4,7 +4,8 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QDockWidget, QLineEdit, QListWidget, QListWidgetItem, QTabWidget, QVBoxLayout, QWidget
 
 from py_rme_canary.logic_layer.brush_definitions import (
@@ -60,6 +61,27 @@ class PaletteManager:
         self._palettes: list[PaletteDock] = []
         self._palette_counter: int = 0
         self._primary: PaletteDock | None = None
+        self._icon_size = 24
+
+    def set_icon_size(self, size: int) -> None:
+        size = int(max(12, min(64, int(size))))
+        if size == int(self._icon_size):
+            return
+        self._icon_size = int(size)
+        for pal in self._palettes:
+            pal.list_widget.setIconSize(QSize(int(size), int(size)))
+            self.refresh_list(pal)
+
+    def _maybe_set_item_icon(self, item: QListWidgetItem, server_id: int | None) -> None:
+        if server_id is None or int(server_id) <= 0:
+            return
+        try:
+            pm = self._editor._sprite_pixmap_for_server_id(int(server_id), tile_px=int(self._icon_size))
+        except Exception:
+            pm = None
+        if pm is None or pm.isNull():
+            return
+        item.setIcon(QIcon(pm))
 
     @property
     def primary(self) -> PaletteDock | None:
@@ -100,7 +122,7 @@ class PaletteManager:
             # Doodad palette is backed by materials XML doodad brushes when available.
             # (Fallback behavior: show wall brushes and wrap them as doodads.)
             "doodad": {"wall"},
-            "item": {"carpet"},
+            "item": {"carpet", "table"},
             "house": {"house"},
         }
         return mapping.get(key)
@@ -185,6 +207,7 @@ class PaletteManager:
                         continue
                     item = QListWidgetItem(text)
                     item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_DOODAD_BASE + int(sid)))
+                    self._maybe_set_item_icon(item, int(sid))
                     palette.list_widget.addItem(item)
 
                 palette.list_widget.blockSignals(False)
@@ -366,6 +389,10 @@ class PaletteManager:
                     continue
                 item = QListWidgetItem(text)
                 item.setData(Qt.ItemDataRole.UserRole, int(sid))
+                try:
+                    self._maybe_set_item_icon(item, int(getattr(bd, "server_id", 0)))
+                except Exception:
+                    pass
                 palette.list_widget.addItem(item)
         else:
             for sid in all_ids:
@@ -389,6 +416,7 @@ class PaletteManager:
                     item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_DOODAD_BASE + int(sid)))
                 else:
                     item.setData(Qt.ItemDataRole.UserRole, int(sid))
+                self._maybe_set_item_icon(item, int(sid))
                 palette.list_widget.addItem(item)
 
         palette.list_widget.blockSignals(False)
@@ -420,6 +448,7 @@ class PaletteManager:
         v.addWidget(filter_edit)
 
         list_widget = QListWidget(panel)
+        list_widget.setIconSize(QSize(int(self._icon_size), int(self._icon_size)))
         v.addWidget(list_widget, stretch=1)
 
         dock.setWidget(panel)

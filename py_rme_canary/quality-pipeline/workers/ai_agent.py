@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: S603,S607,PLR2004
 """
 AI Agent - Autonomous Code Refactoring (v3.0)
 Event-sourced state machine with rollback support
@@ -6,9 +7,12 @@ Event-sourced state machine with rollback support
 Design: github.com/microsoft/autogen pattern
 """
 
+import argparse
 import json
 import logging
+import shlex
 import subprocess
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -122,7 +126,7 @@ class AgentContext:
         if state not in self.snapshots:
             raise ValueError(f"No snapshot for state: {state}")
 
-        data = self.snapshots[state]
+        _data = self.snapshots[state]
         # Restore logic (simplified)
         self.state = state
         log.info(f"Restored to state: {state.value}")
@@ -323,9 +327,8 @@ class StateMachine:
             log.info(f"Fix {i + 1}/{len(self.ctx.plan)}: {plan.issue.rule_id} ({plan.priority_score:.2f})")
 
             # Execute fix command
-            result = subprocess.run(
-                plan.fix_command, check=False, shell=True, cwd=self.ctx.project_root, capture_output=True, text=True
-            )
+            cmd = shlex.split(plan.fix_command)
+            result = subprocess.run(cmd, check=False, cwd=self.ctx.project_root, capture_output=True, text=True)
 
             if result.returncode == 0:
                 self.ctx.applied_fixes.append(str(plan.issue.file))
@@ -347,7 +350,8 @@ class StateMachine:
         test_cmd = self.ctx.config.get("test_command", "pytest")
 
         if self.ctx.config.get("run_tests", True):
-            result = subprocess.run(test_cmd, check=False, shell=True, cwd=self.ctx.project_root, capture_output=True)
+            test_cmd_list = shlex.split(test_cmd) if isinstance(test_cmd, str) else list(test_cmd)
+            result = subprocess.run(test_cmd_list, check=False, cwd=self.ctx.project_root, capture_output=True)
 
             if result.returncode != 0:
                 log.error("Tests failed after fixes")
@@ -417,8 +421,6 @@ class StateMachine:
 
 
 def main():
-    import argparse
-
     parser = argparse.ArgumentParser(description="AI Agent - Autonomous Refactoring")
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--config", type=Path)
@@ -458,4 +460,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

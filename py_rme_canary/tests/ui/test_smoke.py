@@ -2,8 +2,11 @@ import os
 from unittest.mock import patch
 
 import pytest
+
+pytest.importorskip("PyQt6.QtWidgets")
 from PyQt6.QtWidgets import QDialog, QFileDialog
 
+# ruff: noqa: SIM117
 from py_rme_canary.logic_layer.brush_definitions import BrushManager
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 

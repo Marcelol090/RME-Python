@@ -42,20 +42,25 @@ class Color:
     def from_hex(cls, hex_str: str) -> "Color":
         """Create color from hex string like '#RRGGBB' or '#RRGGBBAA'."""
         hex_str = hex_str.lstrip("#")
-        if len(hex_str) == 6:
-            return cls(
-                r=int(hex_str[0:2], 16),
-                g=int(hex_str[2:4], 16),
-                b=int(hex_str[4:6], 16),
-            )
-        elif len(hex_str) == 8:
-            return cls(
-                r=int(hex_str[0:2], 16),
-                g=int(hex_str[2:4], 16),
-                b=int(hex_str[4:6], 16),
-                a=int(hex_str[6:8], 16),
-            )
-        raise ValueError(f"Invalid hex color: {hex_str}")
+        if len(hex_str) not in (6, 8):
+            raise ValueError(f"Invalid hex color: {hex_str}")
+        
+        try:
+            if len(hex_str) == 6:
+                return cls(
+                    r=int(hex_str[0:2], 16),
+                    g=int(hex_str[2:4], 16),
+                    b=int(hex_str[4:6], 16),
+                )
+            else:  # len == 8
+                return cls(
+                    r=int(hex_str[0:2], 16),
+                    g=int(hex_str[2:4], 16),
+                    b=int(hex_str[4:6], 16),
+                    a=int(hex_str[6:8], 16),
+                )
+        except ValueError:
+            raise ValueError(f"Invalid hex color: {hex_str}")
 
 
 @dataclass(frozen=True, slots=True)

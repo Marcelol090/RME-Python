@@ -2,7 +2,7 @@
 
 ⚠️ **WARNING: DO NOT USE THESE FILES IN PRODUCTION**
 
-This directory contains UI prototypes that were developed using **PySide6** 
+This directory contains UI prototypes that were developed using **PySide6**
 but are **not compatible** with the main application which uses **PyQt6**.
 
 ## Contents

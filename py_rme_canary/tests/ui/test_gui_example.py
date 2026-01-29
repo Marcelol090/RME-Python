@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("PyQt6.QtCore")
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 

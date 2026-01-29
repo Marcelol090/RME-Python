@@ -2,10 +2,10 @@
 
 Parses monsters.xml and npcs.xml to populate GameMap with spawn data.
 """
+
 from __future__ import annotations
 
 import os
-import xml.etree.ElementTree as ET
 
 from py_rme_canary.core.data.creature import Monster, Npc
 from py_rme_canary.core.data.gamemap import GameMap
@@ -14,6 +14,8 @@ from py_rme_canary.core.data.spawns import (
     MonsterSpawnArea,
     NpcSpawnArea,
 )
+from py_rme_canary.core.io.xml.safe import Element, ParseError
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 def load_spawns_xml(game_map: GameMap, file_path: str, is_npc: bool) -> None:
@@ -33,9 +35,9 @@ def load_spawns_xml(game_map: GameMap, file_path: str, is_npc: bool) -> None:
         return
 
     try:
-        tree = ET.parse(file_path)  # noqa: S314
+        tree = ET.parse(file_path)
         root = tree.getroot()
-    except ET.ParseError:
+    except ParseError:
         return
 
     for spawn_node in root.findall("spawn"):
@@ -44,7 +46,7 @@ def load_spawns_xml(game_map: GameMap, file_path: str, is_npc: bool) -> None:
 
 def _process_spawn_node(
     game_map: GameMap,
-    spawn_node: ET.Element,
+    spawn_node: Element,
     is_npc: bool,
 ) -> None:
     """Process a single spawn node from XML."""
@@ -131,7 +133,7 @@ def _mark_center_tile_monster(
 
 def _process_creature_entry(
     game_map: GameMap,
-    child: ET.Element,
+    child: Element,
     center_x: int,
     center_y: int,
     center_z: int,

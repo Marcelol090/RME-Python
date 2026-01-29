@@ -27,15 +27,15 @@ class AboutDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("About Canary Map Editor")
         self.setMinimumWidth(400)
-        
+
         layout = QVBoxLayout(self)
-        
+
         # Header / Logo placeholder
         title = QLabel("Canary Map Editor")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: #ffeb3b;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
-        
+
         # Version Info
         info_text = (
             f"Version: 0.1.0-alpha\n"
@@ -47,10 +47,10 @@ class AboutDialog(QDialog):
         info_lbl = QLabel(info_text)
         info_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(info_lbl)
-        
+
         # Tabs for Credits / License
         tabs = QTabWidget()
-        
+
         # Credits Tab
         credits_tab = QWidget()
         c_layout = QVBoxLayout(credits_tab)
@@ -67,7 +67,7 @@ class AboutDialog(QDialog):
         """)
         c_layout.addWidget(credits_text)
         tabs.addTab(credits_tab, "Credits")
-        
+
         # License Tab
         license_tab = QWidget()
         l_layout = QVBoxLayout(license_tab)
@@ -76,9 +76,9 @@ class AboutDialog(QDialog):
         lic_text.setText("MIT License (or GPL if using TFS sources).")
         l_layout.addWidget(lic_text)
         tabs.addTab(license_tab, "License")
-        
+
         layout.addWidget(tabs)
-        
+
         # Close Button
         btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         btn_box.rejected.connect(self.accept)
@@ -92,10 +92,10 @@ class PropertyDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.layout = QVBoxLayout(self)
-        
+
         # Content placeholder
         self.layout.addWidget(QLabel("Properties generic placeholder"))
-        
+
         # Buttons
         btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btns.accepted.connect(self.accept)
