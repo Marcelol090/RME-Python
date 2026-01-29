@@ -31,7 +31,7 @@ jobs:
       - name: Install Python tooling
         run: |
           python -m pip install --upgrade pip setuptools
-          pip install bandit ruff mypy radon pytest pytest-qt openai tenacity
+          pip install bandit ruff mypy radon pytest pytest-qt openai tenacity types-Pillow PyQt6-stubs
 
       - name: Ensure quality.sh is executable
         run: |
@@ -47,5 +47,9 @@ jobs:
           python -m pip install -e py_rme_canary
 
       - name: Run unit tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+          XDG_RUNTIME_DIR: /tmp/runtime-runner
         run: |
+          mkdir -p /tmp/runtime-runner
           python -m pytest py_rme_canary/tests/unit
