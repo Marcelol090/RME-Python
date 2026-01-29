@@ -1,0 +1,56 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0
+collected 128 items
+
+py_rme_canary/tests/logic_layer/operations/test_remove_monsters.py ...   [  2%]
+py_rme_canary/tests/logic_layer/test_brush_settings.py .......           [  7%]
+py_rme_canary/tests/logic_layer/test_brushes.py ..........               [ 15%]
+py_rme_canary/tests/logic_layer/test_door_brush.py ........              [ 21%]
+py_rme_canary/tests/logic_layer/test_replace_items.py .......            [ 27%]
+py_rme_canary/tests/performance/test_benchmarks.py EE                    [ 28%]
+py_rme_canary/tests/ui/test_gui_example.py Fatal Python error: Aborted
+
+Current thread 0x00007f7b97d64b80 (most recent call first):
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pytestqt/plugin.py", line 76 in qapp
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/fixtures.py", line 915 in call_fixture_func
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/fixtures.py", line 1202 in pytest_fixture_setup
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/fixtures.py", line 1110 in execute
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/fixtures.py", line 627 in _get_active_fixturedef
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/fixtures.py", line 539 in getfixturevalue
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/fixtures.py", line 707 in _fillfixtures
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/python.py", line 1723 in setup
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 523 in setup
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 165 in pytest_runtest_setup
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 245 in <lambda>
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 353 in from_call
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 244 in call_and_report
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 131 in runtestprotocol
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/runner.py", line 118 in pytest_runtest_protocol
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/main.py", line 396 in pytest_runtestloop
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/main.py", line 372 in _main
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/main.py", line 318 in wrap_session
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/main.py", line 365 in pytest_cmdline_main
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/config/__init__.py", line 199 in main
+  File "/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/_pytest/config/__init__.py", line 223 in console_main
+  File "/home/jules/.pyenv/versions/3.12.12/bin/pytest", line 7 in <module>
+
+Extension modules: shiboken6.Shiboken, PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets, PySide6.QtTest, PyQt6.QtCore, PyQt6.QtGui, PyQt6.QtWidgets, PyQt6.QtOpenGL, PyQt6.QtOpenGLWidgets (total: 10)

@@ -1,0 +1,147 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quality-pipeline"
+version = "2.1.0"
+description = "Enterprise-grade Python quality pipeline with AI integrations"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "Quality Pipeline Team"}
+]
+keywords = ["quality", "refactoring", "ai", "ast-grep", "copilot"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+# Core dependencies (required for all features)
+dependencies = [
+    "PyYAML>=6.0.1",
+    "requests>=2.31.0",
+    "tenacity>=8.2.3",
+]
+
+[project.optional-dependencies]
+# v2.1.0 AI Integrations
+ai = [
+    "openai>=1.10.0",           # GitHub Copilot backend
+    "anthropic>=0.18.0",        # Claude API (optional provider)
+]
+
+# Static analysis tools
+analysis = [
+    "ruff>=0.1.15",
+    "mypy>=1.8.0",
+    "radon>=6.0.1",
+]
+
+# Testing
+test = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.5.0",      # Parallel testing (v2.2)
+    "pytest-benchmark>=4.0.0",
+]
+
+# Dashboard & TUI
+dashboard = [
+    # gum installed via system package manager (see setup guide)
+]
+
+# Development
+dev = [
+    "black>=23.12.1",
+    "isort>=5.13.2",
+    "pre-commit>=3.6.0",
+]
+
+# All features (convenience)
+all = [
+    "quality-pipeline[ai,analysis,test,dev]",
+]
+
+[project.scripts]
+quality = "quality:main"
+
+[project.urls]
+Homepage = "https://github.com/your-org/quality-pipeline"
+Documentation = "https://quality-pipeline.readthedocs.io"
+Repository = "https://github.com/your-org/quality-pipeline"
+Issues = "https://github.com/your-org/quality-pipeline/issues"
+
+# Tool configurations (existing tools)
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = [
+  "py_rme_canary/vis_layer/**",
+]
+
+[tool.ruff.lint]
+select = [
+  "F", "E", "W", "I", "N", "UP", "B", "C4", "SIM", "PERF", "PL", "RUF", "S"
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+
+exclude = [
+  "py_rme_canary/vis_layer",
+]
+
+[[tool.mypy.overrides]]
+module = [
+  "py_rme_canary.core.*",
+  "py_rme_canary.logic_layer.*",
+  "py_rme_canary.tools.*",
+]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+addopts = [
+  "-v",
+  "--strict-markers",
+  "--tb=short",
+]
+
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "integration: marks tests as integration tests",
+  "ai: marks tests requiring AI API keys",
+]
+
+[tool.coverage.run]
+source = ["quality", "workers", "modules"]
+omit = [
+  "tests/*",
+  ".venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

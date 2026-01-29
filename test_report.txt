@@ -1,0 +1,46 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PyQt6 6.10.2 -- Qt runtime 6.10.1 -- Qt compiled 6.10.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0, benchmark-5.2.3
+collected 128 items
+
+py_rme_canary/tests/logic_layer/operations/test_remove_monsters.py ...   [  2%]
+py_rme_canary/tests/logic_layer/test_brush_settings.py .......           [  7%]
+py_rme_canary/tests/logic_layer/test_brushes.py ..........               [ 15%]
+py_rme_canary/tests/logic_layer/test_door_brush.py ........              [ 21%]
+py_rme_canary/tests/logic_layer/test_replace_items.py .......            [ 27%]
+py_rme_canary/tests/performance/test_benchmarks.py ..                    [ 28%]
+py_rme_canary/tests/ui/test_gui_example.py .                             [ 29%]
+py_rme_canary/tests/ui/test_smoke.py .                                   [ 30%]
+py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py ........... [ 39%]
+................................................                         [ 76%]
+py_rme_canary/tests/unit/logic_layer/test_drawing_options.py ........... [ 85%]
+                                                                         [ 85%]
+py_rme_canary/tests/unit/test_autoborder_wall_like.py ..                 [ 86%]
+py_rme_canary/tests/unit/test_gamemap.py .                               [ 87%]
+py_rme_canary/tests/unit/test_map_detection.py ...                       [ 89%]
+py_rme_canary/tests/unit/test_mirroring.py ......                        [ 94%]
+py_rme_canary/tests/unit/test_otmm_loader.py ......                      [ 99%]
+py_rme_canary/tests/unit/test_otmm_saver.py .                            [100%]
+
+=============================== warnings summary ===============================
+py_rme_canary/tests/ui/test_smoke.py::test_smoke_workflow
+  /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages/pytestqt/qtbot.py:304: DeprecationWarning: waitForWindowShown is deprecated, as the underlying Qt method was obsoleted in Qt 5.0 and removed in Qt 6.0. Its name is imprecise and the pytest-qt wrapper does not raise qtbot.TimeoutError if the window wasn't shown. Please use the qtbot.waitExposed context manager instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+----------------------------------------------------------------------------------------- benchmark: 2 tests ----------------------------------------------------------------------------------------
+Name (time in us)               Min                 Max                Mean             StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_map_creation_time       4.6660 (1.0)      340.7480 (1.0)        5.9328 (1.0)       5.7266 (1.0)        4.9880 (1.0)       0.1920 (1.0)      315;2977      168.5557 (1.0)       18233           1
+test_render_frame_time     401.4980 (86.05)    988.5270 (2.90)     471.2720 (79.44)    87.5034 (15.28)    453.2770 (90.87)    45.6735 (237.88)    123;133        2.1219 (0.01)       1753           1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+======================== 128 passed, 1 warning in 2.80s ========================
