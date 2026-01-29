@@ -1,0 +1,38 @@
+[0;36m[INFO][0m  [2026-01-28 03:48:18] Usando uv (fast mode)
+[0;36m[INFO][0m  [2026-01-28 03:48:18] === Quality Pipeline Iniciado ===
+[0;36m[INFO][0m  [2026-01-28 03:48:18] Modo: dry-run | Verbose: false | Telemetry: false
+[0;36m[INFO][0m  [2026-01-28 03:48:18] Verificando dependências do sistema...
+[0;31m[ERROR][0m [2026-01-28 03:48:18] Dependencia ausente: sonar-scanner
+[0;36m[INFO][0m  [2026-01-28 03:48:18] Sugestao de instalacao: https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/
+[1;33m[WARN][0m  [2026-01-28 03:48:18] SonarScanner não encontrado - análise de segurança desabilitada
+[0;31m[ERROR][0m [2026-01-28 03:48:18] Dependencia ausente: shellcheck
+[0;36m[INFO][0m  [2026-01-28 03:48:18] Sugestao de instalacao: apt install shellcheck / brew install shellcheck
+[1;33m[WARN][0m  [2026-01-28 03:48:18] ShellCheck não encontrado - auditoria de scripts desabilitada
+[1;33m[WARN][0m  [2026-01-28 03:48:18] GNU Parallel não encontrado - baseline será sequencial
+[0;32m[✓][0m    [2026-01-28 03:48:18] Todas as dependências verificadas
+[0;36m[INFO][0m  [2026-01-28 03:48:18] === FASE 1: BASELINE ===
+[0;36m[INFO][0m  [2026-01-28 03:48:18] Indexando símbolos → .quality_reports/symbols_before.json
+Indexando simbolos...
+V 1470 simbolos indexados
+[0;36m[INFO][0m  [2026-01-28 03:48:19] Cache HIT para ruff (nenhuma mudança nas fontes)
+[0;36m[INFO][0m  [2026-01-28 03:48:20] Cache HIT para mypy (nenhuma mudança nas fontes)
+[0;36m[INFO][0m  [2026-01-28 03:48:20] Cache HIT para radon (nenhuma mudança nas fontes)
+[0;36m[INFO][0m  [2026-01-28 03:48:20] === FASE 4: SEGURANÇA ===
+[0;36m[INFO][0m  [2026-01-28 03:48:20] Análise SonarQube pulada (--skip-sonar)
+[0;36m[INFO][0m  [2026-01-28 03:48:20] === FASE 5: CONSOLIDAÇÃO ===
+[0;36m[INFO][0m  [2026-01-28 03:48:20] Normalizando issues de todas as ferramentas...
+Normalizando issues...
+V 891 issues normalizados
+  - Ruff: 576
+  - Radon: 315
+  - ast-grep: 0
+[0;36m[INFO][0m  [2026-01-28 03:48:20] Indexando símbolos → .quality_reports/symbols_after.json
+Indexando simbolos...
+V 1470 simbolos indexados
+[0;36m[INFO][0m  [2026-01-28 03:48:21] Comparando simbolos (antes vs depois)...
+[0;32m[✓][0m    [2026-01-28 03:48:22] Simbolos consistentes
+[0;36m[INFO][0m  [2026-01-28 03:48:22] Gerando relat¢rio consolidado...
+✅ Relatório gerado: .quality_reports/refactor_summary.md
+[0;32m[✓][0m    [2026-01-28 03:48:22] === Pipeline Concluído com Sucesso ===
+[0;36m[INFO][0m  [2026-01-28 03:48:22] ℹ️  Modo dry-run: nenhuma alteração foi aplicada
+[0;36m[INFO][0m  [2026-01-28 03:48:22] ℹ️  Execute com --apply para aplicar mudanças

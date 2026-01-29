@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.env
+
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# IDE/editor
+.vscode/
+.idea/
+.cursor/
+*.code-workspace
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Coverage/test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Build/package
+dist/
+build/
+*.egg-info/
+
+# Project-specific reports/artifacts
+.quality_reports/
+.quality_cache/
+.quality_tmp/
+reports/
+.ruff.json
+.ruff_after.json
+.radon.json
+.radon_mi.json
+.mypy_baseline.log
+.mypy_after.log
+
+# Local agent state and external references
+.agent/
+Remeres-map-editor-linux-4.0.0/
+
+# Cursor exports
+py_rme_canary/.cursor.zip
+RME/
+Remeres-map-editor-linux-4.0.0/
+
+# Archives
+*.zip
