@@ -1,0 +1,30 @@
+# codex/rules/execution.rules
+# Policy: Enforce safe execution for py_rme_canary interactions
+
+# 1. Allow standard read/write/list operations
+prefix_rule(
+    pattern=["ls", "dir", "cat", "grep", "find"],
+    decision="allow",
+    justification="Standard file exploration safety."
+)
+
+# 2. PROMPT for Critical Build/Test actions
+prefix_rule(
+    pattern=["pytest", "python -m pytest"],
+    decision="prompt",
+    justification="Tests can be resource intensive. User should be aware."
+)
+
+# 3. FORBID Dangerous Git Operations
+prefix_rule(
+    pattern=["git", "push", "--force"],
+    decision="forbidden",
+    justification="Force push is forbidden to prevent history loss. Use safe push."
+)
+
+# 4. Allow Project Specific Scripts
+prefix_rule(
+    pattern=["./quality.sh", "bash quality.sh"],
+    decision="allow",
+    justification="Approved project quality check script."
+)
