@@ -1,0 +1,7 @@
+Requirement already satisfied: pytest-benchmark in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (5.2.3)
+Requirement already satisfied: pytest>=8.1 in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (from pytest-benchmark) (9.0.2)
+Requirement already satisfied: py-cpuinfo in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (from pytest-benchmark) (9.0.0)
+Requirement already satisfied: iniconfig>=1.0.1 in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (from pytest>=8.1->pytest-benchmark) (2.3.0)
+Requirement already satisfied: packaging>=22 in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (from pytest>=8.1->pytest-benchmark) (26.0)
+Requirement already satisfied: pluggy<2,>=1.5 in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (from pytest>=8.1->pytest-benchmark) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in /home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages (from pytest>=8.1->pytest-benchmark) (2.19.2)

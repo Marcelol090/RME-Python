@@ -1,0 +1,49 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0
+collected 124 items / 3 errors
+
+==================================== ERRORS ====================================
+_____ ERROR collecting py_rme_canary/tests/performance/test_benchmarks.py ______
+ImportError while importing test module '/app/py_rme_canary/tests/performance/test_benchmarks.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+py_rme_canary/tests/performance/test_benchmarks.py:4: in <module>
+    from py_rme_canary.vis_layer.renderer.render_model import RenderFrame
+py_rme_canary/vis_layer/renderer/__init__.py:18: in <module>
+    from .opengl_canvas import (
+py_rme_canary/vis_layer/renderer/opengl_canvas.py:10: in <module>
+    from PyQt6.QtCore import Qt, QRect, QSize, QElapsedTimer, QTimer, QPoint
+E   ModuleNotFoundError: No module named 'PyQt6'
+_________ ERROR collecting py_rme_canary/tests/ui/test_gui_example.py __________
+ImportError while importing test module '/app/py_rme_canary/tests/ui/test_gui_example.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+py_rme_canary/tests/ui/test_gui_example.py:1: in <module>
+    from PyQt6.QtCore import Qt
+E   ModuleNotFoundError: No module named 'PyQt6'
+____________ ERROR collecting py_rme_canary/tests/ui/test_smoke.py _____________
+ImportError while importing test module '/app/py_rme_canary/tests/ui/test_smoke.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+py_rme_canary/tests/ui/test_smoke.py:5: in <module>
+    from PyQt6.QtWidgets import QDialog, QFileDialog
+E   ModuleNotFoundError: No module named 'PyQt6'
+=========================== short test summary info ============================
+ERROR py_rme_canary/tests/performance/test_benchmarks.py
+ERROR py_rme_canary/tests/ui/test_gui_example.py
+ERROR py_rme_canary/tests/ui/test_smoke.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 3 errors in 0.98s ===============================

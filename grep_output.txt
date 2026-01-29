@@ -1,0 +1,12 @@
+py_rme_canary/docs/tracking/IMPLEMENTATION_SESSION_2026-01-23.md:1. ✅ **PreferencesDialog** - 323 linhas
+py_rme_canary/docs/tracking/IMPLEMENTATION_SESSION_2026-01-23.md:### 1. PreferencesDialog (preferences_dialog.py - 323 linhas)
+py_rme_canary/docs/tracking/IMPLEMENTATION_SESSION_2026-01-23.md:1. **PreferencesDialog:** Integrar com config.toml reader/writer
+py_rme_canary/docs/tracking/IMPLEMENTATION_SESSION_2026-01-23.md:- [ ] Validar settings persistence no PreferencesDialog
+py_rme_canary/docs/FINAL_AUDIT_SUMMARY.md:14. ✅ **PreferencesDialog** - preferences_dialog.py (323 linhas)
+py_rme_canary/docs/analysis/FINAL_AUDIT_SUMMARY.md:14. ✅ **PreferencesDialog** - preferences_dialog.py (323 linhas)
+py_rme_canary/docs/IMPLEMENTATION_SESSION_2026-01-23.md:1. ✅ **PreferencesDialog** - 323 linhas
+py_rme_canary/docs/IMPLEMENTATION_SESSION_2026-01-23.md:### 1. PreferencesDialog (preferences_dialog.py - 323 linhas)
+py_rme_canary/docs/IMPLEMENTATION_SESSION_2026-01-23.md:1. **PreferencesDialog:** Integrar com config.toml reader/writer
+py_rme_canary/docs/IMPLEMENTATION_SESSION_2026-01-23.md:- [ ] Validar settings persistence no PreferencesDialog
+py_rme_canary/vis_layer/ui/main_window/preferences_dialog.py:class PreferencesDialog(QDialog):
+py_rme_canary/vis_layer/ui/main_window/preferences_dialog.py:        print(f"[PreferencesDialog] Settings saved: {self._settings}")

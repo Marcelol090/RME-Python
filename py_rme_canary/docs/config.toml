@@ -1,0 +1,259 @@
+# Codex Configuration - Native TOML Format
+# Purpose: LLM integration setup for py_rme_canary across IDE environments
+
+[metadata]
+name = "py_rme_canary"
+version = "1.0.0"
+description = "Production-grade Tibia map editor with architectural clarity"
+agent_policy = "agents.md"
+last_updated = "2026-01-14"
+
+[session]
+# Automatic context loading at session start
+priority_order = [
+    "docs/README.md",
+    "docs/memory_instruction.md",
+    "docs/agents.md",
+    "docs/PRD.md",
+    "docs/PROJECT_STRUCTURE.md"
+]
+
+# Task-specific context loading
+[session.contexts.new_feature]
+files = [
+    "docs/README.md",
+    "docs/memory_instruction.md",
+    "docs/PRD.md",
+    "docs/IMPLEMENTATION_STATUS.md",
+    "docs/ARCHITECTURE.md"
+]
+
+[session.contexts.bug_fix]
+files = [
+    "docs/README.md",
+    "docs/memory_instruction.md",
+    "docs/ARCHITECTURE.md"
+]
+
+[session.contexts.refactoring]
+files = [
+    "docs/README.md",
+    "docs/PROJECT_STRUCTURE.md",
+    "docs/TODO_EXPENSIVE.md",
+    "docs/memory_instruction.md"
+]
+
+[session.contexts.code_review]
+files = [
+    "docs/agents.md",
+    "docs/QUALITY_CHECKLIST.md",
+    "docs/PROJECT_STRUCTURE.md"
+]
+
+[session.contexts.documentation]
+files = [
+    "docs/README.md",
+    "docs/CONTRIBUTING.md"
+]
+
+# Developer instructions for different IDEs
+[ide.vscode]
+extension = "Codex"
+settings_file = ".vscode/settings.json"
+context_files = [
+    "py_rme_canary/docs/README.md",
+    "py_rme_canary/docs/memory_instruction.md",
+    "py_rme_canary/docs/agents.md",
+    "py_rme_canary/docs/PRD.md",
+    "py_rme_canary/docs/PROJECT_STRUCTURE.md"
+]
+
+[ide.vscode.instructions]
+title = "py_rme_canary Development"
+content = """READ AND FOLLOW:
+1. py_rme_canary/docs/README.md (documentation index)
+2. py_rme_canary/docs/memory_instruction.md (project memory)
+3. py_rme_canary/docs/agents.md (coding standards)
+
+ALWAYS verify against PROJECT_STRUCTURE.md before creating files.
+ALWAYS run quality checks before proposing changes.
+FOLLOW: Async-first architecture, type hints mandatory, 90%+ test coverage."""
+auto_read_context = true
+
+[ide.cursor]
+extension = "Cursor AI"
+config_file = ".cursor/config.json"
+
+[ide.cursor.rules]
+pattern = "**/*.py"
+context = [
+    "py_rme_canary/docs/README.md",
+    "py_rme_canary/docs/memory_instruction.md",
+    "py_rme_canary/docs/agents.md",
+    "py_rme_canary/docs/PROJECT_STRUCTURE.md"
+]
+instructions = """Before any code change, verify against:
+1. Layer dependency rules (core -> logic -> vis)
+2. Coding standards in agents.md
+3. Active work in memory_instruction.md
+4. File organization in PROJECT_STRUCTURE.md"""
+
+[ide.github_copilot]
+extension = "GitHub Copilot"
+config_file = ".github/.copilot-instructions.md"
+
+[ide.github_copilot.instructions]
+title = "Copilot Instructions for py_rme_canary"
+context_files = [
+    "py_rme_canary/docs/README.md",
+    "py_rme_canary/docs/memory_instruction.md",
+    "py_rme_canary/docs/agents.md"
+]
+
+[architecture_rules]
+description = "Critical layer separation enforced for all code changes"
+core_layer = "Zero UI dependencies"
+logic_layer = "Business logic, no UI"
+vis_layer = "UI only (PyQt6)"
+dependencies = "core -> logic -> vis (strict order)"
+circular = false
+
+[quality_gates]
+code_formatter = "black"
+import_sorter = "isort"
+type_checker = "mypy --strict"
+test_framework = "pytest"
+test_coverage_minimum = 0.90
+security_scanner = "bandit"
+linter = "autoflake"
+
+[quality_gates.commands]
+format = "black . && isort . && autoflake --remove-all-unused-imports -i -r ."
+type_check = "mypy . --strict --show-error-codes"
+security = "bandit -r . -ll -i"
+test = "pytest --cov=. --cov-report=term-missing"
+
+[validation_checklist]
+# Codex must verify all items before proposing changes
+read_memory = true
+check_structure = true
+verify_layers = true
+confirm_types = true
+ensure_tests = true
+no_circular = true
+follow_naming = true
+has_docstrings = true
+passes_quality = true
+
+[context_anchors]
+"Architecture" = "ARCHITECTURE.md"
+"File Organization" = "PROJECT_STRUCTURE.md"
+"Feature Requirements" = "PRD.md"
+"Current Work Status" = "memory_instruction.md:ACTIVE_WORK"
+"Quality Standards" = "agents.md"
+"Missing Features" = "IMPLEMENTATION_STATUS.md"
+"Technical Debt" = "TODO_EXPENSIVE.md"
+
+[prompts.new_feature]
+template = """I need to implement [FEATURE_NAME] for py_rme_canary.
+
+Please:
+1. Read docs/PRD.md to understand product requirements
+2. Check docs/IMPLEMENTATION_STATUS.md for current status
+3. Review docs/PROJECT_STRUCTURE.md for file organization
+4. Propose implementation plan with:
+   - Files to create/modify (with correct layer placement)
+   - Dependency verification
+   - Test strategy
+   - Timeline estimate
+
+Wait for approval before coding."""
+
+[prompts.bug_fix]
+template = """There's a bug in [MODULE_NAME]: [DESCRIPTION]
+
+Please:
+1. Read docs/ARCHITECTURE.md to understand the system
+2. Locate the relevant code in [LAYER]/[MODULE]
+3. Explain root cause
+4. Propose fix with:
+   - Code changes (unified diff)
+   - Test additions
+   - Regression prevention
+
+Run quality checks before submitting."""
+
+[prompts.refactor]
+template = """I want to refactor [MODULE/AREA] to improve [REASON]
+
+Please:
+1. Read docs/PROJECT_STRUCTURE.md for organization rules
+2. Check docs/TODO_EXPENSIVE.md for related work
+3. Review current implementation
+4. Propose refactor plan:
+   - Milestones (< 300 LOC each)
+   - Before/after structure
+   - Migration path
+   - Risk assessment
+
+Generate unified diffs for review."""
+
+[prompts.code_review]
+template = """Review this PR: [LINK or PASTE DIFF]
+
+Using:
+1. docs/agents.md - Coding standards
+2. docs/QUALITY_CHECKLIST.md - Quality gates
+3. docs/PROJECT_STRUCTURE.md - Architecture rules
+
+Provide:
+- P0 (Blocking): Security, type safety, critical bugs
+- P1 (High): Performance, unhandled exceptions, missing tests
+- P2 (Medium): Style, documentation
+- Actionable suggestions with code examples"""
+
+[performance]
+# Optimize context loading in long sessions
+reduce_repetition = true
+cache_context = true
+incremental_updates = true
+
+[recovery]
+lost_context = """You seem to have lost context. Please re-read:
+1. py_rme_canary/docs/README.md
+2. py_rme_canary/docs/memory_instruction.md
+3. py_rme_canary/docs/agents.md
+
+Then confirm:
+- Current feature we're working on
+- Expected outcome
+- Any blocking constraints"""
+
+rule_violation = """This change violates [RULE] in docs/PROJECT_STRUCTURE.md.
+
+Please:
+1. Re-read the relevant section
+2. Explain why the violation occurred
+3. Propose corrected approach"""
+
+[metrics]
+positive_signals = [
+    "Codex mentions specific docs without prompting",
+    "Follows layer rules automatically",
+    "Suggests patterns from memory_instruction.md",
+    "Avoids anti-patterns from agents.md",
+    "Continues work from previous sessions"
+]
+
+negative_signals = [
+    "Asks basic architecture questions",
+    "Suggests code in wrong layer",
+    "Ignores naming conventions",
+    "Proposes anti-patterns",
+    "Doesn't check memory_instruction.md"
+]
+
+[continuous_improvement]
+update_memory_after_session = true
+review_codex_performance = true
+track_context_effectiveness = true
