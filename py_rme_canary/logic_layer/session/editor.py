@@ -10,9 +10,9 @@ import os
 import random
 import time
 from collections.abc import Callable
-from typing import Any
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
+from typing import Any
 
 from py_rme_canary.core.data.door import DoorType
 from py_rme_canary.core.data.gamemap import GameMap
@@ -39,6 +39,8 @@ from py_rme_canary.core.protocols.tile_serializer import (
     decode_tile_update,
     encode_tile_update,
 )
+from py_rme_canary.logic_layer.clipboard import ClipboardManager as SystemClipboardManager
+from py_rme_canary.logic_layer.clipboard import tiles_from_entry
 
 from ..brush_definitions import (
     VIRTUAL_DOOR_TOOL_HATCH,
@@ -72,6 +74,7 @@ from ..map_metadata_actions import (
     WaypointAction,
     ZoneAction,
 )
+from ..networked_action_queue import NetworkedActionQueue, decode_tile_positions
 from ..remove_items import remove_items_in_map
 from ..replace_items import replace_items_in_map
 from ..transactional_brush import (
@@ -80,10 +83,8 @@ from ..transactional_brush import (
     LabeledPaintAction,
     PaintAction,
 )
-from ..networked_action_queue import NetworkedActionQueue, decode_tile_positions
 from .action_queue import ActionType, SessionAction, SessionActionQueue
 from .clipboard import ClipboardManager
-from py_rme_canary.logic_layer.clipboard import ClipboardManager as SystemClipboardManager, tiles_from_entry
 from .gestures import GestureHandler
 from .move import MoveHandler
 from .selection import SelectionApplyMode, SelectionManager, TileKey, tile_is_nonempty
@@ -2414,6 +2415,7 @@ class EditorSession:
 
     def copy_selection(self, client_version: str | None = None) -> bool:
         """Copy selected tiles into the internal buffer and system clipboard."""
+
         # Prepare name lookup
         def name_lookup(server_id: int) -> str | None:
             xml = self._ensure_items_xml_loaded()
@@ -2436,7 +2438,7 @@ class EditorSession:
 
         if not tiles:
             return False
-        
+
         # Determine origin version
         origin_x = min(int(t.x) for t in tiles)
         origin_y = min(int(t.y) for t in tiles)
@@ -2448,12 +2450,12 @@ class EditorSession:
             system_clipboard.to_system_clipboard(client_version)
         else:
             system_clipboard.to_system_clipboard()
-            
+
         return True
 
     def import_from_system_clipboard(self, target_version: str | None = None) -> bool:
         """Try to import content from the system clipboard."""
-        
+
         def name_resolver(name: str) -> int | None:
             xml = self._ensure_items_xml_loaded()
             if xml:
@@ -3025,7 +3027,7 @@ class EditorSession:
     def set_live_cursor_callback(self, callback: Callable[[int, int, int, int], None] | None) -> None:
         self._on_live_cursor = callback
 
-    def _broadcast_live_tiles(self, dirty_list: "object") -> None:
+    def _broadcast_live_tiles(self, dirty_list: object) -> None:
         if not (self._live_client or self._live_server):
             return
         positions = list(getattr(dirty_list, "positions", []) or [])
@@ -3077,7 +3079,9 @@ class EditorSession:
         self._live_action_queue.set_live_client(None)
         self._live_sync_started = False
 
-    def start_live_server(self, *, host: str = "127.0.0.1", port: int = 7171, name: str = "", password: str = "") -> bool:
+    def start_live_server(
+        self, *, host: str = "127.0.0.1", port: int = 7171, name: str = "", password: str = ""
+    ) -> bool:
         """Start hosting a Live Editing server."""
         if self._live_server is not None:
             return True
@@ -3240,10 +3244,7 @@ class EditorSession:
                                 y_max=height - 1,
                                 z=int(z),
                             )
-                elif int(pkt_type) == int(PacketType.LOGIN_ERROR):
-                    self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
-                    self.disconnect_live()
-                elif int(pkt_type) == int(PacketType.KICK):
+                elif int(pkt_type) == int(PacketType.LOGIN_ERROR) or int(pkt_type) == int(PacketType.KICK):
                     self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
                     self.disconnect_live()
                 elif int(pkt_type) == int(PacketType.CLIENT_LIST):

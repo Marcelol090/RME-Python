@@ -8,8 +8,9 @@ import logging
 import select
 import socket
 import threading
+from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from .live_packets import PacketType, decode_cursor, encode_chat
 from .live_peer import LivePeer
@@ -308,4 +309,3 @@ class LiveServer:
                 self._disconnect_client(sock)
                 return True
         return False
-

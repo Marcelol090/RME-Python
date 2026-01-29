@@ -86,8 +86,21 @@ class LegacyItemSpriteInfo:
         frame: int,
     ) -> int:
         return (
-            (((((int(frame) % max(1, int(self.frames))) * int(self.pattern_z) + int(pattern_z)) * int(self.pattern_y) + int(pattern_y))
-            * int(self.pattern_x) + int(pattern_x)) * int(self.layers) + int(layer)) * int(self.height) + int(height)
+            (
+                (
+                    (
+                        ((int(frame) % max(1, int(self.frames))) * int(self.pattern_z) + int(pattern_z))
+                        * int(self.pattern_y)
+                        + int(pattern_y)
+                    )
+                    * int(self.pattern_x)
+                    + int(pattern_x)
+                )
+                * int(self.layers)
+                + int(layer)
+            )
+            * int(self.height)
+            + int(height)
         ) * int(self.width) + int(width)
 
     def sprite_id_at(
@@ -283,13 +296,7 @@ def _parse_legacy_items(
             animation = LegacyAnimation(frames=int(frames), durations_ms=tuple(durations), start_frame=int(start_frame))
 
         numsprites = (
-            int(width)
-            * int(height)
-            * int(layers)
-            * int(pattern_x)
-            * int(pattern_y)
-            * int(pattern_z)
-            * int(frames)
+            int(width) * int(height) * int(layers) * int(pattern_x) * int(pattern_y) * int(pattern_z) * int(frames)
         )
         sprite_ids: list[int] = []
         for _ in range(numsprites):

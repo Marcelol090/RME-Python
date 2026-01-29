@@ -76,7 +76,6 @@ def export_to_xml(stats: MapStatistics, output_path: Path) -> None:
     tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
 
-
 def export_to_csv(stats: MapStatistics, output_path: Path) -> None:
     """Export statistics to CSV format.
 

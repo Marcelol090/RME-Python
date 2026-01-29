@@ -194,4 +194,3 @@ class LiveClient(LiveSocket):
             self._on_map_chunk(chunk)
 
         log.debug(f"Received map chunk {chunk_id + 1}/{total} with {len(chunk.get('tiles', []))} tiles")
-

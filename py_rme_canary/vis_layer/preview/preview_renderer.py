@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
-from py_rme_canary.core.assets.appearances_dat import AppearanceIndex, SpriteInfo
+from typing import TYPE_CHECKING, Any
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.memory_guard import MemoryGuard, MemoryGuardError, default_memory_guard
 from py_rme_canary.logic_layer.sprite_system.legacy_dat import LegacyItemSpriteInfo
 
 if TYPE_CHECKING:
     import pygame
+    from py_rme_canary.core.assets.appearances_dat import AppearanceIndex, SpriteInfo
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,7 +105,7 @@ class IngameRenderer:
         self,
         *,
         sprite_provider,
-        appearance_index: AppearanceIndex | None,
+        appearance_index: Any,
         legacy_items: dict[int, LegacyItemSpriteInfo] | None,
         items_xml: ItemsXML | None,
         tile_px: int = 32,
@@ -144,8 +143,7 @@ class IngameRenderer:
                 tile = tile_lookup.get((tx, ty))
                 if tile is None:
                     continue
-                screen_x = (int(tx) - int(viewport.origin_x)) * tile_px
-                screen_y = (int(ty) - int(viewport.origin_y)) * tile_px
+                screen_x, screen_y = self._world_to_screen(tx, ty, viewport)
                 self._draw_tile(world_surface, tile, screen_x, screen_y, time_ms=int(snapshot.time_ms))
 
         if world_surface.get_size() != screen.get_size():
@@ -173,6 +171,12 @@ class IngameRenderer:
 
         for item in ground + bottom + top:
             self._draw_item(surface, tile, item, screen_x, screen_y, time_ms=time_ms)
+
+    def _world_to_screen(self, x: int, y: int, viewport: PreviewViewport) -> tuple[int, int]:
+        tile_px = int(viewport.tile_px)
+        screen_x = (int(x) - int(viewport.origin_x)) * tile_px
+        screen_y = (int(y) - int(viewport.origin_y)) * tile_px
+        return screen_x, screen_y
 
     def _classify_item(self, item: PreviewItem) -> str:
         legacy = self._legacy_items.get(int(item.client_id))
@@ -250,7 +254,7 @@ class IngameRenderer:
         surface: "pygame.Surface",
         tile: TileSnapshot,
         item: PreviewItem,
-        info: SpriteInfo,
+        info: Any,
         screen_x: int,
         screen_y: int,
         *,

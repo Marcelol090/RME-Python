@@ -15,9 +15,7 @@ def test_import_map_with_offset(tmp_path: Path) -> None:
     target_map.set_tile(Tile(x=1, y=1, z=7, ground=Item(id=100)))
 
     source_map = GameMap(header=MapHeader(otbm_version=2, width=5, height=5, housefile="houses.xml"))
-    source_map.set_tile(
-        Tile(x=0, y=0, z=7, ground=Item(id=200), items=[Item(id=201)], house_id=1)
-    )
+    source_map.set_tile(Tile(x=0, y=0, z=7, ground=Item(id=200), items=[Item(id=201)], house_id=1))
     source_map.houses[1] = House(id=1, name="ImportHouse", entry=Position(1, 1, 7), townid=1)
 
     source_path = tmp_path / "source_map.otbm"

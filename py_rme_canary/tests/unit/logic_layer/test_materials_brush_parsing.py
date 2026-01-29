@@ -7,12 +7,14 @@ from py_rme_canary.logic_layer.brush_definitions import BrushManager
 
 
 def _write_materials(tmp_path: Path, include_name: str, include_body: str) -> Path:
-    root_xml = dedent(f"""
+    root_xml = dedent(
+        f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <materials>
             <include file="{include_name}"/>
         </materials>
-    """).strip()
+    """
+    ).strip()
     root_path = tmp_path / "materials.xml"
     root_path.write_text(root_xml, encoding="utf-8")
     (tmp_path / include_name).write_text(dedent(include_body).strip(), encoding="utf-8")

@@ -233,8 +233,12 @@ class ShortcutSettings:
         Returns:
             New ShortcutSettings with default shortcuts
         """
-        return ShortcutSettings.default().with_enabled(self.enabled).with_custom_allowed(
-            self.allow_custom,
+        return (
+            ShortcutSettings.default()
+            .with_enabled(self.enabled)
+            .with_custom_allowed(
+                self.allow_custom,
+            )
         )
 
     def reset_action(self, action: ShortcutAction) -> ShortcutSettings:
@@ -349,8 +353,7 @@ class ShortcutSettings:
             data = json.load(f)
 
         shortcuts = {
-            ShortcutAction[action_name]: shortcut
-            for action_name, shortcut in data.get("shortcuts", {}).items()
+            ShortcutAction[action_name]: shortcut for action_name, shortcut in data.get("shortcuts", {}).items()
         }
 
         return ShortcutSettings(

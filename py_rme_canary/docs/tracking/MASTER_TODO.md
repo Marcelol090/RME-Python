@@ -100,28 +100,28 @@ From `ANALISE_FALTANTE.md` ("Completely Faltante"):
 
 ### 📋 Fase 1: Preparação e Estrutura Base
 *(Ref: C:\Users\Marcelo Henrique\Desktop\projec_rme\RME`)* Structure
-- [ ] **Client Files:** Obtain `.spr` and `.dat`, create `client_files/` directory.
-- [ ] **Format Research:** Study `.dat` (flags, dimensions) and `.spr` (compression, caching) formats.
-- [ ] **Directory Structure:** Create `logic_layer/sprite_system/`, `vis_layer/preview/`, `tests/preview_tests/`.
+- [x] **Client Files:** Obtain `.spr` and `.dat`, create `client_files/` directory.
+- [x] **Format Research:** Study `.dat` (flags, dimensions) and `.spr` (compression, caching) formats.
+- [x] **Directory Structure:** Create `logic_layer/sprite_system/`, `vis_layer/preview/`, `tests/preview_tests/`.
 
 ### 🔧 Phase 2: Sprite Loader (.spr & .dat)
-- [ ] **.dat Reader:** Implement header, flags, dimensions, pattern reading (metadata dictionary).
-- [ ] **.spr Reader:** Implement header, pointer table, RLE decoding, pixel conversion (RGBA).
-- [ ] **Cache System:** Implement LRU cache with memory limits (MemoryGuard integration).
-- [ ] **Validation:** Compare loaded sprites with original client (transparent transparency, multi-tile).
+- [x] **.dat Reader:** Implement header, flags, dimensions, pattern reading (metadata dictionary).
+- [x] **.spr Reader:** Implement header, pointer table, RLE decoding, pixel conversion (RGBA).
+- [x] **Cache System:** Implement LRU cache with memory limits (MemoryGuard integration).
+- [x] **Validation:** Compare loaded sprites with original client (transparent transparency, multi-tile).
 
 ### 🎨 Phase 3: In-Game Renderer
-- [ ] **Rendering Order:** Implement correct layer stacking (Ground → Bottom → Top).
-- [ ] **Isometric Perspective:** Implement World → Screen coordinate conversion (32x32 tiles).
-- [ ] **Multi-Sprite Items:** Render 2x2, 3x3 items with correct offsets.
-- [ ] **Animations:** Implement frame counting, delta_time updates, animation speed (200ms default).
-- [ ] **Stackable Items:** Render counts for stackable items (text with shadow).
+- [x] **Rendering Order:** Implement correct layer stacking (Ground → Bottom → Top).
+- [x] **Isometric Perspective:** Implement World → Screen coordinate conversion (32x32 tiles).
+- [x] **Multi-Sprite Items:** Render 2x2, 3x3 items with correct offsets.
+- [x] **Animations:** Implement frame counting, delta_time updates, animation speed (200ms default).
+- [x] **Stackable Items:** Render counts for stackable items (text with shadow).
 
 ### 🪟 Phase 4: Preview Window
-- [ ] **Window Creation:** Pygame window ("In-Game Preview - RME"), resizeable.
-- [ ] **Render Loop:** Main loop (60 FPS), event processing, display update.
-- [ ] **Synchronization:** Sync camera with editor, update on map changes.
-- [ ] **Viewport:** Culling (render only visible tiles), support zoom/pan.
+- [x] **Window Creation:** Pygame window ("In-Game Preview - RME"), resizeable.
+- [x] **Render Loop:** Main loop (60 FPS), event processing, display update.
+- [x] **Synchronization:** Sync camera with editor, update on map changes.
+- [x] **Viewport:** Culling (render only visible tiles), support zoom/pan.
 
 ### ⚙️ Phase 5: Advanced Features
 - [ ] **Optional Grid:** Toggleable grid overlay (Key 'G').
@@ -130,13 +130,13 @@ From `ANALISE_FALTANTE.md` ("Completely Faltante"):
 - [ ] **Creatures (Optional):** Render creature sprites/outfits with direction.
 
 ### 🔗 Phase 6: Editor Integration
-- [ ] **Actions:** New `toggle_preview` action, F5 shortcut.
-- [ ] **Menu:** "In-Game Preview" item in View menu.
-- [ ] **Threading:** Daemon thread/process for preview window to avoid blocking editor.
-- [ ] **Communication:** Message queue for Editor → Preview updates.
+- [x] **Actions:** New `toggle_preview` action, F5 shortcut.
+- [x] **Menu:** "In-Game Preview" item in View menu.
+- [x] **Threading:** Daemon thread/process for preview window to avoid blocking editor.
+- [x] **Communication:** Message queue for Editor → Preview updates.
 
 ### 🧪 Phase 7: Testing & Validation
-- [ ] **Unit Tests:** Loaders (.dat/.spr), cache, coordinate conversion.
+- [x] **Unit Tests:** Loaders (.dat/.spr), cache, coordinate conversion.
 - [ ] **Integration Tests:** Preview sync, item add/remove updates.
 - [ ] **Performance Tests:** FPS measurements (small vs large viewport), memory usage.
 - [ ] **Visual Tests:** Compare with real client side-by-side.

@@ -156,9 +156,7 @@ class SymmetryManager:
         if callback in self._on_state_changed:
             self._on_state_changed.remove(callback)
 
-    def calculate_mirrored_positions(
-        self, x: int, y: int, z: int
-    ) -> list[MirroredPosition]:
+    def calculate_mirrored_positions(self, x: int, y: int, z: int) -> list[MirroredPosition]:
         """Calculate all mirrored positions for a given coordinate.
 
         Args:
@@ -217,9 +215,7 @@ class SymmetryManager:
 
         return result
 
-    def mirror_direction(
-        self, direction: Direction | int, mirror_type: str
-    ) -> Direction:
+    def mirror_direction(self, direction: Direction | int, mirror_type: str) -> Direction:
         """Get the mirrored direction for an item.
 
         Args:
@@ -252,10 +248,7 @@ class SymmetryManager:
         Optimization for large maps.
         """
         return [
-            p
-            for p in positions
-            if viewport_x_min <= p.x <= viewport_x_max
-            and viewport_y_min <= p.y <= viewport_y_max
+            p for p in positions if viewport_x_min <= p.x <= viewport_x_max and viewport_y_min <= p.y <= viewport_y_max
         ]
 
     def _notify_state_changed(self) -> None:

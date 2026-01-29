@@ -9,7 +9,8 @@ Reference: legacy live_action.cpp
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from py_rme_canary.core.protocols.live_client import LiveClient

@@ -8,9 +8,9 @@ from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.data.item import Item
 from py_rme_canary.core.data.tile import Tile
 from py_rme_canary.core.database.id_mapper import IdMapper
+from py_rme_canary.core.io.otbm.item_parser import ItemParser
 from py_rme_canary.core.io.otbm.loader import OTBMLoader
 from py_rme_canary.core.io.otbm.saver import serialize
-from py_rme_canary.core.io.otbm.item_parser import ItemParser
 from py_rme_canary.core.io.otbm.streaming import EscapedPayloadReader
 
 

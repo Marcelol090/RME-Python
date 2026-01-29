@@ -28,16 +28,12 @@ class TestDoodadEraseLike(unittest.TestCase):
         spec_a = DoodadBrushSpec(
             name="Brush A",
             server_id=1,
-            alternatives=(
-                DoodadAlternative(items=(DoodadItemChoice(id=100, chance=10),)),
-            ),
+            alternatives=(DoodadAlternative(items=(DoodadItemChoice(id=100, chance=10),)),),
         )
         spec_b = DoodadBrushSpec(
             name="Brush B",
             server_id=2,
-            alternatives=(
-                DoodadAlternative(items=(DoodadItemChoice(id=200, chance=10),)),
-            ),
+            alternatives=(DoodadAlternative(items=(DoodadItemChoice(id=200, chance=10),)),),
         )
 
         self.brush_manager._doodads = {1: spec_a, 2: spec_b}

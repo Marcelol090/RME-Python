@@ -114,7 +114,7 @@ class ItemsXML:
 
     def get_client_id(self, server_id: int) -> int | None:
         return self._server_to_client.get(int(server_id))
-    
+
     def get_server_id_by_name(self, name: str) -> int | None:
         """Look up server ID by item name (case-insensitive)."""
         return self._server_id_by_name.get(name.strip().lower())

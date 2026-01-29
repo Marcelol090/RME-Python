@@ -18,7 +18,8 @@ from py_rme_canary.core.data.creature import Outfit
 @pytest.fixture
 def tmp_monsters_xml(tmp_path: Path) -> Path:
     """Create temporary monsters.xml file."""
-    xml_content = dedent("""
+    xml_content = dedent(
+        """
         <?xml version="1.0" encoding="UTF-8"?>
         <monsters>
             <monster name="Dragon" looktype="39"/>
@@ -27,7 +28,8 @@ def tmp_monsters_xml(tmp_path: Path) -> Path:
             <monster name="A Shielded Astral Glyph" lookitem="24226"/>
             <monster name="Rat" looktype="21" lookhead="20" lookbody="30" looklegs="40" lookfeet="50"/>
         </monsters>
-    """).strip()
+    """
+    ).strip()
 
     xml_file = tmp_path / "monsters.xml"
     xml_file.write_text(xml_content, encoding="utf-8")
@@ -37,13 +39,15 @@ def tmp_monsters_xml(tmp_path: Path) -> Path:
 @pytest.fixture
 def tmp_npcs_xml(tmp_path: Path) -> Path:
     """Create temporary npcs.xml file."""
-    xml_content = dedent("""
+    xml_content = dedent(
+        """
         <?xml version="1.0" encoding="UTF-8"?>
         <npcs>
             <npc name="Sam" looktype="128" lookhead="20" lookbody="30" looklegs="40" lookfeet="50"/>
             <npc name="Norma" looktype="140" lookhead="0" lookbody="0" looklegs="0" lookfeet="0"/>
         </npcs>
-    """).strip()
+    """
+    ).strip()
 
     xml_file = tmp_path / "npcs.xml"
     xml_file.write_text(xml_content, encoding="utf-8")
@@ -53,13 +57,15 @@ def tmp_npcs_xml(tmp_path: Path) -> Path:
 @pytest.fixture
 def tmp_legacy_xml(tmp_path: Path) -> Path:
     """Create temporary legacy RME creatures.xml file."""
-    xml_content = dedent("""
+    xml_content = dedent(
+        """
         <?xml version="1.0" encoding="UTF-8"?>
         <creatures>
             <creature name="Dragon" type="monster" looktype="39"/>
             <creature name="Sam" type="npc" looktype="128" lookhead="20"/>
         </creatures>
-    """).strip()
+    """
+    ).strip()
 
     xml_file = tmp_path / "creatures.xml"
     xml_file.write_text(xml_content, encoding="utf-8")

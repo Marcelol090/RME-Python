@@ -26,24 +26,28 @@ def temp_creature_dir(tmp_path: Path) -> Path:
     npcs_dir.mkdir(parents=True)
 
     # Create monsters.xml
-    monsters_xml = dedent("""
+    monsters_xml = dedent(
+        """
         <?xml version="1.0" encoding="UTF-8"?>
         <monsters>
             <monster name="Dragon" looktype="39"/>
             <monster name="Demon" looktype="35"/>
         </monsters>
-    """).strip()
+    """
+    ).strip()
 
     (monsters_dir / "monsters.xml").write_text(monsters_xml, encoding="utf-8")
 
     # Create npcs.xml
-    npcs_xml = dedent("""
+    npcs_xml = dedent(
+        """
         <?xml version="1.0" encoding="UTF-8"?>
         <npcs>
             <npc name="Sam" looktype="128"/>
             <npc name="Tom" looktype="129"/>
         </npcs>
-    """).strip()
+    """
+    ).strip()
 
     (npcs_dir / "npcs.xml").write_text(npcs_xml, encoding="utf-8")
 
@@ -154,12 +158,14 @@ def test_multiple_xml_files_same_directory(tmp_path: Path) -> None:
     """Test handling multiple creature files in same directory."""
     # Create first monsters.xml
     (tmp_path / "monsters.xml").write_text(
-        dedent("""
+        dedent(
+            """
             <?xml version="1.0" encoding="UTF-8"?>
             <monsters>
                 <monster name="Rat" looktype="21"/>
             </monsters>
-        """).strip(),
+        """
+        ).strip(),
         encoding="utf-8",
     )
 
@@ -167,12 +173,14 @@ def test_multiple_xml_files_same_directory(tmp_path: Path) -> None:
     subdir = tmp_path / "bosses"
     subdir.mkdir()
     (subdir / "monsters.xml").write_text(
-        dedent("""
+        dedent(
+            """
             <?xml version="1.0" encoding="UTF-8"?>
             <monsters>
                 <monster name="Dragon" looktype="39"/>
             </monsters>
-        """).strip(),
+        """
+        ).strip(),
         encoding="utf-8",
     )
 

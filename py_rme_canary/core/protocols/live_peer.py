@@ -10,14 +10,14 @@ from .live_socket import LiveSocket
 
 # Color palette for client cursors (similar to legacy RME)
 PEER_COLORS: list[tuple[int, int, int]] = [
-    (255, 0, 0),      # Red
-    (0, 255, 0),      # Green
-    (0, 0, 255),      # Blue
-    (255, 255, 0),    # Yellow
-    (255, 0, 255),    # Magenta
-    (0, 255, 255),    # Cyan
-    (255, 128, 0),    # Orange
-    (128, 0, 255),    # Purple
+    (255, 0, 0),  # Red
+    (0, 255, 0),  # Green
+    (0, 0, 255),  # Blue
+    (255, 255, 0),  # Yellow
+    (255, 0, 255),  # Magenta
+    (0, 255, 255),  # Cyan
+    (255, 128, 0),  # Orange
+    (128, 0, 255),  # Purple
 ]
 
 
@@ -67,4 +67,3 @@ class LivePeer(LiveSocket):
         """Broadcast current cursor position."""
         payload = encode_cursor(self.client_id, self.cursor_x, self.cursor_y, self.cursor_z)
         return self.send_cursor(payload)
-

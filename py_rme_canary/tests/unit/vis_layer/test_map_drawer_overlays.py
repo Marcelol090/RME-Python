@@ -172,7 +172,4 @@ def test_light_rendering_glows_and_strength_labels() -> None:
     assert backend.tile_colors, "Expected ambient overlay/glow draws"
     assert any(size >= drawer.viewport.width_px for _, _, size, _, _, _, _, _ in backend.tile_colors)
     assert any(call[7] >= 60 for call in backend.tile_colors)
-    assert any(
-        text.strip().isdigit() and int(text.strip()) > 0
-        for _, _, text in backend.text_calls
-    )
+    assert any(text.strip().isdigit() and int(text.strip()) > 0 for _, _, text in backend.text_calls)

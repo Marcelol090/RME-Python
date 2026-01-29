@@ -164,9 +164,7 @@ class DrawingOptions:
     # Lights
     show_lights: bool = False
     show_light_strength: bool = True
-    light_settings: LightSettings = field(
-        default_factory=lambda: LIGHT_PRESETS["editor_default"]
-    )
+    light_settings: LightSettings = field(default_factory=lambda: LIGHT_PRESETS["editor_default"])
 
     # Client View
     show_ingame_box: bool = False

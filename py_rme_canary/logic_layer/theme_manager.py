@@ -6,8 +6,8 @@ Layer: logic_layer (no PyQt6 imports)
 """
 from __future__ import annotations
 
-from collections.abc import Callable
 import contextlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 

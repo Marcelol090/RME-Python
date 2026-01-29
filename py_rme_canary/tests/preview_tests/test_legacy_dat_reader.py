@@ -14,6 +14,7 @@ def _build_minimal_dat() -> bytes:
     data += (0).to_bytes(2, "little")  # missiles
 
     data += (0).to_bytes(1, "little")  # DatFlagGround
+    data += (0).to_bytes(2, "little")  # ground speed
     data += (0xFF).to_bytes(1, "little")  # DatFlagLast
 
     data += (1).to_bytes(1, "little")  # width

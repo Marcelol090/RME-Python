@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 log = logging.getLogger(__name__)
 
@@ -32,9 +32,7 @@ class ExportConfig:
 class TileRenderCallback(Protocol):
     """Protocol for rendering a tile to pixels."""
 
-    def __call__(
-        self, x: int, y: int, z: int, tile_size: int
-    ) -> bytes | None:
+    def __call__(self, x: int, y: int, z: int, tile_size: int) -> bytes | None:
         """Render tile at (x,y,z) to RGBA bytes of size tile_size x tile_size.
 
         Returns None if tile is empty.
@@ -74,9 +72,7 @@ class PNGExporter:
         self._y_max: int = 2048
         self._cancelled: bool = False
 
-    def set_map_bounds(
-        self, x_min: int, y_min: int, x_max: int, y_max: int
-    ) -> None:
+    def set_map_bounds(self, x_min: int, y_min: int, x_max: int, y_max: int) -> None:
         """Set the map bounds for export."""
         self._x_min = int(x_min)
         self._y_min = int(y_min)
@@ -129,10 +125,10 @@ class PNGExporter:
 
     def _prepare_image_for_save(
         self,
-        image: "PILImage.Image",
+        image: PILImage.Image,
         image_format: str,
         background_color: tuple[int, int, int, int],
-    ) -> "PILImage.Image":
+    ) -> PILImage.Image:
         if image_format != "BMP":
             return image
 
@@ -205,9 +201,7 @@ class PNGExporter:
                         return False
 
         # Save
-        prepared_image = self._prepare_image_for_save(
-            image, image_format, config.background_color
-        )
+        prepared_image = self._prepare_image_for_save(image, image_format, config.background_color)
         prepared_image.save(str(path), image_format)
         log.info("Saved %s to %s", image_format, path)
 
@@ -287,12 +281,8 @@ class PNGExporter:
 
                 # Save chunk
                 file_ext = image_format.lower()
-                chunk_path = os.path.join(
-                    output_dir, f"chunk_{cx}_{cy}_z{config.z_level}.{file_ext}"
-                )
-                prepared_chunk = self._prepare_image_for_save(
-                    chunk_img, image_format, config.background_color
-                )
+                chunk_path = os.path.join(output_dir, f"chunk_{cx}_{cy}_z{config.z_level}.{file_ext}")
+                prepared_chunk = self._prepare_image_for_save(chunk_img, image_format, config.background_color)
                 prepared_chunk.save(chunk_path, image_format)
 
                 processed_chunks += 1

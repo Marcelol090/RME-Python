@@ -182,7 +182,7 @@ def _serialize_spawn_npc(spawn: object | None, origin: tuple[int, int, int]) -> 
     }
 
 
-def _deserialize_outfit(data: dict | None) -> "Outfit" | None:
+def _deserialize_outfit(data: dict | None) -> Outfit | None:
     if not data:
         return None
     from py_rme_canary.core.data.creature import Outfit
@@ -198,7 +198,7 @@ def _deserialize_outfit(data: dict | None) -> "Outfit" | None:
     )
 
 
-def _deserialize_monster(data: dict | None) -> "Monster" | None:
+def _deserialize_monster(data: dict | None) -> Monster | None:
     if not data:
         return None
     from py_rme_canary.core.data.creature import Monster
@@ -211,7 +211,7 @@ def _deserialize_monster(data: dict | None) -> "Monster" | None:
     )
 
 
-def _deserialize_npc(data: dict | None) -> "Npc" | None:
+def _deserialize_npc(data: dict | None) -> Npc | None:
     if not data:
         return None
     from py_rme_canary.core.data.creature import Npc
@@ -224,7 +224,7 @@ def _deserialize_npc(data: dict | None) -> "Npc" | None:
     )
 
 
-def _deserialize_spawn_monster(data: dict | None, origin: tuple[int, int, int]) -> "MonsterSpawnArea" | None:
+def _deserialize_spawn_monster(data: dict | None, origin: tuple[int, int, int]) -> MonsterSpawnArea | None:
     if not data:
         return None
     from py_rme_canary.core.data.item import Position
@@ -263,7 +263,7 @@ def _deserialize_spawn_monster(data: dict | None, origin: tuple[int, int, int]) 
     )
 
 
-def _deserialize_spawn_npc(data: dict | None, origin: tuple[int, int, int]) -> "NpcSpawnArea" | None:
+def _deserialize_spawn_npc(data: dict | None, origin: tuple[int, int, int]) -> NpcSpawnArea | None:
     if not data:
         return None
     from py_rme_canary.core.data.item import Position
@@ -646,7 +646,6 @@ class ClipboardManager:
         self._current = None
         self._history.clear()
 
-
     def to_system_clipboard(self, client_version: str | None = None) -> bool:
         """Copy current entry to system clipboard as JSON.
 
@@ -700,7 +699,7 @@ class ClipboardManager:
             }
 
             json_str = json.dumps(data)
-            
+
             # Application/x-pyrme-clipboard
             MIME_TYPE = "application/x-pyrme-clipboard"
 
@@ -708,12 +707,16 @@ class ClipboardManager:
             if clipboard:
                 mime = QMimeData()
                 mime.setData(MIME_TYPE, json_str.encode())
-                
+
                 # Text fallback
                 version_str = f" [v{client_version}]" if client_version else ""
-                count_str = f"{self._current.tile_count()} tiles" if self._current.entry_type.endswith("tiles") else f"{len(self._current.data)} items"
+                count_str = (
+                    f"{self._current.tile_count()} tiles"
+                    if self._current.entry_type.endswith("tiles")
+                    else f"{len(self._current.data)} items"
+                )
                 mime.setText(f"[py_rme{version_str}] {count_str}")
-                
+
                 clipboard.setMimeData(mime)
                 return True
 
@@ -732,7 +735,7 @@ class ClipboardManager:
         Args:
             target_version: Version of the target map/session
             name_resolver: Optional callable(name) -> server_id to resolve IDs
-            
+
         Returns:
             True if imported successfully
         """
@@ -755,7 +758,7 @@ class ClipboardManager:
                 data = json.loads(json_str)
 
                 source_version = data.get("version")
-                
+
                 # Check for version mismatch
                 if source_version and target_version and source_version != target_version:
                     logger.warning(f"Clipboard version mismatch: Source {source_version} -> Target {target_version}")
@@ -802,7 +805,7 @@ class ClipboardManager:
                     )
                     self._set_current(entry)
                     return True
-                
+
                 elif data.get("type") == "items":
                     items_data = data.get("items", [])
                     entry = ClipboardEntry(
@@ -849,7 +852,7 @@ class ClipboardManager:
                 resolved = name_resolver(str(ground_name))
                 if resolved is not None:
                     tile["ground_id"] = int(resolved)
-            
+
             # Stack items
             for item in tile.get("items", []):
                 convert_item(item)
@@ -861,7 +864,7 @@ class ClipboardManager:
                 convert_item(item)
 
 
-def tiles_from_entry(entry: ClipboardEntry) -> tuple[list["Tile"], tuple[int, int, int]] | None:
+def tiles_from_entry(entry: ClipboardEntry) -> tuple[list[Tile], tuple[int, int, int]] | None:
     """Convert a clipboard entry into concrete Tile objects.
 
     Returns:

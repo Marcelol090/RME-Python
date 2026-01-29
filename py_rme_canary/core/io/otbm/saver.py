@@ -378,8 +378,7 @@ def _build_item_node(
     children: tuple[bytes, ...] = ()
     if item.items:
         children = tuple(
-            _build_item_node(ch, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper)
-            for ch in item.items
+            _build_item_node(ch, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper) for ch in item.items
         )
     return _node_bytes(OTBM_ITEM, payload, children)
 
@@ -478,8 +477,7 @@ def _build_tile_node_with_items_db(
     children_items.extend(tile.items)
 
     children: list[bytes] = [
-        _build_item_node(it, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper)
-        for it in children_items
+        _build_item_node(it, items_db, otbm_version=int(otbm_version), id_mapper=id_mapper) for it in children_items
     ]
     if tile.zones:
         zones_sorted = sorted(int(z) for z in tile.zones)

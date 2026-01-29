@@ -67,6 +67,7 @@ This document is the **master checklist** for porting and parity between the leg
 | Actions History UI  | actions_history_window.cpp     | vis_layer/ui/docks/actions_history.py| ✅    | `ActionsHistoryDock` with undo stack display (86 lines) |
 | MapCanvasWidget     | map_canvas.cpp                 | vis_layer/ui/canvas/widget.py     | ✅       | Event-driven rendering + input coalescing (ARCHITECTURE.md parity) |
 | OpenGL Renderer     | map_drawer.cpp                 | vis_layer/renderer/opengl_canvas.py| ✅      | Backend + batching + event-driven refresh; OpenGLCanvasWidget is now the main canvas |
+| In-Game Preview     | ingame_preview.cpp (legacy)     | vis_layer/preview/, logic_layer/sprite_system/ | ⚠️ | Pygame preview window + legacy dat reader + threading (2026-01-30) |
 | Sprite Manager      | graphic_manager.cpp            | core/assets/sprite_appearances.py | ⚠️       | Partial, see [ANALISE_PY_RME_CANARY_2025.md](ANALISE_PY_RME_CANARY_2025.md) |
 | DrawingOptions      | drawing_options.cpp            | logic_layer/drawing_options.py     | ✅       | Coordinator in `vis_layer/renderer/drawing_options_coordinator.py` |
 | Live Server/Client  | live_server.cpp, live_client.cpp| core/protocols/live_server.py, live_client.py| ⚠️ | Login payload encoding + TILE_UPDATE broadcast; state sync pending |

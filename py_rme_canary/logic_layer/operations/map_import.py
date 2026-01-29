@@ -176,9 +176,7 @@ def _import_spawns(
             y=int(area.center.y) + int(offset_y),
             z=int(area.center.z) + int(offset_z),
         )
-        target_map.monster_spawns.append(
-            MonsterSpawnArea(center=center, radius=area.radius, monsters=area.monsters)
-        )
+        target_map.monster_spawns.append(MonsterSpawnArea(center=center, radius=area.radius, monsters=area.monsters))
         report.spawns_imported += 1
 
     for area in source_map.npc_spawns:
@@ -187,9 +185,7 @@ def _import_spawns(
             y=int(area.center.y) + int(offset_y),
             z=int(area.center.z) + int(offset_z),
         )
-        target_map.npc_spawns.append(
-            NpcSpawnArea(center=center, radius=area.radius, npcs=area.npcs)
-        )
+        target_map.npc_spawns.append(NpcSpawnArea(center=center, radius=area.radius, npcs=area.npcs))
         report.spawns_imported += 1
 
 

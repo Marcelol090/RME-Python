@@ -18,10 +18,11 @@ This module provides:
 
 from __future__ import annotations
 
-from defusedxml import ElementTree as ET  # type: ignore[import-untyped]
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from defusedxml import ElementTree as ET  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     pass

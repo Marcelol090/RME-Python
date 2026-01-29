@@ -84,14 +84,10 @@ def search_items_in_selection(
                 positions.append(tile_key)
                 break
 
-    return SelectionSearchResult(
-        item_id=item_id, positions=positions, count=len(positions)
-    )
+    return SelectionSearchResult(item_id=item_id, positions=positions, count=len(positions))
 
 
-def count_monsters_in_selection(
-    game_map: GameMap, *, selection_tiles: set[TileKey]
-) -> MonsterCountResult:
+def count_monsters_in_selection(game_map: GameMap, *, selection_tiles: set[TileKey]) -> MonsterCountResult:
     """Count monsters and NPCs within the selected area."""
     total_monsters = 0
     total_npcs = 0
@@ -182,6 +178,4 @@ def remove_duplicates_in_selection(
             changed_tiles[tile_key] = new_tile
             tiles_modified += 1
 
-    return changed_tiles, RemoveDuplicatesResult(
-        removed_count=removed_total, tiles_modified=tiles_modified
-    )
+    return changed_tiles, RemoveDuplicatesResult(removed_count=removed_total, tiles_modified=tiles_modified)

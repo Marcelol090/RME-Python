@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Literal, cast
+from typing import Literal, cast
 from xml.etree.ElementTree import Element
 
 from py_rme_canary.core.io.creatures_xml import default_monsters_path, default_npcs_path

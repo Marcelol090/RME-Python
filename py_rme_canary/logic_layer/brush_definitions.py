@@ -726,13 +726,13 @@ class BrushManager:
 
         ids: set[int] = set()
         for spec in self._doodads.values():
-            for alt in tuple(spec.alternatives or ()): 
-                for it in tuple(alt.items or ()): 
+            for alt in tuple(spec.alternatives or ()):
+                for it in tuple(alt.items or ()):
                     if int(it.id) > 0:
                         ids.add(int(it.id))
-                for comp in tuple(alt.composites or ()): 
-                    for placement in tuple(comp.tiles or ()): 
-                        for it in tuple(placement.items or ()): 
+                for comp in tuple(alt.composites or ()):
+                    for placement in tuple(comp.tiles or ()):
+                        for it in tuple(placement.items or ()):
                             if int(it.id) > 0:
                                 ids.add(int(it.id))
 

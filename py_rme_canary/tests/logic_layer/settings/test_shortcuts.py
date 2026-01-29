@@ -215,21 +215,15 @@ def test_default_shortcuts_constant() -> None:
 
 def test_custom_shortcuts_count() -> None:
     """Test that there are exactly 10 custom shortcuts."""
-    custom_actions = [
-        action for action in ShortcutAction if action.name.startswith("CUSTOM_")
-    ]
+    custom_actions = [action for action in ShortcutAction if action.name.startswith("CUSTOM_")]
 
     assert len(custom_actions) == 10
 
 
 def test_position_hotkeys_count() -> None:
     """Test that there are 5 save and 5 goto position hotkeys."""
-    save_positions = [
-        action for action in ShortcutAction if action.name.startswith("SAVE_POSITION_")
-    ]
-    goto_positions = [
-        action for action in ShortcutAction if action.name.startswith("GOTO_POSITION_")
-    ]
+    save_positions = [action for action in ShortcutAction if action.name.startswith("SAVE_POSITION_")]
+    goto_positions = [action for action in ShortcutAction if action.name.startswith("GOTO_POSITION_")]
 
     assert len(save_positions) == 5
     assert len(goto_positions) == 5

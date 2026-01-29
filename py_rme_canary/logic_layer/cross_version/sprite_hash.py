@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     pass
 
 # FNV-1a 64-bit constants
-FNV_OFFSET_BASIS_64: int = 0xcbf29ce484222325
-FNV_PRIME_64: int = 0x100000001b3
+FNV_OFFSET_BASIS_64: int = 0xCBF29CE484222325
+FNV_PRIME_64: int = 0x100000001B3
 
 
 def fnv1a_64(data: bytes) -> int:
@@ -95,7 +95,7 @@ def calculate_sprite_hash(pixel_data: bytes, width: int, height: int) -> int:
         raise ValueError(msg)
 
     # Prepend dimensions to prevent hash collisions between different sizes
-    dimension_bytes = width.to_bytes(4, 'little') + height.to_bytes(4, 'little')
+    dimension_bytes = width.to_bytes(4, "little") + height.to_bytes(4, "little")
     hash_input = dimension_bytes + pixel_data
 
     return fnv1a_64(hash_input)

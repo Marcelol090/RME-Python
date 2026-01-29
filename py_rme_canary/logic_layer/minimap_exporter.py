@@ -49,14 +49,14 @@ class MinimapExporter:
         pixels = bytearray(width * height)
 
         tiles = getattr(game_map, "tiles", {})
-        
+
         # Optimization: pre-calculate offset
         # pixel_index = (y - min_y) * width + (x - min_x)
 
         count = 0
         for key, tile in tiles.items():
             tx, ty, tz = key if isinstance(key, tuple) else (tile.x, tile.y, tile.z)
-            
+
             if tz != z_level:
                 continue
 
@@ -65,7 +65,7 @@ class MinimapExporter:
                 continue
 
             idx = (ty - min_y) * width + (tx - min_x)
-            
+
             # Simple color mapping logic
             # This should ideally call a proper ColorMapper
             color = self._get_tile_minimap_color(tile)
@@ -78,19 +78,19 @@ class MinimapExporter:
         with open(output_path, "wb") as f:
             # Header
             f.write(b"OTMM")
-            f.write(struct.pack("<H", 0)) # Version or reserved
+            f.write(struct.pack("<H", 0))  # Version or reserved
             f.write(struct.pack("<H", width))
             f.write(struct.pack("<H", height))
-            
+
             # Data
             f.write(pixels)
-            
+
         log.info("Export complete")
 
     def _get_bounds(self, game_map: Any, z: int) -> tuple[int, int, int, int] | None:
         """Calculate bounding box for the given z-level."""
         tiles = getattr(game_map, "tiles", {})
-        
+
         min_x, min_y = float("inf"), float("inf")
         max_x, max_y = float("-inf"), float("-inf")
         found = False
@@ -111,29 +111,30 @@ class MinimapExporter:
 
     def _get_tile_minimap_color(self, tile: Any) -> int:
         """Determine minimap color index for a tile.
-        
+
         Returns a byte value (0-255).
         """
         # TODO: Link this to real client automap colors.
         # For now, simplistic mapping based on ground ID or defaults.
-        
+
         ground = getattr(tile, "ground", None)
         if not ground:
             return 0  # Empty/Black
-            
+
         sid = getattr(ground, "server_id", 0) or getattr(ground, "id", 0)
-        
+
         # Very distinct mock colors for demonstration
-        if sid in (4526, 4527, 4528): # Grass
-            return 24 # Greenish
-        elif sid in (351, 352, 353, 354, 355): # Stone/Cave
-            return 128 # Grey
-        elif sid in (4632, 4633, 4634, 4635): # Sand
-            return 210 # Yellow/Sand
-        elif sid in (4664, 4665, 4666): # Water
-            return 20 # Blue
-            
-        return 200 # Default generic tile
+        if sid in (4526, 4527, 4528):  # Grass
+            return 24  # Greenish
+        elif sid in (351, 352, 353, 354, 355):  # Stone/Cave
+            return 128  # Grey
+        elif sid in (4632, 4633, 4634, 4635):  # Sand
+            return 210  # Yellow/Sand
+        elif sid in (4664, 4665, 4666):  # Water
+            return 20  # Blue
+
+        return 200  # Default generic tile
+
 
 def get_minimap_exporter() -> MinimapExporter:
     return MinimapExporter()

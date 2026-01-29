@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
-from typing import Iterable
 
 from py_rme_canary.core.data.gamemap import GameMap
 from py_rme_canary.core.data.item import Item

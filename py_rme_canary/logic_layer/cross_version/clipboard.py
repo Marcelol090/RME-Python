@@ -94,9 +94,7 @@ def _translate_item(item: Item, matcher: SpriteHashMatcher | None) -> Item:
 
     # Recursively translate container items
     if item.items:
-        translated_children = tuple(
-            _translate_item(child, matcher) for child in item.items
-        )
+        translated_children = tuple(_translate_item(child, matcher) for child in item.items)
         item = item.with_container_items(translated_children)
 
     return _clone_item_with_id(item, new_id)
