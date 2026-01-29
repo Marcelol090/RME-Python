@@ -31,7 +31,7 @@ jobs:
       - name: Install Python tooling
         run: |
           python -m pip install --upgrade pip setuptools
-          pip install bandit ruff mypy radon pytest pytest-qt
+          pip install bandit ruff mypy radon pytest pytest-qt openai tenacity
 
       - name: Ensure quality.sh is executable
         run: |
