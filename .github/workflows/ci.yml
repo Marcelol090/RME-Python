@@ -1,0 +1,51 @@
+﻿name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: 'pip'
+
+      - name: Install OS packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install bandit ruff mypy radon pytest pytest-qt
+
+      - name: Ensure quality.sh is executable
+        run: |
+          chmod +x ./quality.sh
+          chmod +x ./py_rme_canary/quality-pipeline/quality.sh
+
+      - name: Run quality pipeline (dry-run)
+        run: |
+          ./quality.sh --dry-run --skip-tests --skip-libcst --skip-sonar
+
+      - name: Install package for tests
+        run: |
+          python -m pip install -e py_rme_canary
+
+      - name: Run unit tests
+        run: |
+          python -m pytest py_rme_canary/tests/unit

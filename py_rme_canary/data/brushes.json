@@ -1,0 +1,39 @@
+{
+  "brushes": [
+    {
+      "name": "Grass",
+      "server_id": 4526,
+      "type": "ground",
+      "borders": {}
+    },
+    {
+      "name": "Stone Wall",
+      "server_id": 1295,
+      "type": "wall",
+      "borders": {
+        "HORIZONTAL": 1295,
+        "VERTICAL": 1294,
+        "NORTH_WEST": 1293,
+        "NORTH_EAST": 1292,
+        "SOUTH_EAST": 1291,
+        "SOUTH_WEST": 1290
+      }
+    },
+    {
+      "name": "Red Carpet",
+      "server_id": 1600,
+      "type": "carpet",
+      "borders": {
+        "CENTER": 1600,
+        "NORTH": 1601,
+        "EAST": 1602,
+        "SOUTH": 1603,
+        "WEST": 1604,
+        "NORTH_WEST": 1605,
+        "NORTH_EAST": 1606,
+        "SOUTH_EAST": 1607,
+        "SOUTH_WEST": 1608
+      }
+    }
+  ]
+}
