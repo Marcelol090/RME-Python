@@ -1,0 +1,133 @@
+# Anti-patterns Python - ast-grep rules
+# Coloque este arquivo em: tools/ast_rules/python/anti-patterns.yml
+
+rules:
+  # Rule 1: Detecta uso de assert em código de produção
+  - id: no-assert-in-production
+    message: "Evite usar 'assert' em código de produção. Use validação explícita."
+    severity: warning
+    language: python
+    rule:
+      pattern: assert $CONDITION
+    constraints:
+      CONDITION:
+        not:
+          pattern: __debug__
+    fix: |
+      if not $CONDITION:
+          raise ValueError("Assertion failed")
+
+  # Rule 2: Detecta uso de print() ao invés de logging
+  - id: use-logging-not-print
+    message: "Use logging.info/debug ao invés de print() para melhor rastreabilidade"
+    severity: info
+    language: python
+    rule:
+      pattern: print($$$ARGS)
+    constraints:
+      ARGS:
+        not:
+          regex: "^['\"]DEBUG:"
+
+  # Rule 3: Detecta comparação com None usando ==
+  - id: use-is-for-none-comparison
+    message: "Use 'is None' ao invés de '== None'"
+    severity: warning
+    language: python
+    rule:
+      any:
+        - pattern: $VAR == None
+        - pattern: $VAR != None
+    fix: |
+      $VAR is None  # para ==
+      $VAR is not None  # para !=
+
+  # Rule 4: Detecta mutable default arguments
+  - id: no-mutable-default-args
+    message: "Evite listas/dicionários como valores padrão de argumentos"
+    severity: error
+    language: python
+    rule:
+      pattern: |
+        def $FUNC($$$BEFORE, $ARG=[$$$_], $$$AFTER):
+            $$$BODY
+    fix: |
+      def $FUNC($$$BEFORE, $ARG=None, $$$AFTER):
+          if $ARG is None:
+              $ARG = []
+          $$$BODY
+
+  # Rule 5: Detecta uso de bare except
+  - id: no-bare-except
+    message: "Especifique o tipo de exceção ao invés de usar 'except:' genérico"
+    severity: warning
+    language: python
+    rule:
+      pattern: |
+        try:
+            $$$BODY
+        except:
+            $$$HANDLER
+    fix: |
+      try:
+          $$$BODY
+      except Exception as e:
+          $$$HANDLER
+
+  # Rule 6: Detecta f-strings com apenas variável (desnecessário)
+  - id: unnecessary-fstring
+    message: "f-string desnecessária - use str() ou a variável diretamente"
+    severity: info
+    language: python
+    rule:
+      pattern: f"{$VAR}"
+    constraints:
+      VAR:
+        regex: "^[a-zA-Z_][a-zA-Z0-9_]*$"
+    fix: str($VAR)
+
+  # Rule 7: Detecta uso de global em funções
+  - id: avoid-global-keyword
+    message: "Evite uso de 'global' - considere classes ou closures"
+    severity: warning
+    language: python
+    rule:
+      pattern: |
+        def $FUNC($$$ARGS):
+            global $VAR
+            $$$BODY
+
+  # Rule 8: Detecta comparações de tipo incorretas
+  - id: use-isinstance-not-type
+    message: "Use isinstance() ao invés de type() == para verificar tipos"
+    severity: warning
+    language: python
+    rule:
+      any:
+        - pattern: type($VAR) == $TYPE
+        - pattern: type($VAR) is $TYPE
+    fix: isinstance($VAR, $TYPE)
+
+  # Rule 9: Detecta código após return
+  - id: unreachable-code-after-return
+    message: "Código inalcançável após return"
+    severity: error
+    language: python
+    rule:
+      pattern: |
+        def $FUNC($$$ARGS):
+            $$$BEFORE
+            return $RETURN_VALUE
+            $UNREACHABLE_CODE
+            $$$AFTER
+
+  # Rule 10: Detecta uso de len() em condições booleanas
+  - id: simplify-len-comparison
+    message: "Simplifique: ao invés de 'len(x) > 0', use apenas 'x'"
+    severity: info
+    language: python
+    rule:
+      any:
+        - pattern: len($VAR) > 0
+        - pattern: len($VAR) != 0
+    fix: $VAR  # truthy check

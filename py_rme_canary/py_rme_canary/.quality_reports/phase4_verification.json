@@ -1,0 +1,135 @@
+{
+  "total_features": 18,
+  "implemented": 0,
+  "partial": 0,
+  "missing": 18,
+  "parity_score": "0.0%",
+  "results": [
+    {
+      "category": "Map IO",
+      "feature": "OTBM Load",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\core\\io",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Map IO",
+      "feature": "OTBM Save",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\core\\io",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Map IO",
+      "feature": "Map Validation",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\core\\io",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Brushes",
+      "feature": "Ground Brush",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Brushes",
+      "feature": "Wall Brush",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Brushes",
+      "feature": "Doodad Brush",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Brushes",
+      "feature": "Carpet Brush",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Brushes",
+      "feature": "Table Brush",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Editor",
+      "feature": "Undo",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Editor",
+      "feature": "Redo",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Editor",
+      "feature": "PaintAction",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Editor",
+      "feature": "TransactionalStroke",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Selection",
+      "feature": "Box Selection",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer\\session",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Selection",
+      "feature": "Toggle Select",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer\\session",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Selection",
+      "feature": "Move Selection",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\logic_layer\\session",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Navigation",
+      "feature": "Viewport",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\vis_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Navigation",
+      "feature": "Zoom",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\vis_layer",
+      "notes": "Directory/file not found"
+    },
+    {
+      "category": "Navigation",
+      "feature": "Pan",
+      "status": "missing",
+      "location": "C:\\Users\\Marcelo Henrique\\Desktop\\PROJETOS TIBIA\\underv1\\py_rme_canary\\py_rme_canary\\vis_layer",
+      "notes": "Directory/file not found"
+    }
+  ]
+}

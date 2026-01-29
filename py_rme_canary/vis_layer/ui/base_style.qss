@@ -1,0 +1,272 @@
+/* ==================== Base Style for Canary Studio Map Editor ==================== */
+/* This file uses token placeholders that are replaced at runtime by ThemeManager */
+/* Tokens: {surface-primary}, {surface-secondary}, {surface-tertiary}, {surface-elevated} */
+/* Tokens: {text-primary}, {text-secondary}, {text-tertiary} */
+/* Tokens: {interactive-normal}, {interactive-hover}, {interactive-active} */
+/* Tokens: {border-default}, {border-strong}, {border-interactive} */
+/* Tokens: {overlay-light}, {overlay-dark} */
+
+/* ==================== NavBar (Header) ==================== */
+#NavBar {
+    background-color: rgba(10, 10, 11, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid {border-default};
+    min-height: 56px;
+    max-height: 56px;
+}
+
+#NavBar QToolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 36px;
+    min-height: 36px;
+}
+
+#NavBar QToolButton:hover {
+    background-color: {overlay-light};
+}
+
+#NavBar QToolButton:pressed {
+    background-color: {interactive-active};
+}
+
+/* ==================== Sidebar ==================== */
+#Sidebar {
+    background-color: {surface-secondary};
+    border-right: 1px solid {border-default};
+    min-width: 360px;
+    max-width: 360px;
+}
+
+#Sidebar[collapsed="true"] {
+    min-width: 64px;
+    max-width: 64px;
+}
+
+#Sidebar[expanded="true"] {
+    min-width: 480px;
+    max-width: 480px;
+}
+
+/* ==================== Search Bar ==================== */
+#SearchBar {
+    background-color: {surface-tertiary};
+    border: 1px solid {border-default};
+    border-radius: 20px;
+    min-height: 40px;
+    max-height: 40px;
+    padding: 0 16px;
+}
+
+#SearchBar:focus {
+    border-color: {interactive-normal};
+}
+
+/* ==================== Asset Grid ==================== */
+#AssetGrid {
+    background-color: {surface-primary};
+    border: none;
+    padding: 8px;
+}
+
+#AssetGrid::item {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 2px;
+}
+
+#AssetGrid::item:hover {
+    background-color: {overlay-light};
+    border-color: {border-default};
+}
+
+#AssetGrid::item:selected {
+    background-color: {interactive-normal};
+    border-color: {interactive-normal};
+}
+
+/* ==================== Brush Memory Slots ==================== */
+#BrushMemory {
+    background-color: {surface-secondary};
+    border: 1px solid {border-default};
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.BrushSlot {
+    background-color: {surface-tertiary};
+    border: 2px dashed {border-default};
+    border-radius: 10px;
+    min-width: 52px;
+    min-height: 52px;
+    max-width: 52px;
+    max-height: 52px;
+}
+
+.BrushSlot[filled="true"] {
+    border-style: solid;
+}
+
+.BrushSlot[active="true"] {
+    border-color: {interactive-normal};
+    border-width: 2px;
+    box-shadow: 0 0 8px rgba(88, 101, 242, 0.4);
+}
+
+/* ==================== Tools Grid ==================== */
+#ToolsGrid {
+    background-color: transparent;
+    padding: 4px;
+}
+
+#ToolBtn {
+    background-color: {surface-tertiary};
+    border: 1px solid transparent;
+    border-radius: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+}
+
+#ToolBtn:hover {
+    background-color: {overlay-light};
+    border-color: {border-default};
+}
+
+#ToolBtn:checked {
+    background-color: {interactive-normal};
+    border: 2px solid {interactive-normal};
+    color: white;
+}
+
+#ToolBtn:disabled {
+    opacity: 0.4;
+}
+
+/* ==================== Brush Size Control ==================== */
+#BrushSizeControl {
+    background-color: {surface-secondary};
+    border: 1px solid {border-default};
+    border-radius: 8px;
+    padding: 8px;
+}
+
+#BrushSizeSlider::groove:horizontal {
+    background-color: {surface-tertiary};
+    height: 4px;
+    border-radius: 2px;
+}
+
+#BrushSizeSlider::handle:horizontal {
+    background-color: {interactive-normal};
+    border: none;
+    width: 20px;
+    height: 20px;
+    margin: -8px 0;
+    border-radius: 10px;
+}
+
+#BrushSizeSlider::handle:horizontal:hover {
+    background-color: {interactive-hover};
+}
+
+#BrushSizeValue {
+    background-color: {surface-tertiary};
+    border: 1px solid {border-default};
+    border-radius: 6px;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    font-weight: bold;
+}
+
+/* ==================== Status Bar ==================== */
+#StatusBar {
+    background-color: {surface-secondary};
+    border-top: 1px solid {border-default};
+    padding: 4px 16px;
+    min-height: 24px;
+}
+
+/* ==================== Minimap Dock ==================== */
+#MinimapDock {
+    background-color: {surface-secondary};
+    border: 1px solid {border-default};
+    border-radius: 8px;
+}
+
+/* ==================== Palette Tabs ==================== */
+#PaletteTabs::pane {
+    background-color: {surface-primary};
+    border: none;
+    border-top: 1px solid {border-default};
+}
+
+#PaletteTabs::tab-bar {
+    alignment: left;
+}
+
+#PaletteTabs QTabBar::tab {
+    background-color: transparent;
+    color: {text-secondary};
+    padding: 8px 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+#PaletteTabs QTabBar::tab:selected {
+    color: {text-primary};
+    border-bottom-color: {interactive-normal};
+}
+
+#PaletteTabs QTabBar::tab:hover:!selected {
+    color: {text-primary};
+    background-color: {overlay-light};
+}
+
+/* ==================== Dialogs ==================== */
+QDialog {
+    background-color: {surface-primary};
+    border: 1px solid {border-default};
+    border-radius: 12px;
+}
+
+QDialog QLabel {
+    color: {text-primary};
+}
+
+/* ==================== Progress Bar ==================== */
+QProgressBar {
+    background-color: {surface-tertiary};
+    border: none;
+    border-radius: 4px;
+    height: 8px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: {interactive-normal};
+    border-radius: 4px;
+}
+
+/* ==================== Splitter ==================== */
+QSplitter::handle {
+    background-color: {border-default};
+}
+
+QSplitter::handle:horizontal {
+    width: 2px;
+}
+
+QSplitter::handle:vertical {
+    height: 2px;
+}
+
+QSplitter::handle:hover {
+    background-color: {interactive-normal};
+}
