@@ -47,5 +47,7 @@ jobs:
           python -m pip install -e py_rme_canary
 
       - name: Run unit tests
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: |
           python -m pytest py_rme_canary/tests/unit
