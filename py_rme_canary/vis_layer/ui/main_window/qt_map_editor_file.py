@@ -27,13 +27,30 @@ if TYPE_CHECKING:
 
 class QtMapEditorFileMixin:
     def _new_map(self: "QtMapEditor") -> None:
-        if (
-            QMessageBox.question(self, "New map", "Discard current map and create a new blank map?")
-            != QMessageBox.StandardButton.Yes
-        ):
+        """Create new map with template selection."""
+        from vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
+
+        # Show dialog
+        dialog = NewMapDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
+
+        # Get template and settings from dialog
+        template = dialog.get_template()
+        map_size = dialog.get_map_size()
+        description = dialog.get_description()
+        # Note: map_name and author from dialog could be used for future metadata
+
+        # Create new map with template settings
         self.current_path = None
-        self.map = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
+        self.map = GameMap(
+            header=MapHeader(
+                otbm_version=template.otbm_version,
+                width=map_size.width,
+                height=map_size.height,
+                description=description,
+            )
+        )
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
         self.apply_ui_state_to_session()
         self.viewport.origin_x = 0

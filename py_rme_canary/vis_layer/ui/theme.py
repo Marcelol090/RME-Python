@@ -32,52 +32,52 @@ class ThemeTokens(TypedDict):
     overlay_dark: str
 
 
-# Design Tokens - Dark Theme (Primary)
+# Design Tokens - Premium Dark Theme (Dracula Inspired)
 DARK_THEME: ThemeTokens = {
     # Surfaces
-    "surface_primary": "#0A0A0B",
-    "surface_secondary": "#141416",
-    "surface_tertiary": "#1E1F22",
-    "surface_elevated": "#2B2D31",
+    "surface_primary": "#282A36",    # Background
+    "surface_secondary": "#44475A",  # Panels/Sidebars
+    "surface_tertiary": "#6272A4",   # Comments/Secondary Elements
+    "surface_elevated": "#44475A",   # Dialogs/Popups (same as secondary for cohesion)
     # Text
-    "text_primary": "#FFFFFF",
-    "text_secondary": "#B5B9BF",
-    "text_tertiary": "#80848E",
+    "text_primary": "#F8F8F2",       # Main Text
+    "text_secondary": "#BD93F9",     # Headings/Important labels (Purple)
+    "text_tertiary": "#6272A4",      # Comments/Disabled
     # Interactive
-    "interactive_normal": "#5865F2",
-    "interactive_hover": "#4752C4",
-    "interactive_active": "#3C45A5",
+    "interactive_normal": "#BD93F9", # Purple
+    "interactive_hover": "#FF79C6",  # Pink
+    "interactive_active": "#50FA7B", # Green (Success/Active)
     # Borders
-    "border_default": "#3F4147",
-    "border_strong": "#5A5D66",
-    "border_interactive": "#5865F2",
+    "border_default": "#6272A4",     # Muted Blue/Purple
+    "border_strong": "#BD93F9",      # Purple
+    "border_interactive": "#FF79C6", # Pink
     # Overlays
-    "overlay_light": "rgba(255, 255, 255, 0.05)",
-    "overlay_dark": "rgba(0, 0, 0, 0.5)",
+    "overlay_light": "rgba(255, 255, 255, 0.1)",
+    "overlay_dark": "rgba(40, 42, 54, 0.8)",
 }
 
-# Design Tokens - Light Theme (Secondary)
+# Design Tokens - Premium Light Theme (Nord Light Inspired)
 LIGHT_THEME: ThemeTokens = {
     # Surfaces
-    "surface_primary": "#FFFFFF",
-    "surface_secondary": "#F5F5F5",
-    "surface_tertiary": "#E8E8E8",
-    "surface_elevated": "#FAFAFA",
+    "surface_primary": "#ECEFF4",
+    "surface_secondary": "#E5E9F0",
+    "surface_tertiary": "#D8DEE9",
+    "surface_elevated": "#FFFFFF",
     # Text
-    "text_primary": "#1A1A1A",
-    "text_secondary": "#4A4A4A",
-    "text_tertiary": "#808080",
+    "text_primary": "#2E3440",
+    "text_secondary": "#4C566A",
+    "text_tertiary": "#D8DEE9",
     # Interactive
-    "interactive_normal": "#5865F2",
-    "interactive_hover": "#4752C4",
-    "interactive_active": "#3C45A5",
+    "interactive_normal": "#5E81AC",
+    "interactive_hover": "#81A1C1",
+    "interactive_active": "#88C0D0",
     # Borders
-    "border_default": "#D0D0D0",
-    "border_strong": "#A0A0A0",
-    "border_interactive": "#5865F2",
+    "border_default": "#D8DEE9",
+    "border_strong": "#4C566A",
+    "border_interactive": "#5E81AC",
     # Overlays
-    "overlay_light": "rgba(0, 0, 0, 0.03)",
-    "overlay_dark": "rgba(0, 0, 0, 0.3)",
+    "overlay_light": "rgba(46, 52, 64, 0.05)",
+    "overlay_dark": "rgba(46, 52, 64, 0.3)",
 }
 
 # Theme registry
@@ -174,7 +174,7 @@ class ThemeManager:
         app.setStyleSheet(qss)
 
     def _generate_stylesheet(self, tokens: ThemeTokens) -> str:
-        """Generate QSS stylesheet from tokens."""
+        """Generate QSS stylesheet from tokens with Premium Polish."""
         return f"""
 /* ==================== Global ==================== */
 QWidget {{
@@ -182,43 +182,52 @@ QWidget {{
     color: {tokens['text_primary']};
     font-family: 'Segoe UI', 'Inter', sans-serif;
     font-size: 13px;
+    selection-background-color: {tokens['interactive_active']};
+    selection-color: {tokens['surface_primary']};
+    outline: none;
 }}
 
-/* ==================== Buttons ==================== */
+/* ==================== Buttons (Premium) ==================== */
 QPushButton {{
-    background-color: {tokens['surface_tertiary']};
+    background-color: {tokens['surface_secondary']};
     color: {tokens['text_primary']};
     border: 1px solid {tokens['border_default']};
     border-radius: {RADIUS['md']}px;
     padding: {SPACING['sm']}px {SPACING['md']}px;
     min-height: 32px;
+    font-weight: 600;
 }}
 
 QPushButton:hover {{
-    background-color: {tokens['overlay_light']};
-    border-color: {tokens['border_strong']};
+    background-color: {tokens['interactive_hover']};
+    color: {tokens['surface_primary']}; /* High contrast on hover */
+    border-color: {tokens['interactive_hover']};
 }}
 
 QPushButton:pressed {{
     background-color: {tokens['interactive_active']};
+    border-color: {tokens['interactive_active']};
+    color: {tokens['surface_primary']};
 }}
 
 QPushButton:checked {{
     background-color: {tokens['interactive_normal']};
-    border-color: {tokens['border_interactive']};
+    border-color: {tokens['interactive_normal']};
+    color: {tokens['text_primary']};
 }}
 
 QPushButton:disabled {{
-    background-color: {tokens['surface_secondary']};
+    background-color: {tokens['surface_primary']};
+    border-color: {tokens['surface_secondary']};
     color: {tokens['text_tertiary']};
 }}
 
-/* ==================== Tool Buttons ==================== */
+/* ==================== Tool Buttons (Glassmorphism) ==================== */
 QToolButton {{
-    background-color: {tokens['surface_tertiary']};
+    background-color: transparent;
     border: 1px solid transparent;
     border-radius: {RADIUS['md']}px;
-    padding: 4px;
+    padding: 6px;
 }}
 
 QToolButton:hover {{
@@ -228,107 +237,175 @@ QToolButton:hover {{
 
 QToolButton:checked {{
     background-color: {tokens['interactive_normal']};
-    border: 2px solid {tokens['interactive_normal']};
+    border: 1px solid {tokens['interactive_normal']};
     color: white;
 }}
 
-/* ==================== Input Fields ==================== */
-QLineEdit {{
+QToolButton:pressed {{
+    background-color: {tokens['interactive_active']};
+}}
+
+/* ==================== Input Fields (Modern) ==================== */
+QLineEdit, QSpinBox, QComboBox {{
     background-color: {tokens['surface_secondary']};
     color: {tokens['text_primary']};
-    border: 1px solid {tokens['border_default']};
-    border-radius: {RADIUS['lg']}px;
-    padding: {SPACING['sm']}px {SPACING['md']}px;
+    border: 1px solid {tokens['surface_tertiary']};
+    border-radius: {RADIUS['md']}px;
+    padding: {SPACING['sm']}px;
     min-height: 32px;
+    selection-background-color: {tokens['interactive_normal']};
 }}
 
-QLineEdit:focus {{
-    border-color: {tokens['interactive_normal']};
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {{
+    border: 1px solid {tokens['interactive_normal']};
+    background-color: {tokens['surface_elevated']};
 }}
 
-/* ==================== Scroll Bars ==================== */
+QLineEdit:hover {{
+    border-color: {tokens['text_secondary']};
+}}
+
+/* ==================== Scroll Bars (Sleek) ==================== */
 QScrollBar:vertical {{
     background: {tokens['surface_primary']};
-    width: 12px;
+    width: 10px;
     margin: 0;
 }}
 
 QScrollBar::handle:vertical {{
-    background: {tokens['border_default']};
-    border-radius: 6px;
-    min-height: 20px;
+    background: {tokens['surface_tertiary']};
+    border-radius: 5px;
+    min-height: 30px;
+    margin: 2px;
 }}
 
 QScrollBar::handle:vertical:hover {{
-    background: {tokens['border_strong']};
+    background: {tokens['interactive_normal']};
 }}
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
     height: 0;
 }}
 
-/* ==================== Tooltips ==================== */
+/* ==================== Tooltips (Premium) ==================== */
 QToolTip {{
     background-color: {tokens['surface_elevated']};
     color: {tokens['text_primary']};
-    border: 1px solid {tokens['border_default']};
+    border: 1px solid {tokens['border_strong']};
     border-radius: {RADIUS['sm']}px;
     padding: {SPACING['xs']}px {SPACING['sm']}px;
+    font-weight: 500;
 }}
 
-/* ==================== Menus ==================== */
+/* ==================== Menus (Elevated) ==================== */
+QMenuBar {{
+    background-color: {tokens['surface_primary']};
+    border-bottom: 1px solid {tokens['surface_secondary']};
+}}
+
+QMenuBar::item {{
+    padding: 8px 12px;
+    background: transparent;
+}}
+
+QMenuBar::item:selected {{
+    background: {tokens['overlay_light']};
+    border-radius: {RADIUS['sm']}px;
+}}
+
 QMenu {{
-    background-color: {tokens['surface_secondary']};
+    background-color: {tokens['surface_elevated']};
     border: 1px solid {tokens['border_default']};
     border-radius: {RADIUS['md']}px;
     padding: {SPACING['xs']}px;
 }}
 
 QMenu::item {{
-    padding: {SPACING['sm']}px {SPACING['md']}px;
+    padding: 6px 24px 6px 12px;
     border-radius: {RADIUS['sm']}px;
+    margin: 2px;
 }}
 
 QMenu::item:selected {{
     background-color: {tokens['interactive_normal']};
+    color: {tokens['text_primary']};
 }}
 
-/* ==================== Dock Widgets ==================== */
+QMenu::separator {{
+    height: 1px;
+    background: {tokens['border_default']};
+    margin: 4px;
+}}
+
+/* ==================== Dock Widgets (Clean) ==================== */
 QDockWidget {{
-    titlebar-close-icon: none;
-    titlebar-normal-icon: none;
+    titlebar-close-icon: url(:/icons/close.svg);
+    titlebar-normal-icon: url(:/icons/float.svg);
 }}
 
 QDockWidget::title {{
-    background-color: {tokens['surface_secondary']};
-    padding: {SPACING['sm']}px;
-    border-bottom: 1px solid {tokens['border_default']};
+    background-color: {tokens['surface_primary']};
+    padding: 8px;
+    border-bottom: 1px solid {tokens['surface_secondary']};
+    font-weight: 600;
+    color: {tokens['text_secondary']};
 }}
 
-/* ==================== Tab Widgets ==================== */
+/* ==================== Tab Widgets (Modern) ==================== */
 QTabWidget::pane {{
     background-color: {tokens['surface_primary']};
-    border: 1px solid {tokens['border_default']};
+    border: 1px solid {tokens['surface_secondary']};
     border-radius: {RADIUS['md']}px;
+    top: -1px; /* Overlap header border */
 }}
 
 QTabBar::tab {{
-    background-color: {tokens['surface_secondary']};
-    color: {tokens['text_secondary']};
-    padding: {SPACING['sm']}px {SPACING['md']}px;
-    border-top-left-radius: {RADIUS['md']}px;
-    border-top-right-radius: {RADIUS['md']}px;
-    min-width: 80px;
+    background-color: {tokens['surface_primary']};
+    color: {tokens['text_tertiary']};
+    padding: 8px 16px;
+    border-bottom: 2px solid transparent;
+    font-weight: 600;
+    margin-right: 4px;
 }}
 
 QTabBar::tab:selected {{
-    background-color: {tokens['surface_primary']};
     color: {tokens['text_primary']};
     border-bottom: 2px solid {tokens['interactive_normal']};
 }}
 
 QTabBar::tab:hover:!selected {{
     background-color: {tokens['overlay_light']};
+    color: {tokens['text_secondary']};
+}}
+
+/* ==================== Group Boxes ==================== */
+QGroupBox {{
+    border: 1px solid {tokens['border_default']};
+    border-radius: {RADIUS['lg']}px;
+    margin-top: 12px;
+    padding-top: 16px;
+    font-weight: 600;
+    color: {tokens['text_secondary']};
+}}
+
+QGroupBox::title {{
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 12px;
+    padding: 0 4px;
+}}
+
+/* ==================== Process Bar ==================== */
+QProgressBar {{
+    border: none;
+    background-color: {tokens['surface_secondary']};
+    border-radius: {RADIUS['sm']}px;
+    text-align: center;
+}}
+
+QProgressBar::chunk {{
+    background-color: {tokens['interactive_normal']};
+    border-radius: {RADIUS['sm']}px;
 }}
 """
 

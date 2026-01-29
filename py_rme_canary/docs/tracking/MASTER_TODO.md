@@ -72,8 +72,8 @@ From `features.md`:
 
 ### 🧙‍♂️ Map Generation / Templates
 From `ANALISE_FALTANTE.md` ("Completely Faltante"):
-- [ ] **Templates System:** Generate new maps from presets (7.4, 8.6, etc.).
-- [ ] **Tileset Manager:** UI to create/edit custom tilesets.
+- [x] **Templates System:** Generate new maps from presets (7.4, 8.6, etc.) (2026-01-29: 7 version presets, MapTemplate dataclass, 22/22 tests passing).
+- [x] **Tileset Manager:** UI to create/edit custom tilesets (2026-01-29: implemented in earlier session, see IMPLEMENTATION_STATUS.md).
 - [x] **Welcome Dialog:** "New/Open/Recent" splash screen (2026-01-28).
 
 ### 📤 Import/Export
@@ -92,7 +92,7 @@ From `ANALISE_FALTANTE.md` ("Completely Faltante"):
 
 - [ ] **Remove Legacy Stubs:** Final sweep of `logic_layer` and `vis_layer` for any unused files.
 - [x] **Standardize Tests:** Ensure all tests follow `test_*.py` pattern (2026-01-29: audit complete; no nonconforming test files found).
-- [ ] **Documentation:** Update `WALKTHROUGH.md` with final v2.0 workflow.
+- [x] **Documentation:** Update `WALKTHROUGH.md` with final v2.0 workflow (2026-01-29: comprehensive v2.0 doc with all completed features).
 
 ---
 
@@ -146,4 +146,3 @@ From `ANALISE_FALTANTE.md` ("Completely Faltante"):
 - [ ] **Error Handling:** Missing sprites (placeholders), invalid IDs.
 - [ ] **Optimization:** Profiling, dirty rectangles, sprite batching.
 - [ ] **Polish:** Loading feedback, quality options, transitions.
-
