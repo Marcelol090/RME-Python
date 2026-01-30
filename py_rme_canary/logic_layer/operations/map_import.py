@@ -19,7 +19,6 @@ class ImportMapReport:
     spawns_imported: int = 0
     zones_imported: int = 0
     skipped_out_of_bounds: int = 0
-<<<<<<< HEAD
     house_id_mapping: dict[int, int] | None = None
     zone_id_mapping: dict[int, int] | None = None
     warnings: list[str] | None = None
@@ -31,11 +30,6 @@ class ImportMapReport:
             self.zone_id_mapping = {}
         if self.warnings is None:
             self.warnings = []
-=======
-    house_id_mapping: dict[int, int] = field(default_factory=dict)
-    zone_id_mapping: dict[int, int] = field(default_factory=dict)
-    warnings: list[str] = field(default_factory=list)
->>>>>>> chore/mypy-vis-layer-10202022385557517139
 
 
 def import_map_with_offset(
