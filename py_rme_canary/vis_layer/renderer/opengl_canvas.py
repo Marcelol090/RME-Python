@@ -22,7 +22,7 @@ try:
     from PyQt6.QtOpenGLWidgets import QOpenGLWidget
     from PyQt6.QtGui import QSurfaceFormat
     OPENGL_AVAILABLE = True
-except ImportError:
+except Exception:
     OPENGL_AVAILABLE = False
     QOpenGLWidget = QWidget  # Fallback to regular widget
 

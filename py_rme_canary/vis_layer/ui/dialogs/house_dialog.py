@@ -464,14 +464,24 @@ class HouseEditDialog(QDialog):
     
     def __init__(
         self,
-        house: "House",
+        house: "House | None" = None,
+        *,
+        house_id: int | None = None,
+        house_name: str | None = None,
         parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
-        
+
+        if house is None:
+            from py_rme_canary.core.data.houses import House as HouseModel  # lazy import
+
+            hid = house_id if house_id is not None else 0
+            hname = house_name if house_name is not None else ""
+            house = HouseModel(id=int(hid), name=hname)
+
         self._house = house
         
-        self.setWindowTitle(f"Edit House #{house.id}")
+        self.setWindowTitle(f"Edit House #{self._house.id}")
         self.setMinimumWidth(350)
         self.setModal(True)
         

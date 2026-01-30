@@ -58,9 +58,12 @@ from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_toolbars import QtMapE
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_view import QtMapEditorViewMixin
 from py_rme_canary.vis_layer.ui.main_window.build_actions import build_actions
 
+from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_modern_ux import QtMapEditorModernUXMixin
+
 
 class QtMapEditor(
     QMainWindow,
+    QtMapEditorModernUXMixin,
     QtMapEditorToolbarsMixin,
     QtMapEditorViewMixin,
     QtMapEditorPalettesMixin,
@@ -288,6 +291,23 @@ class QtMapEditor(
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
 
+        # Initialize AssetManager with IdMapper (e.g. from items.otb)
+        try:
+            from py_rme_canary.core.database.id_mapper import IdMapper
+            from py_rme_canary.core.database.items_otb import ItemsOTB
+            from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+            otb_path = os.path.join("data", "items", "items.otb")
+            if os.path.exists(otb_path):
+                items_otb = ItemsOTB.load(otb_path)
+                self.id_mapper = IdMapper.from_items_otb(items_otb)
+                AssetManager.instance().set_id_mapper(self.id_mapper)
+                logger.info("Loaded ID Mapper from %s", otb_path)
+            else:
+                logger.warning("items.otb not found at %s, sprites may not match correct IDs", otb_path)
+        except Exception as e:
+            logger.error("Failed to load ID Mapper: %s", e)
+
         self.viewport = Viewport()
         self.current_path: Optional[str] = None
 
@@ -303,6 +323,7 @@ class QtMapEditor(
 
         # Client sprite assets (legacy sprite sheets via catalog-content.json)
         self.assets_dir: Optional[str] = None
+        self.assets_selection_path: Optional[str] = None
         self.sprite_assets = None
         self.appearance_assets = None
         self.asset_profile = None
@@ -314,6 +335,9 @@ class QtMapEditor(
         self._sprite_render_emergency_warned: bool = False
         self._sprite_render_disabled_reason: Optional[str] = None
         self._animation_clock_ms: int = 0
+        
+        # Cross-version clipboard sprite matcher
+        self.sprite_matcher = None
 
         # Selection mode (legacy-like box selection)
         self.selection_mode: bool = False
@@ -519,6 +543,29 @@ class QtMapEditor(
         self.act_show_preview.setChecked(bool(self.show_preview))
         self.act_show_indicators_simple.setChecked(bool(self.show_indicators))
         self.act_palette_large_icons.setChecked(bool(self.palette_large_icons))
+
+        self.act_palette_large_icons.setChecked(bool(self.palette_large_icons))
+
+        # Initialize Modern UX features (theme, overlays, menus)
+        self.init_modern_ux()
+        
+        self._enable_action_logging()
+
+    def _enable_action_logging(self) -> None:
+        """Attach logging to QAction triggers for session tracing."""
+        action_logger = logging.getLogger("ui.actions")
+        seen: set[int] = set()
+        for action in self.findChildren(QAction):
+            aid = id(action)
+            if aid in seen:
+                continue
+            seen.add(aid)
+            name = action.objectName() or action.text()
+
+            def _handler(checked: bool = False, *, _name: str = name) -> None:
+                action_logger.info("Action triggered: %s checked=%s", _name, checked)
+
+            action.triggered.connect(_handler)
 
     def advance_animation_clock(self, delta_ms: int) -> None:
         if int(delta_ms) <= 0:

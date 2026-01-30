@@ -116,6 +116,31 @@ class GeneralSettings(SettingsCategory):
         self.recent_count.setValue(10)
         self.recent_count.valueChanged.connect(self.mark_changed)
         form.addRow("Recent files to show:", self.recent_count)
+
+        # Default client version (used for new maps)
+        self.default_client_version = QSpinBox()
+        self.default_client_version.setRange(0, 2000)
+        self.default_client_version.setObjectName("default_client_version")
+        self.default_client_version.setToolTip("Default Tibia client version for new maps (0 = unknown)")
+        try:
+            from py_rme_canary.core.config.user_settings import get_user_settings
+
+            self.default_client_version.setValue(get_user_settings().get_default_client_version())
+        except Exception:
+            self.default_client_version.setValue(0)
+        self.default_client_version.valueChanged.connect(self.mark_changed)
+        form.addRow("Default client version:", self.default_client_version)
+
+        self.auto_load_appearances = QCheckBox("Auto-load appearances.dat when available")
+        self.auto_load_appearances.setObjectName("auto_load_appearances")
+        try:
+            from py_rme_canary.core.config.user_settings import get_user_settings
+
+            self.auto_load_appearances.setChecked(get_user_settings().get_auto_load_appearances())
+        except Exception:
+            self.auto_load_appearances.setChecked(True)
+        self.auto_load_appearances.stateChanged.connect(self.mark_changed)
+        form.addRow(self.auto_load_appearances)
         
         layout.addLayout(form)
         layout.addStretch()
@@ -172,6 +197,21 @@ class EditorSettings(SettingsCategory):
         self.borderize_paste.setChecked(True)
         self.borderize_paste.stateChanged.connect(self.mark_changed)
         form.addRow(self.borderize_paste)
+        
+        # Sprite match on paste (cross-version)
+        self.sprite_match_paste = QCheckBox("Sprite match on paste (cross-version)")
+        self.sprite_match_paste.setObjectName("sprite_match_on_paste")
+        self.sprite_match_paste.setToolTip(
+            "Enable sprite hash matching for cross-version copy/paste.\n"
+            "Allows copying between RME instances with different client versions."
+        )
+        try:
+            from py_rme_canary.core.config.user_settings import get_user_settings
+            self.sprite_match_paste.setChecked(get_user_settings().get_sprite_match_on_paste())
+        except Exception:
+            self.sprite_match_paste.setChecked(True)
+        self.sprite_match_paste.stateChanged.connect(self.mark_changed)
+        form.addRow(self.sprite_match_paste)
         
         # Default floor
         self.default_floor = QSpinBox()

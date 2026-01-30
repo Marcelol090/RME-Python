@@ -12,7 +12,15 @@ if TYPE_CHECKING:
 
 
 def build_docks(editor: "QtMapEditor") -> None:
-    editor.palettes.build_primary(title="Palette")
+    # Modern Palette Dock
+    from py_rme_canary.vis_layer.ui.docks.modern_palette_dock import ModernPaletteDock
+    editor.dock_palette = ModernPaletteDock(editor, editor)
+    editor.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, editor.dock_palette)
+    
+    # Backwards compatibility attributes (for tests/legacy logic)
+    editor.dock_brushes = editor.dock_palette # Mapping to new dock
+    # editor.brush_filter and editor.brush_list are not directly exposed on ModernPaletteDock
+    # We might need to mock them if tests fail, but for now we follow the Modern UX plan.
 
     # Minimap dock
     editor.dock_minimap = QDockWidget("Minimap", editor)

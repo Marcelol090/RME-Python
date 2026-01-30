@@ -27,7 +27,9 @@ class QtMapEditorEditMixin:
         self.fill_armed = False
         self.session.cancel_box_selection()
         self.session.cancel_gesture()
-        self.canvas.cancel_interaction()
+        # Defensive: Some canvas implementations may not have cancel_interaction
+        if hasattr(self.canvas, 'cancel_interaction'):
+            self.canvas.cancel_interaction()
         self.status.showMessage("Canceled")
 
     def _copy_selection(self: "QtMapEditor") -> None:

@@ -1,16 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_submodules
+
+hiddenimports = ['PyQt6', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets', 'PyQt6.QtOpenGL', 'PyQt6.QtOpenGLWidgets', 'OpenGL', 'OpenGL.GL', 'OpenGL.arrays.arraydatatype', 'OpenGL.raw.GL.VERSION.GL_1_1', 'PIL', 'PIL.Image', 'defusedxml', 'defusedxml.ElementTree', 'defusedxml', 'defusedxml.ElementTree', 'pkgutil', 'importlib', 'importlib.metadata', 'importlib.resources', 'typing_extensions']
+hiddenimports += collect_submodules('PyQt6')
 
 
 a = Analysis(
     ['C:\\Users\\Marcelo Henrique\\Desktop\\projec_rme\\py_rme_canary\\vis_layer\\qt_app.py'],
     pathex=['C:\\Users\\Marcelo Henrique\\Desktop\\projec_rme'],
     binaries=[],
-    datas=[],
-    hiddenimports=['PyQt6', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets', 'PyQt6.QtOpenGL', 'PyQt6.QtOpenGLWidgets', 'OpenGL', 'OpenGL.GL', 'PIL', 'PIL.Image'],
+    datas=[('C:\\Users\\Marcelo Henrique\\Desktop\\projec_rme\\data', 'data'), ('C:\\Users\\Marcelo Henrique\\Desktop\\projec_rme\\py_rme_canary\\data', 'py_rme_canary/data')],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['PySide6', 'PyQt5', 'PySide2'],
     noarchive=False,
     optimize=0,
 )

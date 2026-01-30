@@ -28,6 +28,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme
+
 if TYPE_CHECKING:
     pass
 

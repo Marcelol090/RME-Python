@@ -1,0 +1,153 @@
+2026-01-29 22:47:54,997 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 22:49:19,667 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 22:49:25,924 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 47, in <lambda>
+    editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "py_rme_canary\vis_layer\ui\main_window\menubar\file\tools.py", line 5, in new_map
+    editor._new_map()
+  File "py_rme_canary\vis_layer\ui\main_window\qt_map_editor_file.py", line 31, in _new_map
+    from vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
+ModuleNotFoundError: No module named 'vis_layer'
+2026-01-29 22:53:04,981 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 22:54:02,836 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 22:55:02,099 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 22:56:16,338 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 47, in <lambda>
+    editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "py_rme_canary\vis_layer\ui\main_window\menubar\file\tools.py", line 5, in new_map
+    editor._new_map()
+  File "py_rme_canary\vis_layer\ui\main_window\qt_map_editor_file.py", line 31, in _new_map
+    from py_rme_canary.vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
+  File "pyimod02_importers.py", line 457, in exec_module
+  File "py_rme_canary\vis_layer\ui\dialogs\new_map_dialog.py", line 23, in <module>
+    from logic_layer.templates import (
+ModuleNotFoundError: No module named 'logic_layer'
+2026-01-29 23:00:23,973 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 23:00:29,259 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 47, in <lambda>
+    editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "py_rme_canary\vis_layer\ui\main_window\menubar\file\tools.py", line 5, in new_map
+    editor._new_map()
+  File "py_rme_canary\vis_layer\ui\main_window\qt_map_editor_file.py", line 31, in _new_map
+    from py_rme_canary.vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
+  File "pyimod02_importers.py", line 457, in exec_module
+  File "py_rme_canary\vis_layer\ui\dialogs\new_map_dialog.py", line 23, in <module>
+    from logic_layer.templates import (
+ModuleNotFoundError: No module named 'logic_layer'
+2026-01-29 23:00:29,269 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:01:02,051 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:04:10,631 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 23:06:34,577 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 47, in <lambda>
+    editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "py_rme_canary\vis_layer\ui\main_window\menubar\file\tools.py", line 5, in new_map
+    editor._new_map()
+  File "py_rme_canary\vis_layer\ui\main_window\qt_map_editor_file.py", line 35, in _new_map
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+                        ^^^^^^^
+NameError: name 'QDialog' is not defined. Did you mean: 'dialog'?
+2026-01-29 23:06:34,581 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:06:43,362 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:06:55,643 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:07:11,749 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:08:31,389 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:08:37,665 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:08:42,169 [INFO] ui.actions: Action triggered: Mirror Drawing checked=True
+2026-01-29 23:08:50,082 [INFO] ui.actions: Action triggered: Set Assets Directory… checked=False
+2026-01-29 23:09:04,168 [INFO] ui.actions: Action triggered: Set Assets Directory… checked=False
+2026-01-29 23:09:13,649 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:09:16,123 [INFO] ui.actions: Action triggered: In-Game Preview checked=True
+2026-01-29 23:09:18,449 [INFO] ui.actions: Action triggered: In-Game Preview checked=False
+2026-01-29 23:09:31,315 [INFO] ui.actions: Action triggered: Wall Hooks checked=False
+2026-01-29 23:09:31,758 [INFO] ui.actions: Action triggered: Wall Hooks checked=True
+2026-01-29 23:09:32,235 [INFO] ui.actions: Action triggered: Wall Hooks checked=False
+2026-01-29 23:09:33,641 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:09:43,325 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 47, in <lambda>
+    editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "py_rme_canary\vis_layer\ui\main_window\menubar\file\tools.py", line 5, in new_map
+    editor._new_map()
+  File "py_rme_canary\vis_layer\ui\main_window\qt_map_editor_file.py", line 35, in _new_map
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+                        ^^^^^^^
+NameError: name 'QDialog' is not defined. Did you mean: 'dialog'?
+2026-01-29 23:09:43,326 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:09:45,479 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:09:48,755 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:36:27,999 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 23:36:45,203 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 47, in <lambda>
+    editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "py_rme_canary\vis_layer\ui\main_window\menubar\file\tools.py", line 5, in new_map
+    editor._new_map()
+  File "py_rme_canary\vis_layer\ui\main_window\qt_map_editor_file.py", line 39, in _new_map
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+                        ^^^^^^^
+NameError: name 'QDialog' is not defined. Did you mean: 'dialog'?
+2026-01-29 23:36:45,206 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:37:06,690 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/KingOT/MAPAS/raidzone.otbm
+2026-01-29 23:37:08,130 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:39:53,972 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 23:40:05,413 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/shadowborn/world.otbm
+2026-01-29 23:40:06,796 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:40:16,830 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Ark/Arkcity/City.otbm
+2026-01-29 23:40:17,917 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:40:28,650 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets: Assets directory selected: C:/Users/Marcelo Henrique/Desktop/15.11 Shadowborn Global/assets
+2026-01-29 23:40:28,688 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets: Applying asset profile: modern assets_dir=C:\Users\Marcelo Henrique\Desktop\15.11 Shadowborn Global\assets appearances=C:\Users\Marcelo Henrique\Desktop\15.11 Shadowborn Global\assets\appearances-5997985a63a3e937581971c125efd546c0dfd0623341744ea8fa481c7fc9a560.dat
+2026-01-29 23:40:29,590 [INFO] ui.actions: Action triggered: Set Assets Directory… checked=False
+2026-01-29 23:40:33,420 [INFO] ui.actions: Action triggered: Wall Hooks checked=False
+2026-01-29 23:40:33,927 [INFO] ui.actions: Action triggered: Wall Hooks checked=True
+2026-01-29 23:40:34,991 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:40:39,490 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:40:42,599 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:40:53,880 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:40:56,572 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:41:12,803 [INFO] ui.actions: Action triggered: Border Automagic checked=False
+2026-01-29 23:41:13,675 [INFO] ui.actions: Action triggered: Border Automagic checked=True
+2026-01-29 23:41:15,901 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:41:26,731 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-29 23:41:33,589 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:41:40,548 [INFO] ui.actions: Action triggered: Mirror Drawing checked=True
+2026-01-29 23:41:45,786 [INFO] ui.actions: Action triggered: Set Mirror Axis From Cursor checked=False
+2026-01-29 23:42:01,996 [INFO] ui.actions: Action triggered: Save As… checked=False
+2026-01-29 23:42:02,967 [INFO] ui.actions: Action triggered: Zoom Normal checked=False
+2026-01-29 23:42:03,932 [INFO] ui.actions: Action triggered: Cut checked=False
+2026-01-29 23:42:04,690 [INFO] ui.actions: Action triggered: Redo checked=False
+2026-01-29 23:42:05,758 [INFO] ui.actions: Action triggered: Undo checked=False
+2026-01-29 23:42:05,921 [INFO] ui.actions: Action triggered: Undo checked=False
+2026-01-29 23:55:42,949 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 23:55:57,299 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-29 23:56:02,768 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:56:06,649 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-29 23:58:03,228 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-29 23:58:10,008 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-30 00:00:20,618 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-30 00:00:30,194 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/shadowborn/world.otbm
+2026-01-30 00:00:31,133 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 00:00:39,009 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Ark/Arkcity/city2-house.xml
+2026-01-30 00:00:39,919 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 00:00:42,672 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Ark/Arkcity/city2.otbm
+2026-01-30 00:00:43,587 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 00:00:55,283 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/LatinumOT/ATUALIZADO 3.0/HUNTS/VIP2/HUNT1-CUSTOM-PAY.otbm
+2026-01-30 00:00:57,579 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 00:01:08,521 [WARNING] py_rme_canary.logic_layer.brush_definitions: Failed to parse doodad materials include list: data\materials\brushs.xml (FileNotFoundError: [Errno 2] No such file or directory: 'data\\materials\\brushs.xml')
+2026-01-30 00:01:14,426 [INFO] ui.actions: Action triggered: Redo checked=False
+2026-01-30 01:54:48,382 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-30 01:55:10,100 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-30 01:55:31,957 [INFO] ui.actions: Action triggered: Zoom Normal checked=False
+2026-01-30 01:55:33,561 [INFO] ui.actions: Action triggered: Zoom Out checked=False
+2026-01-30 01:55:33,807 [INFO] ui.actions: Action triggered: Zoom Out checked=False
+2026-01-30 01:55:34,002 [INFO] ui.actions: Action triggered: Zoom Out checked=False
+2026-01-30 01:55:34,220 [INFO] ui.actions: Action triggered: Zoom Out checked=False

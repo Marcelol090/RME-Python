@@ -30,6 +30,7 @@ from PyQt6.QtWidgets import (
 
 if TYPE_CHECKING:
     from py_rme_canary.core.config.configuration_manager import ConfigurationManager
+    from py_rme_canary.core.config.user_settings import get_user_settings
 
 
 class PreferencesDialog(QDialog):
@@ -83,6 +84,7 @@ class PreferencesDialog(QDialog):
     def _load_current_settings(self) -> None:
         """Load current settings from config manager or defaults."""
         # TODO: Load from actual config.toml or ConfigurationManager
+        user_settings = get_user_settings()
         self._settings = {
             "show_welcome_dialog": True,
             "always_make_backup": True,
@@ -96,7 +98,10 @@ class PreferencesDialog(QDialog):
             "replace_count_limit": 10000,
             "delete_backup_days": 7,
             "copy_position_format": 0,  # 0-4 for different formats
-            "client_assets_folder": "",
+            "client_assets_folder": user_settings.get_client_assets_folder(),
+            "default_client_version": user_settings.get_default_client_version(),
+            "auto_load_appearances": user_settings.get_auto_load_appearances(),
+            "sprite_match_on_paste": user_settings.get_sprite_match_on_paste(),
         }
         
     def _create_general_page(self) -> QWidget:
@@ -170,6 +175,14 @@ class PreferencesDialog(QDialog):
         self._worker_threads_spin.setValue(self._settings["worker_threads"])
         self._worker_threads_spin.setToolTip("Number of threads for intensive operations (should match logical CPU cores)")
         form.addRow("Worker threads:", self._worker_threads_spin)
+
+        self._default_client_version_spin = QSpinBox()
+        self._default_client_version_spin.setRange(0, 2000)
+        self._default_client_version_spin.setValue(self._settings["default_client_version"])
+        self._default_client_version_spin.setToolTip(
+            "Default Tibia client version for new maps (0 = unknown/ask later)"
+        )
+        form.addRow("Default client version:", self._default_client_version_spin)
         
         self._replace_size_spin = QSpinBox()
         self._replace_size_spin.setRange(0, 100000)
@@ -216,9 +229,27 @@ class PreferencesDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
         
-        label = QLabel("Editor-specific settings will be added here.")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
+        # Cross-version clipboard
+        cross_version_group = QGroupBox("Cross-Version Copy/Paste")
+        cross_version_layout = QVBoxLayout(cross_version_group)
+        
+        self._sprite_match_paste_chk = QCheckBox("Enable sprite match on paste (cross-version)")
+        self._sprite_match_paste_chk.setChecked(self._settings["sprite_match_on_paste"])
+        self._sprite_match_paste_chk.setToolTip(
+            "When enabled, pasted items are matched by sprite hash across different client versions.\n"
+            "This allows copying from one RME instance to another with different client files."
+        )
+        cross_version_layout.addWidget(self._sprite_match_paste_chk)
+        
+        info_label = QLabel(
+            "This feature uses FNV-1a sprite hash matching to find equivalent sprites\n"
+            "when pasting between different client versions (e.g., 10.98 → 13.x)."
+        )
+        info_label.setStyleSheet("color: #888; font-size: 10px;")
+        info_label.setWordWrap(True)
+        cross_version_layout.addWidget(info_label)
+        
+        layout.addWidget(cross_version_group)
         layout.addStretch()
         
         return page
@@ -265,6 +296,11 @@ class PreferencesDialog(QDialog):
         folder_layout.addWidget(browse_btn)
         
         form.addRow("Client assets folder:", folder_layout)
+
+        self._auto_load_appearances_chk = QCheckBox("Auto-load appearances.dat when available")
+        self._auto_load_appearances_chk.setChecked(bool(self._settings.get("auto_load_appearances", True)))
+        self._auto_load_appearances_chk.setToolTip("If disabled, the editor will skip appearances.dat and use legacy sprites.")
+        form.addRow(self._auto_load_appearances_chk)
         
         layout.addLayout(form)
         layout.addStretch()
@@ -296,10 +332,19 @@ class PreferencesDialog(QDialog):
         self._settings["worker_threads"] = self._worker_threads_spin.value()
         self._settings["replace_count_limit"] = self._replace_size_spin.value()
         self._settings["delete_backup_days"] = self._delete_backup_days_spin.value()
+        self._settings["default_client_version"] = self._default_client_version_spin.value()
         
         self._settings["copy_position_format"] = self._pos_format_group.checkedId()
         self._settings["client_assets_folder"] = self._assets_folder_edit.text()
+        self._settings["auto_load_appearances"] = bool(self._auto_load_appearances_chk.isChecked())
+        self._settings["sprite_match_on_paste"] = bool(self._sprite_match_paste_chk.isChecked())
         
+        user_settings = get_user_settings()
+        user_settings.set_default_client_version(int(self._settings["default_client_version"]))
+        user_settings.set_client_assets_folder(str(self._settings["client_assets_folder"]))
+        user_settings.set_auto_load_appearances(bool(self._settings["auto_load_appearances"]))
+        user_settings.set_sprite_match_on_paste(bool(self._settings["sprite_match_on_paste"]))
+
         # TODO: Write to config.toml or ConfigurationManager
         print(f"[PreferencesDialog] Settings saved: {self._settings}")
         

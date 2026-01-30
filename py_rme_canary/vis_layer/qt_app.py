@@ -1,15 +1,49 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QTimer
+import logging
+import os
+import sys
+from pathlib import Path
+
+from PyQt6.QtCore import QTimer, qInstallMessageHandler
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from py_rme_canary.core.runtime import assert_64bit_runtime
-
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
-from py_rme_canary.vis_layer.ui.themes import apply_dark_theme
+from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
+
+
+def _resolve_log_path() -> Path:
+    base = os.getenv("LOCALAPPDATA") or os.getenv("APPDATA") or str(Path.home())
+    log_dir = Path(base) / "py_rme_canary" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir / "app.log"
+
+
+def _setup_logging() -> None:
+    log_path = _resolve_log_path()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[logging.FileHandler(log_path, encoding="utf-8")],
+    )
+    logging.getLogger("app").info("Logging initialized: %s", log_path)
+
+    def _qt_message_handler(mode, context, message) -> None:  # type: ignore[no-redef]
+        logger = logging.getLogger("qt")
+        logger.info("%s | %s", mode, message)
+
+    qInstallMessageHandler(_qt_message_handler)
+
+    def _excepthook(exc_type, exc, tb) -> None:
+        logging.getLogger("exceptions").exception("Unhandled exception", exc_info=(exc_type, exc, tb))
+        sys.__excepthook__(exc_type, exc, tb)
+
+    sys.excepthook = _excepthook
 
 
 def main() -> int:
+    _setup_logging()
     try:
         assert_64bit_runtime()
     except Exception as e:
@@ -22,7 +56,7 @@ def main() -> int:
             raise
 
     app = QApplication([])
-    apply_dark_theme(app)
+    apply_modern_theme(app)
     win = QtMapEditor()
     win.show()
 

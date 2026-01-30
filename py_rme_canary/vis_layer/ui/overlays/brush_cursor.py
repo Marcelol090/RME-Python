@@ -47,11 +47,14 @@ class BrushCursorOverlay(QWidget):
         self._is_circle = False
         self._pulse_phase = 0.0
         self._visible = False
+        self._shape_progress = 0.0  # 0 = square, 1 = circle
+        self._position = QPoint(0, 0)
 
         # Colors
-        self._primary_color = QColor(139, 92, 246, 180)  # Purple
-        self._secondary_color = QColor(139, 92, 246, 60)  # Lighter purple
-        self._preview_color = QColor(139, 92, 246, 40)  # Fill preview
+        from py_rme_canary.vis_layer.ui.theme.colors import get_theme_color
+        self._primary_color = get_theme_color("primary", 180)  # Purple
+        self._secondary_color = get_theme_color("primary", 60)  # Lighter purple
+        self._preview_color = get_theme_color("primary", 40)  # Fill preview
 
         # Setup
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
@@ -105,6 +108,7 @@ class BrushCursorOverlay(QWidget):
     def set_position(self, center: QPoint) -> None:
         """Set the cursor center position."""
         self._center = center
+        self._position = QPoint(center)
         self._update_geometry()
         self.update()
 

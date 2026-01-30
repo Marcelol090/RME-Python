@@ -93,9 +93,9 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
         m_symmetry.addAction(editor.act_symmetry_horizontal)
 
 
+    # Tools Menu (Top Level)
     if hasattr(editor, "menu_tools"):
-        m_edit.addSeparator()
-        m_edit.addMenu(editor.menu_tools)
+        mb.addMenu(editor.menu_tools)
 
     m_edit.addSeparator()
     m_edit.addAction(editor.act_goto_previous_position)
@@ -140,12 +140,14 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
 
     # Map Menu (Legacy Parity)
     m_map = mb.addMenu("Map")
+    if hasattr(editor, "act_map_properties"):
+        m_map.addAction(editor.act_map_properties)
+        m_map.addSeparator()
+        
     if hasattr(editor, "act_remove_monsters_selection"):
         m_map.addAction(editor.act_remove_monsters_selection)
     if hasattr(editor, "act_convert_map_format"):
         m_map.addAction(editor.act_convert_map_format)
-
-    # We can also add other map-wide tools here later (e.g. Map Properties, Cleanup)
 
     m_view = mb.addMenu("View")
     m_view.addAction(editor.act_zoom_in)
@@ -168,6 +170,10 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
 
     m_assets = mb.addMenu("Assets")
     m_assets.addAction(editor.act_set_assets_dir)
+    if hasattr(editor, "act_load_appearances"):
+        m_assets.addAction(editor.act_load_appearances)
+    if hasattr(editor, "act_unload_appearances"):
+        m_assets.addAction(editor.act_unload_appearances)
 
     m_live = mb.addMenu("Live")
     if hasattr(editor, "act_live_host"):
@@ -274,3 +280,8 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
 
     # Toolbars menu gets toggleViewAction() after toolbars are created.
     editor._menu_toolbars = m_toolbars
+
+    # Help Menu
+    m_help = mb.addMenu("Help")
+    if hasattr(editor, "act_about"):
+        m_help.addAction(editor.act_about)

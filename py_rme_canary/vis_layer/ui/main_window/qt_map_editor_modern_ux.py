@@ -14,13 +14,31 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtWidgets import QApplication, QMessageBox
+
+from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
+from py_rme_canary.vis_layer.ui.docks.modern_properties_panel import ModernPropertiesPanel
+from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay
+from py_rme_canary.vis_layer.ui.overlays.paste_preview import PastePreviewOverlay, SelectionOverlay
+from py_rme_canary.vis_layer.ui.menus.context_menus import TileContextMenu
+from py_rme_canary.logic_layer.clipboard import ClipboardManager
+from py_rme_canary.vis_layer.ui.utils.recent_files import build_recent_files_menu, RecentFilesManager
+from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
+from py_rme_canary.vis_layer.ui.dialogs.waypoint_dialog import WaypointListDialog, WaypointQuickAdd
+from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
+from py_rme_canary.vis_layer.ui.dialogs.spawn_manager import SpawnManagerDialog
+from py_rme_canary.vis_layer.ui.dialogs.zone_town_dialogs import ZoneListDialog, TownListDialog
+from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import SettingsDialog
+from py_rme_canary.vis_layer.ui.dialogs.navigation_dialogs import GoToPositionDialog
+from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
+from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import MapPropertiesDialog, AboutDialog
+from py_rme_canary.core.data.position import Position
+from py_rme_canary.core.config.user_settings import get_user_settings
+
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
-    from py_rme_canary.vis_layer.ui.docks.modern_properties_panel import ModernPropertiesPanel
-    from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay
-    from py_rme_canary.vis_layer.ui.overlays.paste_preview import PastePreviewOverlay, SelectionOverlay
-    from py_rme_canary.vis_layer.ui.menus.context_menus import TileContextMenu
-    from py_rme_canary.logic_layer.clipboard import ClipboardManager
 
 logger = logging.getLogger(__name__)
 
@@ -83,32 +101,19 @@ class QtMapEditorModernUXMixin:
     def _apply_modern_theme(self: "QtMapEditor") -> None:
         """Apply modern dark theme to the application."""
         try:
-            from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
-            from PyQt6.QtWidgets import QApplication
-            
             app = QApplication.instance()
             if app:
                 if apply_modern_theme(app):
                     self._theme_applied = True
                     logger.debug("Modern theme applied successfully")
-                    
-        except ImportError as e:
-            logger.warning(f"Modern theme not available: {e}")
         except Exception as e:
             logger.error(f"Error applying modern theme: {e}")
             
     def _setup_modern_properties_panel(self: "QtMapEditor") -> None:
         """Setup the modern properties panel dock."""
-        try:
-            from PyQt6.QtCore import Qt
-            from py_rme_canary.vis_layer.ui.docks.modern_properties_panel import ModernPropertiesPanel
-            
-            self.modern_properties_panel = ModernPropertiesPanel(self)
-            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.modern_properties_panel)
-            logger.debug("Modern properties panel created")
-            
-        except ImportError as e:
-            logger.warning(f"Modern properties panel not available: {e}")
+        self.modern_properties_panel = ModernPropertiesPanel(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.modern_properties_panel)
+        logger.debug("Modern properties panel created")
             
     def _setup_overlays(self: "QtMapEditor") -> None:
         """Setup all canvas overlays."""
@@ -116,84 +121,76 @@ class QtMapEditorModernUXMixin:
             return
             
         # Brush cursor overlay
-        try:
-            from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay
-            self.brush_cursor_overlay = BrushCursorOverlay(self.canvas)
-            tile_size = getattr(self.drawing_options, 'tile_size', 32) if hasattr(self, 'drawing_options') else 32
-            self.brush_cursor_overlay.set_tile_size(tile_size)
-            self.brush_cursor_overlay.set_visible(False)
-        except ImportError:
-            pass
+        self.brush_cursor_overlay = BrushCursorOverlay(self.canvas)
+        tile_size = getattr(self.drawing_options, 'tile_size', 32) if hasattr(self, 'drawing_options') else 32
+        self.brush_cursor_overlay.set_tile_size(tile_size)
+        self.brush_cursor_overlay.set_visible(False)
             
         # Paste preview overlay
-        try:
-            from py_rme_canary.vis_layer.ui.overlays.paste_preview import PastePreviewOverlay, SelectionOverlay
-            self.paste_preview_overlay = PastePreviewOverlay(self.canvas)
-            self.selection_overlay = SelectionOverlay(self.canvas)
-        except ImportError:
-            pass
+        self.paste_preview_overlay = PastePreviewOverlay(self.canvas)
+        self.selection_overlay = SelectionOverlay(self.canvas)
             
     def _setup_context_menus(self: "QtMapEditor") -> None:
         """Setup context menu handlers."""
-        try:
-            from py_rme_canary.vis_layer.ui.menus.context_menus import TileContextMenu
-            
-            self.tile_context_menu = TileContextMenu(self)
-            self.tile_context_menu.set_callbacks({
-                'copy': lambda: self._do_copy(),
-                'cut': lambda: self._do_cut(),
-                'paste': lambda: self._do_paste(),
-                'delete': lambda: self._do_delete(),
-                'can_paste': lambda: self.clipboard.can_paste() if self.clipboard else False,
-                'select_all': lambda: self._do_select_all(),
-                'deselect': lambda: self._do_deselect(),
-                'properties': lambda: self._show_tile_properties(),
-                'copy_position': lambda: self._copy_position_to_clipboard(),
-                'goto': lambda: self.show_goto_position_dialog(),
-                'set_waypoint': lambda: self.show_waypoint_quick_add(),
-                'delete_waypoint': lambda: self._delete_waypoint_here(),
-                'has_waypoint': lambda: self._has_waypoint_at_cursor(),
-                'set_monster_spawn': lambda: self._place_monster_spawn(),
-                'set_npc_spawn': lambda: self._place_npc_spawn(),
-                'delete_spawn': lambda: self._delete_spawn_here(),
-                'edit_house': lambda: self.show_house_manager(),
-                'clear_house': lambda: self._clear_house_id(),
-                'assign_house': lambda: self._assign_house_dialog(),
-                'set_house_entry': lambda: self._set_house_entry_here(),
-            })
-            logger.debug("Context menus configured")
-            
-        except ImportError as e:
-            logger.debug(f"Context menus not available: {e}")
+        self.tile_context_menu = TileContextMenu(self)
+        self.tile_context_menu.set_callbacks({
+            'copy': lambda: self._do_copy(),
+            'cut': lambda: self._do_cut(),
+            'paste': lambda: self._do_paste(),
+            'delete': lambda: self._do_delete(),
+            'can_paste': lambda: self.clipboard.can_paste() if self.clipboard else False,
+            'select_all': lambda: self._do_select_all(),
+            'deselect': lambda: self._do_deselect(),
+            'properties': lambda: self._show_tile_properties(),
+            'copy_position': lambda: self._copy_position_to_clipboard(),
+            'goto': lambda: self.show_goto_position_dialog(),
+            'set_waypoint': lambda: self.show_waypoint_quick_add(),
+            'delete_waypoint': lambda: self._delete_waypoint_here(),
+            'has_waypoint': lambda: self._has_waypoint_at_cursor(),
+            'set_monster_spawn': lambda: self._place_monster_spawn(),
+            'set_npc_spawn': lambda: self._place_npc_spawn(),
+            'delete_spawn': lambda: self._delete_spawn_here(),
+            'edit_house': lambda: self.show_house_manager(),
+            'clear_house': lambda: self._clear_house_id(),
+            'assign_house': lambda: self._assign_house_dialog(),
+            'set_house_entry': lambda: self._set_house_entry_here(),
+        })
+        logger.debug("Context menus configured")
             
     def _setup_clipboard(self: "QtMapEditor") -> None:
         """Setup clipboard system."""
-        try:
-            from py_rme_canary.logic_layer.clipboard import ClipboardManager
-            self.clipboard = ClipboardManager.instance()
-            logger.debug("Clipboard system initialized")
-        except ImportError:
-            pass
+        self.clipboard = ClipboardManager.instance()
+        logger.debug("Clipboard system initialized")
             
     def _setup_recent_files(self: "QtMapEditor") -> None:
         """Setup recent files menu integration."""
-        try:
-            from py_rme_canary.vis_layer.ui.utils.recent_files import build_recent_files_menu
+        if hasattr(self, 'menu_file') and hasattr(self.menu_file, 'addMenu'):
+            self.menu_recent_files = self.menu_file.addMenu("Recent Files")
+            build_recent_files_menu(self.menu_recent_files, on_file_selected=self._open_recent_file)
             
-            if hasattr(self, 'menu_file') and hasattr(self.menu_file, 'addMenu'):
-                self.menu_recent_files = self.menu_file.addMenu("Recent Files")
-                build_recent_files_menu(self.menu_recent_files, on_file_selected=self._open_recent_file)
-                
-        except ImportError:
-            pass
-            
+    def _setup_modern_dialog_actions(self: "QtMapEditor") -> None:
+        """Setup actions for modern dialogs (About, Properties)."""
+        # About
+        self.act_about = QAction("About py_rme_canary...", self)
+        self.act_about.triggered.connect(lambda: AboutDialog(self).exec())
+
+        # Map Properties
+        self.act_map_properties = QAction("Map Properties", self)
+        self.act_map_properties.setShortcut("Ctrl+P")
+        self.act_map_properties.triggered.connect(lambda: MapPropertiesDialog(getattr(self, 'session', None).game_map if hasattr(self, 'session') else None, self).exec())
+        
+        # Tools Reference (for build_menus)
+        if not hasattr(self, 'menu_tools'):
+             self.menu_tools = QMenu("Tools", self)
+
     def _setup_modern_actions(self: "QtMapEditor") -> None:
         """Setup additional modern UI actions in menus."""
+        self._setup_modern_dialog_actions()
+        
         try:
-            from PyQt6.QtGui import QAction, QKeySequence
-            
             # Add to Edit menu (if exists)
             if hasattr(self, 'menu_edit'):
+                # Check if separator already exists to avoid duplicates? PyQt handles this usually
                 self.menu_edit.addSeparator()
                 
                 act_global_search = QAction("🔍 Global Search...", self)
@@ -241,175 +238,102 @@ class QtMapEditorModernUXMixin:
     
     def show_global_search(self: "QtMapEditor") -> None:
         """Show global search dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
-            
-            dialog = GlobalSearchDialog(game_map=self.map, parent=self)
-            dialog.goto_position.connect(self.goto_position)
-            dialog.show()  # Non-modal
-            
-        except ImportError:
-            self._show_not_implemented("Global Search")
+        dialog = GlobalSearchDialog(game_map=self.map, parent=self)
+        dialog.goto_position.connect(self.goto_position)
+        dialog.show()  # Non-modal
             
     def show_waypoint_manager(self: "QtMapEditor") -> None:
         """Show waypoint manager dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.waypoint_dialog import WaypointListDialog
-            
-            current_pos = self._get_cursor_position()
-            dialog = WaypointListDialog(game_map=self.map, current_pos=current_pos, parent=self)
-            dialog.waypoint_selected.connect(lambda n, x, y, z: self.goto_position(x, y, z))
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("Waypoint Manager")
+        current_pos = self._get_cursor_position()
+        dialog = WaypointListDialog(game_map=self.map, current_pos=current_pos, parent=self)
+        dialog.waypoint_selected.connect(lambda n, x, y, z: self.goto_position(x, y, z))
+        dialog.exec()
             
     def show_waypoint_quick_add(self: "QtMapEditor") -> None:
         """Show quick waypoint add dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.waypoint_dialog import WaypointQuickAdd
-            
-            pos = self._get_cursor_position()
-            dialog = WaypointQuickAdd(position=pos, parent=self)
-            if dialog.exec():
-                name = dialog.get_name()
-                if name and self.map:
-                    from py_rme_canary.core.data.position import Position
-                    if not hasattr(self.map, 'waypoints') or self.map.waypoints is None:
-                        self.map.waypoints = {}
-                    self.map.waypoints[name] = Position(x=pos[0], y=pos[1], z=pos[2])
-                    
-        except ImportError:
-            pass
+        pos = self._get_cursor_position()
+        dialog = WaypointQuickAdd(position=pos, parent=self)
+        if dialog.exec():
+            name = dialog.get_name()
+            if name and self.map:
+                if not hasattr(self.map, 'waypoints') or self.map.waypoints is None:
+                    self.map.waypoints = {}
+                self.map.waypoints[name] = Position(x=pos[0], y=pos[1], z=pos[2])
             
     def show_house_manager(self: "QtMapEditor") -> None:
         """Show house manager dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
-            
-            dialog = HouseListDialog(game_map=self.map, parent=self)
-            dialog.goto_position.connect(self.goto_position)
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("House Manager")
+        dialog = HouseListDialog(game_map=self.map, parent=self)
+        dialog.goto_position.connect(self.goto_position)
+        dialog.exec()
             
     def show_spawn_manager(self: "QtMapEditor") -> None:
         """Show spawn manager dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.spawn_manager import SpawnManagerDialog
-            
-            dialog = SpawnManagerDialog(game_map=self.map, parent=self)
-            dialog.goto_position.connect(self.goto_position)
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("Spawn Manager")
+        dialog = SpawnManagerDialog(game_map=self.map, parent=self)
+        dialog.goto_position.connect(self.goto_position)
+        dialog.exec()
             
     def show_zone_manager(self: "QtMapEditor") -> None:
         """Show zone manager dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.zone_town_dialogs import ZoneListDialog
-            
-            dialog = ZoneListDialog(game_map=self.map, parent=self)
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("Zone Manager")
+        dialog = ZoneListDialog(game_map=self.map, parent=self)
+        dialog.exec()
             
     def show_town_manager(self: "QtMapEditor") -> None:
         """Show town manager dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.zone_town_dialogs import TownListDialog
-            
-            current_pos = self._get_cursor_position()
-            dialog = TownListDialog(game_map=self.map, current_pos=current_pos, parent=self)
-            dialog.goto_position.connect(self.goto_position)
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("Town Manager")
+        current_pos = self._get_cursor_position()
+        dialog = TownListDialog(game_map=self.map, current_pos=current_pos, parent=self)
+        dialog.goto_position.connect(self.goto_position)
+        dialog.exec()
             
     def show_settings_dialog(self: "QtMapEditor") -> None:
         """Show settings dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import SettingsDialog
-            
-            dialog = SettingsDialog(parent=self)
-            dialog.settings_applied.connect(self._apply_settings)
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("Settings")
+        dialog = SettingsDialog(parent=self)
+        dialog.settings_applied.connect(self._apply_settings)
+        dialog.exec()
             
     def show_goto_position_dialog(self: "QtMapEditor") -> None:
         """Show go to position dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.navigation_dialogs import GoToPositionDialog
-            
-            pos = self._get_cursor_position()
-            map_width = self.map.header.width if self.map else 65535
-            map_height = self.map.header.height if self.map else 65535
-            
-            dialog = GoToPositionDialog(
-                current_x=pos[0], current_y=pos[1], current_z=pos[2],
-                map_width=map_width, map_height=map_height,
-                parent=self
-            )
-            dialog.position_selected.connect(self.goto_position)
-            dialog.exec()
-            
-        except ImportError:
-            self._show_not_implemented("Go To Position")
+        pos = self._get_cursor_position()
+        map_width = self.map.header.width if self.map else 65535
+        map_height = self.map.header.height if self.map else 65535
+        
+        dialog = GoToPositionDialog(
+            current_x=pos[0], current_y=pos[1], current_z=pos[2],
+            map_width=map_width, map_height=map_height,
+            parent=self
+        )
+        dialog.position_selected.connect(self.goto_position)
+        dialog.exec()
             
     def show_welcome_dialog(self: "QtMapEditor") -> None:
         """Show the welcome dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
-            from py_rme_canary.vis_layer.ui.utils.recent_files import RecentFilesManager
-            
-            recent = RecentFilesManager.instance().get_recent_files()
-            dialog = WelcomeDialog(recent_files=recent, parent=self)
-            dialog.new_map_requested.connect(lambda: self.act_new.trigger() if hasattr(self, 'act_new') else None)
-            dialog.open_map_requested.connect(lambda: self.act_open.trigger() if hasattr(self, 'act_open') else None)
-            dialog.recent_file_selected.connect(self._open_recent_file)
-            dialog.exec()
-            
-        except ImportError:
-            pass
+        recent = RecentFilesManager.instance().get_recent_files()
+        dialog = WelcomeDialog(recent_files=recent, parent=self)
+        dialog.new_map_requested.connect(lambda: self.act_new.trigger() if hasattr(self, 'act_new') else None)
+        dialog.open_map_requested.connect(lambda: self.act_open.trigger() if hasattr(self, 'act_open') else None)
+        dialog.recent_file_selected.connect(self._open_recent_file)
+        dialog.exec()
             
     def show_map_properties_dialog(self: "QtMapEditor") -> None:
         """Show map properties dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import MapPropertiesDialog
-            
-            dialog = MapPropertiesDialog(game_map=self.map, parent=self)
-            if dialog.exec():
-                values = dialog.get_values()
-                if self.map:
-                    if hasattr(self.map, 'name'):
-                        self.map.name = values.get('name', '')
-                    if hasattr(self.map, 'description'):
-                        self.map.description = values.get('description', '')
-                        
-        except ImportError:
-            pass
+        dialog = MapPropertiesDialog(game_map=self.map, parent=self)
+        if dialog.exec():
+            values = dialog.get_values()
+            if self.map:
+                if hasattr(self.map, 'name'):
+                    self.map.name = values.get('name', '')
+                if hasattr(self.map, 'description'):
+                    self.map.description = values.get('description', '')
             
     def show_about_dialog(self: "QtMapEditor") -> None:
         """Show about dialog."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import AboutDialog
-            dialog = AboutDialog(parent=self)
-            dialog.exec()
-        except ImportError:
-            pass
+        dialog = AboutDialog(parent=self)
+        dialog.exec()
             
     # ========== Overlay Methods ==========
     
     def update_brush_cursor(self: "QtMapEditor", x: int, y: int, visible: bool = True) -> None:
         """Update brush cursor position and visibility."""
         if self.brush_cursor_overlay:
-            from PyQt6.QtCore import QPoint
             self.brush_cursor_overlay.set_position(QPoint(x, y))
             self.brush_cursor_overlay.set_visible(visible)
             brush_size = getattr(self, 'brush_size', 1) or 1
@@ -480,10 +404,24 @@ class QtMapEditorModernUXMixin:
     def _apply_settings(self: "QtMapEditor", settings: dict) -> None:
         """Apply settings from settings dialog."""
         logger.info(f"Applying settings: {list(settings.keys())}")
+        try:
+            general = settings.get("general", {}) if isinstance(settings, dict) else {}
+            default_cv = general.get("default_client_version")
+            if default_cv is not None:
+                get_user_settings().set_default_client_version(int(default_cv))
+            auto_load = general.get("auto_load_appearances")
+            if auto_load is not None:
+                get_user_settings().set_auto_load_appearances(bool(auto_load))
+            
+            editor = settings.get("editor", {}) if isinstance(settings, dict) else {}
+            sprite_match = editor.get("sprite_match_on_paste")
+            if sprite_match is not None:
+                get_user_settings().set_sprite_match_on_paste(bool(sprite_match))
+        except Exception:
+            logger.exception("Failed to apply settings")
         
     def _show_not_implemented(self: "QtMapEditor", feature: str) -> None:
         """Show not implemented message."""
-        from PyQt6.QtWidgets import QMessageBox
         QMessageBox.information(self, "Not Available", f"{feature} is not available yet.")
         
     # Stub methods for context menu callbacks
@@ -511,7 +449,20 @@ class QtMapEditorModernUXMixin:
             self.act_clear_selection.trigger()
             
     def _show_tile_properties(self: "QtMapEditor") -> None:
-        pass  # Would show tile dialog
+        """Show dialog/panel for tile properties."""
+        if not self.modern_properties_panel:
+            return
+            
+        # Get tile at cursor
+        x, y, z = self._get_cursor_position()
+        if hasattr(self, 'session') and self.session and self.session.game_map:
+            tile = self.session.game_map.get_tile(x, y, z)
+            if tile:
+                self.modern_properties_panel.show_tile(tile)
+        elif hasattr(self, 'map') and self.map:
+             tile = self.map.get_tile(x, y, z)
+             if tile:
+                  self.modern_properties_panel.show_tile(tile)
         
     def _copy_position_to_clipboard(self: "QtMapEditor") -> None:
         if hasattr(self, 'act_copy_position'):

@@ -549,6 +549,12 @@ def build_actions(editor: "QtMapEditor") -> None:
     editor.act_set_assets_dir = QAction("Set Assets Directory…", editor)
     editor.act_set_assets_dir.triggered.connect(lambda _c=False: assets_tools.choose_assets_dir(editor))
 
+    editor.act_load_appearances = QAction("Load appearances.dat…", editor)
+    editor.act_load_appearances.triggered.connect(lambda _c=False: assets_tools.load_appearances(editor))
+
+    editor.act_unload_appearances = QAction("Unload appearances.dat", editor)
+    editor.act_unload_appearances.triggered.connect(lambda _c=False: assets_tools.unload_appearances(editor))
+
     # Find
     editor.act_find_item = QAction("Find Item...", editor)
     editor.act_find_item.setShortcut(QKeySequence("Ctrl+F"))

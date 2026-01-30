@@ -19,7 +19,7 @@ class MapFormatConversionReport:
 
     @property
     def ok(self) -> bool:
-        if int(self.target_version) >= 5:
+        if int(self.target_version) >= 4:
             return not self.id_mapper_missing and not self.missing_mappings and self.placeholder_items == 0
         return True
 
@@ -35,7 +35,7 @@ def analyze_map_format_conversion(
     total_items = 0
     placeholders = 0
 
-    if target >= 5 and id_mapper is None:
+    if target >= 4 and id_mapper is None:
         return MapFormatConversionReport(
             current_version=int(game_map.header.otbm_version),
             target_version=target,
@@ -50,7 +50,7 @@ def analyze_map_format_conversion(
         if int(item.id) <= 0:
             placeholders += 1
             continue
-        if target >= 5:
+        if target >= 4:
             mapped = id_mapper.get_client_id(int(item.id)) if id_mapper is not None else None
             if mapped is None:
                 missing_ids.add(int(item.id))

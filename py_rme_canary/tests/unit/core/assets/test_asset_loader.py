@@ -45,7 +45,7 @@ def test_load_assets_modern_profile(tmp_path: Path) -> None:
     assert loaded.sheet_count == 1
     assert loaded.sprite_count is None
     assert loaded.appearance_assets is None
-    assert loaded.appearance_error is None
+    assert loaded.appearance_error is not None
 
 
 def test_load_assets_legacy_profile(tmp_path: Path) -> None:

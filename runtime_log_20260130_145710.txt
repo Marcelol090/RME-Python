@@ -1,0 +1,1 @@
+C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\venv\Scripts\python.exe: No module named py_rme_canary.__main__; 'py_rme_canary' is a package and cannot be directly executed

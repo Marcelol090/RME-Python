@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-from logic_layer.templates import (
+from py_rme_canary.logic_layer.templates import (
     ALL_TEMPLATES,
     COMMON_MAP_SIZES,
     MapTemplate,

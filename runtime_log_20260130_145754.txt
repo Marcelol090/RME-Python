@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 127, in <lambda>
+    editor.act_clear_selection.triggered.connect(lambda _c=False: edit_tools.escape_pressed(editor))
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\menubar\edit\tools.py", line 49, in escape_pressed
+    editor._escape_pressed()
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\qt_map_editor_edit.py", line 91, in _escape_pressed
+    self._cancel_current()
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\qt_map_editor_edit.py", line 30, in _cancel_current
+    self.canvas.cancel_interaction()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OpenGLCanvasWidget' object has no attribute 'cancel_interaction'

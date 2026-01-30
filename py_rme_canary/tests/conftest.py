@@ -7,6 +7,19 @@ import sys
 
 import pytest
 
+# Ensure pytest-qt uses PyQt6 API and provide QSignalSpy alias expected by tests.
+try:
+    import os
+    os.environ.setdefault("PYTEST_QT_API", "pyqt6")
+    from PyQt6.QtTest import QSignalSpy  # type: ignore
+    import PyQt6.QtCore as QtCore  # type: ignore
+
+    if not hasattr(QtCore, "QSignalSpy"):
+        QtCore.QSignalSpy = QSignalSpy  # type: ignore[attr-defined]
+except Exception:
+    # If PyQt6 not available, pytest.importorskip will handle skips elsewhere.
+    pass
+
 
 def pytest_configure(config):
     """Configure pytest."""

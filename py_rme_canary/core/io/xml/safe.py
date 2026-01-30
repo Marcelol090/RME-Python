@@ -21,4 +21,14 @@ def _load_safe_etree() -> ModuleType:
 
 safe_etree = _load_safe_etree()
 
+# defusedxml.ElementTree intentionally omits some constructors (Element/SubElement)
+# that the rest of the codebase expects. When those attributes are missing,
+# borrow the safe stdlib equivalents so code (and tests) can create XML trees.
+if not hasattr(safe_etree, "Element"):
+    safe_etree.Element = stdlib_etree.Element  # type: ignore[attr-defined]
+if not hasattr(safe_etree, "SubElement"):
+    safe_etree.SubElement = stdlib_etree.SubElement  # type: ignore[attr-defined]
+if not hasattr(safe_etree, "tostring"):
+    safe_etree.tostring = stdlib_etree.tostring  # type: ignore[attr-defined]
+
 __all__ = ["Element", "ElementTree", "ParseError", "SubElement", "safe_etree"]

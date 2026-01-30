@@ -1,0 +1,47 @@
+2026-01-30 15:03:21,185 [INFO] app: Logging initialized: C:\Users\Marcelo Henrique\AppData\Local\py_rme_canary\logs\app.log
+2026-01-30 15:03:37,193 [INFO] ui.actions: Action triggered: New checked=False
+2026-01-30 15:03:52,088 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Arcana/bookworld 4.otbm
+2026-01-30 15:03:53,212 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 15:03:56,926 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Arcana/raid_zone.otbm
+2026-01-30 15:03:59,313 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 15:04:03,728 [INFO] ui.actions: Action triggered: Load appearances.dat… checked=False
+2026-01-30 15:04:05,315 [INFO] ui.actions: Action triggered: Unload appearances.dat checked=False
+2026-01-30 15:04:12,774 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets: Assets directory selected: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Arcana/arcana2.0
+2026-01-30 15:04:16,353 [ERROR] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets: Failed to detect assets for path C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Arcana/arcana2.0
+Traceback (most recent call last):
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\qt_map_editor_assets.py", line 54, in _choose_assets_dir
+    profile = detect_asset_profile(path, prefer_kind=self._preferred_asset_kind())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\core\assets\asset_profile.py", line 89, in detect_asset_profile
+    raise AssetProfileError(
+py_rme_canary.core.assets.asset_profile.AssetProfileError: No supported assets found. Provide a Tibia client folder with assets/catalog-content.json or a legacy client folder containing .dat/.spr files.
+2026-01-30 15:04:16,355 [INFO] ui.actions: Action triggered: Set Assets Directory… checked=False
+2026-01-30 15:04:20,183 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets: Assets directory selected: C:/Users/Marcelo Henrique/Desktop/15.11 Shadowborn Global
+2026-01-30 15:04:20,237 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets: Applying asset profile: modern assets_dir=C:\Users\Marcelo Henrique\Desktop\15.11 Shadowborn Global\assets appearances=C:\Users\Marcelo Henrique\Desktop\15.11 Shadowborn Global\assets\appearances-5997985a63a3e937581971c125efd546c0dfd0623341744ea8fa481c7fc9a560.dat
+2026-01-30 15:04:21,290 [INFO] ui.actions: Action triggered: Set Assets Directory… checked=False
+2026-01-30 15:04:31,322 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/shadowborn/world.otbm
+2026-01-30 15:04:32,375 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 15:04:44,286 [INFO] ui.actions: Action triggered: Symmetry Vertical checked=True
+2026-01-30 15:04:50,878 [INFO] ui.actions: Action triggered: Zoom Out checked=False
+2026-01-30 15:04:51,094 [INFO] ui.actions: Action triggered: Zoom Out checked=False
+2026-01-30 15:04:51,410 [INFO] ui.actions: Action triggered: Zoom Normal checked=False
+2026-01-30 15:04:51,613 [INFO] ui.actions: Action triggered: Zoom Normal checked=False
+2026-01-30 15:04:51,763 [INFO] ui.actions: Action triggered: Zoom Normal checked=False
+2026-01-30 15:04:51,899 [INFO] ui.actions: Action triggered: Zoom Normal checked=False
+2026-01-30 15:05:03,937 [INFO] ui.actions: Action triggered: Undo checked=False
+2026-01-30 15:05:04,180 [INFO] ui.actions: Action triggered: Undo checked=False
+2026-01-30 15:05:04,506 [INFO] ui.actions: Action triggered: Redo checked=False
+2026-01-30 15:05:04,971 [INFO] ui.actions: Action triggered: Redo checked=False
+2026-01-30 15:05:05,133 [INFO] ui.actions: Action triggered: Redo checked=False
+2026-01-30 15:05:08,265 [INFO] py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file: Opening map: C:/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/shadowborn/world.otbm
+2026-01-30 15:05:09,242 [INFO] ui.actions: Action triggered: Open… checked=False
+2026-01-30 15:05:13,635 [ERROR] exceptions: Unhandled exception
+Traceback (most recent call last):
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 372, in <lambda>
+    editor.act_remove_monsters_selection.triggered.connect(lambda _c=False: map_tools.remove_monsters(editor, selection_only=True))
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\menubar\map\tools.py", line 17, in remove_monsters
+    game_map = editor.game_map
+               ^^^^^^^^^^^^^^^
+AttributeError: 'QtMapEditor' object has no attribute 'game_map'
+2026-01-30 15:05:13,639 [INFO] ui.actions: Action triggered: Remove Monsters checked=False

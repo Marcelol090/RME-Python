@@ -172,6 +172,26 @@ class OTBMLoader:
         )
 
         gm = self.load(str(map_path))
+        try:
+            md_engine = str(cfg.metadata.engine or "unknown")
+            md_cv = int(cfg.metadata.client_version or 0)
+            if md_engine == "unknown" and md_cv > 0:
+                md_engine = ConfigurationManager.infer_engine_from_client_version(md_cv)
+            md = MapMetadata(
+                engine=md_engine,
+                client_version=md_cv,
+                otbm_version=int(getattr(gm.header, "otbm_version", 0)),
+                source=str(cfg.metadata.source or "unknown"),
+            )
+            gm.load_report = gm.load_report or {}
+            gm.load_report["metadata"] = {
+                "engine": md.engine,
+                "client_version": int(md.client_version),
+                "otbm_version": int(md.otbm_version),
+                "source": md.source,
+            }
+        except Exception:
+            pass
         if warnings:
             self._inner.warnings.extend(warnings)
             if hasattr(gm, "load_report") and isinstance(gm.load_report, dict):

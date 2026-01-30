@@ -7,6 +7,7 @@ to construct the full GameMap data structure.
 
 from __future__ import annotations
 
+import logging
 import os
 import struct
 from dataclasses import dataclass
@@ -49,6 +50,9 @@ from .streaming import (
     read_u8,
 )
 from .tile_parser import TileParser
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,6 +239,19 @@ class OTBMLoader:
 
         gm = km
 
+        # Dynamic ID conversion metrics
+        dyn_server_in_client = sum(1 for w in self.warnings if w.code == "server_id_in_client_map")
+        dyn_client_in_server = sum(1 for w in self.warnings if w.code == "client_id_in_server_map")
+        dyn_total = int(dyn_server_in_client) + int(dyn_client_in_server)
+        if dyn_total > 0:
+            summary = (
+                "Dynamic ID conversions: "
+                f"server_id_in_client_map={dyn_server_in_client}, "
+                f"client_id_in_server_map={dyn_client_in_server}"
+            )
+            self.warnings.append(LoadWarning(code="dynamic_id_conversion_summary", message=summary))
+            logger.warning(summary)
+
         # Build load report
         unknowns = [w for w in self.warnings if w.code == "unknown_item_id" and w.raw_id is not None]
         replaced_items = [
@@ -251,6 +268,11 @@ class OTBMLoader:
             "warnings": list(self.warnings),
             "unknown_ids_count": len(unknowns),
             "replaced_items": replaced_items,
+            "dynamic_id_conversions": {
+                "server_id_in_client_map": int(dyn_server_in_client),
+                "client_id_in_server_map": int(dyn_client_in_server),
+                "total": int(dyn_total),
+            },
         }
 
         return gm

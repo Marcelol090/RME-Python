@@ -57,6 +57,7 @@ class ThemeColors:
 
     # Overlay
     overlay: str = "rgba(0, 0, 0, 0.6)"   # Modal backdrop
+    glass_surface: str = "rgba(42, 42, 62, 0.95)" # Semi-transparent surface for menus
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,7 +202,7 @@ QMenuBar::item:pressed {{
 
 /* === Menus === */
 QMenu {{
-    background-color: {c.surface};
+    background-color: {c.glass_surface};
     border: 1px solid {c.border};
     border-radius: {r.md}px;
     padding: {s.xs}px;
@@ -566,7 +567,7 @@ QProgressBar::chunk {{
 
 /* === Tool Tips === */
 QToolTip {{
-    background: {c.surface};
+    background: {c.glass_surface};
     color: {c.text_primary};
     border: 1px solid {c.border};
     border-radius: {r.md}px;

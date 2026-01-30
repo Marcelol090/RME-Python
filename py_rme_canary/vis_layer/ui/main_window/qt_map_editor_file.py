@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
+from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.io.creatures_xml import clear_creature_name_cache
@@ -25,10 +26,13 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
+logger = logging.getLogger(__name__)
+
+
 class QtMapEditorFileMixin:
     def _new_map(self: "QtMapEditor") -> None:
         """Create new map with template selection."""
-        from vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
+        from py_rme_canary.vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
 
         # Show dialog
         dialog = NewMapDialog(self)
@@ -55,6 +59,10 @@ class QtMapEditorFileMixin:
         self.apply_ui_state_to_session()
         self.viewport.origin_x = 0
         self.viewport.origin_y = 0
+        try:
+            self._apply_preferences_for_new_map()
+        except Exception:
+            logger.exception("Failed to apply preferences for new map")
         self.canvas.update()
 
     def _open_otbm(self: "QtMapEditor") -> None:
@@ -63,6 +71,7 @@ class QtMapEditorFileMixin:
         )
         if not path:
             return
+        logger.info("Opening map: %s", path)
 
         det = detect_map_file(path)
         if det.kind == "canary_json":
@@ -91,6 +100,7 @@ class QtMapEditorFileMixin:
             gm = loader.load_with_detection(path)
         except Exception as e:
             QMessageBox.critical(self, "Open failed", str(e))
+            logger.exception("Open map failed")
             return
 
         self.current_path = loader.last_otbm_path or path
@@ -112,6 +122,19 @@ class QtMapEditorFileMixin:
         self._update_status_capabilities(prefix=f"Loaded: {self.current_path} | source={src}")
         self.canvas.update()
 
+        try:
+            report = gm.load_report or {}
+            warnings = report.get("warnings") or []
+            dyn = report.get("dynamic_id_conversions") or {}
+            logger.warning(
+                "Load report: warnings=%s unknown_ids=%s dynamic_conversions=%s",
+                len(warnings),
+                report.get("unknown_ids_count"),
+                dyn,
+            )
+        except Exception:
+            logger.exception("Failed to log load report")
+
     def _save_as(self: "QtMapEditor") -> None:
         path, _ = QFileDialog.getSaveFileName(self, "Save OTBM As", "", "OTBM (*.otbm);;All Files (*)")
         if not path:
@@ -126,9 +149,13 @@ class QtMapEditorFileMixin:
             self._save_as()
             return
         try:
-            save_game_map_bundle_atomic(self.current_path, self.map, id_mapper=self.id_mapper)
+            if getattr(self, "id_mapper", None) is not None:
+                save_game_map_bundle_atomic(self.current_path, self.map, id_mapper=self.id_mapper)
+            else:
+                save_game_map_bundle_atomic(self.current_path, self.map)
         except Exception as e:
             QMessageBox.critical(self, "Save failed", str(e))
+            logger.exception("Save failed")
 
     def _import_monsters_npcs(self: "QtMapEditor") -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Import Monsters/NPC...", "", "Lua Files (*.lua);;All Files (*)")
@@ -185,9 +212,12 @@ class QtMapEditorFileMixin:
             return
         current_version = int(self.map.header.otbm_version)
         options: list[tuple[str, int]] = [
-            ("ServerID (OTBM 2)", 2),
-            ("ClientID (OTBM 5)", 5),
-            ("ClientID (OTBM 6)", 6),
+            ("ServerID (OTBM 1)", 0),
+            ("ServerID (OTBM 2)", 1),
+            ("ServerID (OTBM 3)", 2),
+            ("ServerID (OTBM 4)", 3),
+            ("ClientID (OTBM 5)", 4),
+            ("ClientID (OTBM 6)", 5),
         ]
         labels = [opt[0] for opt in options]
         default_index = 0

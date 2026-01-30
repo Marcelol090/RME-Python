@@ -1,39 +1,5881 @@
 {
+  "metadata": {
+    "version": "3.0",
+    "description": "Version-aware brush definitions with intelligent ServerID/ClientID detection",
+    "supported_versions": [
+      "740",
+      "800",
+      "840",
+      "860",
+      "910",
+      "920",
+      "946",
+      "960",
+      "986",
+      "1010",
+      "1098",
+      "1271",
+      "1310",
+      "1320",
+      "1330"
+    ],
+    "generation_mode": "intelligent",
+    "auto_detect": true,
+    "generated_at": "2026-01-30T16:42:21.633917",
+    "total_brushes": 284,
+    "rme_source": "Remeres-map-editor-linux-4.0.0/data/materials/brushs"
+  },
+  "version_mappings": {
+    "740": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 0,
+      "timeline": "2003 - Original OTB 1.1"
+    },
+    "800": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 0,
+      "timeline": "2004 - OTB 2.7"
+    },
+    "840": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 1,
+      "timeline": "2004 - OTB 3.12"
+    },
+    "860": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 1,
+      "timeline": "2004 - OTB 3.20"
+    },
+    "910": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 2,
+      "timeline": "2004 - OTB 3.28"
+    },
+    "920": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 2,
+      "timeline": "2004 - OTB 3.31"
+    },
+    "946": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 2,
+      "timeline": "2004 - OTB 3.35"
+    },
+    "960": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 2,
+      "timeline": "2004 - OTB 3.39"
+    },
+    "986": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 3,
+      "timeline": "2004 - OTB 3.43"
+    },
+    "1010": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 3,
+      "timeline": "2004 - OTB 3.50"
+    },
+    "1098": {
+      "format": "traditional",
+      "uses_server_id": true,
+      "otbm_version": 4,
+      "timeline": "2004 - OTB 3.59"
+    },
+    "1271": {
+      "format": "canary",
+      "uses_server_id": false,
+      "otbm_version": 5,
+      "timeline": "2007 - OTB 3.65 (Canary Era)"
+    },
+    "1310": {
+      "format": "canary",
+      "uses_server_id": false,
+      "otbm_version": 5,
+      "timeline": "2007 - OTB 3.65 (Canary)"
+    },
+    "1320": {
+      "format": "canary",
+      "uses_server_id": false,
+      "otbm_version": 5,
+      "timeline": "2007 - OTB 3.65 (Canary)"
+    },
+    "1330": {
+      "format": "canary",
+      "uses_server_id": false,
+      "otbm_version": 6,
+      "timeline": "2008 - OTB 3.65 (Canary)"
+    }
+  },
   "brushes": [
     {
-      "name": "Grass",
-      "server_id": 4526,
-      "type": "ground",
-      "borders": {}
-    },
-    {
-      "name": "Stone Wall",
-      "server_id": 1295,
+      "name": "stone wall",
       "type": "wall",
-      "borders": {
-        "HORIZONTAL": 1295,
-        "VERTICAL": 1294,
-        "NORTH_WEST": 1293,
-        "NORTH_EAST": 1292,
-        "SOUTH_EAST": 1291,
-        "SOUTH_WEST": 1290
-      }
+      "items": [],
+      "borders": {},
+      "server_id": 1295,
+      "client_id": 1295,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
     },
     {
-      "name": "Red Carpet",
-      "server_id": 1600,
-      "type": "carpet",
-      "borders": {
-        "CENTER": 1600,
-        "NORTH": 1601,
-        "EAST": 1602,
-        "SOUTH": 1603,
-        "WEST": 1604,
-        "NORTH_WEST": 1605,
-        "NORTH_EAST": 1606,
-        "SOUTH_EAST": 1607,
-        "SOUTH_WEST": 1608
-      }
+      "name": "broken wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6280,
+      "client_id": 6280,
+      "draggable": true,
+      "on_blocking": false,
+      "thickness": "100/100"
+    },
+    {
+      "name": "broken wall 2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6282,
+      "client_id": 6282,
+      "draggable": true,
+      "on_blocking": false,
+      "thickness": "100/100"
+    },
+    {
+      "name": "framework wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1282,
+      "client_id": 1282,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "damaged framework wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 5145,
+      "client_id": 5145,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "brick wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1271,
+      "client_id": 1271,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "egypt wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1306,
+      "client_id": 1306,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "egypt stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1346,
+      "client_id": 1346,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ruin wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1451,
+      "client_id": 1451,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "marble wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1357,
+      "client_id": 1357,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "rock wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1113,
+      "client_id": 1113,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "wooden wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6840,
+      "client_id": 6840,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ornamented wooden wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6853,
+      "client_id": 6853,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "low stone-wooden wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6858,
+      "client_id": 6858,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ornamented low stone-wooden wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6854,
+      "client_id": 6854,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "high stone-wooden wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6859,
+      "client_id": 6859,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ornamented high stone-wooden wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6855,
+      "client_id": 6855,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "wood wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6135,
+      "client_id": 6135,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "plant wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6238,
+      "client_id": 6238,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "plant wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 5557,
+      "client_id": 5557,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "brick wall arch",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1627,
+      "client_id": 1627,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "plaster wall arch",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1635,
+      "client_id": 1635,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "croft wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 5264,
+      "client_id": 5264,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "bridge",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 2253,
+      "client_id": 2253,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "alabaster wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 7646,
+      "client_id": 7646,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1547,
+      "client_id": 1547,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "metal wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1335,
+      "client_id": 1335,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "paravent",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1416,
+      "client_id": 1416,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "lava wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1442,
+      "client_id": 1442,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "bamboo wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1513,
+      "client_id": 1513,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "grass wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1586,
+      "client_id": 1586,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "palisade",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 1598,
+      "client_id": 1598,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "bone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6395,
+      "client_id": 6395,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "frozen wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6740,
+      "client_id": 6740,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "fur wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 6774,
+      "client_id": 6774,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone wall3",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 8202,
+      "client_id": 8202,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "iron wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 8294,
+      "client_id": 8294,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone wall4",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 8454,
+      "client_id": 8454,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "limestone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9260,
+      "client_id": 9260,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "limestone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9260,
+      "client_id": 9260,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "dark framework wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9310,
+      "client_id": 9310,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone wall5",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9333,
+      "client_id": 9333,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "blue palisade",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 11556,
+      "client_id": 11556,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 11974,
+      "client_id": 11974,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "timber wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 10589,
+      "client_id": 10589,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "light desert wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 11860,
+      "client_id": 11860,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "dark desert wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 11903,
+      "client_id": 11903,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "rocky wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 12388,
+      "client_id": 12388,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "glass wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 14159,
+      "client_id": 14159,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "icy bones",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 15722,
+      "client_id": 15722,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "muddy stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 16334,
+      "client_id": 16334,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "muddy stone wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 16351,
+      "client_id": 16351,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "brown stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 17053,
+      "client_id": 17053,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "red stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 17064,
+      "client_id": 17064,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ornate wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 17075,
+      "client_id": 17075,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ornate wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 17086,
+      "client_id": 17086,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "venore wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 17130,
+      "client_id": 17130,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "venore brick wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 17205,
+      "client_id": 17205,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "roshamuul wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 19456,
+      "client_id": 19456,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "oramond wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 20397,
+      "client_id": 20397,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "oramond wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 20576,
+      "client_id": 20576,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "oramond wall3",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 21224,
+      "client_id": 21224,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9734,
+      "client_id": 9734,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall1",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9749,
+      "client_id": 9749,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall3",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 9746,
+      "client_id": 9746,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall4",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 15928,
+      "client_id": 15928,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall5",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 15926,
+      "client_id": 15926,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall6",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 15927,
+      "client_id": 15927,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall7",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 16021,
+      "client_id": 16021,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall8",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 16013,
+      "client_id": 16013,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "zaoan wall9",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 16019,
+      "client_id": 16019,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "corrupted wall1",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 10878,
+      "client_id": 10878,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "corrupted wall2",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 10982,
+      "client_id": 10982,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "dark stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 22545,
+      "client_id": 22545,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "dark block wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 28338,
+      "client_id": 28338,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "white stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33098,
+      "client_id": 33098,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "cracked wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33156,
+      "client_id": 33156,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "messy wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33183,
+      "client_id": 33183,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "hands wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33217,
+      "client_id": 33217,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "plant wall 3",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33241,
+      "client_id": 33241,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "clean marble wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33578,
+      "client_id": 33578,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "arch marble wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33581,
+      "client_id": 33581,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "gray brick wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33590,
+      "client_id": 33590,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "archwood brick wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 33593,
+      "client_id": 33593,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "strange metal wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 32827,
+      "client_id": 32827,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone wall (bege)",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 30778,
+      "client_id": 30778,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "heavy stones wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 30736,
+      "client_id": 30736,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone covered with blue",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 30992,
+      "client_id": 30992,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "stone covered with purple",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 31003,
+      "client_id": 31003,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "ornamented wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 29088,
+      "client_id": 29088,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "new frozen wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 29116,
+      "client_id": 29116,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "short stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 29116,
+      "client_id": 29116,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "massive stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 26951,
+      "client_id": 26951,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "grass stone wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 27037,
+      "client_id": 27037,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "monument wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 23817,
+      "client_id": 23817,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "dragon lair wall (large)",
+      "type": "wall",
+      "items": [
+        {
+          "item_id": 25037,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 24993,
+      "client_id": 24993,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "dragon lair wall",
+      "type": "wall",
+      "items": [],
+      "borders": {},
+      "server_id": 24993,
+      "client_id": 24993,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "brushes",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3681,
+          "chance": 10
+        },
+        {
+          "item_id": 3682,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3681,
+      "client_id": 3681,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "brushes (dead)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3684,
+          "chance": 10
+        },
+        {
+          "item_id": 3698,
+          "chance": 10
+        },
+        {
+          "item_id": 6430,
+          "chance": 10
+        },
+        {
+          "item_id": 6431,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3698,
+      "client_id": 3698,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "brushes (blueberry)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3699,
+          "chance": 10
+        },
+        {
+          "item_id": 3700,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3699,
+      "client_id": 3699,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "grass drift (horizontal)",
+      "type": "ground",
+      "items": [],
+      "borders": {},
+      "server_id": 2511,
+      "client_id": 2511,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "grass drift (vertical)",
+      "type": "ground",
+      "items": [],
+      "borders": {},
+      "server_id": 2513,
+      "client_id": 2513,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "cane stufts",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 5462,
+          "chance": 10
+        },
+        {
+          "item_id": 5463,
+          "chance": 10
+        },
+        {
+          "item_id": 5465,
+          "chance": 10
+        },
+        {
+          "item_id": 5470,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5470,
+      "client_id": 5470,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "grass tufts",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 6215,
+          "chance": 10
+        },
+        {
+          "item_id": 6216,
+          "chance": 8
+        },
+        {
+          "item_id": 6217,
+          "chance": 12
+        },
+        {
+          "item_id": 6218,
+          "chance": 60
+        }
+      ],
+      "borders": {},
+      "server_id": 6215,
+      "client_id": 6215,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "25/100"
+    },
+    {
+      "name": "dry grass tufts",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 9820,
+          "chance": 1
+        },
+        {
+          "item_id": 9821,
+          "chance": 5
+        },
+        {
+          "item_id": 9822,
+          "chance": 12
+        },
+        {
+          "item_id": 9823,
+          "chance": 60
+        }
+      ],
+      "borders": {},
+      "server_id": 9820,
+      "client_id": 9820,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "25/100"
+    },
+    {
+      "name": "grassy tufts",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 13368,
+          "chance": 5
+        },
+        {
+          "item_id": 13369,
+          "chance": 7
+        },
+        {
+          "item_id": 13370,
+          "chance": 10
+        },
+        {
+          "item_id": 13371,
+          "chance": 7
+        },
+        {
+          "item_id": 13372,
+          "chance": 5
+        },
+        {
+          "item_id": 13373,
+          "chance": 5
+        },
+        {
+          "item_id": 13374,
+          "chance": 10
+        },
+        {
+          "item_id": 13375,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 13374,
+      "client_id": 13374,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "25/100"
+    },
+    {
+      "name": "venorean grass tufts",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 17897,
+          "chance": 10
+        },
+        {
+          "item_id": 17898,
+          "chance": 10
+        },
+        {
+          "item_id": 17983,
+          "chance": 10
+        },
+        {
+          "item_id": 17984,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 17897,
+      "client_id": 17897,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "flowers (moon)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3654,
+          "chance": 10
+        },
+        {
+          "item_id": 3655,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3654,
+      "client_id": 3654,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "sunflowers",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3666,
+          "chance": 15
+        },
+        {
+          "item_id": 3667,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3667,
+      "client_id": 3667,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "lilypads",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3669,
+          "chance": 20
+        },
+        {
+          "item_id": 3670,
+          "chance": 10
+        },
+        {
+          "item_id": 3671,
+          "chance": 15
+        },
+        {
+          "item_id": 3672,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3672,
+      "client_id": 3672,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (yellow)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3888,
+          "chance": 10
+        },
+        {
+          "item_id": 3889,
+          "chance": 10
+        },
+        {
+          "item_id": 3890,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3889,
+      "client_id": 3889,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (white)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3656,
+          "chance": 10
+        },
+        {
+          "item_id": 3892,
+          "chance": 10
+        },
+        {
+          "item_id": 3893,
+          "chance": 10
+        },
+        {
+          "item_id": 3894,
+          "chance": 10
+        },
+        {
+          "item_id": 22643,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3893,
+      "client_id": 3893,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (yellow hanging)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 6225,
+      "client_id": 6225,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (white hanging)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 6226,
+      "client_id": 6226,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (red hanging)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 6227,
+      "client_id": 6227,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (evil)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 10720,
+          "chance": 10
+        },
+        {
+          "item_id": 10721,
+          "chance": 10
+        },
+        {
+          "item_id": 10722,
+          "chance": 10
+        },
+        {
+          "item_id": 10723,
+          "chance": 10
+        },
+        {
+          "item_id": 10860,
+          "chance": 10
+        },
+        {
+          "item_id": 10861,
+          "chance": 10
+        },
+        {
+          "item_id": 10862,
+          "chance": 10
+        },
+        {
+          "item_id": 10863,
+          "chance": 10
+        },
+        {
+          "item_id": 10864,
+          "chance": 10
+        },
+        {
+          "item_id": 10865,
+          "chance": 10
+        },
+        {
+          "item_id": 22648,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 10864,
+      "client_id": 10864,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "flowers (ice)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 29971,
+          "chance": 15
+        },
+        {
+          "item_id": 29972,
+          "chance": 10
+        },
+        {
+          "item_id": 29973,
+          "chance": 10
+        },
+        {
+          "item_id": 29974,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 29971,
+      "client_id": 29971,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "swamp plants",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3683,
+          "chance": 10
+        },
+        {
+          "item_id": 3685,
+          "chance": 10
+        },
+        {
+          "item_id": 3686,
+          "chance": 10
+        },
+        {
+          "item_id": 3687,
+          "chance": 10
+        },
+        {
+          "item_id": 3688,
+          "chance": 10
+        },
+        {
+          "item_id": 3689,
+          "chance": 10
+        },
+        {
+          "item_id": 3690,
+          "chance": 10
+        },
+        {
+          "item_id": 3691,
+          "chance": 10
+        },
+        {
+          "item_id": 3692,
+          "chance": 10
+        },
+        {
+          "item_id": 3693,
+          "chance": 10
+        },
+        {
+          "item_id": 3694,
+          "chance": 10
+        },
+        {
+          "item_id": 3697,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3693,
+      "client_id": 3693,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "2/15"
+    },
+    {
+      "name": "herbs",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3674,
+          "chance": 6
+        },
+        {
+          "item_id": 3735,
+          "chance": 10
+        },
+        {
+          "item_id": 3736,
+          "chance": 10
+        },
+        {
+          "item_id": 3737,
+          "chance": 3
+        },
+        {
+          "item_id": 3738,
+          "chance": 2
+        },
+        {
+          "item_id": 3739,
+          "chance": 4
+        },
+        {
+          "item_id": 3740,
+          "chance": 6
+        },
+        {
+          "item_id": 3741,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3741,
+      "client_id": 3741,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "moonshine bells",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 18446,
+          "chance": 10
+        },
+        {
+          "item_id": 18447,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 18446,
+      "client_id": 18446,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "flowering cactus",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 22298,
+          "chance": 10
+        },
+        {
+          "item_id": 22299,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 22299,
+      "client_id": 22299,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sea plants",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25348,
+          "chance": 6
+        },
+        {
+          "item_id": 25349,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25348,
+      "client_id": 25348,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "twilight morels",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25389,
+          "chance": 10
+        },
+        {
+          "item_id": 25390,
+          "chance": 10
+        },
+        {
+          "item_id": 25391,
+          "chance": 10
+        },
+        {
+          "item_id": 25392,
+          "chance": 10
+        },
+        {
+          "item_id": 25393,
+          "chance": 10
+        },
+        {
+          "item_id": 25394,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25389,
+      "client_id": 25389,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "birch trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 957,
+          "chance": 10
+        },
+        {
+          "item_id": 958,
+          "chance": 2
+        }
+      ],
+      "borders": {},
+      "server_id": 957,
+      "client_id": 957,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "snowy alive trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3609,
+          "chance": 10
+        },
+        {
+          "item_id": 4433,
+          "chance": 10
+        },
+        {
+          "item_id": 7023,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3609,
+      "client_id": 3609,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "green trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3614,
+          "chance": 20
+        },
+        {
+          "item_id": 3615,
+          "chance": 5
+        },
+        {
+          "item_id": 3616,
+          "chance": 10
+        },
+        {
+          "item_id": 3621,
+          "chance": 15
+        },
+        {
+          "item_id": 3622,
+          "chance": 15
+        },
+        {
+          "item_id": 3626,
+          "chance": 5
+        },
+        {
+          "item_id": 957,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3621,
+      "client_id": 3621,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "alternate trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3625,
+          "chance": 10
+        },
+        {
+          "item_id": 3618,
+          "chance": 10
+        },
+        {
+          "item_id": 3619,
+          "chance": 10
+        },
+        {
+          "item_id": 3620,
+          "chance": 10
+        },
+        {
+          "item_id": 3617,
+          "chance": 10
+        },
+        {
+          "item_id": 7024,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3625,
+      "client_id": 3625,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "palm trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3639,
+          "chance": 10
+        },
+        {
+          "item_id": 3640,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3639,
+      "client_id": 3639,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "dead trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 958,
+          "chance": 10
+        },
+        {
+          "item_id": 3623,
+          "chance": 10
+        },
+        {
+          "item_id": 3624,
+          "chance": 10
+        },
+        {
+          "item_id": 3631,
+          "chance": 10
+        },
+        {
+          "item_id": 3632,
+          "chance": 10
+        },
+        {
+          "item_id": 3633,
+          "chance": 10
+        },
+        {
+          "item_id": 3634,
+          "chance": 10
+        },
+        {
+          "item_id": 3636,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3634,
+      "client_id": 3634,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "cactus (large)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3637,
+          "chance": 10
+        },
+        {
+          "item_id": 3638,
+          "chance": 10
+        },
+        {
+          "item_id": 3641,
+          "chance": 10
+        },
+        {
+          "item_id": 3647,
+          "chance": 10
+        },
+        {
+          "item_id": 3649,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3637,
+      "client_id": 3637,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "cactus (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3642,
+          "chance": 10
+        },
+        {
+          "item_id": 3643,
+          "chance": 10
+        },
+        {
+          "item_id": 3644,
+          "chance": 10
+        },
+        {
+          "item_id": 3645,
+          "chance": 10
+        },
+        {
+          "item_id": 3646,
+          "chance": 10
+        },
+        {
+          "item_id": 3648,
+          "chance": 10
+        },
+        {
+          "item_id": 3650,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 3644,
+      "client_id": 3644,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/100"
+    },
+    {
+      "name": "jungle trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3742,
+          "chance": 10
+        },
+        {
+          "item_id": 3743,
+          "chance": 6
+        },
+        {
+          "item_id": 3744,
+          "chance": 10
+        },
+        {
+          "item_id": 5155,
+          "chance": 6
+        },
+        {
+          "item_id": 5156,
+          "chance": 10
+        },
+        {
+          "item_id": 6094,
+          "chance": 2
+        }
+      ],
+      "borders": {},
+      "server_id": 3744,
+      "client_id": 3744,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "giant tree",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 3773,
+      "client_id": 3773,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "20/100"
+    },
+    {
+      "name": "giant tree crown",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 3865,
+      "client_id": 3865,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "banana trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5091,
+          "chance": 10
+        },
+        {
+          "item_id": 5092,
+          "chance": 10
+        },
+        {
+          "item_id": 5093,
+          "chance": 10
+        },
+        {
+          "item_id": 5094,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5091,
+      "client_id": 5091,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "mango tree",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5155,
+          "chance": 10
+        },
+        {
+          "item_id": 5156,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5156,
+      "client_id": 5156,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "mangrove tree (dead)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5391,
+          "chance": 10
+        },
+        {
+          "item_id": 5395,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5391,
+      "client_id": 5391,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "mangrove tree",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5392,
+          "chance": 10
+        },
+        {
+          "item_id": 5396,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5392,
+      "client_id": 5392,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "mangrove tree (dead on water)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5393,
+          "chance": 10
+        },
+        {
+          "item_id": 5397,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5393,
+      "client_id": 5393,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "mangrove tree (on water)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5394,
+          "chance": 10
+        },
+        {
+          "item_id": 5398,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5394,
+      "client_id": 5394,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "large branch (east)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 6185,
+          "chance": 10
+        },
+        {
+          "item_id": 6186,
+          "chance": 10
+        },
+        {
+          "item_id": 6187,
+          "chance": 10
+        },
+        {
+          "item_id": 6188,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 6185,
+      "client_id": 6185,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "large branch (south)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 6181,
+          "chance": 10
+        },
+        {
+          "item_id": 6182,
+          "chance": 10
+        },
+        {
+          "item_id": 6183,
+          "chance": 10
+        },
+        {
+          "item_id": 6184,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 6181,
+      "client_id": 6181,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "twines",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 6219,
+      "client_id": 6219,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "snowy dead trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 3608,
+          "chance": 10
+        },
+        {
+          "item_id": 7020,
+          "chance": 10
+        },
+        {
+          "item_id": 7021,
+          "chance": 10
+        },
+        {
+          "item_id": 7022,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7022,
+      "client_id": 7022,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "tree stubs",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 7957,
+      "client_id": 7957,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "broken palm trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7964,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7964,
+      "client_id": 7964,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "dead trees (no faces)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7969,
+          "chance": 10
+        },
+        {
+          "item_id": 7970,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7970,
+      "client_id": 7970,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "dead trees (faces)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 8838,
+          "chance": 10
+        },
+        {
+          "item_id": 8839,
+          "chance": 10
+        },
+        {
+          "item_id": 8840,
+          "chance": 10
+        },
+        {
+          "item_id": 8841,
+          "chance": 10
+        },
+        {
+          "item_id": 8842,
+          "chance": 10
+        },
+        {
+          "item_id": 8843,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 8843,
+      "client_id": 8843,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "cherry blossom trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 9225,
+          "chance": 10
+        },
+        {
+          "item_id": 9584,
+          "chance": 2
+        }
+      ],
+      "borders": {},
+      "server_id": 9225,
+      "client_id": 9225,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "green zao trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 9587,
+          "chance": 10
+        },
+        {
+          "item_id": 9588,
+          "chance": 2
+        },
+        {
+          "item_id": 9589,
+          "chance": 1
+        }
+      ],
+      "borders": {},
+      "server_id": 9587,
+      "client_id": 9587,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "dragonbone trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 9812,
+          "chance": 10
+        },
+        {
+          "item_id": 9811,
+          "chance": 2
+        }
+      ],
+      "borders": {},
+      "server_id": 9812,
+      "client_id": 9812,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "flower trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 9813,
+          "chance": 2
+        },
+        {
+          "item_id": 9814,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 9814,
+      "client_id": 9814,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "jade plant trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 9815,
+          "chance": 2
+        },
+        {
+          "item_id": 9816,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 9816,
+      "client_id": 9816,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "solstice trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 9995,
+          "chance": 10
+        },
+        {
+          "item_id": 9996,
+          "chance": 2
+        }
+      ],
+      "borders": {},
+      "server_id": 9995,
+      "client_id": 9995,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "whispering willow",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 16377,
+          "chance": 10
+        },
+        {
+          "item_id": 16378,
+          "chance": 8
+        }
+      ],
+      "borders": {},
+      "server_id": 16377,
+      "client_id": 16377,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "ab'dendriel trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 18442,
+          "chance": 10
+        },
+        {
+          "item_id": 18443,
+          "chance": 5
+        },
+        {
+          "item_id": 18444,
+          "chance": 15
+        },
+        {
+          "item_id": 18445,
+          "chance": 15
+        }
+      ],
+      "borders": {},
+      "server_id": 18444,
+      "client_id": 18444,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "enormous tree",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 18587,
+      "client_id": 18587,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "dark cypress trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19671,
+          "chance": 10
+        },
+        {
+          "item_id": 19675,
+          "chance": 10
+        },
+        {
+          "item_id": 19676,
+          "chance": 10
+        },
+        {
+          "item_id": 19677,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19671,
+      "client_id": 19671,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "dusky cypress trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19689,
+          "chance": 10
+        },
+        {
+          "item_id": 19690,
+          "chance": 10
+        },
+        {
+          "item_id": 19716,
+          "chance": 10
+        },
+        {
+          "item_id": 19692,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19689,
+      "client_id": 19689,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "gloomy cy press trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19729,
+          "chance": 10
+        },
+        {
+          "item_id": 19737,
+          "chance": 10
+        },
+        {
+          "item_id": 19739,
+          "chance": 10
+        },
+        {
+          "item_id": 19741,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19739,
+      "client_id": 19739,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "sleepless twine tree",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19919,
+          "chance": 10
+        },
+        {
+          "item_id": 19920,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19919,
+      "client_id": 19919,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "cypress",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 20101,
+          "chance": 10
+        },
+        {
+          "item_id": 20102,
+          "chance": 10
+        },
+        {
+          "item_id": 20116,
+          "chance": 10
+        },
+        {
+          "item_id": 20117,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 20101,
+      "client_id": 20101,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "cactus trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 22290,
+          "chance": 10
+        },
+        {
+          "item_id": 22291,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 22290,
+      "client_id": 22290,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "juniper trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 22293,
+          "chance": 10
+        },
+        {
+          "item_id": 22294,
+          "chance": 5
+        }
+      ],
+      "borders": {},
+      "server_id": 22293,
+      "client_id": 22293,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "tuft palm trees",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 22295,
+          "chance": 15
+        },
+        {
+          "item_id": 22296,
+          "chance": 10
+        },
+        {
+          "item_id": 22297,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 22295,
+      "client_id": 22295,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "tree (trimmed)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 24017,
+          "chance": 10
+        },
+        {
+          "item_id": 24018,
+          "chance": 10
+        },
+        {
+          "item_id": 24019,
+          "chance": 10
+        },
+        {
+          "item_id": 24020,
+          "chance": 10
+        },
+        {
+          "item_id": 24021,
+          "chance": 10
+        },
+        {
+          "item_id": 24022,
+          "chance": 10
+        },
+        {
+          "item_id": 24023,
+          "chance": 10
+        },
+        {
+          "item_id": 24024,
+          "chance": 10
+        },
+        {
+          "item_id": 24025,
+          "chance": 10
+        },
+        {
+          "item_id": 24026,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 24017,
+      "client_id": 24017,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (untended trimmed)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 24027,
+          "chance": 10
+        },
+        {
+          "item_id": 24028,
+          "chance": 10
+        },
+        {
+          "item_id": 24029,
+          "chance": 10
+        },
+        {
+          "item_id": 24030,
+          "chance": 10
+        },
+        {
+          "item_id": 24031,
+          "chance": 10
+        },
+        {
+          "item_id": 24032,
+          "chance": 10
+        },
+        {
+          "item_id": 24033,
+          "chance": 10
+        },
+        {
+          "item_id": 24034,
+          "chance": 10
+        },
+        {
+          "item_id": 24035,
+          "chance": 10
+        },
+        {
+          "item_id": 24036,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 24027,
+      "client_id": 24027,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "dwelling in a log",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25321,
+          "chance": 10
+        },
+        {
+          "item_id": 25322,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25321,
+      "client_id": 25321,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree stump",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25362,
+          "chance": 10
+        },
+        {
+          "item_id": 25363,
+          "chance": 10
+        },
+        {
+          "item_id": 25364,
+          "chance": 10
+        },
+        {
+          "item_id": 25365,
+          "chance": 10
+        },
+        {
+          "item_id": 25366,
+          "chance": 10
+        },
+        {
+          "item_id": 25367,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25362,
+      "client_id": 25362,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "magical tree (colours)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25397,
+          "chance": 10
+        },
+        {
+          "item_id": 25398,
+          "chance": 10
+        },
+        {
+          "item_id": 25399,
+          "chance": 10
+        },
+        {
+          "item_id": 25400,
+          "chance": 10
+        },
+        {
+          "item_id": 25401,
+          "chance": 10
+        },
+        {
+          "item_id": 25402,
+          "chance": 10
+        },
+        {
+          "item_id": 25403,
+          "chance": 10
+        },
+        {
+          "item_id": 25404,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25397,
+      "client_id": 25397,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree with blue leaves",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25307,
+          "chance": 10
+        },
+        {
+          "item_id": 25308,
+          "chance": 10
+        },
+        {
+          "item_id": 25309,
+          "chance": 10
+        },
+        {
+          "item_id": 25310,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25307,
+      "client_id": 25307,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "small plant house",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25311,
+          "chance": 10
+        },
+        {
+          "item_id": 25312,
+          "chance": 10
+        },
+        {
+          "item_id": 25313,
+          "chance": 10
+        },
+        {
+          "item_id": 25314,
+          "chance": 10
+        },
+        {
+          "item_id": 25315,
+          "chance": 10
+        },
+        {
+          "item_id": 25316,
+          "chance": 10
+        },
+        {
+          "item_id": 25317,
+          "chance": 10
+        },
+        {
+          "item_id": 25318,
+          "chance": 10
+        },
+        {
+          "item_id": 25319,
+          "chance": 10
+        },
+        {
+          "item_id": 25320,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25311,
+      "client_id": 25311,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sentient oak",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25405,
+          "chance": 10
+        },
+        {
+          "item_id": 25406,
+          "chance": 10
+        },
+        {
+          "item_id": 25407,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25405,
+      "client_id": 25405,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "lampion tree",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25408,
+          "chance": 10
+        },
+        {
+          "item_id": 25409,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25408,
+      "client_id": 25408,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "fairy tree",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25466,
+          "chance": 10
+        },
+        {
+          "item_id": 25467,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25466,
+      "client_id": 25466,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (beech)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25468,
+          "chance": 10
+        },
+        {
+          "item_id": 25469,
+          "chance": 10
+        },
+        {
+          "item_id": 25470,
+          "chance": 10
+        },
+        {
+          "item_id": 25471,
+          "chance": 10
+        },
+        {
+          "item_id": 25472,
+          "chance": 10
+        },
+        {
+          "item_id": 25473,
+          "chance": 10
+        },
+        {
+          "item_id": 25474,
+          "chance": 10
+        },
+        {
+          "item_id": 25475,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25468,
+      "client_id": 25468,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (windroot)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25476,
+          "chance": 10
+        },
+        {
+          "item_id": 25477,
+          "chance": 10
+        },
+        {
+          "item_id": 25478,
+          "chance": 10
+        },
+        {
+          "item_id": 25479,
+          "chance": 10
+        },
+        {
+          "item_id": 25480,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25476,
+      "client_id": 25476,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (arching)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25481,
+          "chance": 10
+        },
+        {
+          "item_id": 25482,
+          "chance": 10
+        },
+        {
+          "item_id": 25483,
+          "chance": 10
+        },
+        {
+          "item_id": 25484,
+          "chance": 10
+        },
+        {
+          "item_id": 25485,
+          "chance": 10
+        },
+        {
+          "item_id": 25486,
+          "chance": 10
+        },
+        {
+          "item_id": 25477,
+          "chance": 10
+        },
+        {
+          "item_id": 25478,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25481,
+      "client_id": 25481,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (bird plant)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25487,
+          "chance": 10
+        },
+        {
+          "item_id": 25488,
+          "chance": 10
+        },
+        {
+          "item_id": 25489,
+          "chance": 10
+        },
+        {
+          "item_id": 25490,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25487,
+      "client_id": 25487,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (night plants)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25381,
+          "chance": 10
+        },
+        {
+          "item_id": 25382,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25381,
+      "client_id": 25381,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree (dream bird)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25491,
+          "chance": 10
+        },
+        {
+          "item_id": 25492,
+          "chance": 10
+        },
+        {
+          "item_id": 25493,
+          "chance": 10
+        },
+        {
+          "item_id": 25494,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25491,
+      "client_id": 25491,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sun fruit plants",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 29968,
+          "chance": 15
+        },
+        {
+          "item_id": 29969,
+          "chance": 10
+        },
+        {
+          "item_id": 29970,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 29968,
+      "client_id": 29968,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "sequoia trunk",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 30417,
+          "chance": 15
+        }
+      ],
+      "borders": {},
+      "server_id": 30417,
+      "client_id": 30417,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "festive tree (off)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 30237,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 30238,
+      "client_id": 30238,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "festive tree (on)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 30238,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 30238,
+      "client_id": 30238,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "lava hole",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 391,
+      "client_id": 391,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "stalagmite",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 388,
+          "chance": 5
+        },
+        {
+          "item_id": 389,
+          "chance": 5
+        },
+        {
+          "item_id": 392,
+          "chance": 10
+        },
+        {
+          "item_id": 393,
+          "chance": 8
+        }
+      ],
+      "borders": {},
+      "server_id": 392,
+      "client_id": 392,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "sand pile (big)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 968,
+          "chance": 10
+        },
+        {
+          "item_id": 969,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 968,
+      "client_id": 968,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "11/90"
+    },
+    {
+      "name": "stones (dark jagged)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1006,
+          "chance": 10
+        },
+        {
+          "item_id": 1090,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1090,
+      "client_id": 1090,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stones (water)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1136,
+          "chance": 6
+        },
+        {
+          "item_id": 1135,
+          "chance": 6
+        },
+        {
+          "item_id": 1133,
+          "chance": 10
+        },
+        {
+          "item_id": 1134,
+          "chance": 10
+        },
+        {
+          "item_id": 1137,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1136,
+      "client_id": 1136,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stones (south)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1146,
+          "chance": 10
+        },
+        {
+          "item_id": 1147,
+          "chance": 10
+        },
+        {
+          "item_id": 1148,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1146,
+      "client_id": 1146,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stones (east)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1149,
+          "chance": 10
+        },
+        {
+          "item_id": 1150,
+          "chance": 10
+        },
+        {
+          "item_id": 1151,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1149,
+      "client_id": 1149,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stone 1 (4 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1773,
+      "client_id": 1773,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone 2 (4 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1783,
+      "client_id": 1783,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone 3 (4 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1788,
+      "client_id": 1788,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stones (coloured)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1840,
+          "chance": 5
+        },
+        {
+          "item_id": 1841,
+          "chance": 5
+        },
+        {
+          "item_id": 1842,
+          "chance": 5
+        },
+        {
+          "item_id": 1791,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1791,
+      "client_id": 1791,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "stone 1 (2 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1792,
+      "client_id": 1792,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "gray rocks",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1772,
+          "chance": 15
+        },
+        {
+          "item_id": 1843,
+          "chance": 15
+        },
+        {
+          "item_id": 1791,
+          "chance": 15
+        },
+        {
+          "item_id": 1851,
+          "chance": 12
+        },
+        {
+          "item_id": 1852,
+          "chance": 12
+        },
+        {
+          "item_id": 1859,
+          "chance": 12
+        },
+        {
+          "item_id": 1860,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1772,
+      "client_id": 1772,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "rubble (gray rough)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1796,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1796,
+      "client_id": 1796,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "rubble (brown)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1803,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1803,
+      "client_id": 1803,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "rubble (gray)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1817,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1817,
+      "client_id": 1817,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "rubble (brown rough)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1810,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1811,
+      "client_id": 1811,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "rubles",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1810,
+          "chance": 5
+        },
+        {
+          "item_id": 1803,
+          "chance": 5
+        },
+        {
+          "item_id": 1796,
+          "chance": 20
+        },
+        {
+          "item_id": 1817,
+          "chance": 20
+        }
+      ],
+      "borders": {},
+      "server_id": 1810,
+      "client_id": 1810,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "rocks (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1851,
+          "chance": 3
+        },
+        {
+          "item_id": 1859,
+          "chance": 3
+        },
+        {
+          "item_id": 1772,
+          "chance": 3
+        },
+        {
+          "item_id": 1860,
+          "chance": 3
+        },
+        {
+          "item_id": 1852,
+          "chance": 3
+        },
+        {
+          "item_id": 1853,
+          "chance": 3
+        },
+        {
+          "item_id": 1854,
+          "chance": 3
+        },
+        {
+          "item_id": 1855,
+          "chance": 10
+        },
+        {
+          "item_id": 1856,
+          "chance": 12
+        },
+        {
+          "item_id": 1857,
+          "chance": 8
+        },
+        {
+          "item_id": 1858,
+          "chance": 8
+        }
+      ],
+      "borders": {},
+      "server_id": 1854,
+      "client_id": 1854,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "brown rocks",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1845,
+          "chance": 10
+        },
+        {
+          "item_id": 1846,
+          "chance": 10
+        },
+        {
+          "item_id": 1777,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1845,
+      "client_id": 1845,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "mossy rocks (big)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1850,
+      "client_id": 1850,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "mossy rocks (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1876,
+          "chance": 10
+        },
+        {
+          "item_id": 1877,
+          "chance": 10
+        },
+        {
+          "item_id": 1878,
+          "chance": 10
+        },
+        {
+          "item_id": 1879,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1876,
+      "client_id": 1876,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "stone rocks (medium)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1851,
+          "chance": 8
+        },
+        {
+          "item_id": 1852,
+          "chance": 10
+        },
+        {
+          "item_id": 1853,
+          "chance": 8
+        },
+        {
+          "item_id": 1859,
+          "chance": 8
+        },
+        {
+          "item_id": 1860,
+          "chance": 8
+        }
+      ],
+      "borders": {},
+      "server_id": 1852,
+      "client_id": 1852,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone 4 (4 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1861,
+      "client_id": 1861,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone 5 (4 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1868,
+      "client_id": 1868,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone 6 (4 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1872,
+      "client_id": 1872,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone rocks (iny tiny)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1856,
+          "chance": 10
+        },
+        {
+          "item_id": 1865,
+          "chance": 10
+        },
+        {
+          "item_id": 1866,
+          "chance": 10
+        },
+        {
+          "item_id": 1867,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1856,
+      "client_id": 1856,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone rocks (tiny)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1854,
+          "chance": 4
+        },
+        {
+          "item_id": 1855,
+          "chance": 7
+        },
+        {
+          "item_id": 1857,
+          "chance": 7
+        },
+        {
+          "item_id": 1858,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1858,
+      "client_id": 1858,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "debris (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1897,
+          "chance": 10
+        },
+        {
+          "item_id": 1898,
+          "chance": 10
+        },
+        {
+          "item_id": 1899,
+          "chance": 10
+        },
+        {
+          "item_id": 1900,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1897,
+      "client_id": 1897,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "debris (bigger)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1892,
+          "chance": 1
+        },
+        {
+          "item_id": 1893,
+          "chance": 15
+        },
+        {
+          "item_id": 1894,
+          "chance": 15
+        },
+        {
+          "item_id": 1895,
+          "chance": 15
+        },
+        {
+          "item_id": 1896,
+          "chance": 5
+        }
+      ],
+      "borders": {},
+      "server_id": 1895,
+      "client_id": 1895,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "stone 2 (2 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1901,
+      "client_id": 1901,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "stone 3 (2 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1905,
+      "client_id": 1905,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "stone 4 (2 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1903,
+      "client_id": 1903,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "stone 5 (2 SQMS)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1907,
+      "client_id": 1907,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "15/100"
+    },
+    {
+      "name": "stones (weird shaped)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 1909,
+      "client_id": 1909,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "12/100"
+    },
+    {
+      "name": "debris (medium)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 1910,
+          "chance": 10
+        },
+        {
+          "item_id": 1911,
+          "chance": 10
+        },
+        {
+          "item_id": 1912,
+          "chance": 10
+        },
+        {
+          "item_id": 1914,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 1910,
+      "client_id": 1910,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "25/100"
+    },
+    {
+      "name": "mossy spots",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 4569,
+          "chance": 8
+        },
+        {
+          "item_id": 4570,
+          "chance": 8
+        },
+        {
+          "item_id": 4571,
+          "chance": 10
+        },
+        {
+          "item_id": 4572,
+          "chance": 8
+        },
+        {
+          "item_id": 4573,
+          "chance": 6
+        },
+        {
+          "item_id": 4574,
+          "chance": 4
+        },
+        {
+          "item_id": 4575,
+          "chance": 6
+        },
+        {
+          "item_id": 4576,
+          "chance": 10
+        },
+        {
+          "item_id": 4577,
+          "chance": 8
+        },
+        {
+          "item_id": 4578,
+          "chance": 6
+        },
+        {
+          "item_id": 4579,
+          "chance": 8
+        },
+        {
+          "item_id": 4580,
+          "chance": 12
+        },
+        {
+          "item_id": 4581,
+          "chance": 12
+        },
+        {
+          "item_id": 4582,
+          "chance": 12
+        },
+        {
+          "item_id": 4583,
+          "chance": 4
+        }
+      ],
+      "borders": {},
+      "server_id": 4569,
+      "client_id": 4569,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "mossy stone",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 4746,
+          "chance": 10
+        },
+        {
+          "item_id": 4745,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 4746,
+      "client_id": 4746,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "30/100"
+    },
+    {
+      "name": "rocks (stone cave)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5618,
+          "chance": 10
+        },
+        {
+          "item_id": 5619,
+          "chance": 10
+        },
+        {
+          "item_id": 5620,
+          "chance": 10
+        },
+        {
+          "item_id": 5621,
+          "chance": 10
+        },
+        {
+          "item_id": 5622,
+          "chance": 10
+        },
+        {
+          "item_id": 5623,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5618,
+      "client_id": 5618,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "rocks (stone cave with mud)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5707,
+          "chance": 10
+        },
+        {
+          "item_id": 5708,
+          "chance": 10
+        },
+        {
+          "item_id": 5709,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5707,
+      "client_id": 5707,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "rocks (mud cave)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5747,
+          "chance": 10
+        },
+        {
+          "item_id": 5750,
+          "chance": 10
+        },
+        {
+          "item_id": 5751,
+          "chance": 10
+        },
+        {
+          "item_id": 5752,
+          "chance": 10
+        },
+        {
+          "item_id": 5753,
+          "chance": 10
+        },
+        {
+          "item_id": 5754,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5747,
+      "client_id": 5747,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "rocks (mud cave with stone)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 5866,
+          "chance": 10
+        },
+        {
+          "item_id": 5867,
+          "chance": 10
+        },
+        {
+          "item_id": 5868,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 5866,
+      "client_id": 5866,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "stones (jagged unwalkable)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7480,
+          "chance": 10
+        },
+        {
+          "item_id": 7481,
+          "chance": 10
+        },
+        {
+          "item_id": 7482,
+          "chance": 10
+        },
+        {
+          "item_id": 7483,
+          "chance": 10
+        },
+        {
+          "item_id": 7484,
+          "chance": 10
+        },
+        {
+          "item_id": 7485,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7480,
+      "client_id": 7480,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stones (jagged walkable)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7486,
+          "chance": 10
+        },
+        {
+          "item_id": 7487,
+          "chance": 10
+        },
+        {
+          "item_id": 7488,
+          "chance": 10
+        },
+        {
+          "item_id": 7489,
+          "chance": 10
+        },
+        {
+          "item_id": 7490,
+          "chance": 10
+        },
+        {
+          "item_id": 7504,
+          "chance": 10
+        },
+        {
+          "item_id": 7506,
+          "chance": 10
+        },
+        {
+          "item_id": 7491,
+          "chance": 10
+        },
+        {
+          "item_id": 7492,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7486,
+      "client_id": 7486,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stones (jagged hangable)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7503,
+          "chance": 10
+        },
+        {
+          "item_id": 7505,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7503,
+      "client_id": 7503,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "sand pile (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7586,
+          "chance": 10
+        },
+        {
+          "item_id": 7587,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7586,
+      "client_id": 7586,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "11/90"
+    },
+    {
+      "name": "crystals cave (blue)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7805,
+          "chance": 5
+        },
+        {
+          "item_id": 7809,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 7805,
+      "client_id": 7805,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "crystals cave (light blue)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7806,
+          "chance": 5
+        },
+        {
+          "item_id": 7810,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 7806,
+      "client_id": 7806,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "crystals cave (red)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7807,
+          "chance": 5
+        },
+        {
+          "item_id": 7811,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 7807,
+      "client_id": 7807,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "crystals cave (prism)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7808,
+          "chance": 5
+        },
+        {
+          "item_id": 7812,
+          "chance": 9
+        },
+        {
+          "item_id": 7805,
+          "chance": 5
+        },
+        {
+          "item_id": 7809,
+          "chance": 9
+        },
+        {
+          "item_id": 7806,
+          "chance": 5
+        },
+        {
+          "item_id": 7810,
+          "chance": 9
+        },
+        {
+          "item_id": 7807,
+          "chance": 5
+        },
+        {
+          "item_id": 7811,
+          "chance": 9
+        },
+        {
+          "item_id": 7808,
+          "chance": 5
+        },
+        {
+          "item_id": 7812,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 7809,
+      "client_id": 7809,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "crystals cave (green)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7808,
+          "chance": 5
+        },
+        {
+          "item_id": 7812,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 7812,
+      "client_id": 7812,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "stones",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 7912,
+          "chance": 10
+        },
+        {
+          "item_id": 7913,
+          "chance": 10
+        },
+        {
+          "item_id": 7914,
+          "chance": 10
+        },
+        {
+          "item_id": 7915,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7912,
+      "client_id": 7912,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "stones pile",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 8503,
+          "chance": 10
+        },
+        {
+          "item_id": 8504,
+          "chance": 10
+        },
+        {
+          "item_id": 8505,
+          "chance": 10
+        },
+        {
+          "item_id": 8506,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 8503,
+      "client_id": 8503,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "crystals (purple)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 10870,
+          "chance": 5
+        },
+        {
+          "item_id": 11427,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 11427,
+      "client_id": 11427,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "6/10"
+    },
+    {
+      "name": "sand (heap of black)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 12212,
+          "chance": 10
+        },
+        {
+          "item_id": 12213,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 12212,
+      "client_id": 12212,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "mossy spots (green)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 15393,
+          "chance": 10
+        },
+        {
+          "item_id": 15394,
+          "chance": 10
+        },
+        {
+          "item_id": 15395,
+          "chance": 6
+        },
+        {
+          "item_id": 15396,
+          "chance": 6
+        },
+        {
+          "item_id": 15397,
+          "chance": 10
+        },
+        {
+          "item_id": 15398,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 15393,
+      "client_id": 15393,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "crystals large (blue)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 16169,
+          "chance": 10
+        },
+        {
+          "item_id": 16170,
+          "chance": 10
+        },
+        {
+          "item_id": 16171,
+          "chance": 10
+        },
+        {
+          "item_id": 15319,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 16169,
+      "client_id": 16169,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "mud lump (giant)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 16389,
+      "client_id": 16389,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "mud lump (big)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 16393,
+      "client_id": 16393,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "mud clot (giant)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 16395,
+          "chance": 10
+        },
+        {
+          "item_id": 16399,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 16395,
+      "client_id": 16395,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "mud ball",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 16402,
+          "chance": 8
+        },
+        {
+          "item_id": 16403,
+          "chance": 8
+        }
+      ],
+      "borders": {},
+      "server_id": 16402,
+      "client_id": 16402,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "mud clot (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 16416,
+          "chance": 6
+        },
+        {
+          "item_id": 16417,
+          "chance": 4
+        }
+      ],
+      "borders": {},
+      "server_id": 16416,
+      "client_id": 16416,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "menhir",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 18450,
+          "chance": 10
+        },
+        {
+          "item_id": 18451,
+          "chance": 10
+        },
+        {
+          "item_id": 18452,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 18450,
+      "client_id": 18450,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sandy rock pile",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 18621,
+          "chance": 10
+        },
+        {
+          "item_id": 18622,
+          "chance": 10
+        },
+        {
+          "item_id": 18624,
+          "chance": 6
+        },
+        {
+          "item_id": 18625,
+          "chance": 6
+        },
+        {
+          "item_id": 18629,
+          "chance": 3
+        }
+      ],
+      "borders": {},
+      "server_id": 18621,
+      "client_id": 18621,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "crystals cave (white)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19303,
+          "chance": 5
+        },
+        {
+          "item_id": 19304,
+          "chance": 9
+        }
+      ],
+      "borders": {},
+      "server_id": 19303,
+      "client_id": 19303,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "crystals small (white)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19305,
+          "chance": 10
+        },
+        {
+          "item_id": 19306,
+          "chance": 10
+        },
+        {
+          "item_id": 19307,
+          "chance": 10
+        },
+        {
+          "item_id": 19308,
+          "chance": 10
+        },
+        {
+          "item_id": 19309,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19308,
+      "client_id": 19308,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "crystals large (white)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19310,
+          "chance": 10
+        },
+        {
+          "item_id": 19311,
+          "chance": 10
+        },
+        {
+          "item_id": 19312,
+          "chance": 10
+        },
+        {
+          "item_id": 19313,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19310,
+      "client_id": 19310,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "bulbostones",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19784,
+          "chance": 10
+        },
+        {
+          "item_id": 19785,
+          "chance": 10
+        },
+        {
+          "item_id": 19786,
+          "chance": 6
+        },
+        {
+          "item_id": 19787,
+          "chance": 6
+        },
+        {
+          "item_id": 19788,
+          "chance": 6
+        },
+        {
+          "item_id": 19789,
+          "chance": 6
+        }
+      ],
+      "borders": {},
+      "server_id": 19784,
+      "client_id": 19784,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "magma stones",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19808,
+          "chance": 10
+        },
+        {
+          "item_id": 19809,
+          "chance": 10
+        },
+        {
+          "item_id": 19810,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19810,
+      "client_id": 19810,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "krailos rocks",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 22271,
+          "chance": 10
+        },
+        {
+          "item_id": 22272,
+          "chance": 10
+        },
+        {
+          "item_id": 22273,
+          "chance": 10
+        },
+        {
+          "item_id": 22274,
+          "chance": 10
+        },
+        {
+          "item_id": 22275,
+          "chance": 10
+        },
+        {
+          "item_id": 22276,
+          "chance": 10
+        },
+        {
+          "item_id": 22277,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 22271,
+      "client_id": 22271,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "spikes",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25106,
+          "chance": 10
+        },
+        {
+          "item_id": 25107,
+          "chance": 10
+        },
+        {
+          "item_id": 25108,
+          "chance": 10
+        },
+        {
+          "item_id": 25109,
+          "chance": 10
+        },
+        {
+          "item_id": 25110,
+          "chance": 10
+        },
+        {
+          "item_id": 25111,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25106,
+      "client_id": 25106,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "grey stones",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25113,
+          "chance": 10
+        },
+        {
+          "item_id": 25112,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25113,
+      "client_id": 25113,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "slates",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25114,
+          "chance": 10
+        },
+        {
+          "item_id": 25115,
+          "chance": 10
+        },
+        {
+          "item_id": 25116,
+          "chance": 10
+        },
+        {
+          "item_id": 25117,
+          "chance": 10
+        },
+        {
+          "item_id": 25118,
+          "chance": 10
+        },
+        {
+          "item_id": 25119,
+          "chance": 10
+        },
+        {
+          "item_id": 25120,
+          "chance": 10
+        },
+        {
+          "item_id": 25121,
+          "chance": 10
+        },
+        {
+          "item_id": 25122,
+          "chance": 10
+        },
+        {
+          "item_id": 25123,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25114,
+      "client_id": 25114,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "lava pool (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25160,
+          "chance": 10
+        },
+        {
+          "item_id": 25161,
+          "chance": 10
+        },
+        {
+          "item_id": 25162,
+          "chance": 10
+        },
+        {
+          "item_id": 25163,
+          "chance": 10
+        },
+        {
+          "item_id": 25164,
+          "chance": 10
+        },
+        {
+          "item_id": 25165,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25165,
+      "client_id": 25165,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "weeping stones",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25236,
+          "chance": 10
+        },
+        {
+          "item_id": 25237,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25236,
+      "client_id": 25236,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sentient stones (big)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25446,
+          "chance": 10
+        },
+        {
+          "item_id": 25447,
+          "chance": 10
+        },
+        {
+          "item_id": 25448,
+          "chance": 10
+        },
+        {
+          "item_id": 25449,
+          "chance": 10
+        },
+        {
+          "item_id": 25450,
+          "chance": 10
+        },
+        {
+          "item_id": 25451,
+          "chance": 10
+        },
+        {
+          "item_id": 25452,
+          "chance": 10
+        },
+        {
+          "item_id": 25453,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25446,
+      "client_id": 25446,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sentient stones (small)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25454,
+          "chance": 10
+        },
+        {
+          "item_id": 25455,
+          "chance": 10
+        },
+        {
+          "item_id": 25456,
+          "chance": 10
+        },
+        {
+          "item_id": 25457,
+          "chance": 10
+        },
+        {
+          "item_id": 25458,
+          "chance": 10
+        },
+        {
+          "item_id": 25459,
+          "chance": 10
+        },
+        {
+          "item_id": 25460,
+          "chance": 10
+        },
+        {
+          "item_id": 25461,
+          "chance": 10
+        },
+        {
+          "item_id": 25462,
+          "chance": 10
+        },
+        {
+          "item_id": 25463,
+          "chance": 10
+        },
+        {
+          "item_id": 25464,
+          "chance": 10
+        },
+        {
+          "item_id": 25465,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25454,
+      "client_id": 25454,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "crystals (white)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25356,
+          "chance": 10
+        },
+        {
+          "item_id": 25357,
+          "chance": 10
+        },
+        {
+          "item_id": 25358,
+          "chance": 10
+        },
+        {
+          "item_id": 25359,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25356,
+      "client_id": 25356,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "stones (coal)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 27273,
+          "chance": 10
+        },
+        {
+          "item_id": 27274,
+          "chance": 10
+        },
+        {
+          "item_id": 27275,
+          "chance": 10
+        },
+        {
+          "item_id": 27276,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 27274,
+      "client_id": 27274,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "13/100"
+    },
+    {
+      "name": "ward stones (gray)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 29334,
+          "chance": 10
+        },
+        {
+          "item_id": 29335,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 29334,
+      "client_id": 29334,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "ward stones (blue)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 29336,
+          "chance": 10
+        },
+        {
+          "item_id": 29337,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 29336,
+      "client_id": 29336,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "veined stones",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 30436,
+      "client_id": 30436,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "veined stones (big)",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 30446,
+      "client_id": 30446,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "veined rocks",
+      "type": "doodad",
+      "items": [],
+      "borders": {},
+      "server_id": 30428,
+      "client_id": 30428,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "50/100"
+    },
+    {
+      "name": "firefly",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 6490,
+          "chance": 10
+        },
+        {
+          "item_id": 6493,
+          "chance": 10
+        },
+        {
+          "item_id": 6494,
+          "chance": 10
+        },
+        {
+          "item_id": 6497,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 6490,
+      "client_id": 6490,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "vase plant",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25216,
+          "chance": 10
+        },
+        {
+          "item_id": 25217,
+          "chance": 10
+        },
+        {
+          "item_id": 25218,
+          "chance": 10
+        },
+        {
+          "item_id": 25219,
+          "chance": 10
+        },
+        {
+          "item_id": 25220,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25216,
+      "client_id": 25216,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "monster nest",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 19209,
+          "chance": 10
+        },
+        {
+          "item_id": 19210,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 19209,
+      "client_id": 19209,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sand hole",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 967,
+          "chance": 1
+        }
+      ],
+      "borders": {},
+      "server_id": 967,
+      "client_id": 967,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
+    },
+    {
+      "name": "hole 1",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 7515,
+          "chance": 10
+        },
+        {
+          "item_id": 7516,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7515,
+      "client_id": 7515,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "hole 2",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 7517,
+          "chance": 10
+        },
+        {
+          "item_id": 7518,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7517,
+      "client_id": 7517,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "hole 3",
+      "type": "ground",
+      "items": [
+        {
+          "item_id": 7520,
+          "chance": 10
+        },
+        {
+          "item_id": 7521,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 7520,
+      "client_id": 7520,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "waterfall",
+      "type": "ground",
+      "items": [],
+      "borders": {},
+      "server_id": 1716,
+      "client_id": 1716,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "lavafall",
+      "type": "ground",
+      "items": [],
+      "borders": {},
+      "server_id": 14144,
+      "client_id": 14144,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "fogfall",
+      "type": "ground",
+      "items": [],
+      "borders": {},
+      "server_id": 19237,
+      "client_id": 19237,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "100/100"
+    },
+    {
+      "name": "moon sculpture",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 25495,
+          "chance": 10
+        },
+        {
+          "item_id": 25496,
+          "chance": 10
+        },
+        {
+          "item_id": 25497,
+          "chance": 10
+        },
+        {
+          "item_id": 25498,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 25495,
+      "client_id": 25495,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": "10/10"
+    },
+    {
+      "name": "carrot sprouts",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 15637,
+          "chance": 10
+        },
+        {
+          "item_id": 15638,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 15637,
+      "client_id": 15637,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sand trickle (east)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 18612,
+          "chance": 10
+        },
+        {
+          "item_id": 18613,
+          "chance": 10
+        },
+        {
+          "item_id": 18614,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 18609,
+      "client_id": 18609,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "sand trickle (south)",
+      "type": "doodad",
+      "items": [
+        {
+          "item_id": 18609,
+          "chance": 10
+        },
+        {
+          "item_id": 18610,
+          "chance": 10
+        },
+        {
+          "item_id": 18611,
+          "chance": 10
+        }
+      ],
+      "borders": {},
+      "server_id": 18609,
+      "client_id": 18609,
+      "draggable": true,
+      "on_blocking": true,
+      "thickness": "10/10"
+    },
+    {
+      "name": "tree leaves (tiny)",
+      "type": "border",
+      "items": [],
+      "borders": {},
+      "server_id": 18532,
+      "client_id": 18532,
+      "draggable": false,
+      "on_blocking": false,
+      "thickness": null
     }
   ]
 }

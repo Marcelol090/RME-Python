@@ -28,12 +28,14 @@ class PastePreviewOverlay(QWidget):
         self._origin: QPoint = QPoint(0, 0)
         self._tile_size: int = 32
         self._visible: bool = False
+        self._color: QColor | None = None
         
         # Colors
-        self._fill_color = QColor(139, 92, 246, 50)  # Light purple
-        self._border_color = QColor(139, 92, 246, 180)  # Purple
-        self._cut_fill_color = QColor(236, 72, 153, 50)  # Light pink
-        self._cut_border_color = QColor(236, 72, 153, 180)  # Pink
+        from py_rme_canary.vis_layer.ui.theme.colors import get_theme_color
+        self._fill_color = get_theme_color("primary", 50)  # Light purple
+        self._border_color = get_theme_color("primary", 180)  # Purple
+        self._cut_fill_color = get_theme_color("secondary", 50)  # Light pink
+        self._cut_border_color = get_theme_color("secondary", 180)  # Pink
         self._is_cut = False
         
         # Setup
@@ -54,6 +56,7 @@ class PastePreviewOverlay(QWidget):
         """
         self._positions = positions
         self._is_cut = is_cut
+        self._color = self._cut_border_color if is_cut else self._border_color
         self.update()
         
     def set_origin(self, origin: QPoint) -> None:
@@ -149,10 +152,13 @@ class SelectionOverlay(QWidget):
         
         self._selection_rects: list[QRect] = []
         self._march_offset: int = 0
+        self._rect: QRect | None = None
+        self._visible: bool = False
         
         # Colors
-        self._selection_color = QColor(59, 130, 246, 100)  # Blue
-        self._border_color = QColor(59, 130, 246, 255)
+        from py_rme_canary.vis_layer.ui.theme.colors import get_theme_color
+        self._selection_color = get_theme_color("info", 100)  # Blue
+        self._border_color = get_theme_color("info", 255)
         
         # Setup
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
@@ -163,6 +169,27 @@ class SelectionOverlay(QWidget):
         self._march_timer = QTimer()
         self._march_timer.timeout.connect(self._update_march)
         self._march_timer.setInterval(50)
+        self.hide()
+
+    def set_rect(self, rect: QRect) -> None:
+        """Set a single selection rectangle."""
+        self._rect = rect
+        self._selection_rects = [rect]
+        if rect:
+            self._march_timer.start()
+            self.set_visible(True)
+        else:
+            self._march_timer.stop()
+            self.set_visible(False)
+        self.update()
+
+    def set_visible(self, visible: bool) -> None:
+        """Show or hide the overlay."""
+        self._visible = visible
+        if visible:
+            self.show()
+        else:
+            self.hide()
         
     def set_selection(self, rects: list[QRect]) -> None:
         """Set selection rectangles in screen coordinates.

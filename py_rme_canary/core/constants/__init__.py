@@ -20,6 +20,7 @@ from .otbm import (
     ESCAPE_CHAR,
     MAGIC_OTBM,
     MAGIC_WILDCARD,
+    MapVersionID,
     NODE_END,
     NODE_START,
     OTBM_ATTR_ACTION_ID,
@@ -87,6 +88,8 @@ from .otmm import (
 )
 
 __all__ = [
+    # OTBM version enum
+    "MapVersionID",
     # Node delimiters
     "NODE_START",
     "NODE_END",

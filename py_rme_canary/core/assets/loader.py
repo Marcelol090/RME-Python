@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 from typing import Protocol
 
@@ -32,6 +33,10 @@ class LoadedAssets:
     appearance_error: str | None = None
     sheet_count: int | None = None
     sprite_count: int | None = None
+    fallback_notice: str | None = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def load_assets_from_path(
@@ -59,17 +64,46 @@ def load_assets_from_profile(
         sprites.load_catalog_content(load_data=False)
         appearance_assets: AppearanceIndex | None = None
         appearance_error: str | None = None
+        fallback_notice: str | None = None
         if profile.appearances_path is not None:
             try:
                 appearance_assets = load_appearances_dat(profile.appearances_path)
             except AppearancesDatError as exc:
                 appearance_error = str(exc)
+        else:
+            appearance_error = "appearances.dat not found"
+
+        if appearance_assets is None and profile.legacy_dat_path and profile.legacy_spr_path:
+            try:
+                legacy = LegacySpriteArchive(
+                    dat_path=profile.legacy_dat_path,
+                    spr_path=profile.legacy_spr_path,
+                    memory_guard=guard,
+                )
+                fallback_notice = "Falling back to legacy sprites (.dat/.spr) because appearances failed."
+                logger.warning(
+                    "Appearances unavailable; using legacy sprites from %s and %s",
+                    str(profile.legacy_dat_path),
+                    str(profile.legacy_spr_path),
+                )
+                return LoadedAssets(
+                    profile=profile,
+                    sprite_assets=legacy,
+                    appearance_assets=None,
+                    appearance_error=appearance_error,
+                    sheet_count=None,
+                    sprite_count=legacy.sprite_count,
+                    fallback_notice=fallback_notice,
+                )
+            except Exception as exc:
+                logger.warning("Legacy sprite fallback failed: %s", exc)
         return LoadedAssets(
             profile=profile,
             sprite_assets=sprites,
             appearance_assets=appearance_assets,
             appearance_error=appearance_error,
             sheet_count=len(sprites.sheets),
+            fallback_notice=fallback_notice,
         )
 
     if profile.kind == "legacy":

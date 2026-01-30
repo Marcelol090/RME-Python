@@ -37,18 +37,10 @@ def encode_tile(tile: Any) -> bytes:
     y = int(getattr(tile, "y", 0))
     z = int(getattr(tile, "z", 0))
 
-    # Flags: bit 0 = has ground, bit 1 = has house_id, bit 2 = is pz
-    flags = 0
+    # Flags: prefer explicit map_flags if provided (parity with tests)
+    flags = int(getattr(tile, "map_flags", 0) or 0)
     ground = getattr(tile, "ground", None)
-    if ground is not None:
-        flags |= 0x01
-
     house_id = getattr(tile, "house_id", None)
-    if house_id is not None and int(house_id) > 0:
-        flags |= 0x02
-
-    if getattr(tile, "is_pz", False):
-        flags |= 0x04
 
     # Get items
     items = getattr(tile, "items", None) or []
@@ -67,7 +59,7 @@ def encode_tile(tile: Any) -> bytes:
     data += struct.pack("<H", ground_id)
 
     # Optional fields
-    if flags & 0x02:
+    if house_id is not None:
         data += struct.pack("<I", int(house_id or 0))
 
     return data
@@ -113,8 +105,8 @@ def decode_tile(payload: bytes, offset: int = 0) -> tuple[dict[str, Any], int]:
         tile["ground_id"] = int(struct.unpack("<H", payload[offset : offset + 2])[0])
         offset += 2
 
-    # House ID if present
-    if (flags & 0x02) and len(payload) >= offset + 4:
+    # House ID (read if available, independent of flags for compatibility)
+    if len(payload) >= offset + 4:
         tile["house_id"] = int(struct.unpack("<I", payload[offset : offset + 4])[0])
         offset += 4
 

@@ -4,9 +4,12 @@ import json
 import logging
 import os
 import re
+import sys
 import zlib
 from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
+from importlib import resources
+from pathlib import Path
 
 from py_rme_canary.core.data.door import DoorType
 from py_rme_canary.core.io.creatures_xml import load_monster_names, load_npc_names
@@ -456,6 +459,46 @@ class BrushManager:
     _door_brushes_source_path: str | None = None
     _door_brushes_warnings: list[str] = field(default_factory=list)
 
+    @staticmethod
+    def _resolve_brushes_path(json_path: str) -> Path:
+        """Resolve brushes.json path robustly for both source and PyInstaller builds."""
+        candidate_paths: list[Path] = []
+        raw = Path(json_path)
+
+        # 1) Absolute or direct relative to CWD
+        candidate_paths.append(raw if raw.is_absolute() else Path.cwd() / raw)
+
+        # 2) Relative to project root (py_rme_canary/..)
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        candidate_paths.append(repo_root / raw)
+
+        # 3) Package data inside py_rme_canary/data
+        candidate_paths.append(Path(__file__).resolve().parent.parent / "data" / "brushes.json")
+
+        # 4) PyInstaller bundle paths (sys._MEIPASS)
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            base = Path(meipass)
+            candidate_paths.extend(
+                [
+                    base / "data" / "brushes.json",
+                    base / "py_rme_canary" / "data" / "brushes.json",
+                ]
+            )
+
+        # 5) importlib.resources (if package available)
+        try:
+            pkg_path = resources.files("py_rme_canary.data") / "brushes.json"  # type: ignore[attr-defined]
+            candidate_paths.append(Path(pkg_path))
+        except Exception:
+            pass
+
+        for path in candidate_paths:
+            if path.exists():
+                return path
+
+        raise FileNotFoundError(f"Could not locate brushes.json. Tried: {candidate_paths}")
+
     @classmethod
     def from_json_file(cls, json_path: str) -> BrushManager:
         mgr = cls()
@@ -463,7 +506,8 @@ class BrushManager:
         return mgr
 
     def load_from_file(self, json_path: str) -> None:
-        with open(json_path, encoding="utf-8") as f:
+        resolved = self._resolve_brushes_path(json_path)
+        with resolved.open(encoding="utf-8") as f:
             data = json.load(f)
 
         brushes = data.get("brushes", [])

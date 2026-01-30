@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\build_actions.py", line 372, in <lambda>
+    editor.act_remove_monsters_selection.triggered.connect(lambda _c=False: map_tools.remove_monsters(editor, selection_only=True))
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcelo Henrique\Desktop\projec_rme\py_rme_canary\vis_layer\ui\main_window\menubar\map\tools.py", line 17, in remove_monsters
+    game_map = editor.game_map
+               ^^^^^^^^^^^^^^^
+AttributeError: 'QtMapEditor' object has no attribute 'game_map'

@@ -102,14 +102,14 @@ class WelcomeDialog(QDialog):
     
     def __init__(
         self,
-        recent_files: list[str] | None = None,
+        recent_files: list[str] | list[tuple[str, str]] | None = None,
         parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
         
         self._recent_files = recent_files or []
         
-        self.setWindowTitle("Welcome to py_rme_canary")
+        self.setWindowTitle("Welcome")
         self.setMinimumSize(700, 500)
         self.setModal(True)
         
@@ -221,10 +221,17 @@ class WelcomeDialog(QDialog):
         
         # Populate recent files
         if self._recent_files:
-            for path in self._recent_files[:10]:
-                # Show just filename
+            for entry in self._recent_files[:10]:
+                # Support both (path, label) tuples and plain paths
+                if isinstance(entry, (list, tuple)) and len(entry) >= 1:
+                    path = entry[0]
+                    filename = entry[1] if len(entry) > 1 else None
+                else:
+                    path = str(entry)
+                    filename = None
+
                 import os
-                filename = os.path.basename(path)
+                filename = filename or os.path.basename(path)
                 item = QListWidgetItem(f"📄 {filename}")
                 item.setData(Qt.ItemDataRole.UserRole, path)
                 item.setToolTip(path)

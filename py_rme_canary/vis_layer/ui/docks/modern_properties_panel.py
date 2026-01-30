@@ -62,6 +62,8 @@ class ModernPropertiesPanel(QDockWidget):
         self._current_tile: Tile | None = None
         self._current_item: Item | None = None
         self._current_house: House | None = None
+        # Store context (coords, etc) for applying changes
+        self._current_details: dict[str, Any] = {}
         self._pending_changes: list[PropertyChange] = []
 
         self._setup_ui()
@@ -176,6 +178,14 @@ class ModernPropertiesPanel(QDockWidget):
         self.item_id = QLabel("—")
         self.item_id.setObjectName("monoLabel")
         layout.addRow("Item ID:", self.item_id)
+
+        # Image Preview
+        self.item_preview = QLabel()
+        self.item_preview.setFixedSize(32, 32)
+        self.item_preview.setStyleSheet("background: #2A2A3E; border-radius: 4px;")
+        layout.addRow("Preview:", self.item_preview)
+
+
 
         # Client ID (read-only)
         self.item_client_id = QLabel("—")
@@ -408,8 +418,32 @@ class ModernPropertiesPanel(QDockWidget):
         if not self._pending_changes:
             return
 
-        # In production: create modified entity and emit signal
-        # self.changes_applied.emit(modified_entity)
+        # Get parent editor session
+        parent = self.parent()
+        session = getattr(parent, "session", None)
+        if hasattr(parent, "parent"):  # In case docked
+             if session is None:
+                 session = getattr(parent.parent(), "session", None)
+
+        if session is None:
+            return
+
+        # Collate changes
+        changes = {c.field_name: c.new_value for c in self._pending_changes}
+        
+        context_type = "tile"
+        if self._current_item:
+            context_type = "item"
+        elif self._current_house:
+            context_type = "house"
+        elif self.spawn_type.text() != "—": # Spawn
+            context_type = "spawn"
+
+        session.apply_property_changes(
+            context_type=context_type,
+            context_details=self._current_details,
+            changes=changes
+        )
 
         self._pending_changes.clear()
         self.btn_apply.setEnabled(False)
@@ -436,6 +470,7 @@ class ModernPropertiesPanel(QDockWidget):
         self._current_tile = tile
         self._current_item = None
         self._current_house = None
+        self._current_details = {"x": tile.x, "y": tile.y, "z": tile.z}
         self._pending_changes.clear()
 
         self.header.setText(f"Tile @ ({tile.x}, {tile.y}, {tile.z})")
@@ -464,11 +499,17 @@ class ModernPropertiesPanel(QDockWidget):
         self.btn_apply.setEnabled(False)
         self.btn_revert.setEnabled(False)
 
-    def show_item(self, item: Item) -> None:
+    def show_item(self, item: Item, position: tuple[int, int, int] | None = None, stack_pos: int = -1) -> None:
         """Display item properties."""
         self._current_item = item
         self._current_tile = None
         self._current_house = None
+        
+        if position:
+            self._current_details = {"x": position[0], "y": position[1], "z": position[2], "stack_pos": stack_pos}
+        else:
+            self._current_details = {}
+
         self._pending_changes.clear()
 
         self.header.setText(f"Item #{item.id}")
@@ -504,6 +545,22 @@ class ModernPropertiesPanel(QDockWidget):
             self.item_dest_x.setValue(0)
             self.item_dest_y.setValue(0)
             self.item_dest_z.setValue(0)
+        
+        # Update Preview
+        try:
+            from py_rme_canary.logic_layer.asset_manager import AssetManager
+            pm = AssetManager.instance().get_sprite(int(item.id))
+            if pm:
+                self.item_preview.setPixmap(pm.scaled(32, 32, aspectRatioMode=1)) # Keep aspect
+            else:
+                 self.item_preview.clear()
+        except Exception:
+            self.item_preview.clear()
+
+        # Connect dest fields
+        self.item_dest_x.valueChanged.connect(lambda v: self._mark_changed("destination_x", v))
+        self.item_dest_y.valueChanged.connect(lambda v: self._mark_changed("destination_y", v))
+        self.item_dest_z.valueChanged.connect(lambda v: self._mark_changed("destination_z", v))
 
         self.btn_apply.setEnabled(False)
         self.btn_revert.setEnabled(False)

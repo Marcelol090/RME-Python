@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
+from py_rme_canary.core.assets.asset_profile import detect_asset_profile
 
 
 def test_detect_modern_assets_from_client_root(tmp_path: Path) -> None:
@@ -29,12 +27,17 @@ def test_detect_legacy_assets_from_folder(tmp_path: Path) -> None:
     assert profile.spr_path == tmp_path / "Tibia.spr"
 
 
-def test_detect_assets_conflict_raises(tmp_path: Path) -> None:
+def test_detect_assets_conflict_defaults_to_modern(tmp_path: Path) -> None:
     assets_dir = tmp_path / "assets"
     assets_dir.mkdir()
     (assets_dir / "catalog-content.json").write_text("[]", encoding="utf-8")
     (tmp_path / "Tibia.dat").write_bytes(b"1234")
     (tmp_path / "Tibia.spr").write_bytes(b"5678")
 
-    with pytest.raises(AssetProfileError):
-        detect_asset_profile(tmp_path)
+    profile = detect_asset_profile(tmp_path)
+
+    assert profile.kind == "modern"
+    assert profile.assets_dir == assets_dir
+    assert profile.is_ambiguous is True
+    assert profile.legacy_dat_path == tmp_path / "Tibia.dat"
+    assert profile.legacy_spr_path == tmp_path / "Tibia.spr"

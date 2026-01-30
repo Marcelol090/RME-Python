@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 def remove_monsters(editor: "QtMapEditor", selection_only: bool = True) -> None:
     """Action: Remove monsters from the map (or selection)."""
-    game_map = editor.game_map
+    game_map = editor.map
     if game_map is None:
         return
 

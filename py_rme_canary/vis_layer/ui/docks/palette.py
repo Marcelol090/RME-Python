@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -37,6 +38,31 @@ from py_rme_canary.core.io.creatures_xml import load_monster_names, load_npc_nam
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
+
+
+def _resolve_materials_brushs_path() -> str | None:
+    candidates: list[str] = [
+        os.path.join("data", "materials", "brushs.xml"),
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "materials", "brushs.xml"),
+    ]
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.extend(
+            [
+                os.path.join(str(meipass), "data", "materials", "brushs.xml"),
+                os.path.join(str(meipass), "py_rme_canary", "data", "materials", "brushs.xml"),
+            ]
+        )
+
+    for candidate in candidates:
+        try:
+            path = os.path.abspath(candidate)
+        except Exception:
+            path = candidate
+        if os.path.exists(path):
+            return path
+    return None
 
 
 @dataclass(slots=True)
@@ -192,7 +218,9 @@ class PaletteManager:
             doodads = []
             try:
                 if hasattr(editor.brush_mgr, "ensure_doodads_loaded"):
-                    editor.brush_mgr.ensure_doodads_loaded(os.path.join("data", "materials", "brushs.xml"))
+                    materials_path = _resolve_materials_brushs_path()
+                    if materials_path:
+                        editor.brush_mgr.ensure_doodads_loaded(materials_path)
                 doodads = list(getattr(editor.brush_mgr, "iter_doodad_brushes")())
             except Exception:
                 doodads = []

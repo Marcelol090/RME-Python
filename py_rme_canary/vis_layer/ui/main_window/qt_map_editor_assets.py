@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+from pathlib import Path
+from dataclasses import replace
 
 from typing import TYPE_CHECKING
 
@@ -10,43 +13,78 @@ from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
+from py_rme_canary.core.assets.appearances_dat import AppearancesDatError, load_appearances_dat
 from py_rme_canary.core.assets.loader import load_assets_from_profile
 from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteError
 from py_rme_canary.core.assets.sprite_appearances import SpriteAppearancesError
+from py_rme_canary.core.config.configuration_manager import ConfigurationManager
+from py_rme_canary.core.config.project import MapMetadata
+from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.core.config.project import find_project_for_otbm
+from py_rme_canary.core.database.id_mapper import IdMapper
+from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
+from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.memory_guard import MemoryGuardError
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
+logger = logging.getLogger(__name__)
+
+
 class QtMapEditorAssetsMixin:
     # ---------- assets (legacy sprite sheets) ----------
+
+    def _preferred_asset_kind(self: "QtMapEditor") -> str | None:
+        cv = int(self.client_version or 0)
+        if cv >= 1100:
+            return "modern"
+        if cv > 0:
+            return "legacy"
+        return None
 
     def _choose_assets_dir(self: "QtMapEditor") -> None:
         path = QFileDialog.getExistingDirectory(self, "Select Tibia client folder or assets folder")
         if not path:
             return
         try:
-            profile = detect_asset_profile(path)
+            self.assets_selection_path = str(path)
+            logger.info("Assets directory selected: %s", path)
+            profile = detect_asset_profile(path, prefer_kind=self._preferred_asset_kind())
             self._apply_asset_profile(profile)
         except (AssetProfileError, SpriteAppearancesError) as e:
             QMessageBox.critical(self, "Assets", str(e))
+            logger.exception("Failed to detect assets for path %s", path)
 
     def _set_assets_dir(self: "QtMapEditor", assets_dir: str) -> None:
         try:
-            profile = detect_asset_profile(assets_dir)
+            self.assets_selection_path = str(assets_dir)
+            logger.info("Assets directory set: %s", assets_dir)
+            profile = detect_asset_profile(assets_dir, prefer_kind=self._preferred_asset_kind())
         except AssetProfileError as e:
             QMessageBox.critical(self, "Assets", str(e))
+            logger.exception("Failed to detect assets for path %s", assets_dir)
             return
         self._apply_asset_profile(profile)
 
     def _apply_asset_profile(self: "QtMapEditor", profile) -> None:
+        user_settings = get_user_settings()
+        if str(getattr(profile, "kind", "")).lower() == "modern" and not user_settings.get_auto_load_appearances():
+            try:
+                profile = replace(profile, appearances_path=None)
+            except Exception:
+                pass
         self.asset_profile = profile
+        try:
+            logger.info("Applying asset profile: %s", profile.describe())
+        except Exception:
+            logger.info("Applying asset profile")
         try:
             loaded = load_assets_from_profile(profile, memory_guard=self._memory_guard)
         except (AssetProfileError, SpriteAppearancesError, LegacySpriteError) as exc:
             QMessageBox.critical(self, "Assets", str(exc))
+            logger.exception("Failed to load assets")
             return
 
         self.assets_dir = str(profile.assets_dir or profile.root)
@@ -55,6 +93,9 @@ class QtMapEditorAssetsMixin:
         self._sprite_cache.clear()
         self._sprite_render_temporarily_disabled = False
         self._sprite_render_disabled_reason = None
+        
+        # Build sprite hash database for cross-version clipboard
+        self._build_sprite_hash_database()
 
         prefix_parts: list[str] = []
         if loaded.sheet_count is not None:
@@ -66,6 +107,11 @@ class QtMapEditorAssetsMixin:
 
         if loaded.appearance_error:
             self.status.showMessage(f"Appearances load failed: {loaded.appearance_error}")
+            logger.warning("Appearances load failed: %s", loaded.appearance_error)
+
+        if loaded.fallback_notice:
+            self.status.showMessage(str(loaded.fallback_notice))
+            logger.warning(str(loaded.fallback_notice))
 
         self._update_sprite_preview()
 
@@ -78,6 +124,82 @@ class QtMapEditorAssetsMixin:
             self._sprite_cache.clear()
             self._sprite_render_temporarily_disabled = False
             self._sprite_render_disabled_reason = None
+        self._maybe_reselect_assets_for_metadata()
+
+    def _apply_preferences_for_new_map(self: "QtMapEditor") -> None:
+        user_settings = get_user_settings()
+        preferred_cv = int(user_settings.get_default_client_version() or 0)
+        if preferred_cv > 0:
+            self.client_version = int(preferred_cv)
+            self.engine = ConfigurationManager.infer_engine_from_client_version(int(preferred_cv))
+        else:
+            self.client_version = 0
+            self.engine = "unknown"
+
+        md = MapMetadata(
+            engine=str(self.engine or "unknown"),
+            client_version=int(self.client_version or 0),
+            otbm_version=int(getattr(self.map.header, "otbm_version", 0)) if self.map else 0,
+            source="preferences",
+        )
+        cfg = ConfigurationManager.from_sniff(md, workspace_root=Path.cwd())
+        _items_db, id_mapper, warnings = self._load_items_definitions_for_config(cfg)
+        self.id_mapper = id_mapper
+
+        assets_folder = str(user_settings.get_client_assets_folder() or "").strip()
+        if assets_folder and os.path.exists(assets_folder):
+            self._set_assets_dir(assets_folder)
+
+        if warnings:
+            self.status.showMessage(warnings[0])
+            logger.warning(" | ".join(warnings))
+
+        self._update_status_capabilities(prefix="New map initialized from preferences")
+
+    @staticmethod
+    def _load_items_definitions_for_config(
+        cfg: ConfigurationManager,
+    ) -> tuple[ItemsXML | None, IdMapper | None, list[str]]:
+        warnings: list[str] = []
+
+        items_db: ItemsXML | None = None
+        if cfg.definitions.items_xml is not None:
+            try:
+                items_db = ItemsXML.load(cfg.definitions.items_xml, strict_mapping=False)
+            except Exception as e:
+                warnings.append(f"items_xml_error: {e}")
+
+        id_mapper: IdMapper | None = None
+        if cfg.definitions.items_otb is not None:
+            try:
+                items_otb = ItemsOTB.load(cfg.definitions.items_otb)
+                id_mapper = IdMapper.from_items_otb(items_otb)
+            except ItemsOTBError as e:
+                warnings.append(f"items_otb_error: {e}")
+            except Exception as e:
+                warnings.append(f"items_otb_error: {e}")
+
+        if id_mapper is None and items_db is not None:
+            id_mapper = IdMapper.from_items_xml(items_db)
+
+        return items_db, id_mapper, warnings
+
+    def _maybe_reselect_assets_for_metadata(self: "QtMapEditor") -> None:
+        prefer = self._preferred_asset_kind()
+        if prefer is None:
+            return
+        profile = getattr(self, "asset_profile", None)
+        selection = getattr(self, "assets_selection_path", None)
+        if profile is None or not selection:
+            return
+        if str(getattr(profile, "kind", "")).lower() == prefer and not getattr(profile, "is_ambiguous", False):
+            return
+        try:
+            new_profile = detect_asset_profile(selection, prefer_kind=prefer)
+        except Exception:
+            return
+        if str(getattr(new_profile, "kind", "")).lower() != str(getattr(profile, "kind", "")).lower():
+            self._apply_asset_profile(new_profile)
 
     def _disable_sprite_render_temporarily(self: "QtMapEditor", *, reason: str) -> None:
         # Sprites are derived + recreatable. Never crash the editor because of them.
@@ -119,15 +241,68 @@ class QtMapEditorAssetsMixin:
         profile_kind = str(getattr(profile, "kind", "none"))
         engine = str(self.engine or "unknown")
         cv = int(self.client_version or 0)
+        otbm_version = 0
+        try:
+            if getattr(self, "map", None) is not None:
+                otbm_version = int(getattr(self.map.header, "otbm_version", 0))
+        except Exception:
+            otbm_version = 0
         cap = (
-            f"engine={engine} client={cv} | profile={profile_kind} assets={assets} "
+            f"engine={engine} client={cv} otbm={otbm_version} | profile={profile_kind} assets={assets} "
             f"appearances={appearances} mapping={mapping} sprite={sprite}"
         )
         msg = f"{prefix} | {cap}" if prefix else cap
         self.status.showMessage(msg)
 
+    def _load_appearances_dat(self: "QtMapEditor") -> None:
+        profile = getattr(self, "asset_profile", None)
+        if profile is None or str(getattr(profile, "kind", "")).lower() != "modern":
+            QMessageBox.information(self, "Appearances", "Modern assets are required to load appearances.dat.")
+            return
+
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select appearances.dat",
+            str(getattr(profile, "assets_dir", profile.root)),
+            "Appearances (appearances.dat);;All files (*.*)",
+        )
+        if not path:
+            return
+
+        try:
+            self.appearance_assets = load_appearances_dat(path)
+        except AppearancesDatError as exc:
+            QMessageBox.critical(self, "Appearances", str(exc))
+            return
+        except Exception as exc:
+            QMessageBox.critical(self, "Appearances", str(exc))
+            return
+
+        try:
+            self.asset_profile = replace(profile, appearances_path=Path(path))
+        except Exception:
+            pass
+
+        self._update_status_capabilities(prefix=f"Appearances loaded: {path}")
+
+    def _unload_appearances_dat(self: "QtMapEditor") -> None:
+        self.appearance_assets = None
+        profile = getattr(self, "asset_profile", None)
+        if profile is not None and str(getattr(profile, "kind", "")).lower() == "modern":
+            try:
+                self.asset_profile = replace(profile, appearances_path=None)
+            except Exception:
+                pass
+        self._update_status_capabilities(prefix="Appearances unloaded")
+
     def _resolve_sprite_id_from_client_id(self: "QtMapEditor", client_id: int) -> int | None:
         if self.appearance_assets is None:
+            return int(client_id)
+        profile = getattr(self, "asset_profile", None)
+        if str(getattr(profile, "kind", "")).lower() == "legacy":
+            return int(client_id)
+        cv = int(self.client_version or 0)
+        if cv > 0 and cv < 1100:
             return int(client_id)
         time_ms = None
         if hasattr(self, "animation_time_ms") and getattr(self, "show_preview", False):
@@ -315,3 +490,53 @@ class QtMapEditorAssetsMixin:
         except Exception as e:
             self.sprite_preview.setText(str(e))
             self.sprite_preview.setPixmap(QPixmap())
+
+    def _build_sprite_hash_database(self: "QtMapEditor") -> None:
+        """Build sprite hash database for cross-version clipboard matching."""
+        try:
+            from py_rme_canary.logic_layer.cross_version.sprite_hash import SpriteHashMatcher
+            
+            # Initialize sprite matcher
+            if not hasattr(self, 'sprite_matcher') or self.sprite_matcher is None:
+                self.sprite_matcher = SpriteHashMatcher()
+            else:
+                self.sprite_matcher.clear()
+            
+            # Skip if no assets loaded
+            if self.sprite_assets is None or self.id_mapper is None:
+                logger.debug("Skipping sprite hash database build - no assets loaded")
+                return
+            
+            # Get sprite count
+            sprite_count = 0
+            try:
+                sprite_count = getattr(self.sprite_assets, 'sprite_count', 0) or 0
+            except Exception:
+                pass
+            
+            if sprite_count <= 0:
+                logger.debug("No sprites to hash")
+                return
+            
+            # Build hash for each sprite (limit to avoid performance issues)
+            max_sprites = min(int(sprite_count), 50000)
+            hashed_count = 0
+            
+            for sprite_id in range(1, max_sprites + 1):
+                try:
+                    w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
+                    if w > 0 and h > 0 and bgra:
+                        self.sprite_matcher.add_sprite(int(sprite_id), bytes(bgra), int(w), int(h))
+                        hashed_count += 1
+                except Exception:
+                    # Sprite doesn't exist or failed to load, skip
+                    continue
+            
+            logger.info(f"Built sprite hash database: {hashed_count} sprites hashed from {max_sprites} total")
+            
+        except ImportError:
+            logger.warning("CrossVersionClipboard not available")
+            self.sprite_matcher = None
+        except Exception as e:
+            logger.exception(f"Failed to build sprite hash database: {e}")
+            self.sprite_matcher = None

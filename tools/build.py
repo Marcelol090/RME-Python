@@ -40,6 +40,11 @@ def run_pyinstaller():
         "--onefile",  # Single executable (easier distribution)
         # Paths
         f"--paths={PROJECT_ROOT}",
+        # Exclude conflicting Qt bindings
+        "--exclude-module=PySide6",
+        "--exclude-module=PyQt5",
+        "--exclude-module=PySide2",
+        
         # Hidden imports (often missed by auto-analysis)
         "--hidden-import=PyQt6",
         "--hidden-import=PyQt6.QtCore",
@@ -49,8 +54,24 @@ def run_pyinstaller():
         "--hidden-import=PyQt6.QtOpenGLWidgets",
         "--hidden-import=OpenGL",
         "--hidden-import=OpenGL.GL",
+        "--hidden-import=OpenGL.arrays.arraydatatype",
+        "--hidden-import=OpenGL.raw.GL.VERSION.GL_1_1",
         "--hidden-import=PIL",
         "--hidden-import=PIL.Image",
+        "--hidden-import=defusedxml",
+        "--hidden-import=defusedxml.ElementTree",
+        # Data files
+        f"--add-data={(PROJECT_ROOT / 'data')}{os.pathsep}data",
+        f"--add-data={(PROJECT_ROOT / 'py_rme_canary' / 'data')}{os.pathsep}py_rme_canary/data",
+        "--hidden-import=defusedxml",
+        "--hidden-import=defusedxml.ElementTree",
+        # Standard library modules often missed
+        "--hidden-import=pkgutil",
+        "--hidden-import=importlib",
+        "--hidden-import=importlib.metadata",
+        "--hidden-import=importlib.resources",
+        "--hidden-import=typing_extensions",
+        "--collect-submodules=PyQt6",
         # Data files (add as needed)
         # "--add-data=py_rme_canary/data;data",
         # Icon

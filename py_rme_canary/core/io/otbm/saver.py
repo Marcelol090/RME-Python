@@ -159,9 +159,9 @@ def _resolve_item_id_for_save(
     id_mapper: IdMapper | None,
     otbm_version: int,
 ) -> int:
-    if int(otbm_version) >= 5:
+    if int(otbm_version) >= 4:
         if id_mapper is None:
-            raise ValueError("id_mapper is required to save ClientID OTBM (version >= 5)")
+            raise ValueError("id_mapper is required to save ClientID OTBM (version >= 4)")
         mapped = id_mapper.get_client_id(int(item_id))
         if mapped is None:
             raise ValueError(f"No client id mapping for server id {item_id}")

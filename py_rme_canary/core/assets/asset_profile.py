@@ -19,6 +19,9 @@ class AssetProfile:
     appearances_path: Path | None = None
     dat_path: Path | None = None
     spr_path: Path | None = None
+    legacy_dat_path: Path | None = None
+    legacy_spr_path: Path | None = None
+    is_ambiguous: bool = False
 
     def describe(self) -> str:
         if self.kind == "modern":
@@ -30,16 +33,39 @@ class AssetProfile:
         return f"legacy dat={dp} spr={sp}"
 
 
-def detect_asset_profile(path: str | Path) -> AssetProfile:
+def detect_asset_profile(path: str | Path, *, prefer_kind: str | None = None) -> AssetProfile:
     p = Path(path).expanduser()
 
     modern_assets_dir = _resolve_modern_assets_dir(p)
     legacy_paths = _resolve_legacy_paths(p)
+    if legacy_paths is None and modern_assets_dir is not None:
+        # If user selected assets/ directly, allow legacy lookup from parent.
+        with_parent = _resolve_legacy_paths(p.parent)
+        if with_parent is not None:
+            legacy_paths = with_parent
 
     if modern_assets_dir is not None and legacy_paths is not None:
-        raise AssetProfileError(
-            "Both modern (assets/catalog-content.json) and legacy (.dat/.spr) assets were detected. "
-            "Choose a specific folder (assets/ for modern or the .dat/.spr pair for legacy)."
+        preferred = str(prefer_kind or "").strip().lower() or None
+        if preferred == "legacy":
+            dat_path, spr_path = legacy_paths
+            return AssetProfile(
+                kind="legacy",
+                root=dat_path.parent,
+                dat_path=dat_path,
+                spr_path=spr_path,
+                is_ambiguous=True,
+            )
+
+        appearances_path = resolve_appearances_path(modern_assets_dir)
+        dat_path, spr_path = legacy_paths
+        return AssetProfile(
+            kind="modern",
+            root=modern_assets_dir,
+            assets_dir=modern_assets_dir,
+            appearances_path=appearances_path,
+            legacy_dat_path=dat_path,
+            legacy_spr_path=spr_path,
+            is_ambiguous=True,
         )
 
     if modern_assets_dir is not None:
