@@ -63,7 +63,7 @@ Successfully created an intelligent, version-aware brush system that automatical
     - Automatically selects ServerID for traditional (OTBM 0-4)
     - Automatically selects ClientID for Canary (OTBM 5-6)
     - Adds 'active_id' field to each brush
-  
+
   - `get_brush_by_name()` - Retrieves specific brush by name
     - Version-aware ID selection
     - Returns complete brush definition
@@ -84,17 +84,17 @@ Metadata:
   - Generation mode: intelligent
   - Auto-detect enabled
   - Generated: 2026-01-30
-  
+
 Version Mappings: 15 versions
   - Traditional (ServerID): 11 versions (7.4, 8.0, 8.4, 8.6, 9.1, 9.2, 9.46, 9.6, 9.86, 10.1, 10.98)
   - Canary (ClientID): 4 versions (12.71, 13.10, 13.20, 13.30)
-  
+
 Brush Catalog: 284 brushes
   - Doodads: 172 brushes (furniture, decorations, vegetation)
   - Walls: 97 brushes (barriers, structures)
   - Grounds: 14 brushes (textures, grass, floors)
   - Borders: 1 brush (border configurations)
-  
+
 Source XML Files: 17 files parsed
   - animals.xml (1 brush)
   - brushes.xml (3 brushes)
@@ -113,7 +113,7 @@ Source XML Files: 17 files parsed
   - walls.xml (97 brushes)
   - doodads.xml (skipped - malformed)
   - grounds.xml (skipped - no items)
-  
+
 ID Mapping:
   - All 284 brushes have ServerID defined
   - All 284 brushes have ClientID defined
@@ -327,6 +327,6 @@ This system enables professional map editing across all Tibia versions with inte
 
 ---
 
-**Implementation Date**: January 28-30, 2026  
-**Status**: ✓ COMPLETE AND TESTED  
+**Implementation Date**: January 28-30, 2026
+**Status**: ✓ COMPLETE AND TESTED
 **Quality**: Production-Ready

@@ -142,7 +142,7 @@ class HouseCard(QFrame):
                 border: 2px solid {border};
                 border-radius: 10px;
             }}
-            
+
             QPushButton {{
                 background: #404060;
                 color: #E5E5E7;
@@ -151,7 +151,7 @@ class HouseCard(QFrame):
                 padding: 4px 10px;
                 font-size: 10px;
             }}
-            
+
             QPushButton:hover {{
                 background: #8B5CF6;
             }}
@@ -282,7 +282,7 @@ class HouseListDialog(QDialog):
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QLineEdit {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -290,11 +290,11 @@ class HouseListDialog(QDialog):
                 padding: 10px 14px;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -302,12 +302,12 @@ class HouseListDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 16px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
@@ -525,7 +525,7 @@ class HouseEditDialog(QDialog):
                 background: #1E1E2E;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit, QSpinBox {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -533,15 +533,15 @@ class HouseEditDialog(QDialog):
                 padding: 8px;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit:focus, QSpinBox:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QCheckBox {
                 color: #E5E5E7;
             }
-            
+
             QLabel {
                 color: #A1A1AA;
             }

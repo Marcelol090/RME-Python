@@ -101,11 +101,11 @@ Example: Crystal Coin (modern Tibia 13.10)
 
 ```
 items.otb:  ServerID=2160, ClientID=3043
-            
+
 Map File (traditional, ServerID):
     Item stores: 2160
     Editor shows: 2160
-    
+
 Map File (Canary, ClientID):
     Item stores: 3043
     Loads as: ClientID 3043 → ServerID 2160

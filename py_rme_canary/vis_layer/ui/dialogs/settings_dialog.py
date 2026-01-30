@@ -501,7 +501,7 @@ class SettingsDialog(QDialog):
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QSpinBox, QComboBox {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -510,15 +510,15 @@ class SettingsDialog(QDialog):
                 color: #E5E5E7;
                 min-width: 100px;
             }
-            
+
             QSpinBox:focus, QComboBox:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QCheckBox {
                 color: #E5E5E7;
             }
-            
+
             QCheckBox::indicator {
                 width: 18px;
                 height: 18px;
@@ -526,18 +526,18 @@ class SettingsDialog(QDialog):
                 background: #2A2A3E;
                 border: 1px solid #363650;
             }
-            
+
             QCheckBox::indicator:checked {
                 background: #8B5CF6;
                 border-color: #8B5CF6;
             }
-            
+
             QSlider::groove:horizontal {
                 background: #363650;
                 height: 6px;
                 border-radius: 3px;
             }
-            
+
             QSlider::handle:horizontal {
                 background: #8B5CF6;
                 width: 16px;
@@ -545,12 +545,12 @@ class SettingsDialog(QDialog):
                 margin: -5px 0;
                 border-radius: 8px;
             }
-            
+
             QSlider::sub-page:horizontal {
                 background: #8B5CF6;
                 border-radius: 3px;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -558,22 +558,22 @@ class SettingsDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 20px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             #primaryButton {
                 background: #8B5CF6;
                 color: white;
                 border: none;
             }
-            
+
             #primaryButton:hover {
                 background: #A78BFA;
             }
-            
+
             QLabel {
                 color: #A1A1AA;
             }

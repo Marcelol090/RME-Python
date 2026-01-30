@@ -24,7 +24,7 @@ The interface must scream "Modern & Professional".
 
 ### 3.1 Visual Style
 *   **Theme:** Native Dark Mode (Dracula or Nord palette) by default. No "standard gray" Qt widgets.
-*   **Styling:** 
+*   **Styling:**
     *   Use `QSS` for comprehensive styling.
     *   Subtle "Glassmorphism" on overlays/panels (semi-transparent backgrounds with blur).
     *   Rounded corners (4px-8px) on containers.
@@ -42,7 +42,7 @@ The interface must scream "Modern & Professional".
 
 ### 4.1 Startup & Configuration
 1.  **Launch:** User opens `py_rme_canary`.
-2.  **Welcome Dialog:** 
+2.  **Welcome Dialog:**
     *   User sees "New Map", "Open Map", "Recent Files".
     *   User validates/browses for Tibia Client Data (SPR/DAT).
 3.  **Loading:** Progress bar shows asset loading status.
@@ -50,7 +50,7 @@ The interface must scream "Modern & Professional".
 
 ### 4.2 Core Mapping
 1.  **Selection:** User selects a "Brush" from the Palette (e.g., "Ground Brush", "Wall Brush").
-2.  **Editing:** 
+2.  **Editing:**
     *   **Left-Click:** Places the item/tile. Auto-bordering logic runs instantly.
     *   **Right-Click:** Erases or performs context-specific action.
     *   **Shift + Drag:** Selects a region (Rectangle or Lasso).

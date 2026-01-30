@@ -333,19 +333,19 @@ class ModernPropertiesPanel(QDockWidget):
             ModernPropertiesPanel {
                 background: #1E1E2E;
             }
-            
+
             #propertiesHeader {
                 color: #E5E5E7;
                 font-size: 14px;
                 font-weight: 600;
                 padding: 8px 0;
             }
-            
+
             #monoLabel {
                 font-family: 'JetBrains Mono', 'Consolas', monospace;
                 color: #8B5CF6;
             }
-            
+
             QGroupBox {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -355,14 +355,14 @@ class ModernPropertiesPanel(QDockWidget):
                 font-weight: 600;
                 color: #E5E5E7;
             }
-            
+
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 8px;
                 color: #A1A1AA;
             }
-            
+
             #primaryButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #8B5CF6, stop:1 #7C3AED);
@@ -373,17 +373,17 @@ class ModernPropertiesPanel(QDockWidget):
                 font-weight: 500;
                 min-width: 80px;
             }
-            
+
             #primaryButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #A78BFA, stop:1 #8B5CF6);
             }
-            
+
             #primaryButton:disabled {
                 background: #363650;
                 color: #52525B;
             }
-            
+
             #secondaryButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -393,12 +393,12 @@ class ModernPropertiesPanel(QDockWidget):
                 font-weight: 500;
                 min-width: 80px;
             }
-            
+
             #secondaryButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             #secondaryButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;

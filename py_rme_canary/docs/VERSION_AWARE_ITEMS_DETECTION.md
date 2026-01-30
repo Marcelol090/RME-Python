@@ -28,10 +28,10 @@ The system searches for `items.otb` and `items.xml` in this order:
 
 1. **Version-specific folder**: `data/{client_version}/items.otb`
    - Example: `data/1310/items.otb` for Tibia 13.10
-   
+
 2. **Engine-specific folder**: `data/{engine}/items.otb`
    - Example: `data/canary/items.otb`
-   
+
 3. **Generic folder**: `data/items/items.otb`
    - Fallback location with auto-version detection
 
@@ -61,7 +61,7 @@ cfg = ConfigurationManager.from_sniff(md, workspace_root=Path.cwd())
 # Traditional format (OTBM v0-4): Stores ServerID
 ConfigurationManager.is_canary_format(otbm_version=3)  # False
 
-# Canary format (OTBM v5-6): Stores ClientID  
+# Canary format (OTBM v5-6): Stores ClientID
 ConfigurationManager.is_canary_format(otbm_version=5)  # True
 ```
 
@@ -131,7 +131,7 @@ py_rme_canary/
 │   │   ├── items.otb
 │   │   └── items.xml
 │   ├── items/         # Fallback (auto-detected)
-│   │   ├── items.otb  
+│   │   ├── items.otb
 │   │   └── items.xml
 │   └── brushes.json
 ```

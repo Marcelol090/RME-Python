@@ -250,7 +250,7 @@ python -m pytest --cov --cov-report=html
 ### Session 3 (2026-01-29) - Build & Premium UI
 - **Compilation**: PyInstaller build script created (`tools/build.py`) with `PySide6` exclusion.
 - **Executable**: `dist/CanaryMapEditor.exe` successfully built.
-- **Premium UI**: 
+- **Premium UI**:
   - Dracula Theme implemented (#282a36 background).
   - Glassmorphism effects on tool buttons.
   - Modern animations and transitions in QSS.

@@ -20,7 +20,7 @@ The Intelligent Brush System automatically detects Tibia version (ServerID vs Cl
      - ClientID (Canary format, OTBM 5-6)
      - Additional metadata (draggable, on_blocking, thickness)
 
-3. **BrushJsonGenerator** 
+3. **BrushJsonGenerator**
    - Generates intelligent brush.json from RME XMLs
    - Includes metadata, version mappings, and complete brush catalog
    - 284 brushes across 17 categories
@@ -107,7 +107,7 @@ stone_wall = cfg.get_brush_by_name("stone wall")
 if stone_wall:
     print(f"Found brush: {stone_wall['name']}")
     print(f"Using ID: {stone_wall['active_id']}")
-    
+
     # Items in brush
     for item in stone_wall['items']:
         print(f"  - Item {item['item_id']} (chance: {item['chance']}%)")
