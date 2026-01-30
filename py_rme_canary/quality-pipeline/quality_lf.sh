@@ -427,7 +427,7 @@ run_mypy() {
   mkdir -p "$mypy_cache"
 
   # Modo strict para core e logic_layer (conforme pyproject.toml)
-  if mypy py_rme_canary/core py_rme_canary/logic_layer \
+  if mypy py_rme_canary/core py_rme_canary/logic_layer py_rme_canary/vis_layer \
     --config-file "$MYPY_CONFIG" \
     --cache-dir "$mypy_cache" \
     --no-error-summary \

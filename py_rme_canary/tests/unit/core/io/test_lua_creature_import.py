@@ -6,7 +6,8 @@ from py_rme_canary.core.io.lua_creature_import import (
     import_lua_creatures_from_folder,
     parse_lua_creatures_text,
 )
-from py_rme_canary.core.io.xml.safe import safe_etree as ET
+from py_rme_canary.core.io.xml.safe import Element, safe_etree as ET
+from xml.etree.ElementTree import SubElement
 
 
 def test_parse_monster_outfit() -> None:
@@ -49,13 +50,13 @@ def test_import_folder_merges_monsters_and_npcs(tmp_path: Path) -> None:
     monsters_path = tmp_path / "monsters.xml"
     npcs_path = tmp_path / "npcs.xml"
 
-    root = ET.Element("monsters")
-    existing = ET.SubElement(root, "monster")
+    root = Element("monsters")
+    existing = SubElement(root, "monster")
     existing.set("name", "Rat")
     existing.set("lookType", "1")
     monsters_path.write_bytes(ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
-    npcs_path.write_bytes(ET.tostring(ET.Element("npcs"), encoding="utf-8", xml_declaration=True))
+    npcs_path.write_bytes(ET.tostring(Element("npcs"), encoding="utf-8", xml_declaration=True))
 
     folder = tmp_path / "lua"
     folder.mkdir()
