@@ -14,6 +14,7 @@ from py_rme_canary.core.io.otbm_loader import OTBMLoader
 
 @dataclass(slots=True)
 class ImportMapReport:
+    # Report structure for map import operations
     tiles_imported: int = 0
     houses_imported: int = 0
     spawns_imported: int = 0

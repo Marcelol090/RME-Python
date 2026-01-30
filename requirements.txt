@@ -7,3 +7,4 @@ pytest-qt>=4.0.0
 pytest-benchmark>=4.0.0
 PyQt6>=6.0.0
 ast-grep-cli>=0.1.0
+defusedxml>=0.7.1

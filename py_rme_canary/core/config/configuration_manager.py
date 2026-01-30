@@ -39,9 +39,23 @@ class ConfigurationManager:
         items_otb = Path(base / project.definitions.items_otb).resolve() if project.definitions.items_otb else None
         items_xml = Path(base / project.definitions.items_xml).resolve() if project.definitions.items_xml else None
 
+        engine = normalize_engine(project.engine)
+        client_version = int(project.client_version)
+
+        if engine == "unknown" or client_version == 0:
+            from py_rme_canary.core.assets.version_detection import detect_assets_in_path
+
+            detected = detect_assets_in_path(base)
+            if detected:
+                det_engine, det_version = detected
+                if engine == "unknown":
+                    engine = normalize_engine(det_engine)
+                if client_version == 0:
+                    client_version = det_version
+
         md = MapMetadata(
-            engine=normalize_engine(project.engine),
-            client_version=int(project.client_version),
+            engine=engine,
+            client_version=client_version,
             otbm_version=0,
             source="project",
         )
@@ -50,11 +64,34 @@ class ConfigurationManager:
     @classmethod
     def from_sniff(cls, metadata: MapMetadata, *, workspace_root: str | Path) -> ConfigurationManager:
         root = Path(workspace_root)
+
+        # Enhanced Detection: Try to infer engine/version from assets if missing.
+        engine = normalize_engine(metadata.engine)
+        client_version = int(metadata.client_version)
+
+        if engine == "unknown" or client_version == 0:
+            from py_rme_canary.core.assets.version_detection import detect_assets_in_path
+
+            detected = detect_assets_in_path(root)
+            if detected:
+                det_engine, det_version = detected
+                if engine == "unknown":
+                    engine = normalize_engine(det_engine)
+                if client_version == 0:
+                    client_version = det_version
+
+            # Update metadata if we detected something new.
+            if engine != metadata.engine or client_version != metadata.client_version:
+                metadata = MapMetadata(
+                    engine=engine,
+                    client_version=client_version,
+                    otbm_version=metadata.otbm_version,
+                    source="sniff_auto",
+                )
+
         # Conservative defaults for this repo; project wrapper should override.
         # Legacy reference: engine selection drives which item definitions and
         # mappings are applied before interpreting tile/item ids.
-        engine = normalize_engine(metadata.engine)
-
         # items.otb (preferred mapping source for classic pipelines)
         otb_candidates: list[Path] = []
         if engine and engine != "unknown":
