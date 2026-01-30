@@ -22,6 +22,17 @@ class ImportMapReport:
     house_id_mapping: dict[int, int] = field(default_factory=dict)
     zone_id_mapping: dict[int, int] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    house_id_mapping: dict[int, int] | None = None
+    zone_id_mapping: dict[int, int] | None = None
+    warnings: list[str] | None = None
+
+    def __post_init__(self) -> None:
+        if self.house_id_mapping is None:
+            self.house_id_mapping = {}
+        if self.zone_id_mapping is None:
+            self.zone_id_mapping = {}
+        if self.warnings is None:
+            self.warnings = []
 
 
 def import_map_with_offset(
@@ -75,10 +86,10 @@ def import_map_with_offset(
 
 
 def _build_house_id_mapping(target_map: GameMap, source_map: GameMap) -> dict[int, int]:
-    existing = {int(hid) for hid in target_map.houses.keys()}
+    existing = {int(hid) for hid in target_map.houses}
     next_id = max(existing or [0]) + 1
     mapping: dict[int, int] = {}
-    for house_id in source_map.houses.keys():
+    for house_id in source_map.houses:
         house_id = int(house_id)
         if house_id not in existing:
             mapping[house_id] = house_id
@@ -91,7 +102,7 @@ def _build_house_id_mapping(target_map: GameMap, source_map: GameMap) -> dict[in
 
 
 def _build_zone_id_mapping(target_map: GameMap, source_map: GameMap) -> dict[int, int]:
-    existing = {int(zid) for zid in target_map.zones.keys()}
+    existing = {int(zid) for zid in target_map.zones}
     next_id = max(existing or [0]) + 1
     mapping: dict[int, int] = {}
     for zone_id, zone in source_map.zones.items():
