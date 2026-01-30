@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app
+configfile: pyproject.toml
+collected 4 items
+
+py_rme_canary/tests/unit/logic_layer/test_minimap_exporter.py ....       [100%]
+
+============================== 4 passed in 0.49s ===============================
