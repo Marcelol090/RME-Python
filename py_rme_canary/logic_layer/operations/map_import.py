@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from py_rme_canary.core.data.gamemap import GameMap
@@ -19,17 +19,9 @@ class ImportMapReport:
     spawns_imported: int = 0
     zones_imported: int = 0
     skipped_out_of_bounds: int = 0
-    house_id_mapping: dict[int, int] = None  # type: ignore[assignment]
-    zone_id_mapping: dict[int, int] = None  # type: ignore[assignment]
-    warnings: list[str] = None  # type: ignore[assignment]
-
-    def __post_init__(self) -> None:
-        if self.house_id_mapping is None:
-            self.house_id_mapping = {}
-        if self.zone_id_mapping is None:
-            self.zone_id_mapping = {}
-        if self.warnings is None:
-            self.warnings = []
+    house_id_mapping: dict[int, int] = field(default_factory=dict)
+    zone_id_mapping: dict[int, int] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
 
 
 def import_map_with_offset(
@@ -83,10 +75,10 @@ def import_map_with_offset(
 
 
 def _build_house_id_mapping(target_map: GameMap, source_map: GameMap) -> dict[int, int]:
-    existing = {int(hid) for hid in target_map.houses.keys()}
+    existing = {int(hid) for hid in target_map.houses}
     next_id = max(existing or [0]) + 1
     mapping: dict[int, int] = {}
-    for house_id in source_map.houses.keys():
+    for house_id in source_map.houses:
         house_id = int(house_id)
         if house_id not in existing:
             mapping[house_id] = house_id
@@ -99,7 +91,7 @@ def _build_house_id_mapping(target_map: GameMap, source_map: GameMap) -> dict[in
 
 
 def _build_zone_id_mapping(target_map: GameMap, source_map: GameMap) -> dict[int, int]:
-    existing = {int(zid) for zid in target_map.zones.keys()}
+    existing = {int(zid) for zid in target_map.zones}
     next_id = max(existing or [0]) + 1
     mapping: dict[int, int] = {}
     for zone_id, zone in source_map.zones.items():
@@ -179,13 +171,13 @@ def _import_spawns(
         target_map.monster_spawns.append(MonsterSpawnArea(center=center, radius=area.radius, monsters=area.monsters))
         report.spawns_imported += 1
 
-    for area in source_map.npc_spawns:
+    for npc_area in source_map.npc_spawns:
         center = Position(
-            x=int(area.center.x) + int(offset_x),
-            y=int(area.center.y) + int(offset_y),
-            z=int(area.center.z) + int(offset_z),
+            x=int(npc_area.center.x) + int(offset_x),
+            y=int(npc_area.center.y) + int(offset_y),
+            z=int(npc_area.center.z) + int(offset_z),
         )
-        target_map.npc_spawns.append(NpcSpawnArea(center=center, radius=area.radius, npcs=area.npcs))
+        target_map.npc_spawns.append(NpcSpawnArea(center=center, radius=npc_area.radius, npcs=npc_area.npcs))
         report.spawns_imported += 1
 
 
