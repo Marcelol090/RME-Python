@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+tests/reproduce_issue.py
+quality_report.txt
+test_results.txt
+test_output*.txt

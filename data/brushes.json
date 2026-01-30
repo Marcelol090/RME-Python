@@ -1,0 +1,12 @@
+{
+  "brushes": [
+    {
+      "name": "Ground Brush",
+      "server_id": 4526,
+      "type": "ground",
+      "borders": {},
+      "transitions": [],
+      "randomize_ids": []
+    }
+  ]
+}

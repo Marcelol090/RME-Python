@@ -1,0 +1,95 @@
+version: '3'
+
+vars:
+  PYTHON: python
+  REPORT_DIR: .quality_reports
+  CACHE_DIR: .quality_cache
+  TASK_DIR: py_rme_canary/quality-pipeline
+
+tasks:
+  setup:
+    desc: Install all Python dependencies and hooks
+    cmds:
+      - uv pip install -r requirements.txt
+      - pre-commit install
+    env:
+      PATH: "{{.env.PATH}}"
+
+  quality:check:
+    desc: Run all quality checks (uses parallel/cache in quality.sh)
+    cmds:
+      - mkdir -p {{.REPORT_DIR}} {{.CACHE_DIR}}
+      - ./{{.TASK_DIR}}/quality.sh --dry-run --verbose
+
+  quality:fix:
+    desc: Apply auto-fixes via quality pipeline
+    deps: [snapshot]
+    cmds:
+      - ./{{.TASK_DIR}}/quality.sh --apply --verbose
+
+  # Ruff
+  ruff:check:
+    desc: Check code with Ruff + JSON report
+    cmds:
+      - mkdir -p {{.REPORT_DIR}}
+      - ruff check . --config pyproject.toml --output-format=json > {{.REPORT_DIR}}/ruff.json
+
+  ruff:fix:
+    desc: Autofix via Ruff
+    cmds:
+      - ruff check . --config pyproject.toml --fix
+      - ruff format . --config pyproject.toml
+
+  # Mypy
+  mypy:check:
+    desc: Type check core + logic_layer
+    vars:
+      CACHE_DIR: "{{.CACHE_DIR}}/mypy_cache"
+    cmds:
+      - mkdir -p {{.CACHE_DIR}}
+      - mypy py_rme_canary/core py_rme_canary/logic_layer --config-file=pyproject.toml --cache-dir={{.CACHE_DIR}}/mypy_cache
+
+  # Radon
+  radon:check:
+    desc: Measure complexity
+    cmds:
+      - mkdir -p {{.REPORT_DIR}}
+      - radon cc . --min B --json > {{.REPORT_DIR}}/radon.json
+      - radon mi . --min B --json > {{.REPORT_DIR}}/radon_mi.json
+
+  # Tests
+  tests:
+    desc: Run unit & integration tests
+    cmds:
+      - pytest tests/ -v --cov=py_rme_canary --cov-report=term-missing
+
+  tests:unit:
+    desc: Run unit tests only
+    cmds:
+      - pytest tests/unit/ -v
+
+  tests:ui:
+    desc: Run pytest-qt UI tests headless
+    env:
+      QT_QPA_PLATFORM: offscreen
+    cmds:
+      - pytest tests/ui/ -v --qt-no-window-capture
+
+  # Utilities
+  snapshot:
+    desc: Snapshot current working tree for rollback
+    cmds:
+      - git add -A
+      - git stash push -u -m "quality-snapshot-$(date +%s)"
+
+  clean:
+    desc: Clean reports/caches
+    cmds:
+      - rm -rf {{.REPORT_DIR}} {{.CACHE_DIR}}
+      - rm -f .ruff*.json .radon*.json .mypy*.log
+
+  pipeline:
+    desc: Run full quality pipeline + tests
+    cmds:
+      - task: quality:check
+      - task: tests
