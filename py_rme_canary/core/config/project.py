@@ -146,7 +146,7 @@ def normalize_engine(engine: str) -> str:
     e = (engine or "").strip().lower()
     if e in ("canary", "otservbr", "opentibia-canary"):
         return "canary"
-    if e in ("tfs", "forgottenserver", "theforgottenserver"):
+    if e in ("tfs", "forgottenserver", "theforgottenserver", "otx"):
         return "tfs"
     if not e:
         return "unknown"
