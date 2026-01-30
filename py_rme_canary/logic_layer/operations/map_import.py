@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from py_rme_canary.core.data.gamemap import GameMap
@@ -19,6 +19,9 @@ class ImportMapReport:
     spawns_imported: int = 0
     zones_imported: int = 0
     skipped_out_of_bounds: int = 0
+    house_id_mapping: dict[int, int] = field(default_factory=dict)
+    zone_id_mapping: dict[int, int] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
     house_id_mapping: dict[int, int] | None = None
     zone_id_mapping: dict[int, int] | None = None
     warnings: list[str] | None = None

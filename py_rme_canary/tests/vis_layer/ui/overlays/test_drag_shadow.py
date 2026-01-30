@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QWidget
+from PyQt6.QtCore import QPoint
+from PyQt6.QtWidgets import QWidget
 
 
 @pytest.fixture

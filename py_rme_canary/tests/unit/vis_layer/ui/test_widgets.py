@@ -194,7 +194,7 @@ class TestBrushToolbar:
 
     def test_brush_size_change(self, app):
         """Test changing brush size."""
-        from PyQt6.QtCore import QSignalSpy
+        from PyQt6.QtTest import QSignalSpy
 
         from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar
 
