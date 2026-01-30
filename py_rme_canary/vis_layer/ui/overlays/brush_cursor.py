@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 class BrushCursorOverlay(QWidget):
     """Animated brush cursor overlay.
-    
+
     Features:
     - Pulsing outline ring
     - Size indicator with smooth scaling
@@ -69,10 +69,10 @@ class BrushCursorOverlay(QWidget):
         self._size_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         # Shape morph animation
+        self._shape_progress = 0.0  # 0 = square, 1 = circle
         self._shape_anim = QPropertyAnimation(self, b"shapeProgress")
         self._shape_anim.setDuration(150)
         self._shape_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
-        self._shape_progress = 0.0  # 0 = square, 1 = circle
 
     @pyqtProperty(float)
     def animRadius(self) -> float:
@@ -256,7 +256,7 @@ class BrushCursorOverlay(QWidget):
 
 class BrushPreviewOverlay(QWidget):
     """Preview overlay showing what will be painted.
-    
+
     Shows a semi-transparent preview of the brush effect
     before the user clicks to paint.
     """
