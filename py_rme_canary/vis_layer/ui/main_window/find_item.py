@@ -6,24 +6,24 @@ from PyQt6.QtWidgets import QMessageBox
 
 from py_rme_canary.core.data.item import Position
 from py_rme_canary.logic_layer.map_search import (
-    find_item_positions,
     find_houses,
+    find_item_positions,
     find_monsters,
     find_npcs,
 )
 
-from .dialogs import FindEntityDialog, FindPositionsDialog, FindNamedPositionsDialog
+from .dialogs import FindEntityDialog, FindNamedPositionsDialog, FindPositionsDialog
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
-def open_find_item(editor: "QtMapEditor") -> None:
+def open_find_item(editor: QtMapEditor) -> None:
     """Legacy wrapper for finding items."""
     open_find_dialog(editor, initial_mode="item")
 
 
-def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creature", "house"] = "item") -> None:
+def open_find_dialog(editor: QtMapEditor, initial_mode: Literal["item", "creature", "house"] = "item") -> None:
     """UI handler for Find actions."""
 
     dlg = FindEntityDialog(editor, title=f"Find {initial_mode.capitalize()}...")
@@ -53,14 +53,14 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
         named_results = sorted(m_results + n_results, key=lambda x: x[0])
 
         if not named_results:
-             QMessageBox.information(editor, "Find Creature", f"No creatures found matching '{res.query_name}'.")
-             return
+            QMessageBox.information(editor, "Find Creature", f"No creatures found matching '{res.query_name}'.")
+            return
 
     elif res.mode == "house":
         named_results = find_houses(editor.map, query=res.query_name)
         if not named_results:
-             QMessageBox.information(editor, "Find House", f"No houses found matching '{res.query_name}'.")
-             return
+            QMessageBox.information(editor, "Find House", f"No houses found matching '{res.query_name}'.")
+            return
 
     chosen: Position | None = None
 
@@ -88,7 +88,7 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
     _jump_to_position(editor, chosen)
 
 
-def _jump_to_position(editor: "QtMapEditor", pos: Position) -> None:
+def _jump_to_position(editor: QtMapEditor, pos: Position) -> None:
     editor.center_view_on(int(pos.x), int(pos.y), int(pos.z), push_history=True)
     try:
         editor.session.set_single_selection(x=int(pos.x), y=int(pos.y), z=int(pos.z))
@@ -105,6 +105,4 @@ def _jump_to_position(editor: "QtMapEditor", pos: Position) -> None:
     except Exception:
         pass
 
-    editor.status.showMessage(
-        f"Jumped to {pos.x},{pos.y},{pos.z}."
-    )
+    editor.status.showMessage(f"Jumped to {pos.x},{pos.y},{pos.z}.")

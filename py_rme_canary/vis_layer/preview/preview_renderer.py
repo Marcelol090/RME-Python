@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
+
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.memory_guard import MemoryGuard, MemoryGuardError, default_memory_guard
 from py_rme_canary.logic_layer.sprite_system.legacy_dat import LegacyItemSpriteInfo
 
 if TYPE_CHECKING:
     import pygame
-    from py_rme_canary.core.assets.appearances_dat import AppearanceIndex, SpriteInfo
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,10 +49,10 @@ class PreviewSnapshot:
 class SpriteSurfaceCache:
     def __init__(self, sprite_provider, *, memory_guard: MemoryGuard | None = None) -> None:
         self._sprite_provider = sprite_provider
-        self._cache: OrderedDict[int, "pygame.Surface"] = OrderedDict()
+        self._cache: OrderedDict[int, pygame.Surface] = OrderedDict()
         self._memory_guard = memory_guard or default_memory_guard()
 
-    def get_surface(self, sprite_id: int, *, placeholder_size: int = 32) -> "pygame.Surface":
+    def get_surface(self, sprite_id: int, *, placeholder_size: int = 32) -> pygame.Surface:
         import pygame
 
         sid = int(sprite_id)
@@ -92,7 +92,7 @@ class SpriteSurfaceCache:
                 self._cache.popitem(last=False)
         return surf
 
-    def _placeholder_surface(self, size: int) -> "pygame.Surface":
+    def _placeholder_surface(self, size: int) -> pygame.Surface:
         import pygame
 
         surf = pygame.Surface((int(size), int(size)), pygame.SRCALPHA)
@@ -118,7 +118,7 @@ class IngameRenderer:
         self._surface_cache = SpriteSurfaceCache(sprite_provider, memory_guard=memory_guard)
         self._font = None
 
-    def render(self, screen: "pygame.Surface", snapshot: PreviewSnapshot) -> None:
+    def render(self, screen: pygame.Surface, snapshot: PreviewSnapshot) -> None:
         import pygame
 
         if snapshot is None:
@@ -152,7 +152,9 @@ class IngameRenderer:
         else:
             screen.blit(world_surface, (0, 0))
 
-    def _draw_tile(self, surface: "pygame.Surface", tile: TileSnapshot, screen_x: int, screen_y: int, *, time_ms: int) -> None:
+    def _draw_tile(
+        self, surface: pygame.Surface, tile: TileSnapshot, screen_x: int, screen_y: int, *, time_ms: int
+    ) -> None:
         ground = []
         bottom = []
         top = []
@@ -193,7 +195,7 @@ class IngameRenderer:
 
     def _draw_item(
         self,
-        surface: "pygame.Surface",
+        surface: pygame.Surface,
         tile: TileSnapshot,
         item: PreviewItem,
         screen_x: int,
@@ -215,7 +217,7 @@ class IngameRenderer:
 
     def _draw_legacy_sprite(
         self,
-        surface: "pygame.Surface",
+        surface: pygame.Surface,
         tile: TileSnapshot,
         item: PreviewItem,
         info: LegacyItemSpriteInfo,
@@ -251,7 +253,7 @@ class IngameRenderer:
 
     def _draw_modern_sprite(
         self,
-        surface: "pygame.Surface",
+        surface: pygame.Surface,
         tile: TileSnapshot,
         item: PreviewItem,
         info: Any,
@@ -267,9 +269,10 @@ class IngameRenderer:
         layers = max(1, int(info.layers))
         for layer in range(layers):
             idx = (
-                (((int(frame) * int(info.pattern_depth) + int(pattern_z)) * int(info.pattern_height) + int(pattern_y))
-                * int(info.pattern_width) + int(pattern_x)) * layers + int(layer)
-            )
+                ((int(frame) * int(info.pattern_depth) + int(pattern_z)) * int(info.pattern_height) + int(pattern_y))
+                * int(info.pattern_width)
+                + int(pattern_x)
+            ) * layers + int(layer)
             if not info.sprite_ids:
                 continue
             if idx >= len(info.sprite_ids):
@@ -280,7 +283,7 @@ class IngameRenderer:
 
         self._draw_stack_count(surface, item, screen_x, screen_y)
 
-    def _draw_stack_count(self, surface: "pygame.Surface", item: PreviewItem, screen_x: int, screen_y: int) -> None:
+    def _draw_stack_count(self, surface: pygame.Surface, item: PreviewItem, screen_x: int, screen_y: int) -> None:
         if not item.stackable:
             return
         count = int(item.count or 0)

@@ -4,6 +4,7 @@ Provides tiled PNG export for large maps with memory-efficient chunked rendering
 
 Layer: logic_layer (no PyQt6 imports)
 """
+
 from __future__ import annotations
 
 import logging

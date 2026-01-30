@@ -58,6 +58,5 @@ def toggle_dark_mode(editor, value: bool) -> None:
     editor._toggle_dark_mode(bool(value))
 
 
-
 def toggle_live_log_dock(editor, value: bool) -> None:
     editor._toggle_live_log_dock(bool(value))

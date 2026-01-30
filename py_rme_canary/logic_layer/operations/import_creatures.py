@@ -3,6 +3,7 @@
 Scans directories recursively for monsters.xml and npcs.xml files,
 loads creature definitions, and makes them available for placement.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -6,16 +6,27 @@ Tileset Management UI (DEPRECATED - PySide6).
 
 Original purpose - Replaces source/tileset_window.cpp
 """
+
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget,
-    QLabel, QLineEdit, QCheckBox, QGroupBox, QFormLayout, QDialogButtonBox
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QPushButton,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt
+
 
 class TilesetDialog(QDialog):
     """
     Dialog for managing map tilesets.
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Tileset Configuration")
@@ -65,10 +76,12 @@ class TilesetDialog(QDialog):
         # Note: Button box would need additional layout restructuring
         # This is a prototype/placeholder implementation
 
+
 class AddTilesetDialog(QDialog):
     """
     Simple dialog to add a new tileset.
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add New Tileset")

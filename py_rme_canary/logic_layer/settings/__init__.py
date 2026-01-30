@@ -1,4 +1,5 @@
 """Settings and configuration management."""
+
 from __future__ import annotations
 
 from py_rme_canary.logic_layer.settings.grid_settings import (

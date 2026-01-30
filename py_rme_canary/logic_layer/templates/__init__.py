@@ -19,13 +19,8 @@ from .map_templates import (
 )
 
 __all__ = [
-    "MapTemplate",
-    "TibiaVersion",
-    "MapSize",
     "ALL_TEMPLATES",
     "COMMON_MAP_SIZES",
-    "get_template_by_version",
-    "get_template_by_name",
     "TEMPLATE_7_4",
     "TEMPLATE_7_72",
     "TEMPLATE_8_6",
@@ -33,4 +28,9 @@ __all__ = [
     "TEMPLATE_10_98",
     "TEMPLATE_12_0",
     "TEMPLATE_CUSTOM",
+    "MapSize",
+    "MapTemplate",
+    "TibiaVersion",
+    "get_template_by_name",
+    "get_template_by_version",
 ]

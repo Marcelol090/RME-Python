@@ -5,6 +5,7 @@ Used by MAP_CHUNK packets during initial map synchronization.
 
 Layer: core (no PyQt6 imports)
 """
+
 from __future__ import annotations
 
 import struct

@@ -4,6 +4,7 @@ Scans map for duplicate unique IDs and reports conflicts.
 
 Layer: logic_layer (no PyQt6 imports)
 """
+
 from __future__ import annotations
 
 import logging

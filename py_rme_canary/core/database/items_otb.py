@@ -33,17 +33,17 @@ class ItemsOTBHeader:
     minor: int
     build: int
     csd: str
-    
+
     @property
     def client_version(self) -> int:
         """Extract Tibia client version from CSD string or major.minor.
-        
+
         The CSD string typically contains the client version in format "OTB X.Y.Z-AA.BB"
         where AA.BB is the Tibia client version (e.g., "OTB 3.65.62-13.10" → 1310).
-        
+
         For very old versions (like 7.4) that don't have version in CSD,
         uses legacy OTB version mapping.
-        
+
         Examples:
             "OTB 3.65.62-13.10" → 1310
             "OTB 3.12.7-8.40" → 840 (8.4 stored as 840)
@@ -51,21 +51,21 @@ class ItemsOTBHeader:
             "OTB 1.1.1 (1-byte aligned)" → 740 (legacy 7.4, special case)
         """
         import re
-        
+
         # Legacy OTB version → Tibia client version mapping
         # Used for very old OTB versions without client version in CSD
         LEGACY_OTB_MAPPING = {
-            101: 740,   # OTB 1.1 → Tibia 7.4
-            102: 750,   # OTB 1.2 → Tibia 7.5
+            101: 740,  # OTB 1.1 → Tibia 7.4
+            102: 750,  # OTB 1.2 → Tibia 7.5
         }
-        
+
         # Try to extract version from CSD string (format: "OTB X.Y.Z-AA.BB")
-        match = re.search(r'-(\d+)\.(\d+)', self.csd)
+        match = re.search(r"-(\d+)\.(\d+)", self.csd)
         if match:
             major_client = int(match.group(1))
             minor_client = int(match.group(2))
             return major_client * 100 + minor_client
-        
+
         # Fallback: use legacy OTB version mapping for very old versions
         otb_version = int(self.major * 100 + self.minor)
         return LEGACY_OTB_MAPPING.get(otb_version, otb_version)
@@ -83,7 +83,9 @@ class ItemsOTB:
         with p.open("rb") as f:
             magic = f.read(4)
             if magic not in (MAGIC_OTBI, MAGIC_WILDCARD):
-                raise ItemsOTBError(f"Invalid items.otb magic: {magic!r} (expected {MAGIC_OTBI!r} or {MAGIC_WILDCARD!r})")
+                raise ItemsOTBError(
+                    f"Invalid items.otb magic: {magic!r} (expected {MAGIC_OTBI!r} or {MAGIC_WILDCARD!r})"
+                )
 
             op = _read_u8(f)
             if op != NODE_START:
@@ -110,7 +112,7 @@ class ItemsOTB:
                 raise ItemsOTBError(f"Invalid root delimiter 0x{root_delim:02X}")
 
             return cls(header=header, client_to_server=client_to_server, server_to_client=server_to_client)
-    
+
     @classmethod
     def read_header(cls, path: str | Path) -> ItemsOTBHeader:
         """Read just the header without loading all item mappings (fast)."""
@@ -118,7 +120,9 @@ class ItemsOTB:
         with p.open("rb") as f:
             magic = f.read(4)
             if magic not in (MAGIC_OTBI, MAGIC_WILDCARD):
-                raise ItemsOTBError(f"Invalid items.otb magic: {magic!r} (expected {MAGIC_OTBI!r} or {MAGIC_WILDCARD!r})")
+                raise ItemsOTBError(
+                    f"Invalid items.otb magic: {magic!r} (expected {MAGIC_OTBI!r} or {MAGIC_WILDCARD!r})"
+                )
 
             op = _read_u8(f)
             if op != NODE_START:

@@ -8,16 +8,16 @@ Provides chat/log UI for live editing sessions:
 Layer: vis_layer (OK to use PyQt6)
 Reference: legacy live_tab.cpp
 """
+
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QDockWidget,
-    QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from py_rme_canary.core.protocols.live_peer import LivePeer
+    pass
 
 
 class LiveLogPanel(QDockWidget):
@@ -44,9 +44,7 @@ class LiveLogPanel(QDockWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("Live Log", parent)
-        self.setAllowedAreas(
-            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.TopDockWidgetArea
-        )
+        self.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.TopDockWidgetArea)
 
         self._setup_ui()
         self._apply_style()

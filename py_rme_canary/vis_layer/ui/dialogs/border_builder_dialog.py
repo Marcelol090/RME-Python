@@ -6,6 +6,7 @@ Allows users to preview border patterns and configure custom rules.
 Layer: vis_layer (OK to use PyQt6)
 Reference: AutoBorderProcessor in logic_layer/borders/processor.py
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -13,21 +14,16 @@ from typing import TYPE_CHECKING, Any
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
-    QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QFrame,
-    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QScrollArea,
     QSplitter,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -90,11 +86,7 @@ class BorderPreviewWidget(QFrame):
 
         # Draw key label
         painter.setPen(QColor("#E5E5E7"))
-        painter.drawText(
-            0, 3 * cell + 5, 3 * cell, 20,
-            Qt.AlignmentFlag.AlignCenter,
-            self._key
-        )
+        painter.drawText(0, 3 * cell + 5, 3 * cell, 20, Qt.AlignmentFlag.AlignCenter, self._key)
         painter.end()
 
 

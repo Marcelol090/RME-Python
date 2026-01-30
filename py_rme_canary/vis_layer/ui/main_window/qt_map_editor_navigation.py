@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QSpinBox
 
 from py_rme_canary.logic_layer.editor_session import EditorSession
@@ -13,11 +12,13 @@ if TYPE_CHECKING:
 
 
 class QtMapEditorNavigationMixin:
-    def center_view_on(self: "QtMapEditor", x: int, y: int, z: int, *, push_history: bool = True) -> None:
+    def center_view_on(self: QtMapEditor, x: int, y: int, z: int, *, push_history: bool = True) -> None:
         """Center viewport on a given tile (used by GoTo and Minimap)."""
 
         if bool(push_history):
-            self._position_history.append((int(self.viewport.origin_x), int(self.viewport.origin_y), int(self.viewport.z)))
+            self._position_history.append(
+                (int(self.viewport.origin_x), int(self.viewport.origin_y), int(self.viewport.z))
+            )
 
         cols = max(1, self.canvas.width() // max(1, int(self.viewport.tile_px)))
         rows = max(1, self.canvas.height() // max(1, int(self.viewport.tile_px)))
@@ -38,7 +39,7 @@ class QtMapEditorNavigationMixin:
         if self.minimap_widget is not None:
             self.minimap_widget.update()
 
-    def _goto_position_from_fields(self: "QtMapEditor") -> None:
+    def _goto_position_from_fields(self: QtMapEditor) -> None:
         if not hasattr(self, "goto_x_spin") or not hasattr(self, "goto_y_spin"):
             return
         x = int(self.goto_x_spin.value())
@@ -50,7 +51,7 @@ class QtMapEditorNavigationMixin:
 
         self.center_view_on(int(x), int(y), int(z), push_history=True)
 
-    def _goto_previous_position(self: "QtMapEditor") -> None:
+    def _goto_previous_position(self: QtMapEditor) -> None:
         if not self._position_history:
             self.status.showMessage("No previous position")
             return
@@ -60,7 +61,7 @@ class QtMapEditorNavigationMixin:
         self._set_z(int(oz))
         self.canvas.update()
 
-    def update_status_from_mouse(self: "QtMapEditor", px: int, py: int) -> None:
+    def update_status_from_mouse(self: QtMapEditor, px: int, py: int) -> None:
         x, y = self.canvas._tile_at(px, py)
         self._last_hover_tile = (int(x), int(y))
         z = self.viewport.z
@@ -108,7 +109,7 @@ class QtMapEditorNavigationMixin:
         except Exception:
             pass
 
-    def _jump_to_brush(self: "QtMapEditor", _checked: bool = False) -> None:
+    def _jump_to_brush(self: QtMapEditor, _checked: bool = False) -> None:
         try:
             if hasattr(self, "dock_brushes") and self.dock_brushes is not None:
                 self.dock_brushes.raise_()
@@ -118,7 +119,7 @@ class QtMapEditorNavigationMixin:
         except Exception:
             pass
 
-    def _jump_to_item(self: "QtMapEditor", _checked: bool = False) -> None:
+    def _jump_to_item(self: QtMapEditor, _checked: bool = False) -> None:
         try:
             self.brush_id_entry.setFocus()
             le = self.brush_id_entry.lineEdit()
@@ -127,7 +128,7 @@ class QtMapEditorNavigationMixin:
         except Exception:
             pass
 
-    def _new_view(self: "QtMapEditor") -> None:
+    def _new_view(self: QtMapEditor) -> None:
         w = type(self)()
         # Best-effort: mirror current view state.
         try:
@@ -142,7 +143,7 @@ class QtMapEditorNavigationMixin:
         w.show()
         self._extra_views.append(w)
 
-    def _new_instance(self: "QtMapEditor") -> None:
+    def _new_instance(self: QtMapEditor) -> None:
         """Open a new independent editor instance.
 
         The new window starts with a fresh map and independent assets/session.
@@ -151,30 +152,29 @@ class QtMapEditorNavigationMixin:
         w.show()
         self._extra_views.append(w)
 
-    def _toggle_selection_mode(self: "QtMapEditor") -> None:
+    def _toggle_selection_mode(self: QtMapEditor) -> None:
         self.selection_mode = bool(self.act_selection_mode.isChecked())
         # Cancel any active paint gesture if user toggles modes mid-drag.
         if self.selection_mode:
             self.session.cancel_gesture()
-        else:
-            if bool(getattr(self, "lasso_enabled", False)) and hasattr(self, "act_lasso_select"):
+        elif bool(getattr(self, "lasso_enabled", False)) and hasattr(self, "act_lasso_select"):
+            try:
+                self.act_lasso_select.blockSignals(True)
+                self.act_lasso_select.setChecked(False)
+                self.act_lasso_select.blockSignals(False)
+            except Exception:
+                pass
+            self.lasso_enabled = False
+            if hasattr(self, "canvas"):
                 try:
-                    self.act_lasso_select.blockSignals(True)
-                    self.act_lasso_select.setChecked(False)
-                    self.act_lasso_select.blockSignals(False)
+                    self.canvas.cancel_lasso()
                 except Exception:
                     pass
-                self.lasso_enabled = False
-                if hasattr(self, "canvas"):
-                    try:
-                        self.canvas.cancel_lasso()
-                    except Exception:
-                        pass
         self.session.cancel_box_selection()
         self.canvas.update()
         self._update_action_enabled_states()
 
-    def _toggle_lasso(self: "QtMapEditor", enabled: bool) -> None:
+    def _toggle_lasso(self: QtMapEditor, enabled: bool) -> None:
         self.lasso_enabled = bool(enabled)
         if self.lasso_enabled and not bool(self.selection_mode):
             if hasattr(self, "act_selection_mode"):
@@ -194,7 +194,7 @@ class QtMapEditorNavigationMixin:
         self.canvas.update()
         self._update_action_enabled_states()
 
-    def _set_selection_depth_mode(self: "QtMapEditor", mode: SelectionDepthMode | str) -> None:
+    def _set_selection_depth_mode(self: QtMapEditor, mode: SelectionDepthMode | str) -> None:
         self.session.set_selection_depth_mode(mode)
         current = self.session.get_selection_depth_mode()
         mapping = {

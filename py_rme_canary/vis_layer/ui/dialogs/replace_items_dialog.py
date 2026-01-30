@@ -4,11 +4,11 @@ Provides UI for replacing items on the map with various scope options.
 
 Layer: vis_layer (uses PyQt6)
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -122,7 +122,6 @@ class ReplaceItemsDialog(QDialog):
     def _on_replace(self) -> None:
         """Execute replacement."""
         from py_rme_canary.logic_layer.replace_items import (
-            ReplaceItemsResult,
             replace_items_in_map,
         )
 
@@ -156,10 +155,7 @@ class ReplaceItemsDialog(QDialog):
                 if selection:
                     selection_tiles = getattr(selection, "tiles_set", None)
                     if selection_tiles is None:
-                        selection_tiles = {
-                            (t.x, t.y, t.z)
-                            for t in getattr(selection, "tiles", [])
-                        }
+                        selection_tiles = {(t.x, t.y, t.z) for t in getattr(selection, "tiles", [])}
 
             # Execute replacement
             changed_tiles, result = replace_items_in_map(

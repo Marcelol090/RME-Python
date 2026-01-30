@@ -4,6 +4,7 @@ Provides dark/light theme switching with stylesheet generation.
 
 Layer: logic_layer (no PyQt6 imports)
 """
+
 from __future__ import annotations
 
 import contextlib

@@ -6,6 +6,7 @@ Provides beautiful, informative tooltips with:
 - Keyboard shortcut display
 - Consistent styling
 """
+
 from __future__ import annotations
 
 from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
@@ -20,7 +21,7 @@ from PyQt6.QtWidgets import (
 
 class RichTooltip(QWidget):
     """Modern rich tooltip with icon, title, description, and shortcut.
-    
+
     Usage:
         tooltip = RichTooltip(
             title="Terrain Brush",
@@ -32,12 +33,7 @@ class RichTooltip(QWidget):
     """
 
     def __init__(
-        self,
-        title: str,
-        description: str = "",
-        shortcut: str = "",
-        icon: str = "",
-        parent: QWidget | None = None
+        self, title: str, description: str = "", shortcut: str = "", icon: str = "", parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
 
@@ -53,9 +49,7 @@ class RichTooltip(QWidget):
     def _setup_ui(self) -> None:
         """Initialize UI layout."""
         self.setWindowFlags(
-            Qt.WindowType.ToolTip |
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint
+            Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -147,11 +141,12 @@ class RichTooltip(QWidget):
 
     def show_at(self, pos: QPoint, delay_ms: int = 0) -> None:
         """Show tooltip at position with optional delay.
-        
+
         Args:
             pos: Screen position to show tooltip
             delay_ms: Delay before showing (0 = immediate)
         """
+
         def _show() -> None:
             # Adjust position to avoid screen edges
             self.adjustSize()
@@ -180,7 +175,7 @@ class RichTooltip(QWidget):
 
 class TooltipManager:
     """Manages tooltip display for widgets.
-    
+
     Usage:
         manager = TooltipManager()
         manager.register(
@@ -213,10 +208,10 @@ class TooltipManager:
         description: str = "",
         shortcut: str = "",
         icon: str = "",
-        delay_ms: int | None = None
+        delay_ms: int | None = None,
     ) -> None:
         """Register a widget for rich tooltips.
-        
+
         Args:
             widget: Widget to add tooltip to
             title: Tooltip title
@@ -251,12 +246,7 @@ class TooltipManager:
         """Show a tooltip at the specified position."""
         self.hide_tooltip()
 
-        self._current_tooltip = RichTooltip(
-            title=title,
-            description=description,
-            shortcut=shortcut,
-            icon=icon
-        )
+        self._current_tooltip = RichTooltip(title=title, description=description, shortcut=shortcut, icon=icon)
         self._current_tooltip.show_at(pos)
 
     def hide_tooltip(self) -> None:
@@ -268,7 +258,7 @@ class TooltipManager:
 
 class StatusToast(QWidget):
     """Toast notification for status messages.
-    
+
     Shows temporary notifications that auto-dismiss.
     """
 
@@ -277,7 +267,7 @@ class StatusToast(QWidget):
         message: str,
         variant: str = "info",  # info, success, warning, error
         duration_ms: int = 3000,
-        parent: QWidget | None = None
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._message = message
@@ -289,23 +279,14 @@ class StatusToast(QWidget):
 
     def _setup_ui(self) -> None:
         """Initialize UI."""
-        self.setWindowFlags(
-            Qt.WindowType.Tool |
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint
-        )
+        self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 12)
 
         # Icon based on variant
-        icons = {
-            "info": "ℹ️",
-            "success": "✅",
-            "warning": "⚠️",
-            "error": "❌"
-        }
+        icons = {"info": "ℹ️", "success": "✅", "warning": "⚠️", "error": "❌"}
         icon = icons.get(self._variant, "ℹ️")
 
         icon_label = QLabel(icon)
@@ -322,12 +303,7 @@ class StatusToast(QWidget):
 
     def _setup_style(self) -> None:
         """Apply styling based on variant."""
-        colors = {
-            "info": "#3B82F6",
-            "success": "#10B981",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
-        }
+        colors = {"info": "#3B82F6", "success": "#10B981", "warning": "#F59E0B", "error": "#EF4444"}
         accent = colors.get(self._variant, "#3B82F6")
 
         self.setStyleSheet(f"""

@@ -6,6 +6,7 @@ Manages global light and ambient light settings for map rendering:
 - Light color tint
 - Dynamic light effects
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -3,6 +3,7 @@
 Provides reusable animation helpers for smooth transitions,
 hover effects, and feedback animations.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -34,14 +35,14 @@ class AnimationFactory:
         easing: QEasingCurve.Type = QEasingCurve.Type.OutCubic,
     ) -> QPropertyAnimation:
         """Create a fade-in animation for a widget.
-        
+
         Args:
             widget: Widget to animate
             duration: Animation duration in ms
             start_opacity: Starting opacity (0.0-1.0)
             end_opacity: Ending opacity (0.0-1.0)
             easing: Easing curve type
-            
+
         Returns:
             Configured QPropertyAnimation
         """
@@ -68,9 +69,7 @@ class AnimationFactory:
         easing: QEasingCurve.Type = QEasingCurve.Type.OutCubic,
     ) -> QPropertyAnimation:
         """Create a fade-out animation for a widget."""
-        return AnimationFactory.fade_in(
-            widget, duration, start_opacity=1.0, end_opacity=0.0, easing=easing
-        )
+        return AnimationFactory.fade_in(widget, duration, start_opacity=1.0, end_opacity=0.0, easing=easing)
 
     @staticmethod
     def slide_in(
@@ -81,14 +80,14 @@ class AnimationFactory:
         easing: QEasingCurve.Type = QEasingCurve.Type.OutCubic,
     ) -> QPropertyAnimation:
         """Create a slide-in animation.
-        
+
         Args:
             widget: Widget to animate
             direction: Direction to slide from ("up", "down", "left", "right")
             distance: Distance in pixels to slide
             duration: Animation duration in ms
             easing: Easing curve type
-            
+
         Returns:
             Configured QPropertyAnimation
         """
@@ -121,15 +120,12 @@ class AnimationFactory:
         scale_factor: float = 1.1,
     ) -> QPropertyAnimation:
         """Create a bounce scale animation (for button press feedback).
-        
+
         Note: Qt doesn't support transform:scale directly, so this
         animates the widget's size.
         """
         original_size = widget.size()
-        scaled_size = QSize(
-            int(original_size.width() * scale_factor),
-            int(original_size.height() * scale_factor)
-        )
+        scaled_size = QSize(int(original_size.width() * scale_factor), int(original_size.height() * scale_factor))
 
         anim = QPropertyAnimation(widget, b"size")
         anim.setDuration(duration)
@@ -149,7 +145,7 @@ class AnimationFactory:
         max_alpha: int = 200,
     ) -> QPropertyAnimation:
         """Create a pulsing glow effect animation.
-        
+
         Requires widget to have a QGraphicsDropShadowEffect.
         """
         from PyQt6.QtWidgets import QGraphicsDropShadowEffect
@@ -211,16 +207,16 @@ class TransitionManager:
         easing: QEasingCurve.Type = QEasingCurve.Type.OutCubic,
     ) -> QPropertyAnimation:
         """Smoothly transition a widget property.
-        
+
         Cancels any existing animation on the same property.
-        
+
         Args:
             widget: Widget to animate
             property_name: Property to animate (e.g., "pos", "size")
             end_value: Target value
             duration: Animation duration
             easing: Easing curve
-            
+
         Returns:
             The animation (already started)
         """
@@ -258,13 +254,13 @@ class FeedbackAnimation:
         duration: int = 400,
     ) -> tuple[QWidget, QAbstractAnimation]:
         """Create an expanding ripple effect for success feedback.
-        
+
         Args:
             parent: Parent widget to create ripple in
             center: Center point of ripple
             color: Ripple color
             duration: Animation duration
-            
+
         Returns:
             Tuple of (ripple widget, animation)
         """
@@ -279,18 +275,8 @@ class FeedbackAnimation:
         start_size = 20
         end_size = 100
 
-        start_rect = QRect(
-            center.x() - start_size // 2,
-            center.y() - start_size // 2,
-            start_size,
-            start_size
-        )
-        end_rect = QRect(
-            center.x() - end_size // 2,
-            center.y() - end_size // 2,
-            end_size,
-            end_size
-        )
+        start_rect = QRect(center.x() - start_size // 2, center.y() - start_size // 2, start_size, start_size)
+        end_rect = QRect(center.x() - end_size // 2, center.y() - end_size // 2, end_size, end_size)
 
         ripple.setGeometry(start_rect)
         ripple.show()
@@ -330,12 +316,12 @@ class FeedbackAnimation:
         duration: int = 500,
     ) -> QPropertyAnimation:
         """Shake widget horizontally to indicate error.
-        
+
         Args:
             widget: Widget to shake
             distance: Shake distance in pixels
             duration: Total animation duration
-            
+
         Returns:
             The animation (already started)
         """
@@ -363,11 +349,11 @@ class FeedbackAnimation:
 
 def delayed_call(delay_ms: int, callback: Callable[[], None]) -> QTimer:
     """Schedule a callback after a delay.
-    
+
     Args:
         delay_ms: Delay in milliseconds
         callback: Function to call
-        
+
     Returns:
         The timer (for cancellation if needed)
     """

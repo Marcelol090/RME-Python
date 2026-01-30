@@ -1,4 +1,5 @@
 """Tests for selection operations."""
+
 from __future__ import annotations
 
 from py_rme_canary.core.data.creature import Monster, Npc

@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog
+from PyQt6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMessageBox
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.io.creatures_xml import clear_creature_name_cache
@@ -16,11 +16,11 @@ from py_rme_canary.core.io.lua_creature_import import (
 from py_rme_canary.core.io.map_detection import detect_map_file
 from py_rme_canary.core.io.otbm_loader import OTBMLoader
 from py_rme_canary.core.io.otbm_saver import save_game_map_bundle_atomic
+from py_rme_canary.logic_layer.editor_session import EditorSession
 from py_rme_canary.logic_layer.map_format_conversion import (
     analyze_map_format_conversion,
     apply_map_format_version,
 )
-from py_rme_canary.logic_layer.editor_session import EditorSession
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class QtMapEditorFileMixin:
-    def _new_map(self: "QtMapEditor") -> None:
+    def _new_map(self: QtMapEditor) -> None:
         """Create new map with template selection."""
         from py_rme_canary.vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
 
@@ -65,10 +65,8 @@ class QtMapEditorFileMixin:
             logger.exception("Failed to apply preferences for new map")
         self.canvas.update()
 
-    def _open_otbm(self: "QtMapEditor") -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Open Map", "", "Maps (*.otbm *.json *.otml *.xml);;All Files (*)"
-        )
+    def _open_otbm(self: QtMapEditor) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Open Map", "", "Maps (*.otbm *.json *.otml *.xml);;All Files (*)")
         if not path:
             return
         logger.info("Opening map: %s", path)
@@ -92,7 +90,9 @@ class QtMapEditorFileMixin:
             )
             return
         if det.kind not in ("otbm", "project_json"):
-            QMessageBox.warning(self, "Unknown map", f"Could not detect a supported map format.\n\nReason: {det.reason}")
+            QMessageBox.warning(
+                self, "Unknown map", f"Could not detect a supported map format.\n\nReason: {det.reason}"
+            )
             return
 
         try:
@@ -135,7 +135,7 @@ class QtMapEditorFileMixin:
         except Exception:
             logger.exception("Failed to log load report")
 
-    def _save_as(self: "QtMapEditor") -> None:
+    def _save_as(self: QtMapEditor) -> None:
         path, _ = QFileDialog.getSaveFileName(self, "Save OTBM As", "", "OTBM (*.otbm);;All Files (*)")
         if not path:
             return
@@ -144,7 +144,7 @@ class QtMapEditorFileMixin:
         self.current_path = path
         self._save()
 
-    def _save(self: "QtMapEditor") -> None:
+    def _save(self: QtMapEditor) -> None:
         if not self.current_path:
             self._save_as()
             return
@@ -157,7 +157,7 @@ class QtMapEditorFileMixin:
             QMessageBox.critical(self, "Save failed", str(e))
             logger.exception("Save failed")
 
-    def _import_monsters_npcs(self: "QtMapEditor") -> None:
+    def _import_monsters_npcs(self: QtMapEditor) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Import Monsters/NPC...", "", "Lua Files (*.lua);;All Files (*)")
         if not path:
             return
@@ -168,7 +168,7 @@ class QtMapEditorFileMixin:
             return
         self._show_creature_import_result(result, "Import Monsters/NPC...")
 
-    def _import_monster_folder(self: "QtMapEditor") -> None:
+    def _import_monster_folder(self: QtMapEditor) -> None:
         folder = QFileDialog.getExistingDirectory(self, "Import Monster Folder...")
         if not folder:
             return
@@ -179,7 +179,7 @@ class QtMapEditorFileMixin:
             return
         self._show_creature_import_result(result, "Import Monster Folder...")
 
-    def _show_creature_import_result(self: "QtMapEditor", result: LuaCreatureImportResult, title: str) -> None:
+    def _show_creature_import_result(self: QtMapEditor, result: LuaCreatureImportResult, title: str) -> None:
         if result.files_scanned <= 0:
             QMessageBox.information(self, title, "No Lua files found.")
             return
@@ -200,14 +200,14 @@ class QtMapEditorFileMixin:
         ]
         QMessageBox.information(self, title, "\n".join(lines))
 
-    def _import_map(self: "QtMapEditor") -> None:
+    def _import_map(self: QtMapEditor) -> None:
         from py_rme_canary.vis_layer.ui.main_window.import_map_dialog import ImportMapDialog
 
         dialog = ImportMapDialog(self, current_map=self.map)
         if dialog.exec():
             self.canvas.update()
 
-    def _convert_map_format(self: "QtMapEditor") -> None:
+    def _convert_map_format(self: QtMapEditor) -> None:
         if self.map is None:
             return
         current_version = int(self.map.header.otbm_version)

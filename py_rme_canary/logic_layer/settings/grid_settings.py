@@ -6,6 +6,7 @@ Manages grid display settings including:
 - Grid line thickness
 - Grid type (standard/dotted/dashed)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

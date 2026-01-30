@@ -2,12 +2,13 @@
 OpenGL Canvas Widget for high-performance map rendering.
 Uses QOpenGLWidget for hardware-accelerated rendering.
 """
+
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, QRect, QSize, QElapsedTimer, QTimer, QPoint
+from PyQt6.QtCore import QElapsedTimer, QPoint, QRect, QSize, Qt, QTimer
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
@@ -19,8 +20,9 @@ from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay,
 
 # Try importing OpenGL support
 try:
-    from PyQt6.QtOpenGLWidgets import QOpenGLWidget
     from PyQt6.QtGui import QSurfaceFormat
+    from PyQt6.QtOpenGLWidgets import QOpenGLWidget
+
     OPENGL_AVAILABLE = True
 except Exception:
     OPENGL_AVAILABLE = False
@@ -43,7 +45,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
     HARD_REFRESH_RATE_MS = 16
     ANIMATION_INTERVAL_MS = 100
 
-    def __init__(self, parent: QWidget | None, editor: "QtMapEditor") -> None:
+    def __init__(self, parent: QWidget | None, editor: QtMapEditor) -> None:
         if OPENGL_AVAILABLE:
             # Configure OpenGL format for better performance
             fmt = QSurfaceFormat()
@@ -59,15 +61,15 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self._editor = editor
         self._mouse_down = False
         self._panning = False
-        self._pan_anchor: Optional[tuple[QPoint, int, int]] = None
+        self._pan_anchor: tuple[QPoint, int, int] | None = None
         self._right_click_moved = False
         self._right_click_threshold = 4
         self._selection_dragging = False
-        self._selection_drag_start: Optional[tuple[int, int, int]] = None
-        self._selection_box_mode: Optional[SelectionApplyMode] = None
+        self._selection_drag_start: tuple[int, int, int] | None = None
+        self._selection_box_mode: SelectionApplyMode | None = None
         self._opengl_initialized = False
-        self._gl_resources: Optional[OpenGLResources] = None
-        self._gl_error: Optional[str] = None
+        self._gl_resources: OpenGLResources | None = None
+        self._gl_error: str | None = None
         self._is_rendering = False
         self._render_pending = False
         self._pending_zoom_step = 0
@@ -92,7 +94,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         """Return preferred widget size."""
         return QSize(800, 600)
 
-    def update(self, *args: object, **kwargs: object) -> None:  # noqa: N802 (Qt style)
+    def update(self, *args: object, **kwargs: object) -> None:
         self.request_render()
 
     def request_render(self) -> None:
@@ -155,7 +157,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             out.extend(int(it.id) for it in t.items)
         return out
 
-    def _server_id_for_tile(self, x: int, y: int, z: int) -> Optional[int]:
+    def _server_id_for_tile(self, x: int, y: int, z: int) -> int | None:
         t = self._editor.map.get_tile(int(x), int(y), int(z))
         if t is None:
             return None
@@ -296,6 +298,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
         try:
             from OpenGL import GL  # type: ignore[import]
+
             GL.glViewport(0, 0, w, h)
         except ImportError:
             pass
@@ -480,7 +483,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         p.setPen(sel_pen)
 
         selected = editor.session.get_selection_tiles()
-        for (sx, sy, sz) in selected:
+        for sx, sy, sz in selected:
             if int(sz) != int(z):
                 continue
             if not (x0 <= int(sx) < x1 and y0 <= int(sy) < y1):
@@ -608,15 +611,14 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
                     self._selection_box_mode = SelectionApplyMode.REPLACE
                     editor.session.clear_selection()
                 editor.session.begin_box_selection(x=x, y=y, z=z)
-            else:
-                if ctrl:
+            elif ctrl:
+                editor.session.toggle_select_tile(x=x, y=y, z=z)
+            elif alt:
+                selected = editor.session.get_selection_tiles()
+                if (int(x), int(y), int(z)) in selected:
                     editor.session.toggle_select_tile(x=x, y=y, z=z)
-                elif alt:
-                    selected = editor.session.get_selection_tiles()
-                    if (int(x), int(y), int(z)) in selected:
-                        editor.session.toggle_select_tile(x=x, y=y, z=z)
-                else:
-                    editor.session.set_single_selection(x=x, y=y, z=z)
+            else:
+                editor.session.set_single_selection(x=x, y=y, z=z)
             self.update()
             editor._update_action_enabled_states()
             return

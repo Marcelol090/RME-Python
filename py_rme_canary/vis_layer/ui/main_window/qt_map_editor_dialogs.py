@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtWidgets import QMessageBox
 
+from py_rme_canary.logic_layer.map_search import find_item_positions
 from py_rme_canary.vis_layer.ui.main_window.dialogs import (
     FindItemDialog,
     FindPositionsDialog,
@@ -11,7 +12,6 @@ from py_rme_canary.vis_layer.ui.main_window.dialogs import (
     ReplaceItemsDialog,
 )
 from py_rme_canary.vis_layer.ui.main_window.find_item import open_find_item
-from py_rme_canary.logic_layer.map_search import find_item_positions
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -96,9 +96,7 @@ class QtMapEditorDialogsMixin:
         editor = cast("QtMapEditor", self)
         editor.quick_replace_source_id = int(item_id)
         if editor.quick_replace_target_id is not None:
-            editor.status.showMessage(
-                f"Quick Replace: {int(item_id)} → {int(editor.quick_replace_target_id)}"
-            )
+            editor.status.showMessage(f"Quick Replace: {int(item_id)} → {int(editor.quick_replace_target_id)}")
         else:
             editor.status.showMessage(f"Quick Replace: find item set to {int(item_id)}")
 
@@ -106,9 +104,7 @@ class QtMapEditorDialogsMixin:
         editor = cast("QtMapEditor", self)
         editor.quick_replace_target_id = int(item_id)
         if editor.quick_replace_source_id is not None:
-            editor.status.showMessage(
-                f"Quick Replace: {int(editor.quick_replace_source_id)} → {int(item_id)}"
-            )
+            editor.status.showMessage(f"Quick Replace: {int(editor.quick_replace_source_id)} → {int(item_id)}")
         else:
             editor.status.showMessage(f"Quick Replace: replace item set to {int(item_id)}")
 

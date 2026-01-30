@@ -4,12 +4,13 @@ Provides UI for exporting map to PNG with progress bar.
 
 Layer: vis_layer (uses PyQt6)
 """
+
 from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -26,7 +27,7 @@ from PyQt6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from py_rme_canary.logic_layer.png_exporter import ExportConfig, PNGExporter
+    from py_rme_canary.logic_layer.png_exporter import PNGExporter
 
 
 class ExportWorker(QThread):
@@ -180,7 +181,7 @@ class PNGExportDialog(QDialog):
 
     def _update_estimate(self) -> None:
         """Update memory estimate."""
-        from py_rme_canary.logic_layer.png_exporter import ExportConfig, get_default_exporter
+        from py_rme_canary.logic_layer.png_exporter import get_default_exporter
 
         config = self._get_config()
         exporter = get_default_exporter()
@@ -236,13 +237,9 @@ class PNGExportDialog(QDialog):
 
         # Get save path
         if config.format == "tiled":
-            path, _ = QFileDialog.getSaveFileName(
-                self, "Export Image Tiles", "", file_filter
-            )
+            path, _ = QFileDialog.getSaveFileName(self, "Export Image Tiles", "", file_filter)
         else:
-            path, _ = QFileDialog.getSaveFileName(
-                self, "Export Image", "", file_filter
-            )
+            path, _ = QFileDialog.getSaveFileName(self, "Export Image", "", file_filter)
 
         if not path:
             return

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QMouseEvent, QPaintEvent, QPainter
+from PyQt6.QtGui import QMouseEvent, QPainter, QPaintEvent
 from PyQt6.QtWidgets import QWidget
 
 from py_rme_canary.vis_layer.ui.helpers import qcolor_from_id
@@ -22,13 +22,13 @@ class MinimapClick:
 
 
 class MinimapWidget(QWidget):
-    def __init__(self, parent: QWidget | None = None, *, editor: "QtMapEditor") -> None:
+    def __init__(self, parent: QWidget | None = None, *, editor: QtMapEditor) -> None:
         super().__init__(parent)
         self._editor = editor
         self.setMinimumSize(180, 180)
         self.setMouseTracking(True)
 
-    def _get_map(self) -> "GameMap" | None:
+    def _get_map(self) -> GameMap | None:
         return getattr(self._editor, "map", None)
 
     def _get_viewport_z(self) -> int:

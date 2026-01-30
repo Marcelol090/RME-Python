@@ -1,7 +1,9 @@
 """Theme color tokens and QColor helpers."""
+
 from __future__ import annotations
 
 from PyQt6.QtGui import QColor
+
 from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme
 
 # Base colors map
@@ -22,13 +24,14 @@ SEMANTIC = {
     "info": ModernTheme.colors.info,
 }
 
+
 def get_qcolor(hex_color: str, alpha: int = 255) -> QColor:
     """Convert hex string to QColor with optional alpha.
-    
+
     Args:
         hex_color: Hex color string (e.g., "#FF0000")
         alpha: Alpha channel (0-255)
-        
+
     Returns:
         QColor object
     """
@@ -36,13 +39,14 @@ def get_qcolor(hex_color: str, alpha: int = 255) -> QColor:
     c.setAlpha(alpha)
     return c
 
+
 def get_theme_color(name: str, alpha: int = 255) -> QColor:
     """Get a theme color by name as QColor.
-    
+
     Args:
         name: Name of the color property in ThemeColors (e.g., 'primary', 'background')
         alpha: Alpha channel (0-255)
-        
+
     Returns:
         QColor object
     """
@@ -57,5 +61,5 @@ def get_theme_color(name: str, alpha: int = 255) -> QColor:
             return QColor(r, g, b, int(a_float * 255))
         except:
             return QColor(color_str)
-            
+
     return get_qcolor(color_str, alpha)

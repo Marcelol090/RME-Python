@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QPoint, Qt, QRect, QElapsedTimer, QTimer
+from PyQt6.QtCore import QElapsedTimer, QPoint, QRect, Qt, QTimer
 from PyQt6.QtGui import QColor, QPainter, QPen, QPolygon
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
@@ -21,14 +21,14 @@ class MapCanvasWidget(QWidget):
     HARD_REFRESH_RATE_MS = 16
     ANIMATION_INTERVAL_MS = 100
 
-    def __init__(self, parent: QWidget | None, editor: "QtMapEditor") -> None:
+    def __init__(self, parent: QWidget | None, editor: QtMapEditor) -> None:
         super().__init__(parent)
         self.setMouseTracking(True)
 
         self._editor = editor
         self._mouse_down = False
         self._panning = False
-        self._pan_anchor: Optional[tuple[QPoint, int, int]] = None
+        self._pan_anchor: tuple[QPoint, int, int] | None = None
         self._is_rendering = False
         self._render_pending = False
         self._pending_zoom_step = 0
@@ -41,15 +41,15 @@ class MapCanvasWidget(QWidget):
 
         # Selection drag-to-move (legacy-like)
         self._selection_dragging = False
-        self._selection_drag_start: Optional[tuple[int, int, int]] = None
+        self._selection_drag_start: tuple[int, int, int] | None = None
 
         # Selection box apply mode (captured on press)
-        self._selection_box_mode: Optional[SelectionApplyMode] = None
+        self._selection_box_mode: SelectionApplyMode | None = None
         self._lasso_active = False
-        self._lasso_apply_mode: Optional[SelectionApplyMode] = None
+        self._lasso_apply_mode: SelectionApplyMode | None = None
 
         # Hover tracking for tooltips (synced into MapDrawer)
-        self._hover_tile: Optional[tuple[int, int, int]] = None
+        self._hover_tile: tuple[int, int, int] | None = None
         self._hover_stack: list[int] = []
 
     def sizeHint(self):  # noqa: N802 (Qt style)
@@ -57,7 +57,7 @@ class MapCanvasWidget(QWidget):
 
     # ---------- helpers ----------
 
-    def update(self, *args: object, **kwargs: object) -> None:  # noqa: N802 (Qt style)
+    def update(self, *args: object, **kwargs: object) -> None:
         self.request_render()
 
     def request_render(self) -> None:
@@ -122,7 +122,7 @@ class MapCanvasWidget(QWidget):
             out.extend(int(it.id) for it in t.items)
         return out
 
-    def _server_id_for_tile(self, x: int, y: int, z: int) -> Optional[int]:
+    def _server_id_for_tile(self, x: int, y: int, z: int) -> int | None:
         t = self._editor.map.get_tile(int(x), int(y), int(z))
         if t is None:
             return None
@@ -371,74 +371,73 @@ class MapCanvasWidget(QWidget):
                             )
                             if getattr(editor, "show_grid", True):
                                 p.setPen(grid_pen)
-        else:
-            if (
-                getattr(editor, "show_wall_hooks", False)
-                or getattr(editor, "show_pickupables", False)
-                or getattr(editor, "show_moveables", False)
-                or getattr(editor, "show_avoidables", False)
-            ):
-                editor.indicators.ensure_loaded()
-                props = editor.indicators.item_props
-                for y in range(y0, y1):
-                    py0 = (y - y0) * s
-                    for x in range(x0, x1):
-                        px0 = (x - x0) * s
-                        t = self._editor.map.get_tile(int(x), int(y), int(z))
-                        if t is None or (
-                            getattr(editor, "only_show_modified", False) and not bool(getattr(t, "modified", False))
-                        ):
-                            continue
-                        stack: list[int] = []
-                        if t.ground is not None:
-                            stack.append(int(t.ground.id))
-                        if t.items:
-                            stack.extend(int(it.id) for it in t.items)
-                        if not stack:
-                            continue
+        elif (
+            getattr(editor, "show_wall_hooks", False)
+            or getattr(editor, "show_pickupables", False)
+            or getattr(editor, "show_moveables", False)
+            or getattr(editor, "show_avoidables", False)
+        ):
+            editor.indicators.ensure_loaded()
+            props = editor.indicators.item_props
+            for y in range(y0, y1):
+                py0 = (y - y0) * s
+                for x in range(x0, x1):
+                    px0 = (x - x0) * s
+                    t = self._editor.map.get_tile(int(x), int(y), int(z))
+                    if t is None or (
+                        getattr(editor, "only_show_modified", False) and not bool(getattr(t, "modified", False))
+                    ):
+                        continue
+                    stack: list[int] = []
+                    if t.ground is not None:
+                        stack.append(int(t.ground.id))
+                    if t.items:
+                        stack.extend(int(it.id) for it in t.items)
+                    if not stack:
+                        continue
 
-                        any_hook = False
-                        any_pick = False
-                        any_move = False
-                        any_avoid = False
-                        for sid in stack:
-                            it = props.get(int(sid))
-                            if it is None:
-                                continue
-                            if editor.show_wall_hooks and it.hook:
-                                any_hook = True
-                            if editor.show_pickupables and it.pickupable:
-                                any_pick = True
-                            if editor.show_moveables and it.moveable:
-                                any_move = True
-                            if editor.show_avoidables and it.avoidable:
-                                any_avoid = True
+                    any_hook = False
+                    any_pick = False
+                    any_move = False
+                    any_avoid = False
+                    for sid in stack:
+                        it = props.get(int(sid))
+                        if it is None:
+                            continue
+                        if editor.show_wall_hooks and it.hook:
+                            any_hook = True
+                        if editor.show_pickupables and it.pickupable:
+                            any_pick = True
+                        if editor.show_moveables and it.moveable:
+                            any_move = True
+                        if editor.show_avoidables and it.avoidable:
+                            any_avoid = True
 
-                        icon_size = max(8, min(12, s // 2))
-                        cx = px0 + 2
-                        cy = py0 + 2
-                        if any_hook:
-                            pm = editor.indicators.icon("hooks", icon_size)
-                            if pm is not None:
-                                p.drawPixmap(cx, cy, pm)
-                                cx += icon_size + 1
-                        if any_pick:
-                            pm = editor.indicators.icon("pickupables", icon_size)
-                            if pm is not None:
-                                p.drawPixmap(cx, cy, pm)
-                                cx += icon_size + 1
-                        if any_move:
-                            pm = editor.indicators.icon("moveables", icon_size)
-                            if pm is not None:
-                                p.drawPixmap(cx, cy, pm)
-                                cx += icon_size + 1
-                        if any_avoid:
-                            p.setPen(QPen(QColor(255, 60, 60)))
-                            p.drawText(
-                                QRect(px0 + 2, py0 + 2, s - 4, s - 4),
-                                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom,
-                                "A",
-                            )
+                    icon_size = max(8, min(12, s // 2))
+                    cx = px0 + 2
+                    cy = py0 + 2
+                    if any_hook:
+                        pm = editor.indicators.icon("hooks", icon_size)
+                        if pm is not None:
+                            p.drawPixmap(cx, cy, pm)
+                            cx += icon_size + 1
+                    if any_pick:
+                        pm = editor.indicators.icon("pickupables", icon_size)
+                        if pm is not None:
+                            p.drawPixmap(cx, cy, pm)
+                            cx += icon_size + 1
+                    if any_move:
+                        pm = editor.indicators.icon("moveables", icon_size)
+                        if pm is not None:
+                            p.drawPixmap(cx, cy, pm)
+                            cx += icon_size + 1
+                    if any_avoid:
+                        p.setPen(QPen(QColor(255, 60, 60)))
+                        p.drawText(
+                            QRect(px0 + 2, py0 + 2, s - 4, s - 4),
+                            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom,
+                            "A",
+                        )
 
         # --- Selection overlay (legacy-inspired) ---
         sel_pen = QPen(QColor(230, 230, 230))
@@ -446,7 +445,7 @@ class MapCanvasWidget(QWidget):
         p.setPen(sel_pen)
 
         selected = editor.session.get_selection_tiles()
-        for (sx, sy, sz) in selected:
+        for sx, sy, sz in selected:
             if int(sz) != int(z):
                 continue
             if not (x0 <= int(sx) < x1 and y0 <= int(sy) < y1):
@@ -588,16 +587,15 @@ class MapCanvasWidget(QWidget):
                     self._selection_box_mode = SelectionApplyMode.REPLACE
                     editor.session.clear_selection()
                 editor.session.begin_box_selection(x=x, y=y, z=z)
-            else:
-                if ctrl:
+            elif ctrl:
+                editor.session.toggle_select_tile(x=x, y=y, z=z)
+            elif alt:
+                # Subtract single tile
+                selected = editor.session.get_selection_tiles()
+                if (int(x), int(y), int(z)) in selected:
                     editor.session.toggle_select_tile(x=x, y=y, z=z)
-                elif alt:
-                    # Subtract single tile
-                    selected = editor.session.get_selection_tiles()
-                    if (int(x), int(y), int(z)) in selected:
-                        editor.session.toggle_select_tile(x=x, y=y, z=z)
-                else:
-                    editor.session.set_single_selection(x=x, y=y, z=z)
+            else:
+                editor.session.set_single_selection(x=x, y=y, z=z)
             self.update()
             editor._update_action_enabled_states()
             return

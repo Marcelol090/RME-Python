@@ -2,6 +2,7 @@
 
 Provides easy integration with existing QtMapEditor.
 """
+
 from __future__ import annotations
 
 import logging
@@ -15,17 +16,17 @@ logger = logging.getLogger(__name__)
 
 def apply_modern_theme(app: QApplication) -> bool:
     """Apply modern dark theme to the entire application.
-    
+
     Args:
         app: QApplication instance
-        
+
     Returns:
         True if theme was applied successfully
-        
+
     Usage:
         from PyQt6.QtWidgets import QApplication
         from vis_layer.ui.theme.integration import apply_modern_theme
-        
+
         app = QApplication(sys.argv)
         apply_modern_theme(app)
     """
@@ -48,7 +49,7 @@ def apply_modern_theme(app: QApplication) -> bool:
 
 def setup_modern_fonts(app: QApplication) -> None:
     """Setup modern fonts (Inter, JetBrains Mono).
-    
+
     Loads web fonts if available, falls back to system fonts.
     """
     try:
@@ -67,7 +68,7 @@ def setup_modern_fonts(app: QApplication) -> None:
 
 def apply_theme_to_window(window: QMainWindow) -> None:
     """Apply additional window-specific theming.
-    
+
     Args:
         window: Main window to style
     """
@@ -90,7 +91,7 @@ def apply_theme_to_window(window: QMainWindow) -> None:
 
 class ThemeManager:
     """Singleton manager for theme switching.
-    
+
     Future support for light/dark/system theme switching.
     """
 
@@ -109,7 +110,7 @@ class ThemeManager:
 
     def set_theme(self, theme: str) -> None:
         """Set the current theme.
-        
+
         Args:
             theme: "dark", "light", or "system"
         """

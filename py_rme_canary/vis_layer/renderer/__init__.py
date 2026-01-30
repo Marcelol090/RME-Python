@@ -6,14 +6,15 @@ This package provides:
 - OpenGLCanvas: Hardware-accelerated rendering widget
 - MapDrawer: Coordinates rendering based on DrawingOptions
 """
+
 from .render_model import (
+    THEME_COLORS,
     Color,
     DrawCommand,
     DrawCommandType,
     LayerType,
     Rect,
     RenderFrame,
-    THEME_COLORS,
 )
 
 # Heavy Qt imports are optional to keep MapDrawer usable in headless/unit tests.
@@ -22,12 +23,13 @@ try:
         OpenGLCanvasWidget,
         is_opengl_available,
     )
-except Exception as exc:  # pragma: no cover - fallback for headless envs without PyQt6/OpenGL
+except Exception:  # pragma: no cover - fallback for headless envs without PyQt6/OpenGL
     try:
         from PyQt6.QtCore import QSize
         from PyQt6.QtGui import QColor, QPainter
         from PyQt6.QtWidgets import QWidget
-    except Exception as pyqt_exc:  # pragma: no cover
+    except Exception:  # pragma: no cover
+
         class OpenGLCanvasWidget:  # type: ignore[no-redef]
             def __init__(self, *args, **kwargs) -> None:
                 raise ImportError("PyQt6/OpenGL not available") from pyqt_exc
@@ -85,12 +87,15 @@ except Exception as exc:  # pragma: no cover - fallback for headless envs withou
         def is_opengl_available() -> bool:
             return False
 
+
 try:
     from .qpainter_backend import QPainterRenderBackend
 except Exception:  # pragma: no cover - fallback for headless envs without PyQt6
+
     class QPainterRenderBackend:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs) -> None:
             raise ImportError("PyQt6 is required for QPainterRenderBackend")
+
 
 from .map_drawer import (
     MapDrawer,

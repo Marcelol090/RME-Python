@@ -6,6 +6,7 @@ live editing clients/server.
 Layer: logic_layer (no PyQt6 imports)
 Reference: legacy live_action.cpp
 """
+
 from __future__ import annotations
 
 import logging

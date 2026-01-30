@@ -1,4 +1,5 @@
 """Tests for cross-version clipboard with ID translation."""
+
 from __future__ import annotations
 
 import pytest

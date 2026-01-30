@@ -3,6 +3,7 @@
 Build script for py_rme_canary.
 Creates a standalone executable using PyInstaller.
 """
+
 import os
 import shutil
 import subprocess
@@ -44,7 +45,6 @@ def run_pyinstaller():
         "--exclude-module=PySide6",
         "--exclude-module=PyQt5",
         "--exclude-module=PySide2",
-        
         # Hidden imports (often missed by auto-analysis)
         "--hidden-import=PyQt6",
         "--hidden-import=PyQt6.QtCore",

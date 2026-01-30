@@ -3,15 +3,16 @@ RenderModel: Qt-free, thread-safe structure for draw commands.
 This module defines the data structures that represent what to draw,
 without depending on any specific rendering backend (QPainter, OpenGL, etc.)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional
 
 
 class DrawCommandType(Enum):
     """Types of drawing operations."""
+
     FILL_RECT = auto()
     DRAW_RECT = auto()
     DRAW_SPRITE = auto()
@@ -21,6 +22,7 @@ class DrawCommandType(Enum):
 
 class LayerType(Enum):
     """Rendering layer order (bottom to top)."""
+
     GROUND = 0
     BORDERS = 1
     ITEMS = 2
@@ -33,18 +35,19 @@ class LayerType(Enum):
 @dataclass(frozen=True, slots=True)
 class Color:
     """RGBA color representation."""
+
     r: int
     g: int
     b: int
     a: int = 255
 
     @classmethod
-    def from_hex(cls, hex_str: str) -> "Color":
+    def from_hex(cls, hex_str: str) -> Color:
         """Create color from hex string like '#RRGGBB' or '#RRGGBBAA'."""
         hex_str = hex_str.lstrip("#")
         if len(hex_str) not in (6, 8):
             raise ValueError(f"Invalid hex color: {hex_str}")
-        
+
         try:
             if len(hex_str) == 6:
                 return cls(
@@ -66,6 +69,7 @@ class Color:
 @dataclass(frozen=True, slots=True)
 class Rect:
     """Rectangle with position and size."""
+
     x: int
     y: int
     width: int
@@ -75,12 +79,13 @@ class Rect:
 @dataclass(frozen=True, slots=True)
 class DrawCommand:
     """A single drawing operation."""
+
     command_type: DrawCommandType
     layer: LayerType
     rect: Rect
-    color: Optional[Color] = None
-    sprite_id: Optional[int] = None
-    text: Optional[str] = None
+    color: Color | None = None
+    sprite_id: int | None = None
+    text: str | None = None
     line_width: int = 1
     dashed: bool = False
 
@@ -92,6 +97,7 @@ class RenderFrame:
     Contains all draw commands for a single frame, organized by layer.
     Thread-safe: can be built in a worker thread and consumed by UI thread.
     """
+
     commands: list[DrawCommand] = field(default_factory=list)
     viewport_origin_x: int = 0
     viewport_origin_y: int = 0

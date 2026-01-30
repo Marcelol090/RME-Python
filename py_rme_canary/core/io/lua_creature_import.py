@@ -8,7 +8,8 @@ from typing import Literal, cast
 from xml.etree.ElementTree import Element
 
 from py_rme_canary.core.io.creatures_xml import default_monsters_path, default_npcs_path
-from py_rme_canary.core.io.xml.safe import SubElement, safe_etree as ET
+from py_rme_canary.core.io.xml.safe import SubElement
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 @dataclass(slots=True)

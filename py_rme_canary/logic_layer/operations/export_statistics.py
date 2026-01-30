@@ -5,6 +5,7 @@ Exports map statistics (already calculated by map_statistics.py) to:
 - CSV format
 - JSON format
 """
+
 from __future__ import annotations
 
 import csv

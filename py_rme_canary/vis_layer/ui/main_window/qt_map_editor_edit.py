@@ -9,30 +9,30 @@ if TYPE_CHECKING:
 
 
 class QtMapEditorEditMixin:
-    def _undo(self: "QtMapEditor") -> None:
+    def _undo(self: QtMapEditor) -> None:
         self.session.undo()
         self.canvas.update()
 
-    def _redo(self: "QtMapEditor") -> None:
+    def _redo(self: QtMapEditor) -> None:
         self.session.redo()
         self.canvas.update()
 
-    def _arm_fill(self: "QtMapEditor") -> None:
+    def _arm_fill(self: QtMapEditor) -> None:
         self.fill_armed = True
         self.status.showMessage("Fill armed: click a ground tile to flood-fill (64x64)")
 
-    def _cancel_current(self: "QtMapEditor") -> None:
+    def _cancel_current(self: QtMapEditor) -> None:
         # Legacy-ish: Esc cancels armed tools and in-progress interactions.
         self.paste_armed = False
         self.fill_armed = False
         self.session.cancel_box_selection()
         self.session.cancel_gesture()
         # Defensive: Some canvas implementations may not have cancel_interaction
-        if hasattr(self.canvas, 'cancel_interaction'):
+        if hasattr(self.canvas, "cancel_interaction"):
             self.canvas.cancel_interaction()
         self.status.showMessage("Canceled")
 
-    def _copy_selection(self: "QtMapEditor") -> None:
+    def _copy_selection(self: QtMapEditor) -> None:
         if not self.session.copy_selection(client_version=str(self.client_version)):
             self.status.showMessage("Copy: nothing selected")
             self._update_action_enabled_states()
@@ -40,7 +40,7 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Copied selection")
         self._update_action_enabled_states()
 
-    def _cut_selection(self: "QtMapEditor") -> None:
+    def _cut_selection(self: QtMapEditor) -> None:
         action = self.session.cut_selection(client_version=str(self.client_version))
         if action is None:
             self.status.showMessage("Cut: nothing selected")
@@ -50,7 +50,7 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Cut selection")
         self._update_action_enabled_states()
 
-    def _delete_selection(self: "QtMapEditor") -> None:
+    def _delete_selection(self: QtMapEditor) -> None:
         action = self.session.delete_selection(borderize=bool(self.automagic_cb.isChecked()))
         if action is None:
             self.status.showMessage("Delete: nothing selected")
@@ -60,7 +60,7 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Deleted selection")
         self._update_action_enabled_states()
 
-    def _arm_paste(self: "QtMapEditor") -> None:
+    def _arm_paste(self: QtMapEditor) -> None:
         # Try importing from system clipboard first (handling any version conversion)
         self.session.import_from_system_clipboard(target_version=str(self.client_version))
 
@@ -72,7 +72,7 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Paste armed: click to paste")
         self._update_action_enabled_states()
 
-    def _duplicate_selection(self: "QtMapEditor", _checked: bool = False) -> None:
+    def _duplicate_selection(self: QtMapEditor, _checked: bool = False) -> None:
         # Legacy behavior: duplicate arms placement (copy selection -> paste click).
         if not self.session.copy_selection():
             self.status.showMessage("Duplicate: nothing selected")
@@ -82,7 +82,7 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Duplicate armed: click to place")
         self._update_action_enabled_states()
 
-    def _escape_pressed(self: "QtMapEditor", _checked: bool = False) -> None:
+    def _escape_pressed(self: QtMapEditor, _checked: bool = False) -> None:
         # Legacy-ish: Esc clears selection first; otherwise cancels armed tools.
         if self.session.has_selection():
             self.session.clear_selection()
@@ -93,7 +93,7 @@ class QtMapEditorEditMixin:
         self._cancel_current()
         self._update_action_enabled_states()
 
-    def _move_selection_z(self: "QtMapEditor", direction: int) -> None:
+    def _move_selection_z(self: QtMapEditor, direction: int) -> None:
         # EditorSession uses dst = src - move_z.
         # Up (towards z-1) => move_z = +1
         # Down (towards z+1) => move_z = -1
@@ -111,7 +111,7 @@ class QtMapEditorEditMixin:
             self.status.showMessage("Moved selection")
         self._update_action_enabled_states()
 
-    def _copy_position_to_clipboard(self: "QtMapEditor", _checked: bool = False) -> None:
+    def _copy_position_to_clipboard(self: QtMapEditor, _checked: bool = False) -> None:
         x, y = self._last_hover_tile
         z = int(self.viewport.z)
         try:

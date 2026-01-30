@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
 
-
 if TYPE_CHECKING:
     from .editor import QtMapEditor
 
 
 class QtMapEditorSessionMixin:
-    def _as_editor(self) -> "QtMapEditor":
+    def _as_editor(self) -> QtMapEditor:
         return cast("QtMapEditor", self)
 
     def __getattr__(self, name: str) -> Any:  # pragma: no cover
@@ -80,7 +79,6 @@ class QtMapEditorSessionMixin:
             except Exception:
                 pass
 
-
     def _borderize_selection(self, _checked: bool = False) -> None:
         if not self.session.has_selection():
             self.status.showMessage("Borderize selection: nothing selected")
@@ -118,8 +116,9 @@ class QtMapEditorSessionMixin:
 
     def _toggle_dark_mode(self, enabled: bool) -> None:
         """Toggle dark mode theme."""
-        from py_rme_canary.logic_layer.theme_manager import ThemeMode, get_theme_manager
         from PyQt6.QtWidgets import QApplication
+
+        from py_rme_canary.logic_layer.theme_manager import ThemeMode, get_theme_manager
 
         manager = get_theme_manager()
         manager.set_theme(ThemeMode.DARK if enabled else ThemeMode.LIGHT)
@@ -143,7 +142,6 @@ class QtMapEditorSessionMixin:
 
         dialog = UIDReportDialog(parent=self._as_editor(), session=self.session)
         dialog.show()  # Non-modal for navigation while dialog is open
-
 
     def _clear_modified_state(self) -> None:
         ret = QMessageBox.question(
@@ -569,7 +567,9 @@ class QtMapEditorSessionMixin:
             return
 
         gh_default = "Yes" if (before is not None and bool(before.guildhall)) else "No"
-        gh, ok = QInputDialog.getItem(self._as_editor(), "Add/Edit House", "Guildhall:", ["No", "Yes"], 1 if gh_default == "Yes" else 0, False)
+        gh, ok = QInputDialog.getItem(
+            self._as_editor(), "Add/Edit House", "Guildhall:", ["No", "Yes"], 1 if gh_default == "Yes" else 0, False
+        )
         if not ok:
             return
         guildhall = str(gh).strip().lower() == "yes"
@@ -785,7 +785,9 @@ class QtMapEditorSessionMixin:
         if not name:
             return
 
-        spawntime, ok = QInputDialog.getInt(self._as_editor(), "Add Monster", "Spawn time (seconds, 0=default):", 0, 0, 65535, 1)
+        spawntime, ok = QInputDialog.getInt(
+            self._as_editor(), "Add Monster", "Spawn time (seconds, 0=default):", 0, 0, 65535, 1
+        )
         if not ok:
             return
 
@@ -868,7 +870,9 @@ class QtMapEditorSessionMixin:
         if not name:
             return
 
-        spawntime, ok = QInputDialog.getInt(self._as_editor(), "Add NPC", "Spawn time (seconds, 0=default):", 0, 0, 65535, 1)
+        spawntime, ok = QInputDialog.getInt(
+            self._as_editor(), "Add NPC", "Spawn time (seconds, 0=default):", 0, 0, 65535, 1
+        )
         if not ok:
             return
 

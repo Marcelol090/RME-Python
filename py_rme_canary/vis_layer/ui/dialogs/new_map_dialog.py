@@ -4,27 +4,26 @@ New Map Dialog for creating maps with template presets.
 Provides UI for selecting Tibia version templates and configuring
 new map properties (size, metadata).
 """
+
 from PyQt6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
     QSpinBox,
     QTextEdit,
-    QPushButton,
-    QGroupBox,
-    QLabel,
-    QDialogButtonBox,
+    QVBoxLayout,
 )
-from PyQt6.QtCore import Qt
 
 from py_rme_canary.logic_layer.templates import (
     ALL_TEMPLATES,
     COMMON_MAP_SIZES,
-    MapTemplate,
     MapSize,
+    MapTemplate,
 )
 
 
@@ -123,9 +122,7 @@ class NewMapDialog(QDialog):
         layout.addWidget(metadata_group)
 
         # Dialog buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)

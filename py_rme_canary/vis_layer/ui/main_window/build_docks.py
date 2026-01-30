@@ -11,14 +11,15 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
-def build_docks(editor: "QtMapEditor") -> None:
+def build_docks(editor: QtMapEditor) -> None:
     # Modern Palette Dock
     from py_rme_canary.vis_layer.ui.docks.modern_palette_dock import ModernPaletteDock
+
     editor.dock_palette = ModernPaletteDock(editor, editor)
     editor.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, editor.dock_palette)
-    
+
     # Backwards compatibility attributes (for tests/legacy logic)
-    editor.dock_brushes = editor.dock_palette # Mapping to new dock
+    editor.dock_brushes = editor.dock_palette  # Mapping to new dock
     # editor.brush_filter and editor.brush_list are not directly exposed on ModernPaletteDock
     # We might need to mock them if tests fail, but for now we follow the Modern UX plan.
 
@@ -53,9 +54,7 @@ def build_docks(editor: "QtMapEditor") -> None:
     editor.dock_live_log.set_input_enabled(False)
     editor.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, editor.dock_live_log)
     editor.dock_live_log.hide()
-    editor.dock_live_log.visibilityChanged.connect(
-        lambda v: editor._sync_dock_action(editor.act_window_live_log, v)
-    )
+    editor.dock_live_log.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_window_live_log, v))
     editor.act_window_live_log.setChecked(False)
 
     # Sprite preview dock

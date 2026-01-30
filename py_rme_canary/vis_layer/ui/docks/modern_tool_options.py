@@ -3,6 +3,7 @@
 Provides controls for brush size, shape, and variability.
 Reference: GAP_ANALYSIS_LEGACY_UI.md
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -10,12 +11,10 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup,
-    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSlider,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -51,7 +50,7 @@ class ModernToolOptionsWidget(QWidget):
         self.size_container = QWidget()
         size_layout = QVBoxLayout(self.size_container)
         size_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         size_header = QHBoxLayout()
         size_header.addWidget(QLabel("Size"))
         self.size_val_label = QLabel("1")
@@ -67,34 +66,34 @@ class ModernToolOptionsWidget(QWidget):
         self.size_slider.setTickInterval(2)
         self.size_slider.valueChanged.connect(self._on_size_changed)
         size_layout.addWidget(self.size_slider)
-        
+
         layout.addWidget(self.size_container)
 
         # 2. Brush Shape
         self.shape_container = QWidget()
         shape_layout = QVBoxLayout(self.shape_container)
         shape_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         shape_layout.addWidget(QLabel("Shape"))
-        
+
         btn_layout = QHBoxLayout()
         self.shape_group = QButtonGroup(self)
-        
+
         self.btn_square = QPushButton("Square")
         self.btn_square.setCheckable(True)
         self.btn_square.setChecked(True)
         self.btn_square.setObjectName("shapeBtn")
         self.shape_group.addButton(self.btn_square)
         btn_layout.addWidget(self.btn_square)
-        
+
         self.btn_circle = QPushButton("Circle")
         self.btn_circle.setCheckable(True)
         self.btn_circle.setObjectName("shapeBtn")
         self.shape_group.addButton(self.btn_circle)
         btn_layout.addWidget(self.btn_circle)
-        
+
         shape_layout.addLayout(btn_layout)
-        
+
         self.shape_group.buttonClicked.connect(self._on_shape_changed)
         layout.addWidget(self.shape_container)
 
@@ -102,7 +101,7 @@ class ModernToolOptionsWidget(QWidget):
         self.var_container = QWidget()
         var_layout = QVBoxLayout(self.var_container)
         var_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         var_header = QHBoxLayout()
         var_header.addWidget(QLabel("Variation (Thickness)"))
         self.var_val_label = QLabel("100%")
@@ -110,13 +109,13 @@ class ModernToolOptionsWidget(QWidget):
         var_header.addWidget(self.var_val_label)
         var_header.addStretch()
         var_layout.addLayout(var_header)
-        
+
         self.var_slider = QSlider(Qt.Orientation.Horizontal)
         self.var_slider.setRange(1, 100)
         self.var_slider.setValue(100)
         self.var_slider.valueChanged.connect(self._on_variation_changed)
         var_layout.addWidget(self.var_slider)
-        
+
         layout.addWidget(self.var_container)
 
         layout.addStretch()
@@ -154,7 +153,7 @@ class ModernToolOptionsWidget(QWidget):
     def set_brush_type(self, brush_type: str) -> None:
         """Update visibility based on brush type."""
         self._current_brush_type = brush_type.lower()
-        
+
         mapping = {
             "terrain": (True, True, False),
             "doodad": (True, True, True),
@@ -163,9 +162,9 @@ class ModernToolOptionsWidget(QWidget):
             "spawn": (True, True, False),  # Radius
             "raw": (False, False, False),
         }
-        
+
         show_size, show_shape, show_var = mapping.get(self._current_brush_type, (True, True, False))
-        
+
         self.size_container.setVisible(show_size)
         self.shape_container.setVisible(show_shape)
         self.var_container.setVisible(show_var)

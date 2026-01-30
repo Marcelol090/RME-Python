@@ -1,4 +1,5 @@
 """Asset loading and management."""
+
 from __future__ import annotations
 
 from py_rme_canary.core.assets.creatures_loader import (

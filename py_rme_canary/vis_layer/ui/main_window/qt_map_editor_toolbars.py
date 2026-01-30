@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-
 from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtGui import QAction, QIcon
@@ -46,7 +45,9 @@ class QtMapEditorToolbarsMixin:
         editor.brush_id_entry = QSpinBox(editor)
         editor.brush_id_entry.setRange(0, 1000000)
         editor.brush_id_entry.setValue(4405)
-        editor.brush_id_entry.valueChanged.connect(lambda _v: editor._set_selected_brush_id(editor.brush_id_entry.value()))
+        editor.brush_id_entry.valueChanged.connect(
+            lambda _v: editor._set_selected_brush_id(editor.brush_id_entry.value())
+        )
         editor.tb_brushes.addWidget(editor.brush_id_entry)
         editor.brush_label = QLabel("", editor)
         editor.tb_brushes.addWidget(editor.brush_label)
@@ -120,7 +121,9 @@ class QtMapEditorToolbarsMixin:
         editor.variation_spin = QSpinBox(editor)
         editor.variation_spin.setRange(0, 100)
         editor.variation_spin.setValue(int(getattr(editor, "brush_variation", 0) or 0))
-        editor.variation_spin.valueChanged.connect(lambda _v: editor._set_brush_variation(editor.variation_spin.value()))
+        editor.variation_spin.valueChanged.connect(
+            lambda _v: editor._set_brush_variation(editor.variation_spin.value())
+        )
         editor.tb_sizes.addWidget(editor.variation_spin)
 
         editor.tb_sizes.addSeparator()
@@ -134,7 +137,9 @@ class QtMapEditorToolbarsMixin:
         editor.thickness_spin = QSpinBox(editor)
         editor.thickness_spin.setRange(1, 10)
         editor.thickness_spin.setValue(int(getattr(editor, "doodad_thickness_level", 5) or 5))
-        editor.thickness_spin.valueChanged.connect(lambda _v: editor._set_doodad_thickness_level(editor.thickness_spin.value()))
+        editor.thickness_spin.valueChanged.connect(
+            lambda _v: editor._set_doodad_thickness_level(editor.thickness_spin.value())
+        )
         editor.tb_sizes.addWidget(editor.thickness_spin)
 
         editor.tb_position = QToolBar("Position", editor)
@@ -188,13 +193,17 @@ class QtMapEditorToolbarsMixin:
         pickup_path = os.path.join("icons", "toolbar_pickupables.png")
         move_path = os.path.join("icons", "toolbar_moveables.png")
 
-        editor.act_tb_hooks = QAction(QIcon(hooks_path) if os.path.exists(hooks_path) else QIcon(), "Wall Hooks", editor)
+        editor.act_tb_hooks = QAction(
+            QIcon(hooks_path) if os.path.exists(hooks_path) else QIcon(), "Wall Hooks", editor
+        )
         editor.act_tb_hooks.setCheckable(True)
         editor.act_tb_pickupables = QAction(
             QIcon(pickup_path) if os.path.exists(pickup_path) else QIcon(), "Pickupables", editor
         )
         editor.act_tb_pickupables.setCheckable(True)
-        editor.act_tb_moveables = QAction(QIcon(move_path) if os.path.exists(move_path) else QIcon(), "Moveables", editor)
+        editor.act_tb_moveables = QAction(
+            QIcon(move_path) if os.path.exists(move_path) else QIcon(), "Moveables", editor
+        )
         editor.act_tb_moveables.setCheckable(True)
         editor.act_tb_avoidables = QAction("Avoidables", editor)
         editor.act_tb_avoidables.setCheckable(True)

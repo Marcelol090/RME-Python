@@ -1,4 +1,5 @@
 """Tests for creature import functionality."""
+
 from __future__ import annotations
 
 from pathlib import Path

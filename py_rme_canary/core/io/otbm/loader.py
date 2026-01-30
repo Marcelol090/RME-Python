@@ -51,7 +51,6 @@ from .streaming import (
 )
 from .tile_parser import TileParser
 
-
 logger = logging.getLogger(__name__)
 
 

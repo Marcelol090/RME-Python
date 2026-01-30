@@ -1,6 +1,7 @@
 from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QApplication
 
+
 def apply_dark_theme(app: QApplication):
     """
     Applies a dark theme to the QApplication using the Fusion style and a custom palette.
@@ -44,7 +45,7 @@ def apply_dark_theme(app: QApplication):
 
     # Links
     dark_palette.setColor(QPalette.ColorRole.Link, color_link)
-    dark_palette.setColor(QPalette.ColorRole.LinkVisited, color_highlight) # Use highlight for visited
+    dark_palette.setColor(QPalette.ColorRole.LinkVisited, color_highlight)  # Use highlight for visited
 
     # Disabled
     dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, color_disabled_text)

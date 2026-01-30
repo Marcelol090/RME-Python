@@ -3,6 +3,7 @@
 Replaces legacy list-based palette with card-based modern design.
 Reference: palette_legacy_analysis.md / modern_ux_plan.md
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -28,8 +29,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme
-
 if TYPE_CHECKING:
     pass
 
@@ -47,7 +46,7 @@ class BrushCardData:
 
 class AnimatedBrushCard(QFrame):
     """Single brush card with hover animations and selection state.
-    
+
     Features:
     - Smooth hover lift effect (simulated via shadow)
     - Glow border on selection
@@ -57,11 +56,7 @@ class AnimatedBrushCard(QFrame):
 
     clicked = pyqtSignal(int)  # Emits brush_id
 
-    def __init__(
-        self,
-        data: BrushCardData,
-        parent: QWidget | None = None
-    ) -> None:
+    def __init__(self, data: BrushCardData, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.data = data
         self._selected = False
@@ -119,7 +114,7 @@ class AnimatedBrushCard(QFrame):
         """Truncate name for display."""
         if len(name) <= max_len:
             return name
-        return name[:max_len-2] + "…"
+        return name[: max_len - 2] + "…"
 
     def _setup_animations(self) -> None:
         """Setup hover and selection animations."""
@@ -196,14 +191,14 @@ class AnimatedBrushCard(QFrame):
 
     def mousePressEvent(self, event: object) -> None:
         """Handle click."""
-        if hasattr(event, 'button') and event.button() == Qt.MouseButton.LeftButton:
+        if hasattr(event, "button") and event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.data.brush_id)
         super().mousePressEvent(event)
 
 
 class ModernPaletteWidget(QWidget):
     """Modern card-based palette widget.
-    
+
     Features:
     - Grid of animated brush cards
     - Live search filtering
@@ -276,7 +271,7 @@ class ModernPaletteWidget(QWidget):
 
     def set_brushes(self, brushes: list[BrushCardData]) -> None:
         """Set the list of brushes to display.
-        
+
         Args:
             brushes: List of BrushCardData objects
         """
@@ -299,9 +294,9 @@ class ModernPaletteWidget(QWidget):
         # Filter brushes
         filter_lower = filter_text.lower()
         filtered = [
-            b for b in self._all_brushes
-            if not filter_text or filter_lower in b.name.lower() or
-               filter_lower in str(b.brush_id)
+            b
+            for b in self._all_brushes
+            if not filter_text or filter_lower in b.name.lower() or filter_lower in str(b.brush_id)
         ]
 
         # Create cards in grid (4 columns)
@@ -336,7 +331,7 @@ class ModernPaletteWidget(QWidget):
 
     def select_brush(self, brush_id: int) -> None:
         """Programmatically select a brush.
-        
+
         Args:
             brush_id: ID of brush to select
         """
@@ -351,13 +346,7 @@ class SectionHeader(QWidget):
 
     toggled = pyqtSignal(bool)  # Emits expanded state
 
-    def __init__(
-        self,
-        title: str,
-        count: int = 0,
-        expanded: bool = True,
-        parent: QWidget | None = None
-    ) -> None:
+    def __init__(self, title: str, count: int = 0, expanded: bool = True, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._expanded = expanded
 

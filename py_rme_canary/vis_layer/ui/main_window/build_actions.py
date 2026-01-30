@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QAction, QActionGroup, QIcon, QKeySequence
 
+from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
+from py_rme_canary.vis_layer.ui.main_window import find_item, live_connect
 from py_rme_canary.vis_layer.ui.main_window.menubar.assets import tools as assets_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.edit import tools as edit_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.file import tools as file_tools
+from py_rme_canary.vis_layer.ui.main_window.menubar.map import tools as map_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.mirror import tools as mirror_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.mode import tools as mode_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.view import tools as view_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.window import tools as window_tools
-from py_rme_canary.vis_layer.ui.main_window.menubar.map import tools as map_tools
-from py_rme_canary.vis_layer.ui.main_window import live_connect, find_item
-from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -24,7 +24,7 @@ def _icon_if_exists(path: str) -> QIcon:
     return QIcon(path) if os.path.exists(path) else QIcon()
 
 
-def build_actions(editor: "QtMapEditor") -> None:
+def build_actions(editor: QtMapEditor) -> None:
     """Create QActions and connect signals.
 
     This mutates `editor` by setting attributes like `act_open`, etc.
@@ -122,7 +122,9 @@ def build_actions(editor: "QtMapEditor") -> None:
     editor.act_duplicate_selection.setShortcut(QKeySequence("Ctrl+D"))
     editor.act_duplicate_selection.triggered.connect(lambda _c=False: edit_tools.duplicate_selection(editor))
 
-    editor.act_clear_selection = QAction(_icon_if_exists(os.path.join("icons", "mini_unselect.png")), "Clear Selection", editor)
+    editor.act_clear_selection = QAction(
+        _icon_if_exists(os.path.join("icons", "mini_unselect.png")), "Clear Selection", editor
+    )
     editor.act_clear_selection.setShortcut(QKeySequence("Esc"))
     editor.act_clear_selection.triggered.connect(lambda _c=False: edit_tools.escape_pressed(editor))
 
@@ -157,8 +159,6 @@ def build_actions(editor: "QtMapEditor") -> None:
     editor.act_symmetry_horizontal.setShortcut(QKeySequence("Ctrl+Shift+H"))
     editor.act_symmetry_horizontal.toggled.connect(lambda v: edit_tools.toggle_symmetry_horizontal(editor, v))
 
-
-
     editor.act_fill = QAction(_icon_if_exists(os.path.join("icons", "mini_fill.png")), "Fill", editor)
     editor.act_fill.setShortcut(QKeySequence("Ctrl+Shift+D"))
     editor.act_fill.triggered.connect(lambda _c=False: edit_tools.arm_fill(editor))
@@ -177,7 +177,9 @@ def build_actions(editor: "QtMapEditor") -> None:
     editor.act_merge_paste.triggered.connect(lambda _c=False: edit_tools.apply_ui_state_to_session(editor))
     editor.act_borderize_paste.triggered.connect(lambda _c=False: edit_tools.apply_ui_state_to_session(editor))
 
-    editor.act_selection_mode = QAction(_icon_if_exists(os.path.join("icons", "mini_select.png")), "Selection Mode", editor)
+    editor.act_selection_mode = QAction(
+        _icon_if_exists(os.path.join("icons", "mini_select.png")), "Selection Mode", editor
+    )
     editor.act_selection_mode.setCheckable(True)
     editor.act_selection_mode.triggered.connect(lambda _c=False: mode_tools.toggle_selection_mode(editor))
 
@@ -274,7 +276,9 @@ def build_actions(editor: "QtMapEditor") -> None:
     editor.act_ghost_higher_floors = QAction("Ghost higher floors", editor)
     editor.act_ghost_higher_floors.setCheckable(True)
     editor.act_ghost_higher_floors.setShortcut(QKeySequence("Ctrl+L"))
-    editor.act_ghost_higher_floors.toggled.connect(lambda v: window_tools.set_view_flag(editor, "ghost_higher_floors", v))
+    editor.act_ghost_higher_floors.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "ghost_higher_floors", v)
+    )
 
     editor.act_show_client_box = QAction("Show client box", editor)
     editor.act_show_client_box.setCheckable(True)
@@ -299,7 +303,9 @@ def build_actions(editor: "QtMapEditor") -> None:
     editor.act_show_monsters_spawns = QAction("Show monsters spawns", editor)
     editor.act_show_monsters_spawns.setCheckable(True)
     editor.act_show_monsters_spawns.setShortcut(QKeySequence("S"))
-    editor.act_show_monsters_spawns.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_monsters_spawns", v))
+    editor.act_show_monsters_spawns.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "show_monsters_spawns", v)
+    )
 
     editor.act_show_npcs = QAction("Show npcs", editor)
     editor.act_show_npcs.setCheckable(True)
@@ -359,7 +365,9 @@ def build_actions(editor: "QtMapEditor") -> None:
     )
 
     editor.act_clear_invalid_tiles_map = QAction("Clear Invalid Tiles (Map)", editor)
-    editor.act_clear_invalid_tiles_map.triggered.connect(lambda _c=False: editor._clear_invalid_tiles(selection_only=False))
+    editor.act_clear_invalid_tiles_map.triggered.connect(
+        lambda _c=False: editor._clear_invalid_tiles(selection_only=False)
+    )
 
     editor.act_randomize_selection = QAction("Randomize (Selection)", editor)
     editor.act_randomize_selection.triggered.connect(lambda _c=False: editor._randomize(selection_only=True))
@@ -369,7 +377,9 @@ def build_actions(editor: "QtMapEditor") -> None:
 
     # Map Tools (New Legacy Parity)
     editor.act_remove_monsters_selection = QAction("Remove Monsters", editor)
-    editor.act_remove_monsters_selection.triggered.connect(lambda _c=False: map_tools.remove_monsters(editor, selection_only=True))
+    editor.act_remove_monsters_selection.triggered.connect(
+        lambda _c=False: map_tools.remove_monsters(editor, selection_only=True)
+    )
 
     editor.act_convert_map_format = QAction("Convert Map Format...", editor)
     editor.act_convert_map_format.triggered.connect(lambda _c=False: editor._convert_map_format())

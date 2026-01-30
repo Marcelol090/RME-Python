@@ -4,6 +4,7 @@ Draws symmetry axis lines on the map canvas with draggable handles.
 
 Layer: vis_layer (uses PyQt6)
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

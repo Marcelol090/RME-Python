@@ -1,4 +1,5 @@
 """Tests for drag shadow overlay."""
+
 from __future__ import annotations
 
 import pytest

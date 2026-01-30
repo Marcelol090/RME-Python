@@ -6,6 +6,7 @@ Enhanced version of properties_panel.py with:
 - Apply/Revert buttons
 - Modern styling
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
 @dataclass(slots=True)
 class PropertyChange:
     """Represents a pending property change."""
+
     field_name: str
     old_value: Any
     new_value: Any
@@ -47,7 +49,7 @@ class PropertyChange:
 
 class ModernPropertiesPanel(QDockWidget):
     """Modern properties panel with tabs and editable fields.
-    
+
     Signals:
         changes_applied: Emitted when user applies changes
         changes_reverted: Emitted when user reverts changes
@@ -152,7 +154,9 @@ class ModernPropertiesPanel(QDockWidget):
         flags_layout.addWidget(self.flag_pz, 0, 0)
 
         self.flag_no_logout = QCheckBox("No Logout")
-        self.flag_no_logout.stateChanged.connect(lambda: self._mark_changed("flag_no_logout", self.flag_no_logout.isChecked()))
+        self.flag_no_logout.stateChanged.connect(
+            lambda: self._mark_changed("flag_no_logout", self.flag_no_logout.isChecked())
+        )
         flags_layout.addWidget(self.flag_no_logout, 0, 1)
 
         self.flag_no_pvp = QCheckBox("No PvP")
@@ -160,7 +164,9 @@ class ModernPropertiesPanel(QDockWidget):
         flags_layout.addWidget(self.flag_no_pvp, 1, 0)
 
         self.flag_pvp_zone = QCheckBox("PvP Zone")
-        self.flag_pvp_zone.stateChanged.connect(lambda: self._mark_changed("flag_pvp_zone", self.flag_pvp_zone.isChecked()))
+        self.flag_pvp_zone.stateChanged.connect(
+            lambda: self._mark_changed("flag_pvp_zone", self.flag_pvp_zone.isChecked())
+        )
         flags_layout.addWidget(self.flag_pvp_zone, 1, 1)
 
         layout.addRow(flags_group)
@@ -184,8 +190,6 @@ class ModernPropertiesPanel(QDockWidget):
         self.item_preview.setFixedSize(32, 32)
         self.item_preview.setStyleSheet("background: #2A2A3E; border-radius: 4px;")
         layout.addRow("Preview:", self.item_preview)
-
-
 
         # Client ID (read-only)
         self.item_client_id = QLabel("—")
@@ -272,7 +276,9 @@ class ModernPropertiesPanel(QDockWidget):
 
         # Guildhall
         self.house_guildhall = QCheckBox("Is Guildhall")
-        self.house_guildhall.stateChanged.connect(lambda: self._mark_changed("guildhall", self.house_guildhall.isChecked()))
+        self.house_guildhall.stateChanged.connect(
+            lambda: self._mark_changed("guildhall", self.house_guildhall.isChecked())
+        )
         layout.addRow("", self.house_guildhall)
 
         # Entry position (read-only)
@@ -407,11 +413,13 @@ class ModernPropertiesPanel(QDockWidget):
         self.btn_revert.setEnabled(True)
 
         # Track change
-        self._pending_changes.append(PropertyChange(
-            field_name=field,
-            old_value=None,  # Would need to track original
-            new_value=value
-        ))
+        self._pending_changes.append(
+            PropertyChange(
+                field_name=field,
+                old_value=None,  # Would need to track original
+                new_value=value,
+            )
+        )
 
     def _on_apply(self) -> None:
         """Apply pending changes."""
@@ -422,27 +430,25 @@ class ModernPropertiesPanel(QDockWidget):
         parent = self.parent()
         session = getattr(parent, "session", None)
         if hasattr(parent, "parent"):  # In case docked
-             if session is None:
-                 session = getattr(parent.parent(), "session", None)
+            if session is None:
+                session = getattr(parent.parent(), "session", None)
 
         if session is None:
             return
 
         # Collate changes
         changes = {c.field_name: c.new_value for c in self._pending_changes}
-        
+
         context_type = "tile"
         if self._current_item:
             context_type = "item"
         elif self._current_house:
             context_type = "house"
-        elif self.spawn_type.text() != "—": # Spawn
+        elif self.spawn_type.text() != "—":  # Spawn
             context_type = "spawn"
 
         session.apply_property_changes(
-            context_type=context_type,
-            context_details=self._current_details,
-            changes=changes
+            context_type=context_type, context_details=self._current_details, changes=changes
         )
 
         self._pending_changes.clear()
@@ -504,7 +510,7 @@ class ModernPropertiesPanel(QDockWidget):
         self._current_item = item
         self._current_tile = None
         self._current_house = None
-        
+
         if position:
             self._current_details = {"x": position[0], "y": position[1], "z": position[2], "stack_pos": stack_pos}
         else:
@@ -524,19 +530,19 @@ class ModernPropertiesPanel(QDockWidget):
         self.item_count.blockSignals(False)
 
         self.item_action_id.blockSignals(True)
-        self.item_action_id.setValue(getattr(item, 'action_id', 0) or 0)
+        self.item_action_id.setValue(getattr(item, "action_id", 0) or 0)
         self.item_action_id.blockSignals(False)
 
         self.item_unique_id.blockSignals(True)
-        self.item_unique_id.setValue(getattr(item, 'unique_id', 0) or 0)
+        self.item_unique_id.setValue(getattr(item, "unique_id", 0) or 0)
         self.item_unique_id.blockSignals(False)
 
         self.item_text.blockSignals(True)
-        self.item_text.setText(getattr(item, 'text', '') or '')
+        self.item_text.setText(getattr(item, "text", "") or "")
         self.item_text.blockSignals(False)
 
         # Destination
-        dest = getattr(item, 'destination', None)
+        dest = getattr(item, "destination", None)
         if dest:
             self.item_dest_x.setValue(int(dest.x))
             self.item_dest_y.setValue(int(dest.y))
@@ -545,15 +551,16 @@ class ModernPropertiesPanel(QDockWidget):
             self.item_dest_x.setValue(0)
             self.item_dest_y.setValue(0)
             self.item_dest_z.setValue(0)
-        
+
         # Update Preview
         try:
             from py_rme_canary.logic_layer.asset_manager import AssetManager
+
             pm = AssetManager.instance().get_sprite(int(item.id))
             if pm:
-                self.item_preview.setPixmap(pm.scaled(32, 32, aspectRatioMode=1)) # Keep aspect
+                self.item_preview.setPixmap(pm.scaled(32, 32, aspectRatioMode=1))  # Keep aspect
             else:
-                 self.item_preview.clear()
+                self.item_preview.clear()
         except Exception:
             self.item_preview.clear()
 
@@ -587,7 +594,7 @@ class ModernPropertiesPanel(QDockWidget):
         self.house_rent.blockSignals(False)
 
         self.house_guildhall.blockSignals(True)
-        self.house_guildhall.setChecked(getattr(house, 'guildhall', False))
+        self.house_guildhall.setChecked(getattr(house, "guildhall", False))
         self.house_guildhall.blockSignals(False)
 
         # Entry position
@@ -624,7 +631,7 @@ class ModernPropertiesPanel(QDockWidget):
         self.spawn_radius.blockSignals(False)
 
         # Count
-        creatures = getattr(area, 'monsters', []) or getattr(area, 'npcs', []) or []
+        creatures = getattr(area, "monsters", []) or getattr(area, "npcs", []) or []
         self.spawn_count.setText(str(len(creatures)))
 
         self.btn_apply.setEnabled(False)

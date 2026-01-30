@@ -110,5 +110,3 @@ def check_uid(editor) -> None:
 def toggle_lasso(editor, enabled: bool) -> None:
     """Toggle lasso selection tool."""
     editor._toggle_lasso(bool(enabled))
-
-

@@ -20,7 +20,6 @@ from .otbm import (
     ESCAPE_CHAR,
     MAGIC_OTBM,
     MAGIC_WILDCARD,
-    MapVersionID,
     NODE_END,
     NODE_START,
     OTBM_ATTR_ACTION_ID,
@@ -50,6 +49,7 @@ from .otbm import (
     OTBM_TILE_ZONE,
     OTBM_WAYPOINT,
     OTBM_WAYPOINTS,
+    MapVersionID,
 )
 from .otmm import (
     MAGIC_OTMM,

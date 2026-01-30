@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
-def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
+def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     mb = editor.menuBar()
 
     m_file = mb.addMenu("File")
@@ -18,7 +18,11 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     m_file.addAction(editor.act_save_as)
     m_file.addSeparator()
 
-    if hasattr(editor, "act_import_monsters_npcs") or hasattr(editor, "act_import_monster_folder") or hasattr(editor, "act_import_map"):
+    if (
+        hasattr(editor, "act_import_monsters_npcs")
+        or hasattr(editor, "act_import_monster_folder")
+        or hasattr(editor, "act_import_map")
+    ):
         m_import = m_file.addMenu("Import")
         if hasattr(editor, "act_import_map"):
             m_import.addAction(editor.act_import_map)
@@ -92,7 +96,6 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
         m_symmetry.addAction(editor.act_symmetry_vertical)
         m_symmetry.addAction(editor.act_symmetry_horizontal)
 
-
     # Tools Menu (Top Level)
     if hasattr(editor, "menu_tools"):
         mb.addMenu(editor.menu_tools)
@@ -143,7 +146,7 @@ def build_menus_and_toolbars(editor: "QtMapEditor") -> None:
     if hasattr(editor, "act_map_properties"):
         m_map.addAction(editor.act_map_properties)
         m_map.addSeparator()
-        
+
     if hasattr(editor, "act_remove_monsters_selection"):
         m_map.addAction(editor.act_remove_monsters_selection)
     if hasattr(editor, "act_convert_map_format"):

@@ -4,7 +4,6 @@ from threading import Lock
 
 from PyQt6.QtCore import QSettings
 
-
 _DEFAULT_ORG = "py_rme_canary"
 _DEFAULT_APP = "py_rme_canary"
 

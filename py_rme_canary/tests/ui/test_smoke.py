@@ -1,13 +1,7 @@
-import os
-from unittest.mock import patch
-
 import pytest
 
 pytest.importorskip("PyQt6.QtWidgets")
-from PyQt6.QtWidgets import QDialog, QFileDialog
 
-# ruff: noqa: SIM117
-from py_rme_canary.logic_layer.brush_definitions import BrushManager
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
@@ -16,11 +10,13 @@ def editor(qapp, qtbot):
     """Fixture to initialize the Main Window."""
     # Use real BrushManager (integration test style) to avoid mock-related crashes
     # in the PyQt6 test environment.
-    from PyQt6.QtWidgets import QApplication
     import threading
+
+    from PyQt6.QtWidgets import QApplication
+
     print(f"DEBUG: QApp instance: {QApplication.instance()}")
     print(f"DEBUG: Thread: {threading.current_thread().name}")
-    
+
     window = QtMapEditor()
     qtbot.addWidget(window)
     window.show()
@@ -47,7 +43,7 @@ def test_smoke_workflow(editor, qtbot, monkeypatch, tmp_path):
 
     print("Smoke Test Complete")
     pass
-    '''
+    """
     # ---------------------------------------------------------
     # 1. Open Map
     # ---------------------------------------------------------
@@ -190,4 +186,4 @@ def test_smoke_workflow(editor, qtbot, monkeypatch, tmp_path):
         return_value=QDialog.DialogCode.Rejected,
     ):
         editor.act_find_item.trigger()
-    '''
+    """

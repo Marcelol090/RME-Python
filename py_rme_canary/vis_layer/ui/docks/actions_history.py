@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QDockWidget, QListWidget
 
@@ -9,8 +7,8 @@ from PyQt6.QtWidgets import QDockWidget, QListWidget
 class ActionsHistoryDock:
     def __init__(self, editor) -> None:
         self._editor = editor
-        self.dock: Optional[QDockWidget] = None
-        self.list: Optional[QListWidget] = None
+        self.dock: QDockWidget | None = None
+        self.list: QListWidget | None = None
 
     def build(self, *, title: str = "Actions History") -> QDockWidget:
         dock = QDockWidget(title, self._editor)

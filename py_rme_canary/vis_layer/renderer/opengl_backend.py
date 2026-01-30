@@ -3,8 +3,9 @@ from __future__ import annotations
 import ctypes
 import logging
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 from .map_drawer import RenderBackend
 
@@ -35,7 +36,7 @@ class _SpriteTextureCache:
     def __init__(self, gl: Any, *, max_entries: int = 10_000) -> None:
         self._gl = gl
         self._max_entries = int(max_entries)
-        self._entries: "OrderedDict[int, int]" = OrderedDict()
+        self._entries: OrderedDict[int, int] = OrderedDict()
 
     def clear(self) -> None:
         if not self._entries:
@@ -47,7 +48,7 @@ class _SpriteTextureCache:
             pass
         self._entries.clear()
 
-    def get_or_create(self, sprite_id: int, create_fn: Callable[[], Optional[int]]) -> Optional[int]:
+    def get_or_create(self, sprite_id: int, create_fn: Callable[[], int | None]) -> int | None:
         sid = int(sprite_id)
         tex = self._entries.get(sid)
         if tex is not None:
@@ -201,7 +202,7 @@ class _OpenGLBatcher:
         self.color_vertices: list[float] = []
         self.line_vertices: list[float] = []
         self.sprite_runs: list[_SpriteRun] = []
-        self._current_texture: Optional[int] = None
+        self._current_texture: int | None = None
 
     def add_color_rect(self, x: int, y: int, w: int, h: int, color: tuple[int, int, int, int]) -> None:
         r, g, b, a = color
@@ -307,7 +308,7 @@ class OpenGLRenderBackend(RenderBackend):
 
         client_id, w, h, bgra = sprite
 
-        def _create_texture() -> Optional[int]:
+        def _create_texture() -> int | None:
             try:
                 tex = self._gl.glGenTextures(1)
                 self._gl.glBindTexture(self._gl.GL_TEXTURE_2D, tex)

@@ -3,6 +3,7 @@
 Visual feedback when dragging tile selections.
 Shows a semi-transparent preview of where selection will be moved.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -143,8 +144,7 @@ class DragShadowOverlay(QWidget):
 
         # Draw target positions (blue preview)
         target_positions = [
-            (x + self._drag_offset_x, y + self._drag_offset_y, z)
-            for x, y, z in self._original_positions
+            (x + self._drag_offset_x, y + self._drag_offset_y, z) for x, y, z in self._original_positions
         ]
 
         painter.setBrush(QBrush(self._target_fill))

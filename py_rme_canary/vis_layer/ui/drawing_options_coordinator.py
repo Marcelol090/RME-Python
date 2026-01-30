@@ -7,6 +7,7 @@ editor state. It provides methods to:
 - Connect menu action signals to DrawingOptions
 - Trigger canvas repaints when options change
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -27,7 +28,7 @@ class DrawingOptionsCoordinator:
     3. Menu action wiring (Qt actions <-> DrawingOptions setters)
     """
 
-    def __init__(self, editor: "QtMapEditor", options: "DrawingOptions") -> None:
+    def __init__(self, editor: QtMapEditor, options: DrawingOptions) -> None:
         """Initialize the coordinator.
 
         Parameters
@@ -44,7 +45,7 @@ class DrawingOptionsCoordinator:
         self._options._on_change = self._on_options_changed
 
     @property
-    def options(self) -> "DrawingOptions":
+    def options(self) -> DrawingOptions:
         """Return the DrawingOptions instance."""
         return self._options
 
@@ -235,8 +236,8 @@ class DrawingOptionsCoordinator:
 
 
 def create_coordinator(
-    editor: "QtMapEditor",
-    options: "DrawingOptions | None" = None,
+    editor: QtMapEditor,
+    options: DrawingOptions | None = None,
 ) -> DrawingOptionsCoordinator:
     """Create a DrawingOptionsCoordinator for the given editor.
 

@@ -4,11 +4,11 @@ Displays duplicate UID warnings with navigation to conflicts.
 
 Layer: vis_layer (uses PyQt6)
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -51,9 +51,7 @@ class UIDReportDialog(QDialog):
         # Results table
         self._table = QTableWidget()
         self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(
-            ["UID", "Count", "Item IDs", "Positions"]
-        )
+        self._table.setHorizontalHeaderLabels(["UID", "Count", "Item IDs", "Positions"])
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -106,8 +104,7 @@ class UIDReportDialog(QDialog):
 
         if result.has_duplicates:
             self._status_label.setText(
-                f"⚠️ Found {result.duplicate_count} duplicate UID(s) "
-                f"({result.total_items_scanned} items scanned)"
+                f"⚠️ Found {result.duplicate_count} duplicate UID(s) ({result.total_items_scanned} items scanned)"
             )
             self._status_label.setStyleSheet("color: #e57373; font-weight: bold;")
 
@@ -123,16 +120,12 @@ class UIDReportDialog(QDialog):
                     item_ids += f" (+{len(conflict.item_ids) - 3})"
                 self._table.setItem(row, 2, QTableWidgetItem(item_ids))
 
-                pos_str = ", ".join(
-                    f"({x},{y},{z})" for x, y, z in conflict.positions[:2]
-                )
+                pos_str = ", ".join(f"({x},{y},{z})" for x, y, z in conflict.positions[:2])
                 if len(conflict.positions) > 2:
                     pos_str += f" (+{len(conflict.positions) - 2})"
                 self._table.setItem(row, 3, QTableWidgetItem(pos_str))
         else:
-            self._status_label.setText(
-                f"✓ No duplicate UIDs found ({result.total_items_scanned} items scanned)"
-            )
+            self._status_label.setText(f"✓ No duplicate UIDs found ({result.total_items_scanned} items scanned)")
             self._status_label.setStyleSheet("color: #81c784; font-weight: bold;")
 
     def _on_goto(self) -> None:

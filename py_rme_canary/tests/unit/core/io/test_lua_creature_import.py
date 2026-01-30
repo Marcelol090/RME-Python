@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from xml.etree.ElementTree import SubElement
 
 from py_rme_canary.core.io.lua_creature_import import (
     import_lua_creatures_from_folder,
     parse_lua_creatures_text,
 )
-from py_rme_canary.core.io.xml.safe import Element, safe_etree as ET
-from xml.etree.ElementTree import SubElement
+from py_rme_canary.core.io.xml.safe import Element
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
 def test_parse_monster_outfit() -> None:

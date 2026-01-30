@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
+    QInputDialog,
     QLabel,
     QLineEdit,
-    QDialogButtonBox,
     QMessageBox,
-    QInputDialog,
+    QVBoxLayout,
 )
 
 if TYPE_CHECKING:
@@ -95,7 +95,7 @@ class HostDialog(QDialog):
         )
 
 
-def open_connect_dialog(editor: "QtMapEditor") -> None:
+def open_connect_dialog(editor: QtMapEditor) -> None:
     dlg = ConnectDialog(editor)
     if dlg.exec():
         name, host, port, password = dlg.get_values()
@@ -110,14 +110,15 @@ def open_connect_dialog(editor: "QtMapEditor") -> None:
         except Exception as e:
             QMessageBox.critical(editor, "Error", str(e))
 
-def disconnect_live(editor: "QtMapEditor") -> None:
+
+def disconnect_live(editor: QtMapEditor) -> None:
     editor.session.disconnect_live()
     QMessageBox.information(editor, "Disconnected", "Disconnected from Live Server")
     if hasattr(editor, "dock_live_log"):
         editor.dock_live_log.set_input_enabled(False)
 
 
-def open_host_dialog(editor: "QtMapEditor") -> None:
+def open_host_dialog(editor: QtMapEditor) -> None:
     dlg = HostDialog(editor)
     if dlg.exec():
         name, host, port, password = dlg.get_values()
@@ -131,12 +132,12 @@ def open_host_dialog(editor: "QtMapEditor") -> None:
             QMessageBox.critical(editor, "Error", str(e))
 
 
-def stop_host(editor: "QtMapEditor") -> None:
+def stop_host(editor: QtMapEditor) -> None:
     editor.session.stop_live_server()
     QMessageBox.information(editor, "Live Server", "Live server stopped")
 
 
-def kick_client(editor: "QtMapEditor") -> None:
+def kick_client(editor: QtMapEditor) -> None:
     client_id, ok = QInputDialog.getInt(editor, "Kick Client", "Client ID:", 1, 1, 2**31 - 1, 1)
     if not ok:
         return
@@ -147,7 +148,7 @@ def kick_client(editor: "QtMapEditor") -> None:
         QMessageBox.information(editor, "Kick Client", "Client not found or server not running")
 
 
-def ban_client(editor: "QtMapEditor") -> None:
+def ban_client(editor: QtMapEditor) -> None:
     client_id, ok = QInputDialog.getInt(editor, "Ban Client", "Client ID:", 1, 1, 2**31 - 1, 1)
     if not ok:
         return

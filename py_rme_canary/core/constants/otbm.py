@@ -7,20 +7,23 @@ Reference: source/iomap_otbm.h
 
 from enum import IntEnum
 
+
 # OTBM Version Identifiers
 # These determine whether item IDs in the map file are ServerID (0-4) or ClientID (5+)
 class MapVersionID(IntEnum):
     """OTBM map format version identifiers.
-    
+
     Versions 0-4 store ServerID (traditional format).
     Versions 5-6 store ClientID (Canary format).
     """
+
     MAP_OTBM_1 = 0  # 7.4 - Traditional (ServerID)
     MAP_OTBM_2 = 1  # 8.0 - Traditional (ServerID)
     MAP_OTBM_3 = 2  # 8.4+ - Traditional (ServerID)
     MAP_OTBM_4 = 3  # 8.7+ - Traditional (ServerID)
     MAP_OTBM_5 = 4  # ClientID format
     MAP_OTBM_6 = 5  # ClientID format extended
+
 
 # Node stream delimiters
 NODE_START = 0xFE

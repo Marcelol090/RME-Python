@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
-from py_rme_canary.core.io.xml.safe import safe_etree as ET
-from typing import Optional
 
 from PyQt6.QtGui import QPixmap
+
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 from .helpers import ItemProps
 
@@ -79,7 +79,7 @@ class IndicatorService:
 
         self._item_props = props
 
-    def icon(self, key: str, size: int) -> Optional[QPixmap]:
+    def icon(self, key: str, size: int) -> QPixmap | None:
         key = (key or "").strip().lower()
         size = int(max(6, min(64, int(size))))
 

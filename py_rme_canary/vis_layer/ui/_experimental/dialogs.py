@@ -10,19 +10,21 @@ Original purpose - Implements replacement for:
 - source/about_window.cpp
 - source/properties_window.cpp (generic)
 """
-from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout,
-    QTextEdit, QTabWidget, QWidget, QDialogButtonBox
-)
-from PySide6.QtCore import Qt, __version__ as qt_version
-from PySide6 import __version__ as pyside_version
-import sys
+
 import platform
+import sys
+
+from PySide6 import __version__ as pyside_version
+from PySide6.QtCore import Qt
+from PySide6.QtCore import __version__ as qt_version
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QTabWidget, QTextEdit, QVBoxLayout, QWidget
+
 
 class AboutDialog(QDialog):
     """
     Standard About Dialog showing versioning and credits.
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("About Canary Map Editor")
@@ -84,10 +86,12 @@ class AboutDialog(QDialog):
         btn_box.rejected.connect(self.accept)
         layout.addWidget(btn_box)
 
+
 class PropertyDialog(QDialog):
     """
     Generic property editor dialog.
     """
+
     def __init__(self, title: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)

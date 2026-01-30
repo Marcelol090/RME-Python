@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import queue
 import threading
-from typing import Optional
 
 from py_rme_canary.core.assets.appearances_dat import AppearanceIndex
 from py_rme_canary.core.database.items_xml import ItemsXML

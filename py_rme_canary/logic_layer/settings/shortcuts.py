@@ -7,6 +7,7 @@ Supports:
 - Position hotkeys for camera/viewport positions
 - Immutable configuration with builder pattern
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace

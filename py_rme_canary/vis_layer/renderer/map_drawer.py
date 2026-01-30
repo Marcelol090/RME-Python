@@ -10,11 +10,12 @@ Architecture Notes:
 - Actual pixel output is delegated to a backend (QPainter, OpenGL, etc.)
 - The canvas widget creates a MapDrawer and calls draw() on paint events
 """
+
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from py_rme_canary.logic_layer.drawing_options import DrawingOptions
 from py_rme_canary.logic_layer.settings.light_settings import LightMode
@@ -67,6 +68,7 @@ class RenderBackend(Protocol):
 @dataclass(slots=True)
 class Viewport:
     """Viewport state for rendering."""
+
     origin_x: int = 0
     origin_y: int = 0
     z: int = 7
@@ -98,7 +100,7 @@ class MapDrawer:
     """
 
     options: DrawingOptions
-    game_map: Optional["GameMap"] = None
+    game_map: GameMap | None = None
     viewport: Viewport = field(default_factory=Viewport)
 
     # Internal state (mirrors C++ MapDrawer members)
@@ -497,7 +499,7 @@ class MapDrawer:
                             200,
                         )
 
-    def _tile_light_strength(self, tile: "Tile" | None) -> int:
+    def _tile_light_strength(self, tile: Tile | None) -> int:
         """Estimate a normalized light strength for a given tile."""
 
         if tile is None:
@@ -534,10 +536,7 @@ class MapDrawer:
         """Blend two colors, useful for glows."""
 
         ratio = max(0.0, min(1.0, ratio))
-        return tuple(
-            int(max(0, min(255, base[i] * (1.0 - ratio) + accent[i] * ratio)))
-            for i in range(3)
-        )
+        return tuple(int(max(0, min(255, base[i] * (1.0 - ratio) + accent[i] * ratio))) for i in range(3))
 
     def _draw_ingame_box(self, backend: RenderBackend) -> None:
         """Draw the client viewport indicator box.
@@ -652,7 +651,7 @@ class MapDrawer:
 
 
 # Factory function for default drawer
-def create_map_drawer(game_map: Optional["GameMap"] = None) -> MapDrawer:
+def create_map_drawer(game_map: GameMap | None = None) -> MapDrawer:
     """Create a MapDrawer with default DrawingOptions."""
     options = DrawingOptions()
     return MapDrawer(options=options, game_map=game_map)

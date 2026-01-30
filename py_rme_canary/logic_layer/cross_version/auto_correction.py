@@ -5,6 +5,7 @@ are mapped to incorrect IDs (e.g., after version migrations or corrupted maps).
 
 Uses FNV-1a sprite hash matching to identify the correct ID.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

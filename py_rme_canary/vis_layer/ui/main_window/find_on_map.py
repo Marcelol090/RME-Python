@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
-def open_find_waypoint(editor: "QtMapEditor") -> None:
+def open_find_waypoint(editor: QtMapEditor) -> None:
     dlg = WaypointQueryDialog(editor)
     if dlg.exec() != dlg.DialogCode.Accepted:
         return

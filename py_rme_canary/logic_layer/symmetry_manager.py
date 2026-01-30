@@ -5,6 +5,7 @@ are automatically mirrored across vertical/horizontal axes.
 
 Layer: logic_layer (no PyQt6 imports)
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable

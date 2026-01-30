@@ -2,11 +2,11 @@
 
 Shows all available keyboard shortcuts in a searchable dialog.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
@@ -24,28 +24,23 @@ if TYPE_CHECKING:
 
 class ShortcutCategory(QFrame):
     """Category of shortcuts."""
-    
-    def __init__(
-        self,
-        title: str,
-        shortcuts: list[tuple[str, str]],
-        parent: QWidget | None = None
-    ) -> None:
+
+    def __init__(self, title: str, shortcuts: list[tuple[str, str]], parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        
+
         self._title = title
         self._shortcuts = shortcuts
         self._rows: list[QWidget] = []
-        
+
         self._setup_ui()
         self._apply_style()
-        
+
     def _setup_ui(self) -> None:
         """Initialize UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
-        
+
         # Title
         title = QLabel(self._title)
         title.setStyleSheet("""
@@ -55,13 +50,13 @@ class ShortcutCategory(QFrame):
             padding-bottom: 4px;
         """)
         layout.addWidget(title)
-        
+
         # Shortcuts
         for key, description in self._shortcuts:
             row = QFrame()
             row_layout = QHBoxLayout(row)
             row_layout.setContentsMargins(8, 4, 8, 4)
-            
+
             # Key
             key_label = QLabel(key)
             key_label.setStyleSheet("""
@@ -74,16 +69,16 @@ class ShortcutCategory(QFrame):
             """)
             key_label.setFixedWidth(120)
             row_layout.addWidget(key_label)
-            
+
             # Description
             desc_label = QLabel(description)
             desc_label.setStyleSheet("color: #A1A1AA;")
             row_layout.addWidget(desc_label)
             row_layout.addStretch()
-            
+
             layout.addWidget(row)
             self._rows.append(row)
-            
+
     def _apply_style(self) -> None:
         """Apply styling."""
         self.setStyleSheet("""
@@ -93,25 +88,25 @@ class ShortcutCategory(QFrame):
                 border-radius: 8px;
             }
         """)
-        
+
     def filter_shortcuts(self, query: str) -> bool:
         """Filter shortcuts by query. Returns True if any visible."""
         query = query.lower()
         visible_count = 0
-        
+
         for i, (key, desc) in enumerate(self._shortcuts):
             visible = not query or query in key.lower() or query in desc.lower()
             self._rows[i].setVisible(visible)
             if visible:
                 visible_count += 1
-                
+
         self.setVisible(visible_count > 0 or not query)
         return visible_count > 0
 
 
 class KeyboardShortcutsDialog(QDialog):
     """Dialog showing all keyboard shortcuts."""
-    
+
     SHORTCUTS = {
         "📁 File": [
             ("Ctrl+N", "New map"),
@@ -159,57 +154,57 @@ class KeyboardShortcutsDialog(QDialog):
             ("Middle Click", "Pan view"),
         ],
     }
-    
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        
+
         self._categories: list[ShortcutCategory] = []
-        
+
         self.setWindowTitle("Keyboard Shortcuts")
         self.setMinimumSize(500, 600)
         self.setModal(True)
-        
+
         self._setup_ui()
         self._apply_style()
-        
+
     def _setup_ui(self) -> None:
         """Initialize UI."""
         layout = QVBoxLayout(self)
         layout.setSpacing(12)
         layout.setContentsMargins(20, 20, 20, 20)
-        
+
         # Header
         header = QLabel("⌨️ Keyboard Shortcuts")
         header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
         layout.addWidget(header)
-        
+
         # Search
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("🔍 Search shortcuts...")
         self.search_input.textChanged.connect(self._on_search)
         layout.addWidget(self.search_input)
-        
+
         # Scroll area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
-        
+
         content = QWidget()
         content_layout = QVBoxLayout(content)
         content_layout.setSpacing(12)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         # Categories
         for title, shortcuts in self.SHORTCUTS.items():
             category = ShortcutCategory(title, shortcuts)
             content_layout.addWidget(category)
             self._categories.append(category)
-            
+
         content_layout.addStretch()
-        
+
         scroll.setWidget(content)
         layout.addWidget(scroll)
-        
+
     def _apply_style(self) -> None:
         """Apply styling."""
         self.setStyleSheet("""
@@ -245,7 +240,7 @@ class KeyboardShortcutsDialog(QDialog):
                 background: #8B5CF6;
             }
         """)
-        
+
     def _on_search(self, query: str) -> None:
         """Filter shortcuts by search query."""
         for category in self._categories:

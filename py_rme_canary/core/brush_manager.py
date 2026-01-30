@@ -5,17 +5,17 @@ Automatically detects Tibia version (ServerID vs ClientID) and loads appropriate
 
 import json
 import os
-import re
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field, asdict
-from enum import Enum
 import xml.etree.ElementTree as ET
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any
 
 
 class BrushType(Enum):
     """All supported brush types based on RME architecture"""
+
     GROUND = "ground"
     WALL = "wall"
     CARPET = "carpet"
@@ -34,6 +34,7 @@ class BrushType(Enum):
 
 class TibiaVersion(Enum):
     """Tibia version timeline with format detection"""
+
     V740 = ("740", "traditional", True, 0)
     V800 = ("800", "traditional", True, 0)
     V840 = ("840", "traditional", True, 1)
@@ -60,9 +61,10 @@ class TibiaVersion(Enum):
 @dataclass
 class BrushItem:
     """Individual item in a brush (with chance for randomization)"""
+
     item_id: int
     chance: int = 100
-    
+
     def to_dict(self):
         return asdict(self)
 
@@ -70,9 +72,10 @@ class BrushItem:
 @dataclass
 class BrushBorder:
     """Border configuration for a brush"""
+
     position: str  # "CENTER", "NORTH", "EAST", "SOUTH", "WEST", etc.
     item_id: int
-    
+
     def to_dict(self):
         return asdict(self)
 
@@ -80,20 +83,21 @@ class BrushBorder:
 @dataclass
 class BrushDefinition:
     """Complete brush definition with version-aware IDs"""
+
     name: str
     brush_type: BrushType
-    items: List[BrushItem] = field(default_factory=list)
-    borders: Dict[str, int] = field(default_factory=dict)
-    
+    items: list[BrushItem] = field(default_factory=list)
+    borders: dict[str, int] = field(default_factory=dict)
+
     # Version-specific IDs
-    server_id: Optional[int] = None  # Traditional format (OTBM 0-4)
-    client_id: Optional[int] = None  # Canary format (OTBM 5+)
-    
+    server_id: int | None = None  # Traditional format (OTBM 0-4)
+    client_id: int | None = None  # Canary format (OTBM 5+)
+
     # Additional metadata
     draggable: bool = False
     on_blocking: bool = False
-    thickness: Optional[str] = None
-    
+    thickness: str | None = None
+
     def to_dict(self):
         """Convert to JSON-serializable dict"""
         return {
@@ -105,10 +109,10 @@ class BrushDefinition:
             "client_id": self.client_id,
             "draggable": self.draggable,
             "on_blocking": self.on_blocking,
-            "thickness": self.thickness
+            "thickness": self.thickness,
         }
-    
-    def get_id_for_version(self, tibia_version: TibiaVersion) -> Optional[int]:
+
+    def get_id_for_version(self, tibia_version: TibiaVersion) -> int | None:
         """Get appropriate ID for given Tibia version"""
         if tibia_version.uses_server_id:
             return self.server_id
@@ -118,19 +122,19 @@ class BrushDefinition:
 
 class BrushXMLParser:
     """Parse RME brush XML definitions"""
-    
+
     def __init__(self, rme_brushs_path: str):
         self.brushs_path = Path(rme_brushs_path)
-        self.brushes: List[BrushDefinition] = []
-    
-    def parse_all(self) -> List[BrushDefinition]:
+        self.brushes: list[BrushDefinition] = []
+
+    def parse_all(self) -> list[BrushDefinition]:
         """Parse all brush XML files from RME directory"""
         all_brushes = []
-        
+
         if not self.brushs_path.exists():
             print(f"Warning: Brushs path not found: {self.brushs_path}")
             return all_brushes
-        
+
         # Map XML file names to brush types
         file_to_type = {
             "grounds.xml": BrushType.GROUND,
@@ -151,7 +155,7 @@ class BrushXMLParser:
             "natural_products.xml": BrushType.DOODAD,
             "tiny_borders.xml": BrushType.BORDER,
         }
-        
+
         for xml_file, brush_type in file_to_type.items():
             xml_path = self.brushs_path / xml_file
             if xml_path.exists():
@@ -161,81 +165,81 @@ class BrushXMLParser:
                     print(f"  [OK] Loaded {len(brushes)} brushes from {xml_file}")
                 except Exception as e:
                     print(f"  [ERR] Error parsing {xml_file}: {e}")
-        
+
         self.brushes = all_brushes
         return all_brushes
-    
-    def _parse_xml_file(self, xml_path: Path, brush_type: BrushType) -> List[BrushDefinition]:
+
+    def _parse_xml_file(self, xml_path: Path, brush_type: BrushType) -> list[BrushDefinition]:
         """Parse a single brush XML file"""
         brushes = []
-        
+
         try:
             # Try to parse with error handling for malformed XML
             tree = ET.parse(xml_path)
             root = tree.getroot()
-        except ET.ParseError as e:
+        except ET.ParseError:
             # Handle malformed XML by reading and trying to fix
             return brushes
-        
-        for brush_elem in root.findall('brush'):
+
+        for brush_elem in root.findall("brush"):
             try:
                 brush = self._parse_brush_element(brush_elem, brush_type)
                 if brush:
                     brushes.append(brush)
             except Exception as e:
                 print(f"    Warning: Could not parse brush element: {e}")
-        
+
         return brushes
-    
-    def _parse_brush_element(self, elem: ET.Element, brush_type: BrushType) -> Optional[BrushDefinition]:
+
+    def _parse_brush_element(self, elem: ET.Element, brush_type: BrushType) -> BrushDefinition | None:
         """Parse a single brush XML element"""
-        name = elem.get('name')
+        name = elem.get("name")
         if not name:
             return None
-        
+
         # Parse IDs - prefer lookid (ClientID) but also accept server_lookid (ServerID)
         client_id = None
         server_id = None
-        
-        if elem.get('lookid'):
+
+        if elem.get("lookid"):
             try:
-                client_id = int(elem.get('lookid'))
+                client_id = int(elem.get("lookid"))
             except:
                 pass
-        
-        if elem.get('server_lookid'):
+
+        if elem.get("server_lookid"):
             try:
-                server_id = int(elem.get('server_lookid'))
+                server_id = int(elem.get("server_lookid"))
             except:
                 pass
-        
+
         # If only one ID is present, use it for both (version compatibility)
         if client_id and not server_id:
             server_id = client_id
         elif server_id and not client_id:
             client_id = server_id
-        
+
         # Parse items
         items = []
-        for item_elem in elem.findall('item'):
+        for item_elem in elem.findall("item"):
             try:
-                item_id = int(item_elem.get('id', '0'))
-                chance = int(item_elem.get('chance', '100'))
+                item_id = int(item_elem.get("id", "0"))
+                chance = int(item_elem.get("chance", "100"))
                 items.append(BrushItem(item_id=item_id, chance=chance))
             except:
                 pass
-        
+
         # Parse borders (if any)
         borders = {}
-        for border_elem in elem.findall('border'):
+        for border_elem in elem.findall("border"):
             try:
-                pos = border_elem.get('name', '').upper()
-                bid = int(border_elem.get('id', '0'))
+                pos = border_elem.get("name", "").upper()
+                bid = int(border_elem.get("id", "0"))
                 if pos and bid > 0:
                     borders[pos] = bid
             except:
                 pass
-        
+
         # Create brush definition
         brush = BrushDefinition(
             name=name,
@@ -244,31 +248,31 @@ class BrushXMLParser:
             borders=borders,
             server_id=server_id,
             client_id=client_id,
-            draggable=elem.get('draggable', 'false').lower() == 'true',
-            on_blocking=elem.get('on_blocking', 'false').lower() == 'true',
-            thickness=elem.get('thickness')
+            draggable=elem.get("draggable", "false").lower() == "true",
+            on_blocking=elem.get("on_blocking", "false").lower() == "true",
+            thickness=elem.get("thickness"),
         )
-        
+
         return brush
 
 
 class BrushJsonGenerator:
     """Generate intelligent, version-aware brush.json from RME sources"""
-    
+
     def __init__(self, rme_brushs_path: str, output_path: str = None):
         self.rme_brushs_path = rme_brushs_path
         self.output_path = output_path
         self.parser = BrushXMLParser(rme_brushs_path)
-    
-    def generate(self) -> Dict[str, Any]:
+
+    def generate(self) -> dict[str, Any]:
         """Generate complete brush.json"""
         print("Generating intelligent brush.json...")
-        
+
         # Parse all brushes from RME XMLs
         print("Step 1: Parsing RME brush XMLs...")
         brushes = self.parser.parse_all()
         print(f"  Total brushes loaded: {len(brushes)}\n")
-        
+
         # Build metadata
         metadata = {
             "version": "3.0",
@@ -278,9 +282,9 @@ class BrushJsonGenerator:
             "auto_detect": True,
             "generated_at": datetime.now().isoformat(),
             "total_brushes": len(brushes),
-            "rme_source": self.rme_brushs_path
+            "rme_source": self.rme_brushs_path,
         }
-        
+
         # Build version mappings
         version_mappings = {}
         for tibia_version in TibiaVersion:
@@ -288,24 +292,20 @@ class BrushJsonGenerator:
                 "format": tibia_version.format_type,
                 "uses_server_id": tibia_version.uses_server_id,
                 "otbm_version": tibia_version.otbm_version,
-                "timeline": self._get_timeline_for_version(tibia_version)
+                "timeline": self._get_timeline_for_version(tibia_version),
             }
-        
+
         # Build brush list
         brush_list = []
         for brush in brushes:
             brush_dict = brush.to_dict()
             brush_list.append(brush_dict)
-        
+
         # Compile final JSON
-        result = {
-            "metadata": metadata,
-            "version_mappings": version_mappings,
-            "brushes": brush_list
-        }
-        
+        result = {"metadata": metadata, "version_mappings": version_mappings, "brushes": brush_list}
+
         return result
-    
+
     def _get_timeline_for_version(self, version: TibiaVersion) -> str:
         """Get timeline description for version"""
         timelines = {
@@ -323,59 +323,57 @@ class BrushJsonGenerator:
             "1271": "2007 - OTB 3.65 (Canary Era)",
             "1310": "2007 - OTB 3.65 (Canary)",
             "1320": "2007 - OTB 3.65 (Canary)",
-            "1330": "2008 - OTB 3.65 (Canary)"
+            "1330": "2008 - OTB 3.65 (Canary)",
         }
         return timelines.get(version.version_str, "Unknown")
-    
+
     def save(self, output_path: str = None) -> str:
         """Save generated brush.json to file"""
         path = output_path or self.output_path
         if not path:
             raise ValueError("Output path must be specified")
-        
+
         json_data = self.generate()
-        
+
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
-        
+
         print(f"\n[SAVED] Brush.json saved to: {path}")
         print(f"  File size: {os.path.getsize(path)} bytes")
-        
+
         return path
 
 
 def create_intelligent_brushes(
-    rme_path: str = None,
-    output_path: str = None,
-    save_to_file: bool = True
-) -> Dict[str, Any]:
+    rme_path: str = None, output_path: str = None, save_to_file: bool = True
+) -> dict[str, Any]:
     """
     Main entry point: Create intelligent brush system
-    
+
     Args:
         rme_path: Path to RME brushs directory
         output_path: Output path for brush.json
         save_to_file: Whether to save to file
-    
+
     Returns:
         Generated brush dictionary
     """
     # Use defaults if not provided
     if not rme_path:
         rme_path = "Remeres-map-editor-linux-4.0.0/data/materials/brushs"
-    
+
     if not output_path:
         output_path = "py_rme_canary/data/brushes.json"
-    
+
     # Generate
     generator = BrushJsonGenerator(rme_path, output_path)
     result = generator.generate()
-    
+
     # Save if requested
     if save_to_file:
         generator.save(output_path)
-    
+
     return result
 
 

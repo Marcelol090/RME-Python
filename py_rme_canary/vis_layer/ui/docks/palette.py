@@ -5,18 +5,19 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QDockWidget, QLineEdit, QListWidget, QListWidgetItem, QTabWidget, QVBoxLayout, QWidget
 
+from py_rme_canary.core.io.creatures_xml import load_monster_names, load_npc_names
 from py_rme_canary.logic_layer.brush_definitions import (
+    VIRTUAL_DOODAD_BASE,
     VIRTUAL_DOOR_TOOL_HATCH,
     VIRTUAL_DOOR_TOOL_LOCKED,
     VIRTUAL_DOOR_TOOL_MAGIC,
     VIRTUAL_DOOR_TOOL_NORMAL,
     VIRTUAL_DOOR_TOOL_QUEST,
     VIRTUAL_DOOR_TOOL_WINDOW,
-    VIRTUAL_DOODAD_BASE,
     VIRTUAL_HOUSE_BASE,
     VIRTUAL_HOUSE_EXIT_BASE,
     VIRTUAL_MONSTER_BASE,
@@ -33,8 +34,6 @@ from py_rme_canary.logic_layer.brush_definitions import (
     npc_virtual_id,
     waypoint_virtual_id,
 )
-
-from py_rme_canary.core.io.creatures_xml import load_monster_names, load_npc_names
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -82,7 +81,7 @@ class PaletteManager:
     `editor.brush_list`.
     """
 
-    def __init__(self, editor: "QtMapEditor") -> None:
+    def __init__(self, editor: QtMapEditor) -> None:
         self._editor = editor
         self._palettes: list[PaletteDock] = []
         self._palette_counter: int = 0
@@ -221,7 +220,7 @@ class PaletteManager:
                     materials_path = _resolve_materials_brushs_path()
                     if materials_path:
                         editor.brush_mgr.ensure_doodads_loaded(materials_path)
-                doodads = list(getattr(editor.brush_mgr, "iter_doodad_brushes")())
+                doodads = list(editor.brush_mgr.iter_doodad_brushes())
             except Exception:
                 doodads = []
 
@@ -340,7 +339,9 @@ class PaletteManager:
                 if q and (q not in str(nm).lower()):
                     continue
                 vid = name_to_vid.get(str(nm))
-                if vid is None or not (VIRTUAL_MONSTER_BASE <= int(vid) < VIRTUAL_MONSTER_BASE + int(VIRTUAL_MONSTER_MAX)):
+                if vid is None or not (
+                    VIRTUAL_MONSTER_BASE <= int(vid) < VIRTUAL_MONSTER_BASE + int(VIRTUAL_MONSTER_MAX)
+                ):
                     continue
                 item = QListWidgetItem(str(nm))
                 item.setData(Qt.ItemDataRole.UserRole, int(vid))

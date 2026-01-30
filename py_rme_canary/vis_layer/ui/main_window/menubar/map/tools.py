@@ -2,6 +2,7 @@
 
 Provides menu actions for map-wide operations like removing monsters.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
-def remove_monsters(editor: "QtMapEditor", selection_only: bool = True) -> None:
+def remove_monsters(editor: QtMapEditor, selection_only: bool = True) -> None:
     """Action: Remove monsters from the map (or selection)."""
     game_map = editor.map
     if game_map is None:
@@ -45,7 +46,7 @@ def remove_monsters(editor: "QtMapEditor", selection_only: bool = True) -> None:
     _show_status(editor, f"Removed {result.removed} monsters.")
 
 
-def _get_selection_tiles(editor: "QtMapEditor") -> set[tuple[int, int, int]] | None:
+def _get_selection_tiles(editor: QtMapEditor) -> set[tuple[int, int, int]] | None:
     """Extract tile coordinates from editor selection."""
     if not editor.selection or editor.selection.is_empty():
         return None
@@ -68,7 +69,7 @@ def _get_selection_tiles(editor: "QtMapEditor") -> set[tuple[int, int, int]] | N
     return None
 
 
-def _show_status(editor: "QtMapEditor", message: str) -> None:
+def _show_status(editor: QtMapEditor, message: str) -> None:
     """Safely show a status bar message."""
     status_bar = editor.statusBar()
     if status_bar is not None:

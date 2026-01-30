@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class PreviewController(QObject):
-    def __init__(self, editor: "QtMapEditor") -> None:
+    def __init__(self, editor: QtMapEditor) -> None:
         super().__init__(editor)
         self._editor = editor
         self._timer = QTimer(self)

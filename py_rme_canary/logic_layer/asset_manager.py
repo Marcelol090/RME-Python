@@ -3,13 +3,14 @@
 Handles loading of assets (sprites) and coordination between:
 - SpriteAppearances (loading raw sprite sheets)
 - SpriteCache (caching QPixmaps)
-- IdMapper (converting ServerID <-> ClientID) 
+- IdMapper (converting ServerID <-> ClientID)
 """
+
 from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QImage, QPixmap
 
@@ -46,13 +47,13 @@ class AssetManager:
     def is_loaded(self) -> bool:
         """Check if assets are loaded."""
         return self._is_loaded
-        
+
     @property
     def assets_path(self) -> str | None:
         """Get currently loaded assets path."""
         return self._assets_path
 
-    def load_assets(self, path: str | Path, memory_guard: "MemoryGuard | None" = None) -> bool:
+    def load_assets(self, path: str | Path, memory_guard: MemoryGuard | None = None) -> bool:
         """Load assets from directory.
 
         Args:
@@ -67,26 +68,23 @@ class AssetManager:
             logger.info(f"Loading assets from: {resolved_path}")
 
             # 1. Initialize SpriteAppearances (loads catalog-content.json)
-            self._sprite_appearances = SpriteAppearances(
-                assets_dir=resolved_path, 
-                memory_guard=memory_guard
-            )
-            self._sprite_appearances.load_catalog_content(load_data=False) # Lazy load sheets
+            self._sprite_appearances = SpriteAppearances(assets_dir=resolved_path, memory_guard=memory_guard)
+            self._sprite_appearances.load_catalog_content(load_data=False)  # Lazy load sheets
 
             # 2. Initialize IdMapper (loads .json mappings if present in assets?)
             # Ideally IdMapper should be loaded from project data, but for now we assume
-            # we might need to load it. 
-            # TODO: IdMapper usually loaded separately via ItemsXML/OTB. 
+            # we might need to load it.
+            # TODO: IdMapper usually loaded separately via ItemsXML/OTB.
             # For now, we assume global IdMapper or we initialize a local one?
             # Let's try to load standard mappings if available in data/
             # For now, we rely on the editor to set the IdMapper, or we load a default one.
-            
+
             self._assets_path = resolved_path
             self._is_loaded = True
-            
+
             # Clear cache on new asset load
             self._sprite_cache.clear()
-            
+
             logger.info("Assets loaded successfully")
             return True
 
@@ -132,27 +130,22 @@ class AssetManager:
         # Load from SpriteAppearances
         try:
             width, height, bgra_data = self._sprite_appearances.get_sprite_rgba(client_id)
-            
+
             # Convert to QImage then QPixmap
-            # Format_ARGB32 is actually BGRA in Qt's memory model usually, 
-            # but we need to check if we need to swap R/B. 
-            # SpriteAppearances returns BGRA. 
+            # Format_ARGB32 is actually BGRA in Qt's memory model usually,
+            # but we need to check if we need to swap R/B.
+            # SpriteAppearances returns BGRA.
             # QImage.Format.Format_ARGB32 expects B G R A (little endian) -> 0xAARRGGBB
-            
-            image = QImage(
-                bgra_data, 
-                width, 
-                height, 
-                QImage.Format.Format_ARGB32
-            )
-            
+
+            image = QImage(bgra_data, width, height, QImage.Format.Format_ARGB32)
+
             # Create isolated copy to detach from buffer
             pixmap = QPixmap.fromImage(image.copy())
-            
+
             # Cache it
             self._sprite_cache.cache_sprite(item_id, pixmap)
             return pixmap
 
-        except Exception as e:
+        except Exception:
             # logger.debug(f"Failed to load sprite for item {item_id} (client {client_id}): {e}")
             return None

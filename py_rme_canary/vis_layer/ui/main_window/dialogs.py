@@ -9,16 +9,16 @@ from PyQt6.QtWidgets import (
     QDialogButtonBox,
     QFileDialog,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QLineEdit,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QSpinBox,
     QTabWidget,
-    QHBoxLayout,
     QVBoxLayout,
     QWidget,
 )
@@ -56,7 +56,6 @@ class FindItemDialog(QDialog):
 
     def result_value(self) -> FindItemResult:
         return FindItemResult(server_id=int(self._id_spin.value()))
-
 
 
 @dataclass(slots=True)
@@ -130,7 +129,6 @@ class FindEntityDialog(QDialog):
 
 
 class ReplaceItemsDialog(QDialog):
-
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Replace Items")

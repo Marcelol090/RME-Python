@@ -3,6 +3,7 @@
 Provides visual feedback for brush position, size, and shape
 with smooth animations and modern design.
 """
+
 from __future__ import annotations
 
 import math
@@ -52,6 +53,7 @@ class BrushCursorOverlay(QWidget):
 
         # Colors
         from py_rme_canary.vis_layer.ui.theme.colors import get_theme_color
+
         self._primary_color = get_theme_color("primary", 180)  # Purple
         self._secondary_color = get_theme_color("primary", 60)  # Lighter purple
         self._preview_color = get_theme_color("primary", 40)  # Fill preview
@@ -148,12 +150,7 @@ class BrushCursorOverlay(QWidget):
         """Update widget geometry based on center and radius."""
         margin = 50  # Extra margin for glow effects
         size = self._radius * 2 + margin * 2
-        self.setGeometry(
-            self._center.x() - size // 2,
-            self._center.y() - size // 2,
-            size,
-            size
-        )
+        self.setGeometry(self._center.x() - size // 2, self._center.y() - size // 2, size, size)
 
     def paintEvent(self, event: object) -> None:
         """Paint the brush cursor overlay."""
@@ -205,12 +202,10 @@ class BrushCursorOverlay(QWidget):
         painter.setPen(QPen(center_color, 2))
 
         painter.drawLine(
-            QPointF(center.x() - crosshair_size, center.y()),
-            QPointF(center.x() + crosshair_size, center.y())
+            QPointF(center.x() - crosshair_size, center.y()), QPointF(center.x() + crosshair_size, center.y())
         )
         painter.drawLine(
-            QPointF(center.x(), center.y() - crosshair_size),
-            QPointF(center.x(), center.y() + crosshair_size)
+            QPointF(center.x(), center.y() - crosshair_size), QPointF(center.x(), center.y() + crosshair_size)
         )
 
         # Draw size text
@@ -222,30 +217,15 @@ class BrushCursorOverlay(QWidget):
             painter.setFont(font)
 
             text = f"{self._brush_size}x{self._brush_size}"
-            text_rect = QRectF(
-                center.x() - 20,
-                center.y() + radius + 5,
-                40,
-                15
-            )
+            text_rect = QRectF(center.x() - 20, center.y() + radius + 5, 40, 15)
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
 
-    def _draw_shape(
-        self,
-        painter: QPainter,
-        center: QPointF,
-        radius: float
-    ) -> None:
+    def _draw_shape(self, painter: QPainter, center: QPointF, radius: float) -> None:
         """Draw shape based on morph progress (square to circle)."""
         # Interpolate corner radius between 0 (square) and radius (circle)
         corner_radius = radius * self._shape_progress
 
-        rect = QRectF(
-            center.x() - radius,
-            center.y() - radius,
-            radius * 2,
-            radius * 2
-        )
+        rect = QRectF(center.x() - radius, center.y() - radius, radius * 2, radius * 2)
 
         if corner_radius >= radius - 1:
             # Full circle

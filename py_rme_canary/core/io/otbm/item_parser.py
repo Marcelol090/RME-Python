@@ -214,37 +214,35 @@ class ItemParser:
                         raise OTBMParseError(f"No server id mapping for client id {raw_id}")
                     raw_unknown_id = int(raw_id)
                     server_id = 0
-            else:
+            elif self._on_warning is not None:
+                self._on_warning(
+                    code="missing_id_mapper",
+                    message="ClientID map loaded without IdMapper; ids may be incorrect.",
+                    raw_id=int(raw_id),
+                    tile_pos=tile_pos,
+                )
+        elif self._id_mapper is not None:
+            if self._id_mapper.has_server_id(int(raw_id)):
+                try:
+                    client_id = self._id_mapper.get_client_id(int(raw_id))
+                except Exception:
+                    client_id = None
+            elif self._id_mapper.has_client_id(int(raw_id)):
+                # Legacy OTBM, but raw id looks like client id -> map to server id.
+                client_id = int(raw_id)
+                mapped = self._id_mapper.get_server_id(int(raw_id))
+                if mapped is not None:
+                    server_id = int(mapped)
+                else:
+                    raw_unknown_id = int(raw_id)
+                    server_id = 0
                 if self._on_warning is not None:
                     self._on_warning(
-                        code="missing_id_mapper",
-                        message="ClientID map loaded without IdMapper; ids may be incorrect.",
+                        code="client_id_in_server_map",
+                        message="OTBM v2-4 expects server ids; treating raw id as client id.",
                         raw_id=int(raw_id),
                         tile_pos=tile_pos,
                     )
-        else:
-            if self._id_mapper is not None:
-                if self._id_mapper.has_server_id(int(raw_id)):
-                    try:
-                        client_id = self._id_mapper.get_client_id(int(raw_id))
-                    except Exception:
-                        client_id = None
-                elif self._id_mapper.has_client_id(int(raw_id)):
-                    # Legacy OTBM, but raw id looks like client id -> map to server id.
-                    client_id = int(raw_id)
-                    mapped = self._id_mapper.get_server_id(int(raw_id))
-                    if mapped is not None:
-                        server_id = int(mapped)
-                    else:
-                        raw_unknown_id = int(raw_id)
-                        server_id = 0
-                    if self._on_warning is not None:
-                        self._on_warning(
-                            code="client_id_in_server_map",
-                            message="OTBM v2-4 expects server ids; treating raw id as client id.",
-                            raw_id=int(raw_id),
-                            tile_pos=tile_pos,
-                        )
 
         return int(server_id), client_id, raw_unknown_id
 

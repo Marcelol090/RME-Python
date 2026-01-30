@@ -1,4 +1,5 @@
 """Tests for auto-correction system."""
+
 from __future__ import annotations
 
 import pytest
@@ -18,7 +19,7 @@ def sprite_matcher() -> SpriteHashMatcher:
     # Create test pixel data
     # Same sprite data for IDs 100 and 200 (cross-version scenario)
     same_pixels = b"\x12\x34\x56\x78" * 64  # 256 bytes = 64 pixels
-    unique_pixels = b"\xFF\x00\xAA\xBB" * 64  # Different sprite
+    unique_pixels = b"\xff\x00\xaa\xbb" * 64  # Different sprite
 
     matcher.add_sprite(sprite_id=100, pixel_data=same_pixels, width=8, height=8)
     matcher.add_sprite(sprite_id=200, pixel_data=same_pixels, width=8, height=8)  # Same sprite

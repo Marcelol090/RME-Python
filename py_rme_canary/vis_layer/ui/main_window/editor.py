@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 from collections import OrderedDict
-from typing import Optional
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QAction, QKeySequence, QPixmap
@@ -13,7 +12,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMenu,
-    QMessageBox,
     QPushButton,
     QSpinBox,
     QStatusBar,
@@ -22,28 +20,26 @@ from PyQt6.QtWidgets import (
 )
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
-from py_rme_canary.core.memory_guard import MemoryGuardError, default_memory_guard
+from py_rme_canary.core.memory_guard import default_memory_guard
 from py_rme_canary.logic_layer.brush_definitions import BrushManager
 from py_rme_canary.logic_layer.drawing_options import DrawingOptions
 from py_rme_canary.logic_layer.editor_session import EditorSession
-
+from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
 from py_rme_canary.vis_layer.renderer.map_drawer import MapDrawer
 from py_rme_canary.vis_layer.ui.docks.actions_history import ActionsHistoryDock
+from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
 from py_rme_canary.vis_layer.ui.drawing_options_coordinator import (
     DrawingOptionsCoordinator,
     create_coordinator,
 )
 from py_rme_canary.vis_layer.ui.helpers import Viewport
 from py_rme_canary.vis_layer.ui.indicators import IndicatorService
-from py_rme_canary.vis_layer.ui.main_window.find_on_map import open_find_waypoint
 from py_rme_canary.vis_layer.ui.main_window.find_item import open_find_item
-from py_rme_canary.vis_layer.ui.main_window.dialogs import MapStatisticsDialog, ReplaceItemsDialog, show_not_implemented
-from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
-from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
+from py_rme_canary.vis_layer.ui.main_window.find_on_map import open_find_waypoint
 
 logger = logging.getLogger(__name__)
 from py_rme_canary.vis_layer.ui.docks.palette import PaletteManager
-
+from py_rme_canary.vis_layer.ui.main_window.build_actions import build_actions
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets import QtMapEditorAssetsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes import QtMapEditorBrushesMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_dialogs import QtMapEditorDialogsMixin
@@ -51,14 +47,12 @@ from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_docks import QtMapEdit
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit import QtMapEditorEditMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file import QtMapEditorFileMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror import QtMapEditorMirrorMixin
+from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_modern_ux import QtMapEditorModernUXMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation import QtMapEditorNavigationMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_palettes import QtMapEditorPalettesMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_session import QtMapEditorSessionMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_toolbars import QtMapEditorToolbarsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_view import QtMapEditorViewMixin
-from py_rme_canary.vis_layer.ui.main_window.build_actions import build_actions
-
-from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_modern_ux import QtMapEditorModernUXMixin
 
 
 class QtMapEditor(
@@ -309,7 +303,7 @@ class QtMapEditor(
             logger.error("Failed to load ID Mapper: %s", e)
 
         self.viewport = Viewport()
-        self.current_path: Optional[str] = None
+        self.current_path: str | None = None
 
         # Detection context (drives safe, engine-aware flows)
         self.engine: str = "unknown"
@@ -322,20 +316,20 @@ class QtMapEditor(
         self.paste_armed = False
 
         # Client sprite assets (legacy sprite sheets via catalog-content.json)
-        self.assets_dir: Optional[str] = None
-        self.assets_selection_path: Optional[str] = None
+        self.assets_dir: str | None = None
+        self.assets_selection_path: str | None = None
         self.sprite_assets = None
         self.appearance_assets = None
         self.asset_profile = None
         self.id_mapper = None
         # LRU cache to avoid unbounded growth
-        self._sprite_cache: "OrderedDict[tuple[int, int], QPixmap]" = OrderedDict()
+        self._sprite_cache: OrderedDict[tuple[int, int], QPixmap] = OrderedDict()
         self._memory_guard = default_memory_guard()
         self._sprite_render_temporarily_disabled: bool = False
         self._sprite_render_emergency_warned: bool = False
-        self._sprite_render_disabled_reason: Optional[str] = None
+        self._sprite_render_disabled_reason: str | None = None
         self._animation_clock_ms: int = 0
-        
+
         # Cross-version clipboard sprite matcher
         self.sprite_matcher = None
 
@@ -346,7 +340,7 @@ class QtMapEditor(
         # Mirror drawing (legacy-like: toggle, pick axis, set axis from cursor)
         self.mirror_enabled: bool = False
         self.mirror_axis: str = "x"  # "x" or "y"
-        self.mirror_axis_value: Optional[int] = None
+        self.mirror_axis_value: int | None = None
         self._last_hover_tile: tuple[int, int] = (0, 0)
         self._position_history: list[tuple[int, int, int]] = []
 
@@ -384,7 +378,7 @@ class QtMapEditor(
         self.ingame_preview_enabled: bool = False
         self.ingame_preview_controller = None
 
-        self._extra_views: list["QtMapEditor"] = []
+        self._extra_views: list[QtMapEditor] = []
         self.quick_replace_source_id = None
         self.quick_replace_target_id = None
         self.palette_large_icons: bool = False
@@ -395,9 +389,9 @@ class QtMapEditor(
         self.actions_history = ActionsHistoryDock(self)
 
         # Optional docks (Window menu)
-        self.dock_minimap: Optional[QDockWidget] = None
-        self.minimap_widget: Optional[MinimapWidget] = None
-        self.dock_actions_history: Optional[QDockWidget] = None
+        self.dock_minimap: QDockWidget | None = None
+        self.minimap_widget: MinimapWidget | None = None
+        self.dock_actions_history: QDockWidget | None = None
 
         self.canvas = OpenGLCanvasWidget(self, editor=self)
         self.setCentralWidget(self.canvas)
@@ -520,7 +514,6 @@ class QtMapEditor(
         self._live_timer.timeout.connect(self._poll_live_events)
         self._live_timer.start()
 
-
         self._update_brush_label()
         self.apply_ui_state_to_session()
         self.act_ghost_higher_floors.setChecked(bool(self.ghost_higher_floors))
@@ -548,7 +541,7 @@ class QtMapEditor(
 
         # Initialize Modern UX features (theme, overlays, menus)
         self.init_modern_ux()
-        
+
         self._enable_action_logging()
 
     def _enable_action_logging(self) -> None:

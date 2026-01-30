@@ -5,6 +5,7 @@ and consistent visual language throughout the application.
 
 Reference: modern_ux_plan.md / palette_legacy_analysis.md
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from typing import ClassVar
 
 class ThemeVariant(str, Enum):
     """Available theme variants."""
+
     DARK = "dark"
     LIGHT = "light"  # Future support
     SYSTEM = "system"  # Follow OS preference
@@ -24,40 +26,40 @@ class ThemeColors:
     """Color palette for the theme."""
 
     # Base Colors (Dark Mode)
-    background: str = "#1E1E2E"           # Deep purple-tinted dark
-    surface: str = "#2A2A3E"              # Elevated surface
-    surface_variant: str = "#363650"      # Interactive elements
-    surface_hover: str = "#404060"        # Hovered state
+    background: str = "#1E1E2E"  # Deep purple-tinted dark
+    surface: str = "#2A2A3E"  # Elevated surface
+    surface_variant: str = "#363650"  # Interactive elements
+    surface_hover: str = "#404060"  # Hovered state
 
     # Accent Colors (Vibrant but not overwhelming)
-    primary: str = "#8B5CF6"              # Purple (selection, active)
-    primary_hover: str = "#A78BFA"        # Lighter purple
-    primary_pressed: str = "#7C3AED"      # Darker purple
-    secondary: str = "#EC4899"            # Pink (highlights)
-    success: str = "#10B981"              # Green (success states)
-    warning: str = "#F59E0B"              # Amber (warnings)
-    error: str = "#EF4444"                # Red (errors)
-    info: str = "#3B82F6"                 # Blue (info)
+    primary: str = "#8B5CF6"  # Purple (selection, active)
+    primary_hover: str = "#A78BFA"  # Lighter purple
+    primary_pressed: str = "#7C3AED"  # Darker purple
+    secondary: str = "#EC4899"  # Pink (highlights)
+    success: str = "#10B981"  # Green (success states)
+    warning: str = "#F59E0B"  # Amber (warnings)
+    error: str = "#EF4444"  # Red (errors)
+    info: str = "#3B82F6"  # Blue (info)
 
     # Text Colors
-    text_primary: str = "#E5E5E7"         # Almost white
-    text_secondary: str = "#A1A1AA"       # Gray
-    text_disabled: str = "#52525B"        # Dark gray
-    text_on_primary: str = "#FFFFFF"      # White on accent
+    text_primary: str = "#E5E5E7"  # Almost white
+    text_secondary: str = "#A1A1AA"  # Gray
+    text_disabled: str = "#52525B"  # Dark gray
+    text_on_primary: str = "#FFFFFF"  # White on accent
 
     # Border Colors
-    border: str = "#363650"               # Subtle border
-    border_focus: str = "#8B5CF6"         # Focused border
+    border: str = "#363650"  # Subtle border
+    border_focus: str = "#8B5CF6"  # Focused border
 
     # Special Effects
-    glow_primary: str = "rgba(139, 92, 246, 0.3)"    # Soft purple glow
-    glow_success: str = "rgba(16, 185, 129, 0.3)"    # Soft green glow
-    shadow_subtle: str = "rgba(0, 0, 0, 0.2)"        # Light shadow
-    shadow_strong: str = "rgba(0, 0, 0, 0.5)"        # Deep shadow
+    glow_primary: str = "rgba(139, 92, 246, 0.3)"  # Soft purple glow
+    glow_success: str = "rgba(16, 185, 129, 0.3)"  # Soft green glow
+    shadow_subtle: str = "rgba(0, 0, 0, 0.2)"  # Light shadow
+    shadow_strong: str = "rgba(0, 0, 0, 0.5)"  # Deep shadow
 
     # Overlay
-    overlay: str = "rgba(0, 0, 0, 0.6)"   # Modal backdrop
-    glass_surface: str = "rgba(42, 42, 62, 0.95)" # Semi-transparent surface for menus
+    overlay: str = "rgba(0, 0, 0, 0.6)"  # Modal backdrop
+    glass_surface: str = "rgba(42, 42, 62, 0.95)"  # Semi-transparent surface for menus
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,7 +131,7 @@ class ThemeAnimation:
 
 class ModernTheme:
     """Modern theme configuration and stylesheet generator.
-    
+
     Usage:
         theme = ModernTheme()
         app.setStyleSheet(theme.get_stylesheet())
@@ -780,10 +782,10 @@ QToolButton:checked {{
     @classmethod
     def apply_to_app(cls, app: object) -> None:
         """Apply theme to QApplication.
-        
+
         Args:
             app: QApplication instance
         """
-        if hasattr(app, 'setStyleSheet'):
+        if hasattr(app, "setStyleSheet"):
             stylesheet = cls.get_stylesheet()
             app.setStyleSheet(stylesheet)

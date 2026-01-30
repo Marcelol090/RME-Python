@@ -198,6 +198,7 @@ class TestSelectionOverlay:
 
         # Test that set_selection starts timer and clears stops it
         from PyQt6.QtCore import QRect
+
         rect = QRect(10, 20, 100, 50)
 
         overlay.set_selection([rect])

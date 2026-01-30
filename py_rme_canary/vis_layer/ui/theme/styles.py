@@ -1,4 +1,5 @@
 """Theme stylesheet helpers."""
+
 from __future__ import annotations
 
 from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme

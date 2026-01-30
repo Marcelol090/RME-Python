@@ -1,4 +1,5 @@
 """Tests for sprite hash matching (FNV-1a algorithm)."""
+
 from __future__ import annotations
 
 from py_rme_canary.logic_layer.cross_version.sprite_hash import (

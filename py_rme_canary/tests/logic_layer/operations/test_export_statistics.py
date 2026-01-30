@@ -1,4 +1,5 @@
 """Tests for statistics export."""
+
 from __future__ import annotations
 
 import csv
