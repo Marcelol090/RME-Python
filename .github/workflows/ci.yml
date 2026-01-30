@@ -26,7 +26,7 @@ jobs:
       - name: Install OS packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq libegl1 libgl1 libxkbcommon-x11-0 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 libxcb-shape0
+          sudo apt-get install -y jq libegl1 libgl1 libxkbcommon-x11-0 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 libxcb-shape0 xvfb
 
       - name: Install Python tooling
         run: |
@@ -52,4 +52,4 @@ jobs:
           XDG_RUNTIME_DIR: /tmp/runtime-runner
         run: |
           mkdir -p /tmp/runtime-runner
-          python -m pytest py_rme_canary/tests/unit
+          xvfb-run -a python -m pytest py_rme_canary/tests/unit
