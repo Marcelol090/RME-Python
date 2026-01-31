@@ -5,7 +5,7 @@ Following Sonnet TDD workflow with strict assertions.
 """
 
 import pytest
-from logic_layer.templates.map_templates import (
+from py_rme_canary.logic_layer.templates.map_templates import (
     ALL_TEMPLATES,
     COMMON_MAP_SIZES,
     MAP_SIZE_MEDIUM,
