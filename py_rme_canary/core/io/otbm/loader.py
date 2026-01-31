@@ -54,6 +54,29 @@ from .tile_parser import TileParser
 logger = logging.getLogger(__name__)
 
 
+from typing import TypedDict
+
+class ItemConversion(TypedDict):
+    from_id: int
+    to_id: int
+    count: int
+
+
+class LoadReport(TypedDict):
+    """Structured report of the map loading process."""
+
+    filename: str
+    version: int
+    width: int
+    height: int
+    items_count: int
+    tiles_count: int
+    duration_ms: float
+    errors: list[str]
+    warnings: list[str]
+    dynamic_id_conversions: list[ItemConversion]
+
+
 @dataclass(frozen=True, slots=True)
 class LoadWarning:
     """Warning generated during map loading."""

@@ -10,19 +10,20 @@ Demonstrates:
 This example shows how all features interact in a real editing session.
 """
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
-from PyQt6.QtCore import Qt
 import sys
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget
 
 
 class IntegrationDemoWindow(QMainWindow):
     """Demo window showing all integrated features."""
-    
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("RME UI Features Integration Demo")
         self.setGeometry(100, 100, 800, 600)
-        
+
         # Apply modern theme
         self.setStyleSheet("""
             QMainWindow {
@@ -47,55 +48,63 @@ class IntegrationDemoWindow(QMainWindow):
                 padding: 5px;
             }
         """)
-        
+
         # Central widget
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        
+
         # Header
         header = QLabel("🎉 70% Complete - All Features Integrated!")
         header.setStyleSheet("font-size: 18px; font-weight: bold; color: #50fa7b;")
         header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(header)
-        
+
         # Feature demos
         layout.addWidget(QLabel("\n📋 Browse Tile Window:"))
         btn_browse = QPushButton("🔍 Demo Browse Tile Dialog")
         btn_browse.clicked.connect(self.demo_browse_tile)
         layout.addWidget(btn_browse)
-        
-        info1 = QLabel("  • Inspect complete item stack\n  • Drag & drop reordering\n  • Edit properties (ActionID, UniqueID, Text)\n  • Full undo/redo support")
+
+        info1 = QLabel(
+            "  • Inspect complete item stack\n  • Drag & drop reordering\n  • Edit properties (ActionID, UniqueID, Text)\n  • Full undo/redo support"
+        )
         info1.setStyleSheet("color: #8be9fd; margin-left: 20px;")
         layout.addWidget(info1)
-        
+
         layout.addWidget(QLabel("\n🔎 Find Item Window:"))
         btn_find = QPushButton("🎯 Demo Find Items (Ctrl+F)")
         btn_find.clicked.connect(self.demo_find_items)
         layout.addWidget(btn_find)
-        
-        info2 = QLabel("  • Search by ID, Name, Type\n  • Advanced filters (ActionID, UniqueID, Text, Z-layer)\n  • Jump to results\n  • Replace All integration")
+
+        info2 = QLabel(
+            "  • Search by ID, Name, Type\n  • Advanced filters (ActionID, UniqueID, Text, Z-layer)\n  • Jump to results\n  • Replace All integration"
+        )
         info2.setStyleSheet("color: #8be9fd; margin-left: 20px;")
         layout.addWidget(info2)
-        
+
         layout.addWidget(QLabel("\n✨ Smart Context Menu:"))
         btn_context = QPushButton("📝 Demo Context Menu Actions")
         btn_context.clicked.connect(self.demo_context_menu)
         layout.addWidget(btn_context)
-        
-        info3 = QLabel("  • Smart brush selection\n  • 🚪 Door toggle (open/close)\n  • 🔄 Item rotation\n  • 🚀 Teleport navigation\n  • 📋 Copy data (Server ID, Name, Position)")
+
+        info3 = QLabel(
+            "  • Smart brush selection\n  • 🚪 Door toggle (open/close)\n  • 🔄 Item rotation\n  • 🚀 Teleport navigation\n  • 📋 Copy data (Server ID, Name, Position)"
+        )
         info3.setStyleSheet("color: #8be9fd; margin-left: 20px;")
         layout.addWidget(info3)
-        
+
         layout.addWidget(QLabel("\n🔄 EditorActions System:"))
         btn_undo = QPushButton("↩️ Demo Undo/Redo")
         btn_undo.clicked.connect(self.demo_undo_redo)
         layout.addWidget(btn_undo)
-        
-        info4 = QLabel("  • All actions support undo\n  • Descriptive history labels\n  • Change detection\n  • Safe fallback when session unavailable")
+
+        info4 = QLabel(
+            "  • All actions support undo\n  • Descriptive history labels\n  • Change detection\n  • Safe fallback when session unavailable"
+        )
         info4.setStyleSheet("color: #8be9fd; margin-left: 20px;")
         layout.addWidget(info4)
-        
+
         # Integration info
         layout.addWidget(QLabel("\n📊 Integration Status:"))
         status = QLabel(
@@ -106,19 +115,19 @@ class IntegrationDemoWindow(QMainWindow):
         )
         status.setStyleSheet("color: #50fa7b; margin-left: 20px; font-weight: bold;")
         layout.addWidget(status)
-        
+
         layout.addStretch()
-        
+
         # Footer
         footer = QLabel("💡 Tip: These features are fully integrated into QtMapEditor!")
         footer.setStyleSheet("color: #ffb86c; font-style: italic;")
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(footer)
-    
+
     def demo_browse_tile(self):
         """Demo Browse Tile functionality."""
         from PyQt6.QtWidgets import QMessageBox
-        
+
         msg = QMessageBox(self)
         msg.setWindowTitle("Browse Tile Demo")
         msg.setIcon(QMessageBox.Icon.Information)
@@ -147,11 +156,11 @@ class IntegrationDemoWindow(QMainWindow):
             }
         """)
         msg.exec()
-    
+
     def demo_find_items(self):
         """Demo Find Items functionality."""
         from PyQt6.QtWidgets import QMessageBox
-        
+
         msg = QMessageBox(self)
         msg.setWindowTitle("Find Items Demo")
         msg.setIcon(QMessageBox.Icon.Information)
@@ -185,11 +194,11 @@ class IntegrationDemoWindow(QMainWindow):
             }
         """)
         msg.exec()
-    
+
     def demo_context_menu(self):
         """Demo Smart Context Menu."""
         from PyQt6.QtWidgets import QMessageBox
-        
+
         msg = QMessageBox(self)
         msg.setWindowTitle("Smart Context Menu Demo")
         msg.setIcon(QMessageBox.Icon.Information)
@@ -224,11 +233,11 @@ class IntegrationDemoWindow(QMainWindow):
             }
         """)
         msg.exec()
-    
+
     def demo_undo_redo(self):
         """Demo Undo/Redo system."""
         from PyQt6.QtWidgets import QMessageBox
-        
+
         msg = QMessageBox(self)
         msg.setWindowTitle("Undo/Redo Demo")
         msg.setIcon(QMessageBox.Icon.Information)
@@ -268,25 +277,25 @@ class IntegrationDemoWindow(QMainWindow):
 def main():
     """Run the integration demo."""
     app = QApplication(sys.argv)
-    
+
     # Set application-wide dark theme
     app.setStyle("Fusion")
-    
+
     window = IntegrationDemoWindow()
     window.show()
-    
+
     sys.exit(app.exec())
 
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🎉 RME UI Features Integration Demo")
-    print("="*60)
+    print("=" * 60)
     print("\n📊 Status: 70% Complete (38/54 tasks)")
     print("\n✅ All HIGH priority features implemented:")
     print("   1. Browse Tile Window (92%)")
     print("   2. Find Item Window (56% - menu complete)")
     print("   3. Smart Context Menus (94%)")
     print("\n💡 Press Ctrl+C to exit\n")
-    
+
     main()

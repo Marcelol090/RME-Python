@@ -237,15 +237,20 @@ class ItemTypeDetector:
         return names.get(category, "Item")
 
     @staticmethod
-    def can_select_brush(category: ItemCategory) -> bool:
+    def can_select_brush(category_or_item: ItemCategory | Item) -> bool:
         """Check if category supports brush selection.
 
         Args:
-            category: Item category
+            category_or_item: Item category or Item instance
 
         Returns:
             True if category has an associated brush
         """
+        if isinstance(category_or_item, ItemCategory):
+            category = category_or_item
+        else:
+            category = ItemTypeDetector.get_category(category_or_item)
+
         return category in {
             ItemCategory.WALL,
             ItemCategory.CARPET,
