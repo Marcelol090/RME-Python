@@ -1,8 +1,8 @@
-# Quality Pipeline v2.1 - Documentação
+# Quality Pipeline v2.3 - Documentação
 
 ## Visão Geral
 
-O Quality Pipeline v2.1 é uma solução completa de análise de código para **projetos locais**, integrando múltiplas ferramentas de análise estática, segurança, detecção de segredos, código morto/duplicado e vulnerabilidades em dependências.
+O Quality Pipeline v2.3 é uma solução completa de análise de código para **projetos locais**, integrando múltiplas ferramentas de análise estática, segurança, detecção de segredos, código morto/duplicado, documentação, testes e **automação de UI/UX** com testes visuais.
 
 ## Decisões de Arquitetura
 
@@ -24,12 +24,16 @@ O Quality Pipeline v2.1 é uma solução completa de análise de código para **
 | **Mypy** | Type checking estático | `pip install mypy` |
 | **Radon** | Métricas de complexidade ciclomática | `pip install radon` |
 | **Pyright** | Type checking avançado (complementar) | `pip install pyright` |
+| **Complexipy** | Cognitive complexity (legibilidade) | `pip install complexipy` |
+| **Lizard** | Complexidade ciclomática multi-linguagem | `pip install lizard` |
 
-#### Fase 3: Análise Complementar (Dead Code, Duplication)
+#### Fase 3: Análise Complementar (Dead Code, Duplication, Quality)
 | Ferramenta | Propósito | Instalação |
 |------------|-----------|------------|
 | **Pylint** | Análise complementar (naming, dead code) | `pip install pylint` |
+| **Prospector** | Agregador de linters | `pip install prospector` |
 | **Vulture** | Detecção de código morto | `pip install vulture` |
+| **Skylos** | Código morto + segurança + qualidade | `pip install skylos` |
 | **jscpd** | Detecção de código duplicado | `npm install -g jscpd` |
 
 #### Fase 4: Segurança (Multi-layer)
@@ -44,6 +48,22 @@ O Quality Pipeline v2.1 é uma solução completa de análise de código para **
 | **pip-audit** | Vulnerabilidades (PyPI Advisory + OSV) | `pip install pip-audit` |
 | **OSV-Scanner** | Vulnerabilidades multi-ecossistema | `go install github.com/google/osv-scanner/cmd/osv-scanner@latest` |
 
+#### Fase 5: Documentação e Testes
+| Ferramenta | Propósito | Instalação |
+|------------|-----------|------------|
+| **Interrogate** | Cobertura de docstrings | `pip install interrogate` |
+| **Pydocstyle** | Conformidade PEP 257 (docstrings) | `pip install pydocstyle` |
+| **Mutmut** | Mutation testing (qualidade de testes) | `pip install mutmut` |
+
+#### Fase 6: UI/UX Automation ✨ NEW
+| Ferramenta | Propósito | Instalação |
+|------------|-----------|------------|
+| **PyAutoGUI** | Automação de mouse/teclado/screenshots | `pip install pyautogui` |
+| **Pywinauto** | Automação de GUI Windows | `pip install pywinauto` (Windows) |
+| **Lighthouse** | Auditorias de qualidade web (Performance, Accessibility, SEO) | `npm install -g lighthouse` |
+| **Percy** | Testes de regressão visual | `npm install -g @percy/cli` |
+| **Applitools** | Validação visual com IA | `pip install eyes-selenium` |
+
 ## Instalação
 
 ### Dependências Obrigatórias
@@ -55,11 +75,26 @@ pip install ruff mypy radon bandit safety pylint
 ### Ferramentas Adicionais Recomendadas
 
 ```bash
+# Análise de complexidade
+pip install complexipy lizard pyright
+
 # Análise complementar
-pip install vulture pyright
+pip install vulture skylos prospector
+
+# Documentação
+pip install interrogate pydocstyle
+
+# Testes
+pip install mutmut pytest-randomly pytest-xdist
 
 # Segurança avançada
 pip install detect-secrets semgrep pip-audit
+
+# UI/UX Automation
+pip install pyautogui pillow opencv-python
+pip install pywinauto  # Windows only
+pip install eyes-selenium  # Applitools
+npm install -g lighthouse @percy/cli
 
 # Secret scanning alternativo
 brew install gitleaks  # macOS
@@ -70,6 +105,72 @@ go install github.com/google/osv-scanner/cmd/osv-scanner@latest
 
 # Código duplicado
 npm install -g jscpd
+```
+
+### PyAutoGUI (UI Automation)
+
+```bash
+# Instalação
+pip install pyautogui pillow
+
+# Usar em testes (exemplo)
+import pyautogui
+
+# Capturar screenshot
+screenshot = pyautogui.screenshot()
+screenshot.save('screenshot.png')
+
+# Localizar imagem na tela
+button_location = pyautogui.locateOnScreen('button.png')
+if button_location:
+    pyautogui.click(button_location)
+```
+
+### Lighthouse (Web Quality Audits)
+
+```bash
+# Instalação
+npm install -g lighthouse
+
+# Executar auditoria
+lighthouse http://localhost:8000 \
+    --output json \
+    --output html \
+    --chrome-flags="--headless"
+
+# Variável de ambiente (opcional)
+export LIGHTHOUSE_URL=http://localhost:8000
+```
+
+### Percy (Visual Regression Testing)
+
+```bash
+# Instalação
+npm install -g @percy/cli
+pip install percy-selenium  # ou percy-playwright
+
+# Configurar token
+export PERCY_TOKEN=your_token_here
+
+# Executar com testes
+percy exec -- pytest tests/visual/
+```
+
+### Applitools (AI Visual Validation)
+
+```bash
+# Instalação
+pip install eyes-selenium
+
+# Configurar API key
+export APPLITOOLS_API_KEY=your_key_here
+
+# Exemplo de uso
+from applitools.selenium import Eyes, Target
+
+eyes = Eyes()
+eyes.api_key = os.getenv('APPLITOOLS_API_KEY')
+eyes.check_window("Main Page")
 ```
 
 ### detect-secrets (Secret Scanning)
@@ -83,6 +184,35 @@ detect-secrets scan > .secrets.baseline
 
 # Auditar segredos detectados
 detect-secrets audit .secrets.baseline
+```
+
+### Skylos (Código Morto + Segurança)
+
+```bash
+# Instalação
+pip install skylos
+
+# Inicializar configuração
+skylos init  # Adiciona [tool.skylos] no pyproject.toml
+
+# Executar análise com trace (reduz falsos positivos)
+skylos . --trace
+```
+
+### Mutmut (Mutation Testing)
+
+```bash
+# Instalação
+pip install mutmut
+
+# Executar mutation testing (computacionalmente intensivo)
+mutmut run --paths-to-mutate=py_rme_canary
+
+# Ver resultados
+mutmut results
+
+# Gerar relatório HTML
+mutmut html
 ```
 
 ### Semgrep (Análise de Padrões)
@@ -342,6 +472,29 @@ sed -i 's/\r$//' quality_lf.sh
 ```
 
 ## Changelog
+
+### v2.3 (2026-01-30)
+- ✅ Adicionado: PyAutoGUI para automação de UI (mouse, teclado, screenshots)
+- ✅ Adicionado: Pywinauto para automação de GUI Windows
+- ✅ Adicionado: Lighthouse para auditorias web (Performance, Accessibility, SEO, PWA)
+- ✅ Adicionado: Percy para testes de regressão visual
+- ✅ Adicionado: Applitools para validação visual com IA
+- ✅ Nova Fase 6: UI/UX Automation (5 ferramentas)
+- ✅ Adicionado: Flag `--skip-ui-tests` para pular testes de UI/UX
+- ✅ Reorganizado: Consolidação agora é Fase 7
+- ✅ Total: 26 ferramentas, 7 fases
+
+### v2.2 (2026-01-30)
+- ✅ Adicionado: Complexipy para cognitive complexity (legibilidade)
+- ✅ Adicionado: Skylos para código morto + segurança com taint analysis
+- ✅ Adicionado: Lizard para complexidade ciclomática multi-linguagem
+- ✅ Adicionado: Interrogate para cobertura de docstrings
+- ✅ Adicionado: Pydocstyle para conformidade PEP 257 (docstrings)
+- ✅ Adicionado: Mutmut para mutation testing (qualidade de testes)
+- ✅ Adicionado: Prospector como agregador de linters
+- ✅ Nova Fase 5: Documentação e Testes (Interrogate, Pydocstyle, Mutmut)
+- ✅ Reorganizado: Fase 3 inclui Prospector e Skylos
+- ✅ Reorganizado: Consolidação agora é Fase 6
 
 ### v2.1 (2026-01-30)
 - ✅ Adicionado: Pyright para type checking avançado (complementa Mypy)
