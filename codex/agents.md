@@ -23,7 +23,12 @@ Before starting any task, you must understand the current state:
 *   **Active Skills**:
     *   [Port Legacy Feature](codex/skills/port_feature.md): "Invoke this when moving logic from C++ to Python."
 
-### 👥 Sub-Agent Personas\nWhen a specialized task arises, adopt the appropriate persona:\n*   **[System Architect](codex/agents/architect.md)**: For architectural decisions and dependency checks.\n*   **[Quality Engineer](codex/agents/quality_engineer.md)**: For testing, linting, and strict typing.\n*   **[Frontend Specialist](codex/agents/frontend_specialist.md)**: For PyQt6 UI development.\n*   **[Legacy Expert](codex/agents/legacy_expert.md)**: For C++ porting and analysis.
+### 👥 Sub-Agent Personas
+When a specialized task arises, adopt the appropriate persona:
+*   **[System Architect](codex/agents/architect.md)**: For architectural decisions and dependency checks.
+*   **[Quality Engineer](codex/agents/quality_engineer.md)**: For testing, linting, and strict typing.
+*   **[Frontend Specialist](codex/agents/frontend_specialist.md)**: For PyQt6 UI development.
+*   **[Legacy Expert](codex/agents/legacy_expert.md)**: For C++ porting and analysis.
 
 ### 🗺️ Reference Map (Single Source of Truth)
 *   **Legacy Source A**: `RME/source` (Primary C++ Logic).
