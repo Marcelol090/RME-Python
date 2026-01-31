@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import logging
 from collections import OrderedDict
@@ -52,10 +53,8 @@ class _SpriteTextureCache:
         sid = int(sprite_id)
         tex = self._entries.get(sid)
         if tex is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._entries.move_to_end(sid)
-            except Exception:
-                pass
             return tex
 
         tex = create_fn()
@@ -63,10 +62,8 @@ class _SpriteTextureCache:
             return None
 
         self._entries[sid] = int(tex)
-        try:
+        with contextlib.suppress(Exception):
             self._entries.move_to_end(sid)
-        except Exception:
-            pass
 
         if self._max_entries > 0 and len(self._entries) > self._max_entries:
             try:

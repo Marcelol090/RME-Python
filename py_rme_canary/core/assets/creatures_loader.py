@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from defusedxml import ElementTree as ET  # type: ignore[import-untyped]
+from defusedxml import ElementTree as ET  # type: ignore[import-not-found]
 
 if TYPE_CHECKING:
     pass

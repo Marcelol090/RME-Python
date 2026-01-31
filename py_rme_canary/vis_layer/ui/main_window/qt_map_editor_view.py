@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtGui import QAction
@@ -21,13 +22,7 @@ class QtMapEditorViewMixin:
         editor = cast("QtMapEditor", self)
         floor = int(editor.viewport.z)
         show_all = bool(getattr(editor, "show_all_floors", False))
-        if show_all:
-            if floor < 8:
-                start_z = 7
-            else:
-                start_z = min(15, floor + 2)
-        else:
-            start_z = floor
+        start_z = (7 if floor < 8 else min(15, floor + 2)) if show_all else floor
         end_z = floor
         if start_z >= end_z:
             return list(range(start_z, end_z - 1, -1))
@@ -40,10 +35,8 @@ class QtMapEditorViewMixin:
         except Exception:
             return
         editor._sync_drawing_options()
-        try:
+        with contextlib.suppress(Exception):
             editor.canvas.update()
-        except Exception:
-            pass
 
     def _toggle_indicators_simple(self, checked: bool) -> None:
         editor = cast("QtMapEditor", self)
@@ -54,10 +47,8 @@ class QtMapEditorViewMixin:
         editor.show_moveables = bool(checked)
         editor.show_avoidables = bool(checked)
         editor._sync_drawing_options()
-        try:
+        with contextlib.suppress(Exception):
             editor.canvas.update()
-        except Exception:
-            pass
 
     def _toggle_fullscreen(self) -> None:
         editor = cast("QtMapEditor", self)

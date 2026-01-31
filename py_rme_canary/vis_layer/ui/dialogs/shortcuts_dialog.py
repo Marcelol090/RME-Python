@@ -43,12 +43,14 @@ class ShortcutCategory(QFrame):
 
         # Title
         title = QLabel(self._title)
-        title.setStyleSheet("""
+        title.setStyleSheet(
+            """
             font-size: 13px;
             font-weight: 700;
             color: #8B5CF6;
             padding-bottom: 4px;
-        """)
+        """
+        )
         layout.addWidget(title)
 
         # Shortcuts
@@ -59,14 +61,16 @@ class ShortcutCategory(QFrame):
 
             # Key
             key_label = QLabel(key)
-            key_label.setStyleSheet("""
+            key_label.setStyleSheet(
+                """
                 background: #363650;
                 color: #E5E5E7;
                 padding: 4px 8px;
                 border-radius: 4px;
                 font-family: monospace;
                 font-weight: 600;
-            """)
+            """
+            )
             key_label.setFixedWidth(120)
             row_layout.addWidget(key_label)
 
@@ -81,13 +85,15 @@ class ShortcutCategory(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             ShortcutCategory {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-        """)
+        """
+        )
 
     def filter_shortcuts(self, query: str) -> bool:
         """Filter shortcuts by query. Returns True if any visible."""
@@ -207,11 +213,12 @@ class KeyboardShortcutsDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QLineEdit {
                 background: #2A2A3E;
                 border: 2px solid #363650;
@@ -220,26 +227,27 @@ class KeyboardShortcutsDialog(QDialog):
                 color: #E5E5E7;
                 font-size: 14px;
             }
-            
+
             QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QScrollBar:vertical {
                 background: #1E1E2E;
                 width: 8px;
                 border-radius: 4px;
             }
-            
+
             QScrollBar::handle:vertical {
                 background: #363650;
                 border-radius: 4px;
             }
-            
+
             QScrollBar::handle:vertical:hover {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def _on_search(self, query: str) -> None:
         """Filter shortcuts by search query."""

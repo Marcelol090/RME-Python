@@ -43,6 +43,7 @@ class LoadReport(TypedDict, total=False):
     unknown_ids_count: int
     replaced_items: list[tuple[int, int, int, int]]
     metadata: dict[str, Any]
+    dynamic_id_conversions: dict[str, int]
 
 
 def _default_load_report() -> LoadReport:
@@ -51,6 +52,11 @@ def _default_load_report() -> LoadReport:
         "unknown_ids_count": 0,
         "replaced_items": [],
         "metadata": {},
+        "dynamic_id_conversions": {
+            "server_id_in_client_map": 0,
+            "client_id_in_server_map": 0,
+            "total": 0,
+        },
     }
 
 

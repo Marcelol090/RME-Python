@@ -230,7 +230,7 @@ class PropertiesPanel(QDockWidget):
 
             if field_item and field_item.widget():
                 field = field_item.widget()
-                if isinstance(field, QLabel) or isinstance(field, QLineEdit):
+                if isinstance(field, (QLabel, QLineEdit)):
                     text_parts.append(field.text())
                 elif isinstance(field, QSpinBox):
                     text_parts.append(str(field.value()))

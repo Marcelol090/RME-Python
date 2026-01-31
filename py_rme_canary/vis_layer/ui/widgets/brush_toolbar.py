@@ -113,13 +113,14 @@ class BrushToolbar(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             BrushToolbar {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #A1A1AA;
@@ -128,17 +129,18 @@ class BrushToolbar(QFrame):
                 font-size: 12px;
                 font-weight: 600;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 color: #E5E5E7;
             }
-            
+
             QPushButton:checked {
                 background: #8B5CF6;
                 color: white;
             }
-        """)
+        """
+        )
 
     def _on_size_clicked(self, size: int) -> None:
         """Handle size button click."""
@@ -234,13 +236,14 @@ class ToolSelector(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             ToolSelector {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 10px;
             }
-            
+
             QPushButton {
                 background: transparent;
                 color: #A1A1AA;
@@ -248,15 +251,16 @@ class ToolSelector(QFrame):
                 border-radius: 8px;
                 font-size: 18px;
             }
-            
+
             QPushButton:hover {
                 background: #363650;
             }
-            
+
             QPushbutton:checked {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def _on_tool_clicked(self, tool_id: str) -> None:
         """Handle tool click."""

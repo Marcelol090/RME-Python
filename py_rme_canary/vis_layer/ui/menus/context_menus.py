@@ -40,7 +40,8 @@ class ContextMenuBuilder:
         self._menu_stack: list[QMenu] = []
 
         # Apply styling
-        self._menu.setStyleSheet("""
+        self._menu.setStyleSheet(
+            """
             QMenu {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -48,31 +49,32 @@ class ContextMenuBuilder:
                 padding: 6px;
                 color: #E5E5E7;
             }
-            
+
             QMenu::item {
                 padding: 8px 24px 8px 12px;
                 border-radius: 4px;
                 margin: 2px;
             }
-            
+
             QMenu::item:selected {
                 background: #8B5CF6;
             }
-            
+
             QMenu::item:disabled {
                 color: #52525B;
             }
-            
+
             QMenu::separator {
                 background: #363650;
                 height: 1px;
                 margin: 4px 8px;
             }
-            
+
             QMenu::icon {
                 margin-left: 8px;
             }
-        """)
+        """
+        )
 
     def add_action(
         self,
@@ -254,8 +256,15 @@ class ItemContextMenu:
         # Detect item category
         category = ItemTypeDetector.get_category(item)
 
-        # Item info header
-        builder.add_action(f"📦 Item #{item.id}", enabled=False)
+        # Get item name from AssetManager
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+        asset_mgr = AssetManager.instance()
+        item_name = asset_mgr.get_item_name(item.id)
+
+        # Item info header with name
+        header_text = f"📦 {item_name} (#{item.id})" if item_name != f"Item #{item.id}" else f"📦 Item #{item.id}"
+        builder.add_action(header_text, enabled=False)
         builder.add_separator()
 
         # Smart Brush Selection

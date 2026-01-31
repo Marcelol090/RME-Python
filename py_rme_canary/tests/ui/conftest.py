@@ -18,6 +18,4 @@ def pytest_ignore_collect(collection_path, config):
     path_str = str(collection_path).replace("\\", "/")
     if path_str.endswith("test_ui_placeholder.py"):
         return False
-    if "/tests/ui/" in path_str:
-        return True
-    return False
+    return "/tests/ui/" in path_str

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
 from dataclasses import dataclass
@@ -161,10 +162,8 @@ class PaletteManager:
         pal = self._create_dock(title="Palette", make_primary=False)
         primary = self._primary
         if primary is not None:
-            try:
+            with contextlib.suppress(Exception):
                 pal.tabs.setCurrentIndex(int(primary.tabs.currentIndex()))
-            except Exception:
-                pass
         pal.dock.show()
         pal.dock.raise_()
         pal.filter_edit.setFocus()
@@ -287,7 +286,7 @@ class PaletteManager:
 
             # Build stable ids for all waypoints independent of filtering.
             used: set[int] = set()
-            names = sorted((str(k) for k in waypoints.keys()), key=lambda s: s.lower())
+            names = sorted((str(k) for k in waypoints), key=lambda s: s.lower())
             name_to_vid: dict[str, int] = {}
             for nm in names:
                 try:
@@ -418,10 +417,8 @@ class PaletteManager:
                     continue
                 item = QListWidgetItem(text)
                 item.setData(Qt.ItemDataRole.UserRole, int(sid))
-                try:
+                with contextlib.suppress(Exception):
                     self._maybe_set_item_icon(item, int(getattr(bd, "server_id", 0)))
-                except Exception:
-                    pass
                 palette.list_widget.addItem(item)
         else:
             for sid in all_ids:

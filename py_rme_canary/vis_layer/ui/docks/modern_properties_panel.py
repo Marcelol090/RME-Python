@@ -329,7 +329,8 @@ class ModernPropertiesPanel(QDockWidget):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             ModernPropertiesPanel {
                 background: #1E1E2E;
             }
@@ -404,7 +405,8 @@ class ModernPropertiesPanel(QDockWidget):
                 color: #52525B;
                 border-color: #363650;
             }
-        """)
+        """
+        )
 
     def _mark_changed(self, field: str, value: Any) -> None:
         """Mark a field as changed."""
@@ -429,9 +431,8 @@ class ModernPropertiesPanel(QDockWidget):
         # Get parent editor session
         parent = self.parent()
         session = getattr(parent, "session", None)
-        if hasattr(parent, "parent"):  # In case docked
-            if session is None:
-                session = getattr(parent.parent(), "session", None)
+        if hasattr(parent, "parent") and session is None:  # In case docked
+            session = getattr(parent.parent(), "session", None)
 
         if session is None:
             return

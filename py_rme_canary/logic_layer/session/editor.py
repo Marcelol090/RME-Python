@@ -2365,10 +2365,7 @@ class EditorSession:
         depth_mode = self.get_selection_depth_mode()
 
         floors: list[int] = [base_z]
-        if visible_floors:
-            visible_sorted = sorted({int(z) for z in visible_floors})
-        else:
-            visible_sorted = [base_z]
+        visible_sorted = sorted({int(z) for z in visible_floors}) if visible_floors else [base_z]
 
         if depth_mode is SelectionDepthMode.CURRENT:
             floors = [base_z]

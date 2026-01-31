@@ -60,29 +60,31 @@ class CategoryList(QListWidget):
 
         self._categories: list[TilesetCategory] = []
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QListWidget {
                 background: #2A2A3E;
                 border: none;
                 border-radius: 8px;
                 outline: none;
             }
-            
+
             QListWidget::item {
                 padding: 12px 16px;
                 border-radius: 6px;
                 margin: 2px 4px;
                 color: #E5E5E7;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
         self.itemClicked.connect(self._on_item_clicked)
 
@@ -133,13 +135,15 @@ class BrushGridItem(QFrame):
         sprite = QLabel(brush.name[0].upper() if brush.name else "?")
         sprite.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sprite.setFixedSize(40, 40)
-        sprite.setStyleSheet("""
+        sprite.setStyleSheet(
+            """
             background: #1E1E2E;
             border-radius: 6px;
             color: #8B5CF6;
             font-size: 18px;
             font-weight: 700;
-        """)
+        """
+        )
         layout.addWidget(sprite, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Name
@@ -157,15 +161,18 @@ class BrushGridItem(QFrame):
 
     def _update_style(self) -> None:
         if self._selected:
-            self.setStyleSheet("""
+            self.setStyleSheet(
+                """
                 BrushGridItem {
                     background: #363650;
                     border: 2px solid #8B5CF6;
                     border-radius: 8px;
                 }
-            """)
+            """
+            )
         else:
-            self.setStyleSheet("""
+            self.setStyleSheet(
+                """
                 BrushGridItem {
                     background: #2A2A3E;
                     border: 1px solid #363650;
@@ -175,7 +182,8 @@ class BrushGridItem(QFrame):
                     background: #363650;
                     border-color: #8B5CF6;
                 }
-            """)
+            """
+            )
 
     def set_selected(self, selected: bool) -> None:
         self._selected = selected
@@ -216,7 +224,8 @@ class TilesetBrowser(QWidget):
         # Search bar
         self.search = QLineEdit()
         self.search.setPlaceholderText("🔍 Search brushes...")
-        self.search.setStyleSheet("""
+        self.search.setStyleSheet(
+            """
             QLineEdit {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -231,7 +240,8 @@ class TilesetBrowser(QWidget):
             QLineEdit::placeholder {
                 color: #52525B;
             }
-        """)
+        """
+        )
         self.search.textChanged.connect(self._on_search_changed)
         layout.addWidget(self.search)
 
@@ -251,24 +261,28 @@ class TilesetBrowser(QWidget):
 
         # Category header
         self.category_header = QLabel("")
-        self.category_header.setStyleSheet("""
+        self.category_header.setStyleSheet(
+            """
             font-size: 14px;
             font-weight: 600;
             color: #E5E5E7;
             padding: 8px 0;
-        """)
+        """
+        )
         brush_layout.addWidget(self.category_header)
 
         # Scroll area for grid
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
+        scroll.setStyleSheet(
+            """
             QScrollArea {
                 background: transparent;
                 border: none;
             }
-        """)
+        """
+        )
 
         self.brush_grid = QWidget()
         self.brush_grid_layout = QHBoxLayout(self.brush_grid)

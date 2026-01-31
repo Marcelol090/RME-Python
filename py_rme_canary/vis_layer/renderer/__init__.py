@@ -7,6 +7,8 @@ This package provides:
 - MapDrawer: Coordinates rendering based on DrawingOptions
 """
 
+import contextlib
+
 from .render_model import (
     THEME_COLORS,
     Color,
@@ -32,7 +34,7 @@ except Exception:  # pragma: no cover - fallback for headless envs without PyQt6
 
         class OpenGLCanvasWidget:  # type: ignore[no-redef]
             def __init__(self, *args, **kwargs) -> None:
-                raise ImportError("PyQt6/OpenGL not available") from pyqt_exc
+                raise ImportError("PyQt6/OpenGL not available")
 
         def is_opengl_available() -> bool:
             return False
@@ -67,10 +69,8 @@ except Exception:  # pragma: no cover - fallback for headless envs without PyQt6
                     drawer.viewport.tile_px = int(self._editor.viewport.tile_px)
                     drawer.viewport.width_px = int(self.width())
                     drawer.viewport.height_px = int(self.height())
-                    try:
+                    with contextlib.suppress(Exception):
                         drawer.set_live_cursors(self._editor.session.get_live_cursor_overlays())
-                    except Exception:
-                        pass
 
                     backend = QPainterRenderBackend(
                         painter,

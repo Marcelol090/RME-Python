@@ -50,13 +50,15 @@ class StatusBarSection(QFrame):
         if tooltip:
             self.setToolTip(tooltip)
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             StatusBarSection {
                 background: transparent;
                 border-left: 1px solid #363650;
                 padding-left: 8px;
             }
-        """)
+        """
+        )
 
     def set_text(self, text: str) -> None:
         """Update the text."""
@@ -229,18 +231,20 @@ class ModernStatusBar(QStatusBar):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QStatusBar {
                 background: #1A1A2E;
                 border-top: 1px solid #363650;
                 color: #A1A1AA;
                 min-height: 26px;
             }
-            
+
             QStatusBar::item {
                 border: none;
             }
-        """)
+        """
+        )
 
     def show_message(self, message: str, timeout: int = 3000) -> None:
         """Show a temporary message."""

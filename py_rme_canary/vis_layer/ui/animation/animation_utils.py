@@ -139,7 +139,7 @@ class AnimationFactory:
     @staticmethod
     def pulse_glow(
         widget: QWidget,
-        color: QColor = QColor(139, 92, 246),  # Purple
+        color: QColor | None = None,  # Purple
         duration: int = 1000,
         min_alpha: int = 100,
         max_alpha: int = 200,
@@ -164,6 +164,9 @@ class AnimationFactory:
         anim.setEndValue(25)
         anim.setEasingCurve(QEasingCurve.Type.InOutSine)
         anim.setLoopCount(-1)  # Infinite loop
+
+        if color is None:
+            color = QColor(139, 92, 246)
 
         # Set color
         color.setAlpha(max_alpha)
@@ -250,7 +253,7 @@ class FeedbackAnimation:
     def success_ripple(
         parent: QWidget,
         center: QPoint,
-        color: QColor = QColor(16, 185, 129),  # Green
+        color: QColor | None = None,  # Green
         duration: int = 400,
     ) -> tuple[QWidget, QAbstractAnimation]:
         """Create an expanding ripple effect for success feedback.
@@ -264,13 +267,18 @@ class FeedbackAnimation:
         Returns:
             Tuple of (ripple widget, animation)
         """
+        if color is None:
+            color = QColor(16, 185, 129)
+
         # Create ripple widget
         ripple = QWidget(parent)
-        ripple.setStyleSheet(f"""
+        ripple.setStyleSheet(
+            f"""
             background: transparent;
             border: 3px solid rgba({color.red()}, {color.green()}, {color.blue()}, 200);
             border-radius: 50px;
-        """)
+        """
+        )
 
         start_size = 20
         end_size = 100

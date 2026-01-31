@@ -196,10 +196,17 @@ class PNGExporter:
                     image.paste(tile_img, (px_x, px_y))
 
                 processed += 1
-                if on_progress and processed % 100 == 0:
-                    if not on_progress(processed, total_tiles, f"Rendering tile {processed}/{total_tiles}"):
-                        self._cancelled = True
-                        return False
+                if (
+                    on_progress
+                    and processed % 100 == 0
+                    and not on_progress(
+                        processed,
+                        total_tiles,
+                        f"Rendering tile {processed}/{total_tiles}",
+                    )
+                ):
+                    self._cancelled = True
+                    return False
 
         # Save
         prepared_image = self._prepare_image_for_save(image, image_format, config.background_color)
@@ -287,14 +294,13 @@ class PNGExporter:
                 prepared_chunk.save(chunk_path, image_format)
 
                 processed_chunks += 1
-                if on_progress:
-                    if not on_progress(
-                        processed_chunks,
-                        total_chunks,
-                        f"Exported chunk {processed_chunks}/{total_chunks}",
-                    ):
-                        self._cancelled = True
-                        return False
+                if on_progress and not on_progress(
+                    processed_chunks,
+                    total_chunks,
+                    f"Exported chunk {processed_chunks}/{total_chunks}",
+                ):
+                    self._cancelled = True
+                    return False
 
         # Create metadata file
         meta_path = os.path.join(output_dir, "metadata.txt")

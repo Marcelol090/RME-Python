@@ -69,14 +69,16 @@ class HouseCard(QFrame):
 
         # ID badge
         id_badge = QLabel(f"#{self._house.id}")
-        id_badge.setStyleSheet("""
+        id_badge.setStyleSheet(
+            """
             background: #363650;
             color: #A1A1AA;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 10px;
             font-family: 'JetBrains Mono', monospace;
-        """)
+        """
+        )
         header.addWidget(id_badge)
 
         layout.addLayout(header)
@@ -103,10 +105,7 @@ class HouseCard(QFrame):
 
         # Entry position
         entry = self._house.entry
-        if entry:
-            entry_text = f"📍 Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})"
-        else:
-            entry_text = "📍 Entry: Not set"
+        entry_text = f"📍 Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})" if entry else "📍 Entry: Not set"
 
         entry_label = QLabel(entry_text)
         entry_label.setStyleSheet("color: #52525B; font-size: 10px;")
@@ -136,7 +135,8 @@ class HouseCard(QFrame):
         border = "#8B5CF6" if self._selected else "#363650"
         bg = "#363650" if self._selected else "#2A2A3E"
 
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             HouseCard {{
                 background: {bg};
                 border: 2px solid {border};
@@ -155,7 +155,8 @@ class HouseCard(QFrame):
             QPushButton:hover {{
                 background: #8B5CF6;
             }}
-        """)
+        """
+        )
 
     def set_selected(self, selected: bool) -> None:
         """Set selection state."""
@@ -214,11 +215,13 @@ class HouseListDialog(QDialog):
         header_layout = QHBoxLayout()
 
         header = QLabel("🏠 Houses")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             font-size: 18px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         header_layout.addWidget(header)
 
         header_layout.addStretch()
@@ -239,12 +242,14 @@ class HouseListDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
+        scroll.setStyleSheet(
+            """
             QScrollArea {
                 background: transparent;
                 border: none;
             }
-        """)
+        """
+        )
 
         self.cards_container = QWidget()
         self.cards_layout = QVBoxLayout(self.cards_container)
@@ -278,7 +283,8 @@ class HouseListDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
@@ -312,7 +318,8 @@ class HouseListDialog(QDialog):
                 background: #2A2A3E;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def _load_houses(self) -> None:
         """Load houses from map."""
@@ -333,7 +340,7 @@ class HouseListDialog(QDialog):
 
         houses = getattr(self._game_map, "houses", {}) or {}
 
-        for house_id, house in sorted(houses.items()):
+        for _house_id, house in sorted(houses.items()):
             card = HouseCard(house)
             card.clicked.connect(self._on_card_clicked)
             card.goto_clicked.connect(self._on_goto)
@@ -504,10 +511,7 @@ class HouseEditDialog(QDialog):
 
         # Entry position (read-only)
         entry = self._house.entry
-        if entry:
-            entry_text = f"Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})"
-        else:
-            entry_text = "Entry: Not set"
+        entry_text = f"Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})" if entry else "Entry: Not set"
         entry_label = QLabel(entry_text)
         entry_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
         layout.addWidget(entry_label)
@@ -520,7 +524,8 @@ class HouseEditDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
                 color: #E5E5E7;
@@ -545,7 +550,8 @@ class HouseEditDialog(QDialog):
             QLabel {
                 color: #A1A1AA;
             }
-        """)
+        """
+        )
 
     def get_values(self) -> dict:
         """Get edited values."""

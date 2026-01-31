@@ -94,7 +94,8 @@ class LayerRow(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             LayerRow {
                 background: transparent;
                 border-radius: 6px;
@@ -102,7 +103,7 @@ class LayerRow(QFrame):
             LayerRow:hover {
                 background: #363650;
             }
-            
+
             QCheckBox::indicator {
                 width: 16px;
                 height: 16px;
@@ -110,18 +111,18 @@ class LayerRow(QFrame):
                 background: #2A2A3E;
                 border: 1px solid #52525B;
             }
-            
+
             QCheckBox::indicator:checked {
                 background: #8B5CF6;
                 border-color: #8B5CF6;
             }
-            
+
             QSlider::groove:horizontal {
                 background: #363650;
                 height: 4px;
                 border-radius: 2px;
             }
-            
+
             QSlider::handle:horizontal {
                 background: #8B5CF6;
                 width: 12px;
@@ -129,12 +130,13 @@ class LayerRow(QFrame):
                 margin: -4px 0;
                 border-radius: 6px;
             }
-            
+
             QSlider::sub-page:horizontal {
                 background: #8B5CF6;
                 border-radius: 2px;
             }
-        """)
+        """
+        )
 
     def _on_visibility_changed(self, state: int) -> None:
         """Handle visibility change."""
@@ -224,32 +226,34 @@ class LayerManager(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             LayerManager {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 10px;
             }
-            
+
             QPushButton {
                 background: transparent;
                 border: none;
                 border-radius: 4px;
             }
-            
+
             QPushButton:hover {
                 background: #363650;
             }
-        """)
+        """
+        )
 
     def _show_all(self) -> None:
         """Show all layers."""
-        for layer_id, row in self._layer_rows.items():
+        for _layer_id, row in self._layer_rows.items():
             row.check_visible.setChecked(True)
 
     def _hide_all(self) -> None:
         """Hide all layers."""
-        for layer_id, row in self._layer_rows.items():
+        for _layer_id, row in self._layer_rows.items():
             row.check_visible.setChecked(False)
 
     def set_layer_visible(self, layer_id: str, visible: bool) -> None:

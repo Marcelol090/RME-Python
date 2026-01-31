@@ -100,25 +100,26 @@ class RichTooltip(QWidget):
 
     def _setup_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             #tooltipContainer {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #2A2A3E, stop:1 #1E1E2E);
                 border: 1px solid #363650;
                 border-radius: 10px;
             }
-            
+
             #tooltipTitle {
                 color: #E5E5E7;
                 font-size: 13px;
                 font-weight: 600;
             }
-            
+
             #tooltipDescription {
                 color: #A1A1AA;
                 font-size: 11px;
             }
-            
+
             #tooltipShortcut {
                 background: #363650;
                 color: #A1A1AA;
@@ -127,7 +128,8 @@ class RichTooltip(QWidget):
                 padding: 3px 6px;
                 border-radius: 4px;
             }
-        """)
+        """
+        )
 
     def _setup_animation(self) -> None:
         """Setup fade-in animation."""
@@ -294,11 +296,13 @@ class StatusToast(QWidget):
         layout.addWidget(icon_label)
 
         message_label = QLabel(self._message)
-        message_label.setStyleSheet("""
+        message_label.setStyleSheet(
+            """
             color: #E5E5E7;
             font-size: 13px;
             font-weight: 500;
-        """)
+        """
+        )
         layout.addWidget(message_label)
 
     def _setup_style(self) -> None:
@@ -306,7 +310,8 @@ class StatusToast(QWidget):
         colors = {"info": "#3B82F6", "success": "#10B981", "warning": "#F59E0B", "error": "#EF4444"}
         accent = colors.get(self._variant, "#3B82F6")
 
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             StatusToast {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #2A2A3E, stop:1 #1E1E2E);
@@ -314,7 +319,8 @@ class StatusToast(QWidget):
                 border-left: 4px solid {accent};
                 border-radius: 8px;
             }}
-        """)
+        """
+        )
 
     def show_toast(self, screen_pos: QPoint | None = None) -> None:
         """Show the toast notification."""

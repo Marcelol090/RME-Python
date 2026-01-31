@@ -162,7 +162,7 @@ def npc_virtual_id(name: str, *, used: set[int] | None = None) -> int:
 def _parse_border_group_value(value: object | None) -> int | None:
     if value is None:
         return None
-    if isinstance(value, str | int | float):
+    if isinstance(value, (str, int, float)):
         try:
             return int(value)
         except (TypeError, ValueError):
@@ -488,8 +488,11 @@ class BrushManager:
 
         # 5) importlib.resources (if package available)
         try:
-            pkg_path = resources.files("py_rme_canary.data") / "brushes.json"  # type: ignore[attr-defined]
-            candidate_paths.append(Path(pkg_path))
+            pkg_path = resources.files("py_rme_canary.data") / "brushes.json"
+            if isinstance(pkg_path, Path):
+                candidate_paths.append(pkg_path)
+            else:
+                candidate_paths.append(Path(str(pkg_path)))
         except Exception:
             pass
 
@@ -646,11 +649,11 @@ class BrushManager:
                 raw_names = payload.get("names", [])
                 names = list(raw_names) if isinstance(raw_names, list) else []
                 for fname in names:
-                    resolved = name_to_id.get(str(fname))
-                    if resolved is None:
+                    resolved_id = name_to_id.get(str(fname))
+                    if resolved_id is None:
                         logger.warning("Unknown friend/enemy brush name %r referenced by %r", fname, pending_brush.name)
                         continue
-                    ids.append(int(resolved))
+                    ids.append(int(resolved_id))
                 if ids or payload.get("hate", False):
                     self._brushes[int(sid)] = replace(
                         pending_brush,

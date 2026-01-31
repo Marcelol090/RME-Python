@@ -287,10 +287,8 @@ class LiveServer:
         """Kick a client by id."""
         for sock, peer in list(self.clients.items()):
             if int(peer.client_id) == int(client_id):
-                try:
+                with suppress(Exception):
                     peer.send_packet(PacketType.KICK, str(reason).encode("utf-8"))
-                except Exception:
-                    pass
                 self._disconnect_client(sock)
                 return True
         return False
@@ -302,10 +300,8 @@ class LiveServer:
                 host = str(peer.address[0])
                 if host:
                     self._banned_hosts.add(host)
-                try:
+                with suppress(Exception):
                     peer.send_packet(PacketType.KICK, str(reason).encode("utf-8"))
-                except Exception:
-                    pass
                 self._disconnect_client(sock)
                 return True
         return False

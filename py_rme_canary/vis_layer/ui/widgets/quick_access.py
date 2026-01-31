@@ -53,7 +53,8 @@ class FavoriteButton(QPushButton):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             FavoriteButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -61,23 +62,25 @@ class FavoriteButton(QPushButton):
                 border-radius: 8px;
                 font-size: 18px;
             }
-            
+
             FavoriteButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             FavoriteButton:pressed {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def contextMenuEvent(self, event: object) -> None:
         """Handle right-click."""
         from PyQt6.QtWidgets import QMenu
 
         menu = QMenu(self)
-        menu.setStyleSheet("""
+        menu.setStyleSheet(
+            """
             QMenu {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -92,7 +95,8 @@ class FavoriteButton(QPushButton):
             QMenu::item:selected {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
         remove_action = menu.addAction("🗑️ Remove from favorites")
 
@@ -156,13 +160,14 @@ class QuickAccessBar(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QuickAccessBar {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #A1A1AA;
@@ -170,12 +175,13 @@ class QuickAccessBar(QFrame):
                 border-radius: 6px;
                 font-size: 14px;
             }
-            
+
             QPushButton:hover {
                 background: #8B5CF6;
                 color: white;
             }
-        """)
+        """
+        )
 
     def add_favorite(self, item: FavoriteItem) -> None:
         """Add a favorite item."""

@@ -224,7 +224,7 @@ class SearchWorker(QThread):
 
         max_results = 100
 
-        for pos, tile in tiles.items():
+        for _pos, tile in tiles.items():
             if self._cancelled or count >= max_results:
                 break
 
@@ -363,11 +363,12 @@ class GlobalSearchDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QLineEdit {
                 background: #2A2A3E;
                 border: 2px solid #363650;
@@ -376,20 +377,20 @@ class GlobalSearchDialog(QDialog):
                 color: #E5E5E7;
                 font-size: 14px;
             }
-            
+
             QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QCheckBox {
                 color: #A1A1AA;
                 font-size: 12px;
             }
-            
+
             QCheckBox:checked {
                 color: #E5E5E7;
             }
-            
+
             QListWidget {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -397,33 +398,33 @@ class GlobalSearchDialog(QDialog):
                 color: #E5E5E7;
                 outline: none;
             }
-            
+
             QListWidget::item {
                 padding: 10px 12px;
                 border-radius: 6px;
                 margin: 2px 4px;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-            
+
             QProgressBar {
                 background: #363650;
                 border: none;
                 border-radius: 4px;
                 height: 6px;
             }
-            
+
             QProgressBar::chunk {
                 background: #8B5CF6;
                 border-radius: 4px;
             }
-            
+
             QPushButton {
                 background: #8B5CF6;
                 color: white;
@@ -432,16 +433,17 @@ class GlobalSearchDialog(QDialog):
                 padding: 8px 16px;
                 font-weight: 500;
             }
-            
+
             QPushButton:hover {
                 background: #A78BFA;
             }
-            
+
             QPushButton:disabled {
                 background: #363650;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def _get_search_types(self) -> list[SearchType]:
         """Get enabled search types."""

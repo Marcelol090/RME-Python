@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, Any, cast
 
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
@@ -74,10 +75,8 @@ class QtMapEditorSessionMixin:
     def _update_symmetry_overlay(self) -> None:
         """Update symmetry overlay widget if present."""
         if hasattr(self, "symmetry_overlay"):
-            try:
+            with contextlib.suppress(Exception):
                 self.symmetry_overlay.update()
-            except Exception:
-                pass
 
     def _borderize_selection(self, _checked: bool = False) -> None:
         if not self.session.has_selection():
@@ -366,10 +365,8 @@ class QtMapEditorSessionMixin:
         else:
             self.status.showMessage(f"Zone saved: {int(zid)} ({name})")
             self.canvas.update()
-            try:
+            with contextlib.suppress(Exception):
                 self.palettes.refresh_primary_list()
-            except Exception:
-                pass
         self._update_action_enabled_states()
 
     def _zone_delete_definition(self) -> None:
@@ -409,10 +406,8 @@ class QtMapEditorSessionMixin:
         else:
             self.status.showMessage(f"Deleted zone: {int(zid)}")
             self.canvas.update()
-            try:
+            with contextlib.suppress(Exception):
                 self.palettes.refresh_primary_list()
-            except Exception:
-                pass
         self._update_action_enabled_states()
 
     def _waypoint_set_here(self) -> None:
@@ -595,10 +590,8 @@ class QtMapEditorSessionMixin:
 
         # If newly created and we chose cursor defaults, ensure entry is set.
         if before is None:
-            try:
+            with contextlib.suppress(Exception):
                 self.session.set_house_entry(house_id=int(hid), x=int(entryx), y=int(entryy), z=int(entryz))
-            except Exception:
-                pass
 
         if action is None:
             self.status.showMessage("Add/edit house: no changes")
@@ -974,10 +967,8 @@ class QtMapEditorSessionMixin:
         self.canvas.update()
         if self.minimap_widget is not None and self.dock_minimap is not None and self.dock_minimap.isVisible():
             self.minimap_widget.update()
-        try:
+        with contextlib.suppress(Exception):
             self.actions_history.refresh()
-        except Exception:
-            pass
         self._update_action_enabled_states()
 
     def _poll_live_events(self) -> None:

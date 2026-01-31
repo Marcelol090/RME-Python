@@ -6,6 +6,7 @@ Provides UI for editing container item properties.
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import (
@@ -134,10 +135,8 @@ class ContainerPropertiesDialog(QDialog):
         for list_item in selected:
             item = list_item.data(100)
             if hasattr(self._container, "container_items"):
-                try:
+                with contextlib.suppress(ValueError):
                     self._container.container_items.remove(item)
-                except ValueError:
-                    pass
 
         # Update list
         self._update_items_list()

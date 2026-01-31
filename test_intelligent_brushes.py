@@ -166,10 +166,7 @@ def test_server_id_client_id_mapping():
         client_id = brush.get("client_id")
         brush_type = brush.get("type")
 
-        if server_id == client_id:
-            id_display = f"ID={server_id}"
-        else:
-            id_display = f"ServerID={server_id}, ClientID={client_id}"
+        id_display = f"ID={server_id}" if server_id == client_id else f"ServerID={server_id}, ClientID={client_id}"
 
         print(f"  {i + 1}. {name:30s} ({brush_type:8s}) {id_display}")
 
@@ -195,7 +192,7 @@ def test_configuration_manager_integration():
     for version_str, engine, otbm_version, expects_server_id in test_cases:
         metadata = MapMetadata(engine=engine, client_version=int(version_str), otbm_version=otbm_version, source="test")
 
-        cfg = ConfigurationManager(metadata=metadata, definitions={})
+        ConfigurationManager(metadata=metadata, definitions={})
 
         # Test format detection
         is_canary = ConfigurationManager.is_canary_format(otbm_version)
@@ -258,7 +255,7 @@ def run_all_tests():
     print("*" * 70)
 
     try:
-        brushes = test_brush_generation()
+        test_brush_generation()
         test_version_mapping()
         test_brush_types()
         test_server_id_client_id_mapping()

@@ -188,12 +188,13 @@ class MapPropertiesDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
                 color: #E5E5E7;
             }
-            
+
             QGroupBox {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -202,14 +203,14 @@ class MapPropertiesDialog(QDialog):
                 padding-top: 8px;
                 font-weight: 600;
             }
-            
+
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 8px;
                 color: #A1A1AA;
             }
-            
+
             QLineEdit, QTextEdit, QSpinBox {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -217,11 +218,11 @@ class MapPropertiesDialog(QDialog):
                 padding: 8px;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit:focus, QTextEdit:focus, QSpinBox:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -229,18 +230,18 @@ class MapPropertiesDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 16px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             QTabWidget::pane {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-            
+
             QTabBar::tab {
                 background: #1E1E2E;
                 color: #A1A1AA;
@@ -250,12 +251,13 @@ class MapPropertiesDialog(QDialog):
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
             }
-            
+
             QTabBar::tab:selected {
                 background: #2A2A3E;
                 color: #E5E5E7;
             }
-        """)
+        """
+        )
 
     def _load_values(self) -> None:
         """Load values from game map."""
@@ -325,11 +327,13 @@ class AboutDialog(QDialog):
 
         # Title
         title = QLabel("py_rme_canary")
-        title.setStyleSheet("""
+        title.setStyleSheet(
+            """
             font-size: 24px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
@@ -368,12 +372,13 @@ class AboutDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #2A2A3E, stop:1 #1E1E2E);
             }
-            
+
             QPushButton {
                 background: #8B5CF6;
                 color: white;
@@ -382,8 +387,9 @@ class AboutDialog(QDialog):
                 padding: 8px 24px;
                 font-weight: 500;
             }
-            
+
             QPushButton:hover {
                 background: #A78BFA;
             }
-        """)
+        """
+        )

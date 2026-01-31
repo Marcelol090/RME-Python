@@ -32,7 +32,7 @@ def remove_monsters(editor: QtMapEditor, selection_only: bool = True) -> None:
         return
 
     # Apply changes to map
-    for pos, new_tile in changed_tiles.items():
+    for _pos, new_tile in changed_tiles.items():
         game_map.set_tile(new_tile)
 
     # Request viewport refresh

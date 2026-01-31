@@ -132,7 +132,8 @@ class BorderPatternList(QFrame):
 
         # Pattern list
         self.list_widget = QListWidget()
-        self.list_widget.setStyleSheet("""
+        self.list_widget.setStyleSheet(
+            """
             QListWidget {
                 background: #1A1A2E;
                 border: 1px solid #363650;
@@ -149,7 +150,8 @@ class BorderPatternList(QFrame):
             QListWidget::item:hover {
                 background: #2A2A3E;
             }
-        """)
+        """
+        )
         self.list_widget.currentRowChanged.connect(self._on_row_changed)
 
         # Populate patterns
@@ -243,7 +245,8 @@ class BorderBuilderDialog(QDialog):
         left_layout.addWidget(brush_label)
 
         self.brush_list = QListWidget()
-        self.brush_list.setStyleSheet("""
+        self.brush_list.setStyleSheet(
+            """
             QListWidget {
                 background: #1A1A2E;
                 border: 1px solid #363650;
@@ -256,7 +259,8 @@ class BorderBuilderDialog(QDialog):
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
         self.brush_list.currentItemChanged.connect(self._on_brush_selected)
         left_layout.addWidget(self.brush_list)
 
@@ -274,7 +278,8 @@ class BorderBuilderDialog(QDialog):
 
         # Preview
         preview_group = QGroupBox("Pattern Preview")
-        preview_group.setStyleSheet("""
+        preview_group.setStyleSheet(
+            """
             QGroupBox {
                 color: #E5E5E7;
                 font-weight: bold;
@@ -288,7 +293,8 @@ class BorderBuilderDialog(QDialog):
                 left: 10px;
                 padding: 0 5px;
             }
-        """)
+        """
+        )
         preview_layout = QVBoxLayout(preview_group)
 
         self.preview_widget = BorderPreviewWidget()
@@ -298,7 +304,8 @@ class BorderBuilderDialog(QDialog):
 
         # Brush info
         info_group = QGroupBox("Brush Info")
-        info_group.setStyleSheet("""
+        info_group.setStyleSheet(
+            """
             QGroupBox {
                 color: #E5E5E7;
                 font-weight: bold;
@@ -312,7 +319,8 @@ class BorderBuilderDialog(QDialog):
                 left: 10px;
                 padding: 0 5px;
             }
-        """)
+        """
+        )
         info_layout = QFormLayout(info_group)
         info_layout.setSpacing(8)
 
@@ -353,7 +361,8 @@ class BorderBuilderDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
@@ -371,7 +380,8 @@ class BorderBuilderDialog(QDialog):
                 background: #404060;
                 border-color: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def _load_brushes(self) -> None:
         """Load brushes that have border definitions."""
@@ -396,7 +406,7 @@ class BorderBuilderDialog(QDialog):
             if borders and len(borders) > 0:
                 name = getattr(brush, "name", None) or str(getattr(brush, "server_id", "?"))
                 brush_type = getattr(brush, "brush_type", "unknown")
-                server_id = getattr(brush, "server_id", 0)
+                getattr(brush, "server_id", 0)
 
                 item = QListWidgetItem(f"[{brush_type}] {name}")
                 item.setData(Qt.ItemDataRole.UserRole, brush)

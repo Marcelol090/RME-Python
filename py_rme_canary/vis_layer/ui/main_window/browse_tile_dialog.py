@@ -55,10 +55,7 @@ class BrowseTileDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # Tile info
-        if tile:
-            info_label = QLabel(f"Tile Position: ({tile.x}, {tile.y}, {tile.z})")
-        else:
-            info_label = QLabel("No tile selected")
+        info_label = QLabel(f"Tile Position: ({tile.x}, {tile.y}, {tile.z})") if tile else QLabel("No tile selected")
         layout.addWidget(info_label)
 
         # Items list

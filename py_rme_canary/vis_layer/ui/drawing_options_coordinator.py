@@ -10,6 +10,7 @@ editor state. It provides methods to:
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -54,10 +55,8 @@ class DrawingOptionsCoordinator:
 
         Updates canvas to reflect new options.
         """
-        try:
+        with contextlib.suppress(Exception):
             self._editor.canvas.update()
-        except Exception:
-            pass
 
     def sync_from_editor(self) -> None:
         """Sync DrawingOptions from editor attributes.

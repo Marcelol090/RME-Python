@@ -95,13 +95,14 @@ class UndoRedoPanel(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             UndoRedoPanel {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 10px;
             }
-            
+
             QListWidget {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -109,21 +110,21 @@ class UndoRedoPanel(QFrame):
                 color: #E5E5E7;
                 outline: none;
             }
-            
+
             QListWidget::item {
                 padding: 6px 10px;
                 border-radius: 4px;
                 margin: 1px 2px;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -132,16 +133,17 @@ class UndoRedoPanel(QFrame):
                 padding: 6px 12px;
                 font-size: 11px;
             }
-            
+
             QPushButton:hover {
                 background: #8B5CF6;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def add_entry(self, entry: HistoryEntry) -> None:
         """Add a history entry."""
@@ -258,11 +260,12 @@ class QuickUndoRedo(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QuickUndoRedo {
                 background: transparent;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -271,16 +274,17 @@ class QuickUndoRedo(QFrame):
                 font-size: 14px;
                 font-weight: 700;
             }
-            
+
             QPushButton:hover {
                 background: #8B5CF6;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def set_counts(self, undo_count: int, redo_count: int) -> None:
         """Update undo/redo counts."""

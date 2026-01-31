@@ -73,13 +73,15 @@ class SpawnCard(QFrame):
         # Radius badge
         radius = getattr(self._spawn, "radius", 0)
         badge = QLabel(f"r={radius}")
-        badge.setStyleSheet("""
+        badge.setStyleSheet(
+            """
             background: #363650;
             color: #A1A1AA;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 10px;
-        """)
+        """
+        )
         header.addWidget(badge)
 
         layout.addLayout(header)
@@ -133,13 +135,14 @@ class SpawnCard(QFrame):
         border = "#8B5CF6" if self._selected else "#363650"
         bg = "#363650" if self._selected else "#2A2A3E"
 
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             SpawnCard {{
                 background: {bg};
                 border: 2px solid {border};
                 border-radius: 10px;
             }}
-            
+
             QPushButton {{
                 background: #404060;
                 color: #E5E5E7;
@@ -148,11 +151,12 @@ class SpawnCard(QFrame):
                 padding: 4px 10px;
                 font-size: 10px;
             }}
-            
+
             QPushButton:hover {{
                 background: #8B5CF6;
             }}
-        """)
+        """
+        )
 
     def set_selected(self, selected: bool) -> None:
         """Set selection state."""
@@ -271,12 +275,13 @@ class SpawnEditDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
                 color: #E5E5E7;
             }
-            
+
             QSpinBox, QLineEdit {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -284,18 +289,18 @@ class SpawnEditDialog(QDialog):
                 padding: 8px;
                 color: #E5E5E7;
             }
-            
+
             QSpinBox:focus, QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QListWidget {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 6px;
                 color: #E5E5E7;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -303,11 +308,12 @@ class SpawnEditDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 16px;
             }
-            
+
             QPushButton:hover {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def _add_creature(self) -> None:
         """Add creature to list."""
@@ -375,11 +381,13 @@ class SpawnManagerDialog(QDialog):
         header_layout = QHBoxLayout()
 
         header = QLabel("👹 Spawn Manager")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             font-size: 18px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         header_layout.addWidget(header)
 
         header_layout.addStretch()
@@ -392,7 +400,8 @@ class SpawnManagerDialog(QDialog):
 
         # Tabs for monster/npc
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
+        self.tabs.setStyleSheet(
+            """
             QTabWidget::pane {
                 border: none;
                 background: transparent;
@@ -408,7 +417,8 @@ class SpawnManagerDialog(QDialog):
                 background: #8B5CF6;
                 color: white;
             }
-        """)
+        """
+        )
 
         # Monster spawns tab
         monster_tab = QWidget()
@@ -457,11 +467,13 @@ class SpawnManagerDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-        """)
+        """
+        )
 
     def _load_spawns(self) -> None:
         """Load spawns from map."""

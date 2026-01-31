@@ -34,7 +34,7 @@ class Position:
     z: int
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class Item:
     """Minimal item model required for strict OTBM I/O.
 

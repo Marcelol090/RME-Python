@@ -12,8 +12,8 @@ def apply_dark_theme(app: QApplication):
 
     # Base colors
     color_dark = QColor(45, 45, 45)
-    color_mid = QColor(40, 40, 40)
-    color_light = QColor(60, 60, 60)
+    QColor(40, 40, 40)
+    QColor(60, 60, 60)
     color_text = QColor(208, 208, 208)
     color_bright_text = QColor(255, 255, 255)
     color_disabled_text = QColor(127, 127, 127)
@@ -57,10 +57,12 @@ def apply_dark_theme(app: QApplication):
     app.setPalette(dark_palette)
 
     # Additional stylesheet for specific controls if needed
-    app.setStyleSheet("""
+    app.setStyleSheet(
+        """
         QToolTip {
             color: #ffffff;
             background-color: #2a82da;
             border: 1px solid white;
         }
-    """)
+    """
+    )

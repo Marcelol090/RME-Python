@@ -1,3 +1,8 @@
+[project]
+name = "py_rme_canary"
+version = "0.0.0"
+requires-python = ">=3.12"
+
 [tool.ruff]
 target-version = "py312"
 line-length = 120
@@ -5,6 +10,24 @@ extend-exclude = ["py_rme_canary/tools/**"]
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "I", "N", "UP", "B", "C4", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"py_rme_canary/vis_layer/**" = ["N802"]
+"py_rme_canary/core/assets/creatures_loader.py" = ["N817"]
+"py_rme_canary/core/database/*.py" = ["N812"]
+"py_rme_canary/core/database/items_otb.py" = ["N806"]
+"py_rme_canary/core/io/**/*.py" = ["N812", "N813"]
+"py_rme_canary/core/protocols/live_server.py" = ["N806"]
+"py_rme_canary/logic_layer/brush_definitions.py" = ["N812"]
+"py_rme_canary/logic_layer/clipboard.py" = ["N806"]
+"py_rme_canary/vis_layer/ui/indicators.py" = ["N812"]
+"py_rme_canary/vis_layer/ui/main_window/editor.py" = ["E402"]
+"py_rme_canary/vis_layer/ui/main_window/*.py" = ["E501"]
+"py_rme_canary/examples/*.py" = ["E501"]
+"py_rme_canary/tests/unit/core/io/test_lua_creature_import.py" = ["E501", "N812"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["pytest"]
 
 [tool.ruff.format]
 quote-style = "double"

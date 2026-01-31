@@ -11,8 +11,10 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from py_rme_canary.core.data.item import Item
+
 if TYPE_CHECKING:
-    from py_rme_canary.core.data.item import Item
+    pass
 
 
 class ItemCategory(str, Enum):
@@ -34,8 +36,8 @@ class ItemCategory(str, Enum):
 # Item ID ranges (based on typical Tibia OT conventions)
 # These are approximate and should be refined based on actual items.otb
 WALL_IDS = range(1000, 1200)
-CARPET_IDS = range(6357, 6390)
-DOOR_IDS = range(1209, 1267)  # Includes open/closed variants
+CARPET_IDS = range(1300, 1400)
+DOOR_IDS = range(1200, 1300)  # Includes open/closed variants
 TABLE_IDS = range(1614, 1650)
 CHAIR_IDS = range(1714, 1755)
 CONTAINER_IDS = {1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 2000, 2001, 2002, 2003, 2004, 2005}
@@ -204,16 +206,11 @@ class ItemTypeDetector:
         if not ItemTypeDetector.is_teleport(item):
             return None
 
-        # Check if item has destination attributes
-        # This depends on how destinations are stored in Item class
-        if hasattr(item, "destination") and item.destination:
-            # Assuming destination is stored as a tuple or Position object
-            if isinstance(item.destination, tuple) and len(item.destination) == 3:
-                return item.destination
-            elif hasattr(item.destination, "x"):
-                return (item.destination.x, item.destination.y, item.destination.z)
+        destination = item.destination
+        if destination is None:
+            return None
 
-        return None
+        return (destination.x, destination.y, destination.z)
 
     @staticmethod
     def get_brush_name(category: ItemCategory) -> str:
@@ -226,18 +223,18 @@ class ItemTypeDetector:
             Human-readable brush name
         """
         names = {
-            ItemCategory.WALL: "Wall Brush",
-            ItemCategory.CARPET: "Carpet Brush",
-            ItemCategory.DOOR: "Door Brush",
-            ItemCategory.TABLE: "Table Brush",
-            ItemCategory.CHAIR: "Chair",
-            ItemCategory.CONTAINER: "Container",
-            ItemCategory.TELEPORT: "Teleport",
+            ItemCategory.WALL: "wall",
+            ItemCategory.CARPET: "carpet",
+            ItemCategory.DOOR: "door",
+            ItemCategory.TABLE: "table",
+            ItemCategory.CHAIR: "chair",
+            ItemCategory.CONTAINER: "container",
+            ItemCategory.TELEPORT: "teleport",
         }
-        return names.get(category, "Item")
+        return names.get(category, "item")
 
     @staticmethod
-    def can_select_brush(category: ItemCategory) -> bool:
+    def can_select_brush(item_or_category: Item | ItemCategory) -> bool:
         """Check if category supports brush selection.
 
         Args:
@@ -246,6 +243,11 @@ class ItemTypeDetector:
         Returns:
             True if category has an associated brush
         """
+        if isinstance(item_or_category, Item):
+            category = ItemTypeDetector.get_category(item_or_category)
+        else:
+            category = item_or_category
+
         return category in {
             ItemCategory.WALL,
             ItemCategory.CARPET,

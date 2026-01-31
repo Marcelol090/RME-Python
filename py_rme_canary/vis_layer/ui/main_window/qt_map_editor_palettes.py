@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,11 +19,7 @@ class QtMapEditorPalettesMixin:
     def _toggle_palette_large_icons(self: QtMapEditor, enabled: bool) -> None:
         self.palette_large_icons = bool(enabled)
         size = 48 if bool(enabled) else 24
-        try:
+        with contextlib.suppress(Exception):
             self.palettes.set_icon_size(int(size))
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             self.status.showMessage("Palette icons: large" if bool(enabled) else "Palette icons: normal")
-        except Exception:
-            pass

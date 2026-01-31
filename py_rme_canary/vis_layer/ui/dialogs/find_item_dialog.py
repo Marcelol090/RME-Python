@@ -100,7 +100,17 @@ class SearchResultWidget(QWidget):
         item = self.result.item
         pos = self.result.position
 
-        info_text = f"ID {item.id} @ ({pos[0]}, {pos[1]}, Floor {pos[2]})"
+        # Get item name from asset manager
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+        asset_mgr = AssetManager.instance()
+        item_name = asset_mgr.get_item_name(item.id)
+
+        # Format info text with name
+        if item_name != f"Item #{item.id}":
+            info_text = f"{item_name} (#{item.id}) @ ({pos[0]}, {pos[1]}, Floor {pos[2]})"
+        else:
+            info_text = f"ID {item.id} @ ({pos[0]}, {pos[1]}, Floor {pos[2]})"
 
         # Add attributes
         attrs = []
@@ -112,19 +122,22 @@ class SearchResultWidget(QWidget):
             info_text += f" - {', '.join(attrs)}"
 
         label = QLabel(info_text)
-        label.setStyleSheet("""
+        label.setStyleSheet(
+            """
             QLabel {
                 color: #E5E5E7;
                 font-size: 12px;
                 padding: 4px;
             }
-        """)
+        """
+        )
         layout.addWidget(label, 1)
 
         # Jump button
         jump_btn = QPushButton("Jump →")
         jump_btn.setFixedWidth(80)
-        jump_btn.setStyleSheet("""
+        jump_btn.setStyleSheet(
+            """
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -137,7 +150,8 @@ class SearchResultWidget(QWidget):
                 background: #8B5CF6;
                 color: white;
             }
-        """)
+        """
+        )
         jump_btn.clicked.connect(lambda: self.clicked.emit(pos))
         layout.addWidget(jump_btn)
 
@@ -279,7 +293,8 @@ class FindItemDialog(QDialog):
 
         self.results_list = QListWidget()
         self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
-        self.results_list.setStyleSheet("""
+        self.results_list.setStyleSheet(
+            """
             QListWidget {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -299,7 +314,8 @@ class FindItemDialog(QDialog):
             QListWidget::item:hover {
                 background: #363650;
             }
-        """)
+        """
+        )
         results_layout.addWidget(self.results_list)
 
         layout.addWidget(results_group)
@@ -380,11 +396,8 @@ class FindItemDialog(QDialog):
                 continue
 
             # Check ground
-            if tile.ground:
-                if self._item_matches(tile.ground, filters):
-                    results.append(
-                        SearchResult(item=tile.ground, position=(tile.x, tile.y, tile.z), tile_item_index=-1)
-                    )
+            if tile.ground and self._item_matches(tile.ground, filters):
+                results.append(SearchResult(item=tile.ground, position=(tile.x, tile.y, tile.z), tile_item_index=-1))
 
             # Check items
             for i, item in enumerate(tile.items):
@@ -414,32 +427,33 @@ class FindItemDialog(QDialog):
                     return False
 
         elif filters.search_mode == SearchMode.NAME:
-            # TODO: Implement name lookup via items.otb
-            # For now, just search by ID
+            # Search by item name using items.xml
             if filters.search_value:
-                if filters.search_value.lower() not in str(item.id).lower():
+                from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+                asset_mgr = AssetManager.instance()
+
+                # Get item name and check if search term is in it
+                item_name = asset_mgr.get_item_name(item.id).lower()
+                search_term = filters.search_value.lower()
+
+                if search_term not in item_name:
                     return False
 
         elif filters.search_mode == SearchMode.TYPE:
-            # TODO: Implement type filtering
+            # TODO: Implement type filtering using ItemTypeDetector
             pass
 
         # Action ID filter
-        if filters.has_action_id:
-            if item.action_id != filters.action_id_value:
-                return False
+        if filters.has_action_id and item.action_id != filters.action_id_value:
+            return False
 
         # Unique ID filter
-        if filters.has_unique_id:
-            if item.unique_id != filters.unique_id_value:
-                return False
+        if filters.has_unique_id and item.unique_id != filters.unique_id_value:
+            return False
 
         # Text filter
-        if filters.has_text:
-            if not item.text or filters.text_value.lower() not in item.text.lower():
-                return False
-
-        return True
+        return not (filters.has_text and (not item.text or filters.text_value.lower() not in item.text.lower()))
 
     def _display_results(self) -> None:
         """Display search results in the list."""
@@ -476,7 +490,8 @@ class FindItemDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark theme."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             FindItemDialog {
                 background: #1E1E2E;
             }
@@ -524,4 +539,5 @@ class FindItemDialog(QDialog):
                 background: #363650;
                 color: #52525B;
             }
-        """)
+        """
+        )

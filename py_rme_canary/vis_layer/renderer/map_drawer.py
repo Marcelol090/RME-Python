@@ -179,9 +179,7 @@ class MapDrawer:
         """Check if items should be drawn (not zoomed out too far)."""
         if not self.options.show_items:
             return False
-        if self.options.hide_items_when_zoomed and self._zoom > 10.0:
-            return False
-        return True
+        return not (self.options.hide_items_when_zoomed and self._zoom > 10.0)
 
     def should_draw_creatures(self) -> bool:
         """Check if creatures (monsters/NPCs) should be drawn."""

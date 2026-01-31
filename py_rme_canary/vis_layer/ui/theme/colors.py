@@ -59,7 +59,7 @@ def get_theme_color(name: str, alpha: int = 255) -> QColor:
             r, g, b = int(parts[0]), int(parts[1]), int(parts[2])
             a_float = float(parts[3])
             return QColor(r, g, b, int(a_float * 255))
-        except:
+        except (ValueError, IndexError, AttributeError):
             return QColor(color_str)
 
     return get_qcolor(color_str, alpha)

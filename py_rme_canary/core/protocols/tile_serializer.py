@@ -38,10 +38,15 @@ def encode_tile(tile: Any) -> bytes:
     y = int(getattr(tile, "y", 0))
     z = int(getattr(tile, "z", 0))
 
-    # Flags: prefer explicit map_flags if provided (parity with tests)
-    flags = int(getattr(tile, "map_flags", 0) or 0)
     ground = getattr(tile, "ground", None)
     house_id = getattr(tile, "house_id", None)
+
+    # Flags: 1 if ground exists, 2 if house id exists (parity with tests)
+    flags = 0
+    if ground is not None:
+        flags |= 1
+    if house_id is not None:
+        flags |= 2
 
     # Get items
     items = getattr(tile, "items", None) or []

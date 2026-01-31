@@ -152,11 +152,12 @@ class ItemFindReplaceDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QGroupBox {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -166,13 +167,13 @@ class ItemFindReplaceDialog(QDialog):
                 color: #E5E5E7;
                 font-weight: 600;
             }
-            
+
             QGroupBox::title {
                 subcontrol-origin: margin;
                 left: 12px;
                 padding: 0 8px;
             }
-            
+
             QSpinBox, QLineEdit {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -180,15 +181,15 @@ class ItemFindReplaceDialog(QDialog):
                 padding: 8px;
                 color: #E5E5E7;
             }
-            
+
             QSpinBox:focus, QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QCheckBox, QRadioButton {
                 color: #E5E5E7;
             }
-            
+
             QPushButton {
                 background: #8B5CF6;
                 color: white;
@@ -196,28 +197,29 @@ class ItemFindReplaceDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 16px;
             }
-            
+
             QPushButton:hover {
                 background: #A78BFA;
             }
-            
+
             QPushButton:disabled {
                 background: #363650;
                 color: #52525B;
             }
-            
+
             QProgressBar {
                 background: #363650;
                 border: none;
                 border-radius: 4px;
                 height: 6px;
             }
-            
+
             QProgressBar::chunk {
                 background: #8B5CF6;
                 border-radius: 4px;
             }
-        """)
+        """
+        )
 
     def _on_delete_mode_changed(self, state: int) -> None:
         """Handle delete mode toggle."""
@@ -242,7 +244,7 @@ class ItemFindReplaceDialog(QDialog):
         count = 0
         tiles = getattr(self._game_map, "tiles", {}) or {}
 
-        for pos, tile in tiles.items():
+        for _pos, tile in tiles.items():
             # Check scope
             if self.scope_floor.isChecked():
                 # Would check against current floor
@@ -252,10 +254,9 @@ class ItemFindReplaceDialog(QDialog):
                 pass
 
             # Check ground
-            if self.match_ground.isChecked():
-                if tile.ground and tile.ground.id == find_id:
-                    count += 1
-                    continue
+            if self.match_ground.isChecked() and tile.ground and tile.ground.id == find_id:
+                count += 1
+                continue
 
             # Check items
             if self.match_items.isChecked():
@@ -303,16 +304,15 @@ class ItemFindReplaceDialog(QDialog):
         replaced = 0
         tiles = getattr(self._game_map, "tiles", {}) or {}
 
-        for pos, tile in tiles.items():
+        for _pos, tile in tiles.items():
             # Check ground
-            if self.match_ground.isChecked():
-                if tile.ground and tile.ground.id == find_id:
-                    if self.delete_mode.isChecked():
-                        tile.ground = None
-                    else:
-                        tile.ground.id = replace_id
-                    replaced += 1
-                    self.progress.setValue(replaced)
+            if self.match_ground.isChecked() and tile.ground and tile.ground.id == find_id:
+                if self.delete_mode.isChecked():
+                    tile.ground = None
+                else:
+                    tile.ground.id = replace_id
+                replaced += 1
+                self.progress.setValue(replaced)
 
             # Check items
             if self.match_items.isChecked():

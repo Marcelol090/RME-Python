@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QAction, QKeySequence
-from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMenu, QMessageBox
 
 from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.core.data.position import Position
@@ -103,10 +103,9 @@ class QtMapEditorModernUXMixin:
         """Apply modern dark theme to the application."""
         try:
             app = QApplication.instance()
-            if app:
-                if apply_modern_theme(app):
-                    self._theme_applied = True
-                    logger.debug("Modern theme applied successfully")
+            if app and apply_modern_theme(app):
+                self._theme_applied = True
+                logger.debug("Modern theme applied successfully")
         except Exception as e:
             logger.error(f"Error applying modern theme: {e}")
 

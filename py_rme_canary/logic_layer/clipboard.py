@@ -78,7 +78,7 @@ class ClipboardEntry:
         """Get number of tiles in this entry."""
         if self.tiles is not None:
             return len(self.tiles)
-        if isinstance(self.data, dict) or isinstance(self.data, list):
+        if isinstance(self.data, (dict, list)):
             return len(self.data)
         return 0
 

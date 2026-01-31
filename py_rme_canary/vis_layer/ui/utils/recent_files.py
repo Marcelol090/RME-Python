@@ -156,7 +156,6 @@ def build_recent_files_menu(parent_menu: object, on_file_selected: callable) -> 
     """
     try:
         from PyQt6.QtGui import QAction
-        from PyQt6.QtWidgets import QMenu
 
         # Clear existing
         if hasattr(parent_menu, "clear"):
@@ -175,10 +174,7 @@ def build_recent_files_menu(parent_menu: object, on_file_selected: callable) -> 
         # Add file actions (with index for shortcut)
         for i, (display, path) in enumerate(items):
             # Show index for first 9 files (Ctrl+1 to Ctrl+9)
-            if i < 9:
-                text = f"&{i + 1}. {display}"
-            else:
-                text = f"    {display}"
+            text = f"&{i + 1}. {display}" if i < 9 else f"    {display}"
 
             action = QAction(text, parent_menu)
             action.setToolTip(path)

@@ -1,11 +1,19 @@
-"""Pytest configuration for all tests."""
+"""Pytest configuration for package imports."""
 
 from __future__ import annotations
 
 import importlib.util
 import sys
+from pathlib import Path
 
 import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+PACKAGE_ROOT = ROOT / "py_rme_canary"
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
 
 # Ensure pytest-qt uses PyQt6 API and provide QSignalSpy alias expected by tests.
 try:
@@ -57,12 +65,9 @@ def _benchmark_available() -> bool:
 
 def pytest_ignore_collect(collection_path, config):
     path_str = str(collection_path).replace("\\", "/")
-    if not _pyqt6_available():
-        if "/tests/unit/vis_layer/ui/" in path_str:
-            return True
-    if not _benchmark_available() and "/tests/performance/" in path_str:
+    if not _pyqt6_available() and "/tests/unit/vis_layer/ui/" in path_str:
         return True
-    return False
+    return bool(not _benchmark_available() and "/tests/performance/" in path_str)
 
 
 @pytest.fixture

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import queue
 import threading
 
@@ -67,10 +68,8 @@ class PreviewThread(threading.Thread):
                 elif event.type == pygame.VIDEORESIZE:
                     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
 
-            try:
+            with contextlib.suppress(queue.Empty):
                 self._current_snapshot = self._queue.get_nowait()
-            except queue.Empty:
-                pass
 
             if self._current_snapshot is not None:
                 self._renderer.render(screen, self._current_snapshot)

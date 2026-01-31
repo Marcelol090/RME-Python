@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QElapsedTimer, QPoint, QRect, Qt, QTimer
@@ -248,10 +249,8 @@ class MapCanvasWidget(QWidget):
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
         self._sync_hover_to_drawer(drawer)
-        try:
+        with contextlib.suppress(Exception):
             drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
-        except Exception:
-            pass
 
         backend = QPainterRenderBackend(
             painter,
@@ -754,10 +753,8 @@ class MapCanvasWidget(QWidget):
     def cancel_lasso(self) -> None:
         self._lasso_active = False
         self._lasso_apply_mode = None
-        try:
+        with contextlib.suppress(Exception):
             get_lasso_tool().cancel()
-        except Exception:
-            pass
 
     def _set_hover_from_pos(self, px: int, py: int) -> None:
         """Capture hover tile for MapDrawer tooltips."""

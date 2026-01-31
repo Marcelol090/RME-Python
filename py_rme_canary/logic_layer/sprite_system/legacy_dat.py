@@ -300,10 +300,7 @@ def _parse_legacy_items(
         )
         sprite_ids: list[int] = []
         for _ in range(numsprites):
-            if is_extended:
-                sprite_id = read_u32()
-            else:
-                sprite_id = read_u16()
+            sprite_id = read_u32() if is_extended else read_u16()
             sprite_ids.append(int(sprite_id))
             total_ids += 1
             if 0 < int(sprite_id) <= int(sprite_count):

@@ -199,7 +199,7 @@ class TestBrushToolbar:
         from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar
 
         toolbar = BrushToolbar()
-        spy = QSignalSpy(toolbar.size_changed)
+        QSignalSpy(toolbar.size_changed)
 
         toolbar.set_size(5)
         # Verify signal would be emitted on actual click

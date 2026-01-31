@@ -38,8 +38,11 @@ class ColorButton(QPushButton):
 
     color_changed = pyqtSignal(QColor)
 
-    def __init__(self, color: QColor = QColor(139, 92, 246), parent: QWidget | None = None) -> None:
+    def __init__(self, color: QColor | None = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+
+        if color is None:
+            color = QColor(139, 92, 246)
 
         self._color = color
         self.setFixedSize(60, 30)
@@ -48,7 +51,8 @@ class ColorButton(QPushButton):
 
     def _update_style(self) -> None:
         """Update button appearance."""
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             ColorButton {{
                 background: {self._color.name()};
                 border: 2px solid #363650;
@@ -57,7 +61,8 @@ class ColorButton(QPushButton):
             ColorButton:hover {{
                 border-color: #8B5CF6;
             }}
-        """)
+        """
+        )
 
     def _pick_color(self) -> None:
         """Open color picker."""
@@ -106,11 +111,13 @@ class ZoneListDialog(QDialog):
 
         # Header
         header = QLabel("🗺️ Zones")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             font-size: 18px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         layout.addWidget(header)
 
         # Zone list
@@ -148,11 +155,12 @@ class ZoneListDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QListWidget {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -160,21 +168,21 @@ class ZoneListDialog(QDialog):
                 color: #E5E5E7;
                 outline: none;
             }
-            
+
             QListWidget::item {
                 padding: 10px 12px;
                 border-radius: 6px;
                 margin: 2px 4px;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -182,17 +190,18 @@ class ZoneListDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 16px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def _load_zones(self) -> None:
         """Load zones from map."""
@@ -206,10 +215,7 @@ class ZoneListDialog(QDialog):
         for zone_id, zone in sorted(zones.items()):
             # Create colored indicator
             color = getattr(zone, "color", None)
-            if color:
-                color_text = "● "
-            else:
-                color_text = "○ "
+            color_text = "● " if color else "○ "
 
             name = getattr(zone, "name", zone_id) or zone_id
             text = f"{color_text}{name}"
@@ -361,12 +367,13 @@ class ZoneEditDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -374,15 +381,16 @@ class ZoneEditDialog(QDialog):
                 padding: 8px;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QLabel {
                 color: #A1A1AA;
             }
-        """)
+        """
+        )
 
     def get_values(self) -> dict:
         """Get entered values."""
@@ -424,11 +432,13 @@ class TownListDialog(QDialog):
 
         # Header
         header = QLabel("🏰 Towns")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             font-size: 18px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         layout.addWidget(header)
 
         # Town list
@@ -475,11 +485,12 @@ class TownListDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QListWidget {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -487,21 +498,21 @@ class TownListDialog(QDialog):
                 color: #E5E5E7;
                 outline: none;
             }
-            
+
             QListWidget::item {
                 padding: 10px 12px;
                 border-radius: 6px;
                 margin: 2px 4px;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -509,17 +520,18 @@ class TownListDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 12px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def _load_towns(self) -> None:
         """Load towns from map."""
@@ -534,10 +546,7 @@ class TownListDialog(QDialog):
             name = getattr(town, "name", f"Town {town_id}") or f"Town {town_id}"
             temple = getattr(town, "temple", None)
 
-            if temple:
-                temple_text = f"({int(temple.x)}, {int(temple.y)}, {int(temple.z)})"
-            else:
-                temple_text = "Temple not set"
+            temple_text = f"({int(temple.x)}, {int(temple.y)}, {int(temple.z)})" if temple else "Temple not set"
 
             text = f"🏰 {name}\n    ID: {town_id} | {temple_text}"
 
@@ -577,7 +586,7 @@ class TownListDialog(QDialog):
         towns = getattr(self._game_map, "towns", {}) or {}
 
         # Find next ID
-        next_id = max([int(k) for k in towns.keys()], default=0) + 1
+        next_id = max([int(k) for k in towns], default=0) + 1
 
         # Create town (simplified)
         if not hasattr(self._game_map, "towns") or self._game_map.towns is None:

@@ -44,9 +44,7 @@ class UserSettings:
         if isinstance(raw, (int, float)):
             return bool(raw)
         value = str(raw).strip().lower()
-        if value in ("0", "false", "no", "off", ""):
-            return False
-        return True
+        return value not in ("0", "false", "no", "off", "")
 
     def set_auto_load_appearances(self, value: bool) -> None:
         self._settings.setValue("preferences/auto_load_appearances", bool(value))
@@ -63,9 +61,7 @@ class UserSettings:
         if isinstance(raw, (int, float)):
             return bool(raw)
         value = str(raw).strip().lower()
-        if value in ("0", "false", "no", "off", ""):
-            return False
-        return True
+        return value not in ("0", "false", "no", "off", "")
 
     def set_sprite_match_on_paste(self, value: bool) -> None:
         """Set sprite match on paste preference."""

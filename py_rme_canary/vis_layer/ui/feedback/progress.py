@@ -64,11 +64,13 @@ class ProgressDialog(QDialog):
 
         # Message
         self.message_label = QLabel(message)
-        self.message_label.setStyleSheet("""
+        self.message_label.setStyleSheet(
+            """
             color: #E5E5E7;
             font-size: 14px;
             font-weight: 500;
-        """)
+        """
+        )
         layout.addWidget(self.message_label)
 
         # Progress bar
@@ -92,24 +94,25 @@ class ProgressDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QProgressBar {
                 background: #2A2A3E;
                 border: none;
                 border-radius: 6px;
                 height: 12px;
             }
-            
+
             QProgressBar::chunk {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #8B5CF6, stop:0.5 #EC4899, stop:1 #8B5CF6);
                 border-radius: 6px;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -117,12 +120,13 @@ class ProgressDialog(QDialog):
                 border-radius: 6px;
                 padding: 8px 24px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def set_progress(self, value: int, status: str = "") -> None:
         """Update progress value and status.

@@ -64,32 +64,10 @@ def integration_example_with_editor_session():
     This is pseudocode showing the integration pattern.
     """
     # In the actual editor, you would:
-
-    # 1. Add callback to context menu
-    def on_browse_tile():
-        # Get current tile from click position
-        tile = editor_session.get_tile_at(click_pos)
-        if not tile:
-            return
-
-        # Open dialog
-        dialog = BrowseTileDialog(tile=tile, position=click_pos, asset_manager=editor.asset_manager, parent=editor)
-
-        if dialog.exec():
-            # Apply changes via undoable action
-            ground, items = dialog.get_modified_items()
-
-            action = ModifyTileItemsAction(position=click_pos, new_ground=ground, new_items=items)
-
-            editor_session.execute_action(action)
-
-    # 2. RegisterCallback
-    context_menu.set_callbacks(
-        {
-            # ... other callbacks ...
-            "browse_tile": on_browse_tile,
-        }
-    )
+    # 1. Add a context menu callback to open BrowseTileDialog
+    # 2. Apply changes via an undoable action (e.g., ModifyTileItemsAction)
+    # 3. Execute the action through the editor session history
+    return
 
 
 if __name__ == "__main__":

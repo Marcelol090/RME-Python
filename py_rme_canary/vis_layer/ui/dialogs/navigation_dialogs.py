@@ -157,11 +157,12 @@ class GoToPositionDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QSpinBox {
                 background: #2A2A3E;
                 border: 2px solid #363650;
@@ -172,21 +173,21 @@ class GoToPositionDialog(QDialog):
                 font-weight: 600;
                 min-width: 80px;
             }
-            
+
             QSpinBox:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QSpinBox::up-button, QSpinBox::down-button {
                 width: 20px;
                 background: #363650;
                 border: none;
             }
-            
+
             QSpinBox::up-button:hover, QSpinBox::down-button:hover {
                 background: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -195,16 +196,17 @@ class GoToPositionDialog(QDialog):
                 padding: 8px 12px;
                 font-size: 11px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             QDialogButtonBox QPushButton {
                 min-width: 80px;
             }
-        """)
+        """
+        )
 
     def _goto_center(self) -> None:
         """Set coordinates to map center."""
@@ -318,11 +320,12 @@ class FindItemDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QSpinBox {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -330,11 +333,11 @@ class FindItemDialog(QDialog):
                 padding: 8px;
                 color: #E5E5E7;
             }
-            
+
             QSpinBox:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #8B5CF6;
                 color: white;
@@ -343,36 +346,37 @@ class FindItemDialog(QDialog):
                 padding: 8px 16px;
                 font-weight: 500;
             }
-            
+
             QPushButton:hover {
                 background: #A78BFA;
             }
-            
+
             QPushButton:disabled {
                 background: #363650;
                 color: #52525B;
             }
-            
+
             QListWidget {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 8px;
                 color: #E5E5E7;
             }
-            
+
             QListWidget::item {
                 padding: 8px;
                 border-radius: 4px;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def _do_search(self) -> None:
         """Execute search."""

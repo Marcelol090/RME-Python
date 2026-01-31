@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, cast
 
 from py_rme_canary.vis_layer.ui.main_window.build_docks import build_docks
@@ -32,10 +33,8 @@ class QtMapEditorDocksMixin:
         if bool(checked):
             editor.dock_actions_history.show()
             editor.dock_actions_history.raise_()
-            try:
+            with contextlib.suppress(Exception):
                 editor.actions_history.refresh()
-            except Exception:
-                pass
         else:
             editor.dock_actions_history.hide()
 

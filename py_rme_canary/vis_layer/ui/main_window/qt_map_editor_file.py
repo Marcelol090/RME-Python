@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -188,10 +189,8 @@ class QtMapEditorFileMixin:
             return
 
         clear_creature_name_cache()
-        try:
+        with contextlib.suppress(Exception):
             self.palettes.refresh_primary_list()
-        except Exception:
-            pass
 
         lines = [
             f"Files scanned: {int(result.files_scanned)}",

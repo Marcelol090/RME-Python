@@ -3,6 +3,7 @@ Brush Management System - Intelligent, Version-Aware Brush Definition Loading
 Automatically detects Tibia version (ServerID vs ClientID) and loads appropriate brushes
 """
 
+import contextlib
 import json
 import os
 import xml.etree.ElementTree as ET
@@ -51,7 +52,7 @@ class TibiaVersion(Enum):
     V1320 = ("1320", "canary", False, 5)
     V1330 = ("1330", "canary", False, 6)
 
-    def __init__(self, version_str, format_type, uses_server_id, otbm_version):
+    def __init__(self, version_str: str, format_type: str, uses_server_id: bool, otbm_version: int) -> None:
         self.version_str = version_str
         self.format_type = format_type  # "traditional" or "canary"
         self.uses_server_id = uses_server_id
@@ -65,7 +66,7 @@ class BrushItem:
     item_id: int
     chance: int = 100
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -76,7 +77,7 @@ class BrushBorder:
     position: str  # "CENTER", "NORTH", "EAST", "SOUTH", "WEST", etc.
     item_id: int
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -98,7 +99,7 @@ class BrushDefinition:
     on_blocking: bool = False
     thickness: str | None = None
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dict"""
         return {
             "name": self.name,
@@ -129,7 +130,7 @@ class BrushXMLParser:
 
     def parse_all(self) -> list[BrushDefinition]:
         """Parse all brush XML files from RME directory"""
-        all_brushes = []
+        all_brushes: list[BrushDefinition] = []
 
         if not self.brushs_path.exists():
             print(f"Warning: Brushs path not found: {self.brushs_path}")
@@ -171,7 +172,7 @@ class BrushXMLParser:
 
     def _parse_xml_file(self, xml_path: Path, brush_type: BrushType) -> list[BrushDefinition]:
         """Parse a single brush XML file"""
-        brushes = []
+        brushes: list[BrushDefinition] = []
 
         try:
             # Try to parse with error handling for malformed XML
@@ -198,20 +199,18 @@ class BrushXMLParser:
             return None
 
         # Parse IDs - prefer lookid (ClientID) but also accept server_lookid (ServerID)
-        client_id = None
-        server_id = None
+        client_id: int | None = None
+        server_id: int | None = None
 
-        if elem.get("lookid"):
-            try:
-                client_id = int(elem.get("lookid"))
-            except:
-                pass
+        lookid = elem.get("lookid")
+        if lookid:
+            with contextlib.suppress(ValueError):
+                client_id = int(lookid)
 
-        if elem.get("server_lookid"):
-            try:
-                server_id = int(elem.get("server_lookid"))
-            except:
-                pass
+        server_lookid = elem.get("server_lookid")
+        if server_lookid:
+            with contextlib.suppress(ValueError):
+                server_id = int(server_lookid)
 
         # If only one ID is present, use it for both (version compatibility)
         if client_id and not server_id:
@@ -226,7 +225,7 @@ class BrushXMLParser:
                 item_id = int(item_elem.get("id", "0"))
                 chance = int(item_elem.get("chance", "100"))
                 items.append(BrushItem(item_id=item_id, chance=chance))
-            except:
+            except (ValueError, TypeError):
                 pass
 
         # Parse borders (if any)
@@ -237,7 +236,7 @@ class BrushXMLParser:
                 bid = int(border_elem.get("id", "0"))
                 if pos and bid > 0:
                     borders[pos] = bid
-            except:
+            except (ValueError, TypeError):
                 pass
 
         # Create brush definition
@@ -259,7 +258,7 @@ class BrushXMLParser:
 class BrushJsonGenerator:
     """Generate intelligent, version-aware brush.json from RME sources"""
 
-    def __init__(self, rme_brushs_path: str, output_path: str = None):
+    def __init__(self, rme_brushs_path: str, output_path: str | None = None):
         self.rme_brushs_path = rme_brushs_path
         self.output_path = output_path
         self.parser = BrushXMLParser(rme_brushs_path)
@@ -327,7 +326,7 @@ class BrushJsonGenerator:
         }
         return timelines.get(version.version_str, "Unknown")
 
-    def save(self, output_path: str = None) -> str:
+    def save(self, output_path: str | None = None) -> str:
         """Save generated brush.json to file"""
         path = output_path or self.output_path
         if not path:
@@ -346,7 +345,7 @@ class BrushJsonGenerator:
 
 
 def create_intelligent_brushes(
-    rme_path: str = None, output_path: str = None, save_to_file: bool = True
+    rme_path: str | None = None, output_path: str | None = None, save_to_file: bool = True
 ) -> dict[str, Any]:
     """
     Main entry point: Create intelligent brush system

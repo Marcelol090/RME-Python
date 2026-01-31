@@ -80,14 +80,16 @@ class FloorIndicator(QFrame):
         self.floor_display = QLabel("7")
         self.floor_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.floor_display.setFixedSize(40, 36)
-        self.floor_display.setStyleSheet("""
+        self.floor_display.setStyleSheet(
+            """
             background: #1E1E2E;
             border: 2px solid #8B5CF6;
             border-radius: 8px;
             color: #E5E5E7;
             font-size: 16px;
             font-weight: 700;
-        """)
+        """
+        )
         layout.addWidget(self.floor_display, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Floor name
@@ -107,13 +109,14 @@ class FloorIndicator(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             FloorIndicator {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 10px;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #A1A1AA;
@@ -122,17 +125,18 @@ class FloorIndicator(QFrame):
                 font-size: 12px;
                 font-weight: 700;
             }
-            
+
             QPushButton:hover {
                 background: #8B5CF6;
                 color: white;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
             }
-        """)
+        """
+        )
 
     def _update_display(self) -> None:
         """Update the floor display."""
@@ -214,13 +218,15 @@ class MinimapWidget(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             MinimapWidget {
                 background: #1E1E2E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-        """)
+        """
+        )
 
     def set_map_size(self, width: int, height: int) -> None:
         """Set the map dimensions."""
@@ -330,11 +336,13 @@ class FloorMinimapPanel(QFrame):
 
         # Title
         title = QLabel("🗺️ Navigation")
-        title.setStyleSheet("""
+        title.setStyleSheet(
+            """
             font-size: 12px;
             font-weight: 600;
             color: #A1A1AA;
-        """)
+        """
+        )
         layout.addWidget(title)
 
         # Floor indicator
@@ -351,13 +359,15 @@ class FloorMinimapPanel(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             FloorMinimapPanel {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 10px;
             }
-        """)
+        """
+        )
 
     def set_floor(self, floor: int) -> None:
         """Set current floor."""

@@ -65,13 +65,15 @@ class ItemStackItemWidget(QWidget):
         # Sprite icon
         sprite_label = QLabel()
         sprite_label.setFixedSize(32, 32)
-        sprite_label.setStyleSheet("""
+        sprite_label.setStyleSheet(
+            """
             QLabel {
                 background: #1E1E2E;
                 border: 1px solid #363650;
                 border-radius: 4px;
             }
-        """)
+        """
+        )
 
         if self.stack_entry.sprite_pixmap:
             sprite_label.setPixmap(
@@ -88,7 +90,15 @@ class ItemStackItemWidget(QWidget):
 
         # Item info
         item = self.stack_entry.item
-        info_text = f"ID {item.id}"
+
+        # Get item name from asset manager (if available)
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+        asset_mgr = AssetManager.instance()
+        item_name = asset_mgr.get_item_name(item.id)
+
+        # Show name if available, otherwise just ID
+        info_text = f"{item_name} (#{item.id})" if item_name != f"Item #{item.id}" else f"ID {item.id}"
 
         # Add ground indicator
         if self.stack_entry.is_ground:
@@ -107,12 +117,14 @@ class ItemStackItemWidget(QWidget):
             info_text += f" ({', '.join(attrs)})"
 
         info_label = QLabel(info_text)
-        info_label.setStyleSheet("""
+        info_label.setStyleSheet(
+            """
             QLabel {
                 color: #E5E5E7;
                 font-size: 13px;
             }
-        """)
+        """
+        )
         layout.addWidget(info_label, 1)
 
 
@@ -131,7 +143,8 @@ class ItemStackListWidget(QListWidget):
         # Connect to detect reordering
         self.model().rowsMoved.connect(self._on_rows_moved)
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             ItemStackListWidget {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -151,7 +164,8 @@ class ItemStackListWidget(QListWidget):
             ItemStackListWidget::item:hover {
                 background: #363650;
             }
-        """)
+        """
+        )
 
     def _on_rows_moved(self, parent, start: int, end: int, destination, row: int) -> None:
         """Callback when items are reordered via drag & drop."""
@@ -208,7 +222,8 @@ class BrowseTileDialog(QDialog):
 
         # Header with position info
         header = QLabel(f"Position: ({self.position[0]}, {self.position[1]}, Floor {self.position[2]})")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             QLabel {
                 color: #E5E5E7;
                 font-size: 14px;
@@ -217,12 +232,14 @@ class BrowseTileDialog(QDialog):
                 background: #2A2A3E;
                 border-radius: 6px;
             }
-        """)
+        """
+        )
         layout.addWidget(header)
 
         # Item stack list
         stack_group = QGroupBox("Item Stack")
-        stack_group.setStyleSheet("""
+        stack_group.setStyleSheet(
+            """
             QGroupBox {
                 color: #E5E5E7;
                 font-weight: 600;
@@ -236,7 +253,8 @@ class BrowseTileDialog(QDialog):
                 subcontrol-position: top left;
                 padding: 0 8px;
             }
-        """)
+        """
+        )
 
         stack_layout = QVBoxLayout(stack_group)
 
@@ -328,10 +346,15 @@ class BrowseTileDialog(QDialog):
     def _get_sprite(self, item: Item) -> QPixmap | None:
         """Get sprite pixmap for an item."""
         if not self.asset_manager:
-            return None
+            # Try to get from singleton
+            from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+            self.asset_manager = AssetManager.instance()
+            if not self.asset_manager.is_loaded:
+                return None
 
         try:
-            return self.asset_manager.get_item_sprite(int(item.id))
+            return self.asset_manager.get_sprite(int(item.id))
         except Exception:
             return None
 
@@ -406,7 +429,8 @@ class BrowseTileDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark theme."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             BrowseTileDialog {
                 background: #1E1E2E;
             }
@@ -434,7 +458,8 @@ class BrowseTileDialog(QDialog):
             QPushButton:pressed {
                 background: #7C3AED;
             }
-        """)
+        """
+        )
 
     def get_modified_items(self) -> tuple[Item | None, list[Item]]:
         """Get modified ground and items list.

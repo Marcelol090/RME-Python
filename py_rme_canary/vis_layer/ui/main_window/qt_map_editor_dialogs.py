@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtWidgets import QMessageBox
@@ -126,8 +127,6 @@ class QtMapEditorDialogsMixin:
                 return
 
         editor.center_view_on(int(pos.x), int(pos.y), int(pos.z), push_history=True)
-        try:
+        with contextlib.suppress(Exception):
             editor.session.set_single_selection(x=int(pos.x), y=int(pos.y), z=int(pos.z))
-        except Exception:
-            pass
         editor.canvas.update()

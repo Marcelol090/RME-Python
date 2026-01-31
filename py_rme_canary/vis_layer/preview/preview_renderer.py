@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -58,10 +59,8 @@ class SpriteSurfaceCache:
         sid = int(sprite_id)
         cached = self._cache.get(sid)
         if cached is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._cache.move_to_end(sid)
-            except Exception:
-                pass
             return cached
 
         if self._sprite_provider is None:
@@ -75,10 +74,8 @@ class SpriteSurfaceCache:
             return self._placeholder_surface(placeholder_size)
 
         self._cache[sid] = surf
-        try:
+        with contextlib.suppress(Exception):
             self._cache.move_to_end(sid)
-        except Exception:
-            pass
 
         try:
             self._memory_guard.check_cache_entries(

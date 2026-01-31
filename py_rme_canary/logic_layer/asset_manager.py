@@ -4,6 +4,8 @@ Handles loading of assets (sprites) and coordination between:
 - SpriteAppearances (loading raw sprite sheets)
 - SpriteCache (caching QPixmaps)
 - IdMapper (converting ServerID <-> ClientID)
+- ItemsOTB (server/client ID mapping from items.otb)
+- ItemsXML (item names and metadata from items.xml)
 """
 
 from __future__ import annotations
@@ -16,6 +18,8 @@ from PyQt6.QtGui import QImage, QPixmap
 
 from py_rme_canary.core.assets.sprite_appearances import SpriteAppearances, resolve_assets_dir
 from py_rme_canary.core.database.id_mapper import IdMapper
+from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
+from py_rme_canary.core.database.items_xml import ItemsXML, ItemsXMLError, ItemType
 from py_rme_canary.logic_layer.sprite_cache import SpriteCache
 
 if TYPE_CHECKING:
@@ -35,6 +39,11 @@ class AssetManager:
         self._sprite_cache = SpriteCache.instance()
         self._assets_path: str | None = None
         self._is_loaded = False
+
+        # Additional asset components for item metadata
+        self._items_otb: ItemsOTB | None = None
+        self._items_xml: ItemsXML | None = None
+        self._client_version: int | None = None
 
     @classmethod
     def instance(cls) -> AssetManager:
@@ -118,11 +127,8 @@ class AssetManager:
         # Resolve Client ID
         client_id = client_id_override
         if client_id is None:
-            if self._id_mapper:
-                client_id = self._id_mapper.get_client_id(item_id)
-            else:
-                # Fallback: Assume 1:1 if no mapper (often wrong but better than nothing)
-                client_id = item_id
+            # Fallback: Assume 1:1 if no mapper (often wrong but better than nothing)
+            client_id = self._id_mapper.get_client_id(item_id) if self._id_mapper else item_id
 
         if client_id is None or client_id == 0:
             return None
@@ -149,3 +155,72 @@ class AssetManager:
         except Exception:
             # logger.debug(f"Failed to load sprite for item {item_id} (client {client_id}): {e}")
             return None
+
+    def get_item_name(self, server_id: int) -> str:
+        """Get item name from items.xml.
+
+        Args:
+            server_id: Item server ID
+
+        Returns:
+            Item name or "Item #ID" if not found
+        """
+        if self._items_xml:
+            item_type = self._items_xml.get(server_id)
+            if item_type:
+                return item_type.name
+        return f"Item #{server_id}"
+
+    def get_item_metadata(self, server_id: int) -> ItemType | None:
+        """Get full item metadata from items.xml.
+
+        Args:
+            server_id: Item server ID
+
+        Returns:
+            ItemType or None if not found
+        """
+        if self._items_xml:
+            return self._items_xml.get(server_id)
+        return None
+
+    def load_items_otb(self, otb_path: str | Path) -> bool:
+        """Load items.otb for server/client ID mapping.
+
+        Args:
+            otb_path: Path to items.otb file
+
+        Returns:
+            True if loaded successfully
+        """
+        try:
+            self._items_otb = ItemsOTB.load(otb_path)
+            logger.info(f"Loaded items.otb: {len(self._items_otb.server_to_client)} mappings")
+
+            # Create IdMapper from OTB mappings
+            mapper = IdMapper(
+                client_to_server=self._items_otb.client_to_server, server_to_client=self._items_otb.server_to_client
+            )
+            self.set_id_mapper(mapper)
+
+            return True
+        except (ItemsOTBError, FileNotFoundError) as e:
+            logger.error(f"Failed to load items.otb: {e}")
+            return False
+
+    def load_items_xml(self, xml_path: str | Path) -> bool:
+        """Load items.xml for item names and metadata.
+
+        Args:
+            xml_path: Path to items.xml file
+
+        Returns:
+            True if loaded successfully
+        """
+        try:
+            self._items_xml = ItemsXML.load(xml_path, strict_mapping=False)
+            logger.info(f"Loaded items.xml: {len(self._items_xml.items_by_server_id)} items")
+            return True
+        except (ItemsXMLError, FileNotFoundError) as e:
+            logger.error(f"Failed to load items.xml: {e}")
+            return False

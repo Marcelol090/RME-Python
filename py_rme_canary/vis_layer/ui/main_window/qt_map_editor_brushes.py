@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
@@ -22,20 +23,16 @@ class QtMapEditorBrushesMixin:
 
     def _set_brush_size(self: QtMapEditor, size: int) -> None:
         self.brush_size = max(0, int(size))
-        try:
+        with contextlib.suppress(Exception):
             self.session.brush_size = int(self.brush_size)
-        except Exception:
-            pass
         self.size_spin.blockSignals(True)
         self.size_spin.setValue(self.brush_size)
         self.size_spin.blockSignals(False)
 
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
-        try:
+        with contextlib.suppress(Exception):
             self.session.set_brush_variation(int(self.brush_variation))
-        except Exception:
-            pass
         if hasattr(self, "variation_spin") and isinstance(self.variation_spin, QSpinBox):
             self.variation_spin.blockSignals(True)
             self.variation_spin.setValue(int(self.brush_variation))
@@ -45,10 +42,8 @@ class QtMapEditorBrushesMixin:
         delta = int(delta)
         cur = int(getattr(self, "brush_variation", 0) or 0)
         if hasattr(self, "variation_spin") and isinstance(self.variation_spin, QSpinBox):
-            try:
+            with contextlib.suppress(Exception):
                 cur = int(self.variation_spin.value())
-            except Exception:
-                pass
             lo, hi = int(self.variation_spin.minimum()), int(self.variation_spin.maximum())
         else:
             lo, hi = 0, 100
@@ -62,12 +57,10 @@ class QtMapEditorBrushesMixin:
         level = max(1, min(10, int(level)))
         lookup_table = (1, 2, 3, 5, 8, 13, 23, 35, 50, 80)
         low = int(lookup_table[level - 1])
-        try:
+        with contextlib.suppress(Exception):
             self.session.set_doodad_custom_thickness(
                 enabled=bool(self.doodad_thickness_enabled), low=int(low), ceil=100
             )
-        except Exception:
-            pass
         if hasattr(self, "thickness_cb") and isinstance(self.thickness_cb, QCheckBox):
             self.thickness_cb.blockSignals(True)
             self.thickness_cb.setChecked(bool(self.doodad_thickness_enabled))

@@ -399,9 +399,7 @@ class TransactionalBrushStroke:
             return True
         if item.depot_id is not None or item.house_door_id is not None:
             return True
-        if item.subtype is not None or item.count is not None:
-            return True
-        return False
+        return bool(item.subtype is not None or item.count is not None)
 
     def _apply_doodad_remove_owned_all(
         self,
@@ -427,10 +425,13 @@ class TransactionalBrushStroke:
             new_items.append(it)
 
         new_ground = before.ground
-        if new_ground is not None and int(new_ground.id) in owned_ids:
-            if not (self.eraser_leave_unique and self._is_complex_item(new_ground)):
-                new_ground = None
-                removed = True
+        if (
+            new_ground is not None
+            and int(new_ground.id) in owned_ids
+            and not (self.eraser_leave_unique and self._is_complex_item(new_ground))
+        ):
+            new_ground = None
+            removed = True
 
         if not removed:
             return

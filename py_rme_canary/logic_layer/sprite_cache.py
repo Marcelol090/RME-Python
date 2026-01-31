@@ -16,7 +16,7 @@ import time
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
     pass
@@ -52,7 +52,7 @@ class CacheStats:
         self.total_requests = 0
 
 
-class LRUCache(Generic[T]):
+class LRUCache[T]:
     """Thread-safe LRU cache implementation.
 
     Uses OrderedDict for O(1) access and eviction.
@@ -400,7 +400,7 @@ class TileCache:
             z: Floor to invalidate
         """
         # Mark all tiles on floor as dirty
-        keys_to_remove = [k for k in self._cache._cache.keys() if k[2] == z]
+        keys_to_remove = [k for k in self._cache._cache if k[2] == z]
         for key in keys_to_remove:
             self._cache.remove(key)
             self._dirty_tiles.add(key)

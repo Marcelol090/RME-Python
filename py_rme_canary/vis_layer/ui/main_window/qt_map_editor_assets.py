@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
@@ -69,10 +70,8 @@ class QtMapEditorAssetsMixin:
     def _apply_asset_profile(self: QtMapEditor, profile) -> None:
         user_settings = get_user_settings()
         if str(getattr(profile, "kind", "")).lower() == "modern" and not user_settings.get_auto_load_appearances():
-            try:
+            with contextlib.suppress(Exception):
                 profile = replace(profile, appearances_path=None)
-            except Exception:
-                pass
         self.asset_profile = profile
         try:
             logger.info("Applying asset profile: %s", profile.describe())
@@ -203,27 +202,21 @@ class QtMapEditorAssetsMixin:
         # Sprites are derived + recreatable. Never crash the editor because of them.
         self._sprite_render_temporarily_disabled = True
         self._sprite_render_disabled_reason = str(reason)
-        try:
+        with contextlib.suppress(Exception):
             self._sprite_cache.clear()
-        except Exception:
-            pass
 
         # One clear warning; after that keep it in the status bar.
         msg = (
             "Sprite rendering was temporarily disabled due to memory pressure/driver failure. "
             "You can keep editing (sprites may be hidden)."
         )
-        try:
+        with contextlib.suppress(Exception):
             self.status.showMessage(f"{msg} | reason={reason}")
-        except Exception:
-            pass
 
         if not bool(getattr(self, "_sprite_render_emergency_warned", False)):
             self._sprite_render_emergency_warned = True
-            try:
+            with contextlib.suppress(Exception):
                 QMessageBox.warning(self, "Sprites disabled", f"{msg}\n\nReason: {reason}")
-            except Exception:
-                pass
 
     def _sprite_render_enabled(self: QtMapEditor) -> bool:
         if bool(getattr(self, "_sprite_render_temporarily_disabled", False)):
@@ -276,10 +269,8 @@ class QtMapEditorAssetsMixin:
             QMessageBox.critical(self, "Appearances", str(exc))
             return
 
-        try:
+        with contextlib.suppress(Exception):
             self.asset_profile = replace(profile, appearances_path=Path(path))
-        except Exception:
-            pass
 
         self._update_status_capabilities(prefix=f"Appearances loaded: {path}")
 
@@ -287,10 +278,8 @@ class QtMapEditorAssetsMixin:
         self.appearance_assets = None
         profile = getattr(self, "asset_profile", None)
         if profile is not None and str(getattr(profile, "kind", "")).lower() == "modern":
-            try:
+            with contextlib.suppress(Exception):
                 self.asset_profile = replace(profile, appearances_path=None)
-            except Exception:
-                pass
         self._update_status_capabilities(prefix="Appearances unloaded")
 
     def _resolve_sprite_id_from_client_id(self: QtMapEditor, client_id: int) -> int | None:
@@ -379,10 +368,8 @@ class QtMapEditorAssetsMixin:
         cached = self._sprite_cache.get(key)
         if cached is not None:
             # LRU bump
-            try:
+            with contextlib.suppress(Exception):
                 self._sprite_cache.move_to_end(key)
-            except Exception:
-                pass
             return cached
         try:
             w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
@@ -505,10 +492,8 @@ class QtMapEditorAssetsMixin:
 
             # Get sprite count
             sprite_count = 0
-            try:
+            with contextlib.suppress(Exception):
                 sprite_count = getattr(self.sprite_assets, "sprite_count", 0) or 0
-            except Exception:
-                pass
 
             if sprite_count <= 0:
                 logger.debug("No sprites to hash")

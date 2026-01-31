@@ -38,13 +38,15 @@ class BrushSizePreview(QFrame):
 
         self.setMinimumSize(80, 80)
         self.setMaximumSize(100, 100)
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             BrushSizePreview {
                 background: #1E1E2E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-        """)
+        """
+        )
 
     def set_size(self, size: int) -> None:
         """Set brush size."""
@@ -133,11 +135,13 @@ class BrushSizePanel(QWidget):
 
         # Header
         header = QLabel("Brush Size")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             font-size: 12px;
             font-weight: 600;
             color: #A1A1AA;
-        """)
+        """
+        )
         layout.addWidget(header)
 
         # Preview + controls
@@ -224,19 +228,20 @@ class BrushSizePanel(QWidget):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             BrushSizePanel {
                 background: #2A2A3E;
                 border: 1px solid #363650;
                 border-radius: 8px;
             }
-            
+
             QSlider::groove:horizontal {
                 background: #363650;
                 height: 6px;
                 border-radius: 3px;
             }
-            
+
             QSlider::handle:horizontal {
                 background: #8B5CF6;
                 width: 16px;
@@ -244,12 +249,12 @@ class BrushSizePanel(QWidget):
                 margin: -5px 0;
                 border-radius: 8px;
             }
-            
+
             QSlider::sub-page:horizontal {
                 background: #8B5CF6;
                 border-radius: 3px;
             }
-            
+
             QSpinBox {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -257,11 +262,11 @@ class BrushSizePanel(QWidget):
                 padding: 4px;
                 color: #E5E5E7;
             }
-            
+
             QSpinBox:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #A1A1AA;
@@ -269,18 +274,19 @@ class BrushSizePanel(QWidget):
                 border-radius: 4px;
                 font-weight: 600;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 color: #E5E5E7;
             }
-            
+
             QPushButton:checked {
                 background: #8B5CF6;
                 color: white;
                 border-color: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def _set_size(self, size: int) -> None:
         """Set the brush size."""

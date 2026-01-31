@@ -1,0 +1,136 @@
+[0;36m[INFO][0m    [2026-01-30 23:41:02] Usando uv (fast mode)
+[0;36m[INFO][0m    [2026-01-30 23:41:02] === Quality Pipeline v2.3 Iniciado ===
+[0;36m[INFO][0m    [2026-01-30 23:41:02] Modo: dry-run | Verbose: false
+[0;36m[INFO][0m    [2026-01-30 23:41:02] Verificando dependências do sistema...
+[1;33m[WARN][0m    [2026-01-30 23:41:04] Safety não encontrado - instale com: pip install safety
+[1;33m[WARN][0m    [2026-01-30 23:41:04] SonarLint CLI não encontrado
+[0;36m[INFO][0m    [2026-01-30 23:41:04]   Para instalar sonarlint-ls-cli:
+[0;36m[INFO][0m    [2026-01-30 23:41:04]     pip install sonarlint-ls-cli
+[0;36m[INFO][0m    [2026-01-30 23:41:05]   Ou via Docker:
+[0;36m[INFO][0m    [2026-01-30 23:41:05]     docker run --rm -v $(pwd):/src sonarsource/sonarlint-cli
+[0;32m[✓][0m       [2026-01-30 23:41:07] Dependências verificadas
+[0;36m[INFO][0m    [2026-01-30 23:41:07] Verificando configuração pre-commit...
+[0;36m[INFO][0m    [2026-01-30 23:41:07] Instalando hooks pre-commit...
+pre-commit installed at .git\hooks\pre-commit
+[0;36m[INFO][0m    [2026-01-30 23:41:09] === FASE 1: BASELINE ===
+[0;36m[INFO][0m    [2026-01-30 23:41:09] Indexando símbolos → .quality_reports/symbols_before.json
+Indexando simbolos...
+V 3875 simbolos indexados
+[0;36m[INFO][0m    [2026-01-30 23:41:18] Executando Ruff (linter + formatter)...
+[1;33m[WARN][0m    [2026-01-30 23:41:20] Ruff: 2774 issue(s) detectado(s)
+[0;36m[INFO][0m    [2026-01-30 23:41:20] Executando Mypy (type checking)...
+py_rme_canary\logic_layer\item_type_detector.py:211:27: error: Subclass of "Position" and "tuple[Any, ...]" cannot exist: have distinct disjoint bases  [unreachable]
+py_rme_canary\logic_layer\item_type_detector.py:211:56: error: Right operand of "and" is never evaluated  [unreachable]
+py_rme_canary\logic_layer\item_type_detector.py:212:17: error: Statement is unreachable  [unreachable]
+py_rme_canary\core\brush_manager.py:54:5: error: Function is missing a type annotation  [no-untyped-def]
+py_rme_canary\core\brush_manager.py:68:5: error: Function is missing a return type annotation  [no-untyped-def]
+py_rme_canary\core\brush_manager.py:79:5: error: Function is missing a return type annotation  [no-untyped-def]
+py_rme_canary\core\brush_manager.py:101:5: error: Function is missing a return type annotation  [no-untyped-def]
+py_rme_canary\core\brush_manager.py:132:9: error: Need type annotation for "all_brushes" (hint: "all_brushes: list[<type>] = ...")  [var-annotated]
+py_rme_canary\core\brush_manager.py:174:9: error: Need type annotation for "brushes" (hint: "brushes: list[<type>] = ...")  [var-annotated]
+py_rme_canary\core\brush_manager.py:206:33: error: Argument 1 to "int" has incompatible type "str | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+py_rme_canary\core\brush_manager.py:212:33: error: Argument 1 to "int" has incompatible type "str | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+py_rme_canary\core\brush_manager.py:262:65: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
+py_rme_canary\core\brush_manager.py:262:65: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+py_rme_canary\core\brush_manager.py:262:65: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+py_rme_canary\core\brush_manager.py:330:39: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
+py_rme_canary\core\brush_manager.py:330:39: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+py_rme_canary\core\brush_manager.py:330:39: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+py_rme_canary\core\brush_manager.py:349:21: error: Incompatible default for argument "rme_path" (default has type "None", argument has type "str")  [assignment]
+py_rme_canary\core\brush_manager.py:349:21: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+py_rme_canary\core\brush_manager.py:349:21: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+py_rme_canary\core\brush_manager.py:349:46: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
+py_rme_canary\logic_layer\brush_definitions.py:491: error: Unused "type: ignore" comment  [unused-ignore]
+py_rme_canary\logic_layer\brush_definitions.py:492:41: error: Argument 1 to "Path" has incompatible type "Traversable"; expected "str | PathLike[str]"  [arg-type]
+py_rme_canary\logic_layer\brush_definitions.py:649:32: error: Incompatible types in assignment (expression has type "int | None", variable has type "Path")  [assignment]
+py_rme_canary\logic_layer\brush_definitions.py:651:25: error: Statement is unreachable  [unreachable]
+py_rme_canary\logic_layer\brush_definitions.py:653:32: error: No overload variant of "int" matches argument type "Path"  [call-overload]
+py_rme_canary\logic_layer\brush_definitions.py:653:32: note: Possible overload variants:
+py_rme_canary\logic_layer\brush_definitions.py:653:32: note:     def int(str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc = ..., /) -> int
+py_rme_canary\logic_layer\brush_definitions.py:653:32: note:     def int(str | bytes | bytearray, /, base: SupportsIndex) -> int
+py_rme_canary\core\io\otbm\loader.py:266:26: error: Extra key "dynamic_id_conversions" for TypedDict "LoadReport"  [typeddict-unknown-key]
+py_rme_canary\logic_layer\context_menu_handlers.py:28:5: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+py_rme_canary\logic_layer\context_menu_handlers.py:95:9: error: Property "id" defined in "Item" is read-only  [misc]
+py_rme_canary\logic_layer\context_menu_handlers.py:126:9: error: Property "id" defined in "Item" is read-only  [misc]
+py_rme_canary\logic_layer\context_menu_handlers.py:168:9: error: Item "None" of "QClipboard | None" has no attribute "setText"  [union-attr]
+py_rme_canary\logic_layer\context_menu_handlers.py:181:9: error: Item "None" of "QClipboard | None" has no attribute "setText"  [union-attr]
+py_rme_canary\logic_layer\context_menu_handlers.py:191:9: error: Item "None" of "QClipboard | None" has no attribute "setText"  [union-attr]
+py_rme_canary\logic_layer\context_menu_handlers.py:205:9: error: Item "None" of "QClipboard | None" has no attribute "setText"  [union-attr]
+[1;33m[WARN][0m    [2026-01-30 23:41:44] Mypy: erros de tipagem detectados
+[0;36m[INFO][0m    [2026-01-30 23:41:44] Executando Radon (complexidade)...
+[1;33m[WARN][0m    [2026-01-30 23:41:48] Radon: 187 função(ões) com complexidade > 10
+[0;36m[INFO][0m    [2026-01-30 23:41:48] Executando Pyright (type checking avançado)...
+[0;36m[INFO][0m    [2026-01-30 23:41:48] Executando Complexipy (cognitive complexity)...
+[1;33m[WARN][0m    [2026-01-30 23:41:49] Complexipy não disponível - instale com: pip install complexipy
+[0;36m[INFO][0m    [2026-01-30 23:41:49] Executando Lizard (cyclomatic complexity)...
+[1;33m[WARN][0m    [2026-01-30 23:41:49] Lizard não disponível - instale com: pip install lizard
+[0;36m[INFO][0m    [2026-01-30 23:41:49] === FASE 3: ANÁLISE COMPLEMENTAR ===
+[0;36m[INFO][0m    [2026-01-30 23:41:49] Executando Pylint (análise complementar)...
+[0;36m[INFO][0m    [2026-01-30 23:42:41] Pylint: 3184 issue(s) encontrado(s)
+[0;36m[INFO][0m    [2026-01-30 23:42:41] Executando Prospector (linter aggregator)...
+[1;33m[WARN][0m    [2026-01-30 23:42:41] Prospector não disponível - instale com: pip install prospector
+[0;36m[INFO][0m    [2026-01-30 23:42:41] Executando Vulture (código morto)...
+[1;33m[WARN][0m    [2026-01-30 23:42:41] Vulture não disponível - instale com: pip install vulture
+[0;36m[INFO][0m    [2026-01-30 23:42:41] Executando Skylos (dead code + security analysis)...
+[1;33m[WARN][0m    [2026-01-30 23:42:41] Skylos não disponível - instale com: pip install skylos
+[0;36m[INFO][0m    [2026-01-30 23:42:41] Executando jscpd (código duplicado)...
+[1;33m[WARN][0m    [2026-01-30 23:42:42] jscpd não disponível - instale com: npm install -g jscpd
+[0;36m[INFO][0m    [2026-01-30 23:42:42] === FASE 4: SEGURANÇA ===
+[0;36m[INFO][0m    [2026-01-30 23:42:42] --- Fase 4.1: Secret Scanning ---
+[0;36m[INFO][0m    [2026-01-30 23:42:42] Executando detect-secrets (secret scanning)...
+[1;33m[WARN][0m    [2026-01-30 23:42:42] Nenhuma ferramenta de secret scanning disponível
+[0;36m[INFO][0m    [2026-01-30 23:42:42]   Instale: pip install detect-secrets
+[0;36m[INFO][0m    [2026-01-30 23:42:42]   Ou: brew install gitleaks / go install github.com/gitleaks/gitleaks/v8@latest
+[0;36m[INFO][0m    [2026-01-30 23:42:42] --- Fase 4.2: Code Security ---
+[0;36m[INFO][0m    [2026-01-30 23:42:42] Executando Bandit (segurança)...
+[1;33m[WARN][0m    [2026-01-30 23:42:51] Bandit: 1 potencial(is) vulnerabilidade(s)
+[0;36m[INFO][0m    [2026-01-30 23:42:51] Executando Semgrep (análise de padrões)...
+[1;33m[WARN][0m    [2026-01-30 23:42:51] Semgrep não disponível - instale com: pip install semgrep
+[0;36m[INFO][0m    [2026-01-30 23:42:51] SonarLint pulado (--skip-sonarlint)
+[0;36m[INFO][0m    [2026-01-30 23:42:51] --- Fase 4.3: Dependency Vulnerabilities ---
+[0;36m[INFO][0m    [2026-01-30 23:42:52] Executando Safety (vulnerabilidades em dependências)...
+[1;33m[WARN][0m    [2026-01-30 23:42:52] Safety não disponível - instale com: pip install safety
+[0;36m[INFO][0m    [2026-01-30 23:42:52] Executando pip-audit (vulnerabilidades em dependências - PyPI/OSV)...
+[1;33m[WARN][0m    [2026-01-30 23:42:52] pip-audit não disponível - instale com: pip install pip-audit
+[0;36m[INFO][0m    [2026-01-30 23:42:52] Executando OSV-Scanner (vulnerabilidades multi-ecossistema)...
+[1;33m[WARN][0m    [2026-01-30 23:42:52] OSV-Scanner não disponível
+[0;36m[INFO][0m    [2026-01-30 23:42:52]   Instale: go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+[0;36m[INFO][0m    [2026-01-30 23:42:52] === FASE 5: DOCUMENTAÇÃO E TESTES ===
+[0;36m[INFO][0m    [2026-01-30 23:42:52] Executando Interrogate (docstring coverage)...
+[1;33m[WARN][0m    [2026-01-30 23:42:53] Interrogate não disponível - instale com: pip install interrogate
+[0;36m[INFO][0m    [2026-01-30 23:42:53] Executando pydocstyle (PEP 257 compliance)...
+[1;33m[WARN][0m    [2026-01-30 23:42:53] pydocstyle não disponível - instale com: pip install pydocstyle
+[0;36m[INFO][0m    [2026-01-30 23:42:53] Executando Mutmut (mutation testing)...
+[1;33m[WARN][0m    [2026-01-30 23:42:53] Mutmut não disponível - instale com: pip install mutmut
+[0;36m[INFO][0m    [2026-01-30 23:42:53]   Nota: Mutation testing é computacionalmente intensivo
+[0;36m[INFO][0m    [2026-01-30 23:42:53] === FASE 6: UI/UX AUTOMATION ===
+[0;36m[INFO][0m    [2026-01-30 23:42:53] Executando PyAutoGUI UI automation tests...
+[1;33m[WARN][0m    [2026-01-30 23:42:53] PyAutoGUI não disponível - instale com: pip install pyautogui
+[0;36m[INFO][0m    [2026-01-30 23:42:53] Executando Pywinauto Windows GUI automation tests...
+[1;33m[WARN][0m    [2026-01-30 23:42:54] Pywinauto não disponível - instale com: pip install pywinauto
+[0;36m[INFO][0m    [2026-01-30 23:42:54] Executando Lighthouse (web quality audits)...
+[1;33m[WARN][0m    [2026-01-30 23:42:54] Lighthouse não disponível - instale com: npm install -g lighthouse
+[0;36m[INFO][0m    [2026-01-30 23:42:54] Executando Percy (visual regression testing)...
+[1;33m[WARN][0m    [2026-01-30 23:42:54] Percy CLI não disponível - instale com: npm install -g @percy/cli
+[0;36m[INFO][0m    [2026-01-30 23:42:54]   Requer PERCY_TOKEN configurado como variável de ambiente
+[0;36m[INFO][0m    [2026-01-30 23:42:54] Executando Applitools (AI visual validation)...
+[1;33m[WARN][0m    [2026-01-30 23:42:54] Applitools Eyes SDK não disponível - instale com: pip install eyes-selenium
+[0;36m[INFO][0m    [2026-01-30 23:42:54]   Requer APPLITOOLS_API_KEY configurado
+[0;36m[INFO][0m    [2026-01-30 23:42:55] === FASE 7: CONSOLIDAÇÃO ===
+[0;36m[INFO][0m    [2026-01-30 23:42:55] Normalizando issues...
+Normalizando issues...
+V 3100 issues normalizados
+  - Ruff: 2774
+  - Radon: 326
+  - ast-grep: 0
+[0;36m[INFO][0m    [2026-01-30 23:42:55] Indexando símbolos → .quality_reports/symbols_after.json
+Indexando simbolos...
+V 3875 simbolos indexados
+[0;36m[INFO][0m    [2026-01-30 23:42:56] Comparando símbolos (antes vs depois)...
+✅ Símbolos consistentes
+[0;32m[✓][0m       [2026-01-30 23:42:57] Comparação de símbolos concluída
+[0;36m[INFO][0m    [2026-01-30 23:42:57] Gerando relatório consolidado...
+✅ Relatório: .quality_reports/refactor_summary.md
+[0;32m[✓][0m       [2026-01-30 23:42:57] === Pipeline v2.3 Concluído ===
+[0;36m[INFO][0m    [2026-01-30 23:42:57] ℹ️  Modo dry-run: nenhuma alteração aplicada
+[0;36m[INFO][0m    [2026-01-30 23:42:57] ℹ️  Execute com --apply para aplicar mudanças

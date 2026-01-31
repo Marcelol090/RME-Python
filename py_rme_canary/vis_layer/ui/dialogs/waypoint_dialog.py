@@ -67,11 +67,13 @@ class WaypointListDialog(QDialog):
 
         # Header
         header = QLabel("📍 Waypoints")
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             font-size: 18px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         layout.addWidget(header)
 
         # Search
@@ -123,11 +125,12 @@ class WaypointListDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QLineEdit {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -135,11 +138,11 @@ class WaypointListDialog(QDialog):
                 padding: 10px 14px;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-            
+
             QListWidget {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -147,21 +150,21 @@ class WaypointListDialog(QDialog):
                 color: #E5E5E7;
                 outline: none;
             }
-            
+
             QListWidget::item {
                 padding: 10px 12px;
                 border-radius: 6px;
                 margin: 2px 4px;
             }
-            
+
             QListWidget::item:hover {
                 background: #363650;
             }
-            
+
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-            
+
             QPushButton {
                 background: #363650;
                 color: #E5E5E7;
@@ -170,18 +173,19 @@ class WaypointListDialog(QDialog):
                 padding: 8px 16px;
                 font-size: 12px;
             }
-            
+
             QPushButton:hover {
                 background: #404060;
                 border-color: #8B5CF6;
             }
-            
+
             QPushButton:disabled {
                 background: #2A2A3E;
                 color: #52525B;
                 border-color: #363650;
             }
-        """)
+        """
+        )
 
     def _load_waypoints(self) -> None:
         """Load waypoints from map."""
@@ -360,11 +364,12 @@ class WaypointQuickAdd(QDialog):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-            
+
             QLineEdit {
                 background: #2A2A3E;
                 border: 1px solid #363650;
@@ -372,11 +377,12 @@ class WaypointQuickAdd(QDialog):
                 padding: 10px;
                 color: #E5E5E7;
             }
-            
+
             QLineEdit:focus {
                 border-color: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def get_name(self) -> str:
         """Get entered waypoint name."""

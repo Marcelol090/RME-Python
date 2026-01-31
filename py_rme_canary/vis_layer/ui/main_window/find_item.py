@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, Literal
 
 from PyQt6.QtWidgets import QMessageBox
@@ -90,15 +91,11 @@ def open_find_dialog(editor: QtMapEditor, initial_mode: Literal["item", "creatur
 
 def _jump_to_position(editor: QtMapEditor, pos: Position) -> None:
     editor.center_view_on(int(pos.x), int(pos.y), int(pos.z), push_history=True)
-    try:
+    with contextlib.suppress(Exception):
         editor.session.set_single_selection(x=int(pos.x), y=int(pos.y), z=int(pos.z))
-    except Exception:
-        pass
 
-    try:
+    with contextlib.suppress(Exception):
         editor.canvas.update()
-    except Exception:
-        pass
     try:
         if getattr(editor, "minimap_widget", None) is not None:
             editor.minimap_widget.update()

@@ -108,7 +108,7 @@ class PastePreviewOverlay(QWidget):
         painter.setPen(QPen(border, 2))
 
         # Draw each tile
-        for x, y, z in self._positions:
+        for x, y, _z in self._positions:
             screen_x = self._origin.x() + x * self._tile_size
             screen_y = self._origin.y() + y * self._tile_size
 

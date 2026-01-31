@@ -12,6 +12,8 @@ These handlers connect context menu UI to actual map editing operations.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QClipboard
@@ -20,12 +22,18 @@ from PyQt6.QtWidgets import QApplication
 if TYPE_CHECKING:
     from py_rme_canary.core.data.item import Item
     from py_rme_canary.core.data.tile import Tile
+    from py_rme_canary.logic_layer.session.editor import EditorSession
 
 
 class ContextMenuActionHandlers:
     """Handlers for context menu actions."""
 
-    def __init__(self, editor_session=None, canvas=None, palette=None) -> None:
+    def __init__(
+        self,
+        editor_session: EditorSession | None = None,
+        canvas: object | None = None,
+        palette: object | None = None,
+    ) -> None:
         """Initialize handlers with editor components.
 
         Args:
@@ -36,7 +44,7 @@ class ContextMenuActionHandlers:
         self.editor_session = editor_session
         self.canvas = canvas
         self.palette = palette
-        self._clipboard = QApplication.clipboard()
+        self._clipboard: QClipboard | None = QApplication.clipboard()
 
     # ========================
     # Smart Brush Selection
@@ -90,16 +98,21 @@ class ContextMenuActionHandlers:
             print(f"[Toggle Door] No toggle mapping for door ID {item.id}")
             return
 
-        # Update item ID
+        if self.editor_session is not None:
+            action = self.editor_session.switch_door_at(x=position[0], y=position[1], z=position[2])
+            if action is not None:
+                return
+
+        # Update item ID (local-only fallback)
         old_id = item.id
-        item.id = toggle_id
+        updated_item = replace(item, id=toggle_id)
 
         # TODO: Wrap in EditorAction for undo/redo
         # if self.editor_session:
         #     action = ModifyItemAction(position, old_id, toggle_id)
         #     self.editor_session.execute_action(action)
 
-        is_open = ItemTypeDetector.is_door_open(item)
+        is_open = ItemTypeDetector.is_door_open(updated_item)
         state = "opened" if is_open else "closed"
         print(f"[Toggle Door] Door {old_id} → {toggle_id} ({state})")
 
@@ -123,10 +136,10 @@ class ContextMenuActionHandlers:
             return
 
         old_id = item.id
-        item.id = next_id
+        updated_item = replace(item, id=next_id)
 
         # TODO: Wrap in EditorAction for undo/redo
-        print(f"[Rotate Item] Item {old_id} → {next_id}")
+        print(f"[Rotate Item] Item {old_id} → {updated_item.id}")
 
     # ========================
     # Teleport Navigation
@@ -164,8 +177,11 @@ class ContextMenuActionHandlers:
         Args:
             item: Item to copy ID from
         """
+        clipboard = self._clipboard
+        if clipboard is None:
+            return
         text = str(item.id)
-        self._clipboard.setText(text, QClipboard.Mode.Clipboard)
+        clipboard.setText(text, QClipboard.Mode.Clipboard)
         print(f"[Copy] Server ID {text} copied to clipboard")
 
     def copy_item_name(self, item: Item) -> None:
@@ -178,7 +194,10 @@ class ContextMenuActionHandlers:
         # For now, use placeholder
         name = f"Item_{item.id}"  # Placeholder
 
-        self._clipboard.setText(name, QClipboard.Mode.Clipboard)
+        clipboard = self._clipboard
+        if clipboard is None:
+            return
+        clipboard.setText(name, QClipboard.Mode.Clipboard)
         print(f"[Copy] Item name '{name}' copied to clipboard")
 
     def copy_position(self, position: tuple[int, int, int]) -> None:
@@ -187,8 +206,11 @@ class ContextMenuActionHandlers:
         Args:
             position: (x, y, z) coordinates
         """
+        clipboard = self._clipboard
+        if clipboard is None:
+            return
         text = f"{position[0]}, {position[1]}, {position[2]}"
-        self._clipboard.setText(text, QClipboard.Mode.Clipboard)
+        clipboard.setText(text, QClipboard.Mode.Clipboard)
         print(f"[Copy] Position {text} copied to clipboard")
 
     def copy_client_id(self, item: Item) -> None:
@@ -201,8 +223,11 @@ class ContextMenuActionHandlers:
         # client_id = id_mapper.server_to_client(item.id)
         client_id = item.id  # Placeholder
 
+        clipboard = self._clipboard
+        if clipboard is None:
+            return
         text = str(client_id)
-        self._clipboard.setText(text, QClipboard.Mode.Clipboard)
+        clipboard.setText(text, QClipboard.Mode.Clipboard)
         print(f"[Copy] Client ID {text} copied to clipboard")
 
     # ========================
@@ -264,7 +289,7 @@ class ContextMenuActionHandlers:
 
     def get_item_context_callbacks(
         self, item: Item, tile: Tile | None = None, position: tuple[int, int, int] | None = None
-    ) -> dict:
+    ) -> dict[str, Callable[[], object | None]]:
         """Get callback dictionary for ItemContextMenu.
 
         Args:

@@ -28,6 +28,8 @@ except Exception:
     OPENGL_AVAILABLE = False
     QOpenGLWidget = QWidget  # Fallback to regular widget
 
+import contextlib
+
 from .opengl_backend import OpenGLRenderBackend, OpenGLResources
 
 if TYPE_CHECKING:
@@ -381,10 +383,8 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
-        try:
+        with contextlib.suppress(Exception):
             drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
-        except Exception:
-            pass
 
         backend = QPainterRenderBackend(
             painter,
@@ -525,10 +525,8 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
-        try:
+        with contextlib.suppress(Exception):
             drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
-        except Exception:
-            pass
 
         backend = OpenGLRenderBackend(
             gl,
@@ -783,9 +781,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             return False
         if getattr(editor, "selection_mode", False):
             return False
-        if getattr(editor, "paste_armed", False) or getattr(editor, "fill_armed", False):
-            return False
-        return True
+        return not (getattr(editor, "paste_armed", False) or getattr(editor, "fill_armed", False))
 
     def _update_brush_preview(self, point: QPoint) -> None:
         if not self._should_show_brush_preview():

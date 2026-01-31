@@ -62,8 +62,8 @@ class Color:
                     b=int(hex_str[4:6], 16),
                     a=int(hex_str[6:8], 16),
                 )
-        except ValueError:
-            raise ValueError(f"Invalid hex color: {hex_str}")
+        except ValueError as exc:
+            raise ValueError(f"Invalid hex color: {hex_str}") from exc
 
 
 @dataclass(frozen=True, slots=True)

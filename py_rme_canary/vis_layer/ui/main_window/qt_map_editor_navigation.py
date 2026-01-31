@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import QSpinBox
@@ -77,10 +78,8 @@ class QtMapEditorNavigationMixin:
             self.goto_y_spin.setValue(int(y))
             self.goto_y_spin.blockSignals(False)
         if not getattr(self, "show_tooltips", True):
-            try:
+            with contextlib.suppress(Exception):
                 self.canvas.setToolTip("")
-            except Exception:
-                pass
             self.status.showMessage(f"x={x} y={y} z={z} | origin=({self.viewport.origin_x},{self.viewport.origin_y})")
             return
 
@@ -96,18 +95,14 @@ class QtMapEditorNavigationMixin:
         else:
             tooltip = f"{x},{y},{z}\n(empty)"
 
-        try:
+        with contextlib.suppress(Exception):
             self.canvas.setToolTip(tooltip)
-        except Exception:
-            pass
 
         self.status.showMessage(
             f"x={x} y={y} z={z} | tile_id={sid if sid is not None else '-'} | origin=({self.viewport.origin_x},{self.viewport.origin_y})"
         )
-        try:
+        with contextlib.suppress(Exception):
             self.session.send_live_cursor_update(x=int(x), y=int(y), z=int(z))
-        except Exception:
-            pass
 
     def _jump_to_brush(self: QtMapEditor, _checked: bool = False) -> None:
         try:
@@ -166,10 +161,8 @@ class QtMapEditorNavigationMixin:
                 pass
             self.lasso_enabled = False
             if hasattr(self, "canvas"):
-                try:
+                with contextlib.suppress(Exception):
                     self.canvas.cancel_lasso()
-                except Exception:
-                    pass
         self.session.cancel_box_selection()
         self.canvas.update()
         self._update_action_enabled_states()
@@ -187,10 +180,8 @@ class QtMapEditorNavigationMixin:
             self.selection_mode = True
             self.session.cancel_gesture()
         if not self.lasso_enabled and hasattr(self, "canvas"):
-            try:
+            with contextlib.suppress(Exception):
                 self.canvas.cancel_lasso()
-            except Exception:
-                pass
         self.canvas.update()
         self._update_action_enabled_states()
 
