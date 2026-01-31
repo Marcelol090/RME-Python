@@ -640,6 +640,7 @@ run_detect_secrets() {
       --exclude-files 'venv/.*' \
       --exclude-files '__pycache__/.*' \
       --exclude-files '\.quality_.*' \
+      --exclude-files '.*\.(otbm|otb|xml|json|spr|dat|pic|png|jpg|jpeg|gif|bmp|tiff|ico)$' \
       > "$output_file" 2>/dev/null || true
 
     local secret_count
@@ -781,7 +782,7 @@ run_jscpd() {
   jscpd py_rme_canary \
     --reporters json \
     --output "$REPORT_DIR" \
-    --ignore '**/venv/**,**/__pycache__/**,**/.venv/**' \
+    --ignore '**/venv/**,**/__pycache__/**,**/.venv/**,**/tests/**,**/*.json,**/*.xml,**/*.otbm,**/*.otb' \
     --min-lines 10 \
     --min-tokens 50 \
     --format python \
@@ -1078,6 +1079,12 @@ run_pydocstyle() {
 run_mutmut() {
   if [[ "$SKIP_TESTS" == true ]]; then
     log INFO "Mutmut pulado (--skip-tests)"
+    return 0
+  fi
+
+  # Skip on Windows due to 'resource' module dependency
+  if [[ "${OS:-}" == "Windows_NT" || "${OSTYPE:-}" == msys* ]]; then
+    log INFO "Mutmut pulado no Windows (dependência de 'resource')"
     return 0
   fi
 
