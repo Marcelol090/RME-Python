@@ -57,12 +57,15 @@ from ...constants.otbm import (
 from ...data.gamemap import GameMap
 from ...data.item import Item, ItemAttribute
 from ...data.tile import Tile
-from ...database.id_mapper import IdMapper
-from ...database.items_xml import ItemsXML
 from ..atomic_io import save_bytes_atomic
 from ..houses_xml import save_houses
 from ..spawn_xml import save_monster_spawns, save_npc_spawns
 from ..zones_xml import save_zones
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...database.id_mapper import IdMapper
+    from ...database.items_xml import ItemsXML
 
 # =============================================================================
 # Helper functions

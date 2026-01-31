@@ -9,6 +9,8 @@ import struct
 from collections.abc import Callable
 from contextlib import suppress
 
+from typing import TYPE_CHECKING
+
 from py_rme_canary.core.constants import (
     ITEMATTR_BOOLEAN,
     ITEMATTR_DOUBLE,
@@ -29,11 +31,13 @@ from py_rme_canary.core.constants import (
     OTBM_ATTR_UNIQUE_ID,
 )
 from py_rme_canary.core.data.item import Item, ItemAttribute, Position
-from py_rme_canary.core.database.id_mapper import IdMapper
-from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.exceptions import OTBMParseError
 
 from .streaming import EscapedPayloadReader, read_string, read_string_bytes
+
+if TYPE_CHECKING:
+    from py_rme_canary.core.database.id_mapper import IdMapper
+    from py_rme_canary.core.database.items_xml import ItemsXML
 
 
 def read_attribute_map(payload: EscapedPayloadReader) -> tuple[ItemAttribute, ...]:

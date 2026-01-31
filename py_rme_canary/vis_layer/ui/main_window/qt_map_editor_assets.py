@@ -7,7 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QObject, QThread, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
@@ -29,6 +29,58 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+class SpriteHashWorker(QObject):
+    finished = pyqtSignal(object)  # Emits SpriteHashMatcher
+
+    def __init__(self, sprite_assets) -> None:
+        super().__init__()
+        self.sprite_assets = sprite_assets
+
+    def run(self) -> None:
+        try:
+            from py_rme_canary.logic_layer.cross_version.sprite_hash import SpriteHashMatcher
+
+            matcher = SpriteHashMatcher()
+
+            # Get sprite count
+            sprite_count = 0
+            try:
+                sprite_count = getattr(self.sprite_assets, "sprite_count", 0) or 0
+            except Exception:
+                pass
+
+            if sprite_count <= 0:
+                self.finished.emit(matcher)
+                return
+
+            # Build hash for each sprite (limit to avoid performance issues)
+            # Note: Running in a thread allows us to potentially increase this limit,
+            # but we keep it reasonable to avoid long background processing.
+            max_sprites = min(int(sprite_count), 50000)
+            hashed_count = 0
+
+            for sprite_id in range(1, max_sprites + 1):
+                if QThread.currentThread().isInterruptionRequested():
+                    logger.debug("Sprite hash build interrupted")
+                    self.finished.emit(None)
+                    return
+
+                try:
+                    w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
+                    if w > 0 and h > 0 and bgra:
+                        matcher.add_sprite(int(sprite_id), bytes(bgra), int(w), int(h))
+                        hashed_count += 1
+                except Exception:
+                    continue
+
+            logger.info(f"Built sprite hash database: {hashed_count} sprites hashed from {max_sprites} total")
+            self.finished.emit(matcher)
+
+        except Exception as e:
+            logger.exception(f"Failed to build sprite hash database in worker: {e}")
+            self.finished.emit(None)
 
 
 class QtMapEditorAssetsMixin:
@@ -488,51 +540,45 @@ class QtMapEditorAssetsMixin:
             self.sprite_preview.setPixmap(QPixmap())
 
     def _build_sprite_hash_database(self: QtMapEditor) -> None:
-        """Build sprite hash database for cross-version clipboard matching."""
-        try:
-            from py_rme_canary.logic_layer.cross_version.sprite_hash import SpriteHashMatcher
-
-            # Initialize sprite matcher
-            if not hasattr(self, "sprite_matcher") or self.sprite_matcher is None:
-                self.sprite_matcher = SpriteHashMatcher()
-            else:
-                self.sprite_matcher.clear()
-
-            # Skip if no assets loaded
-            if self.sprite_assets is None or self.id_mapper is None:
-                logger.debug("Skipping sprite hash database build - no assets loaded")
-                return
-
-            # Get sprite count
-            sprite_count = 0
-            try:
-                sprite_count = getattr(self.sprite_assets, "sprite_count", 0) or 0
-            except Exception:
-                pass
-
-            if sprite_count <= 0:
-                logger.debug("No sprites to hash")
-                return
-
-            # Build hash for each sprite (limit to avoid performance issues)
-            max_sprites = min(int(sprite_count), 50000)
-            hashed_count = 0
-
-            for sprite_id in range(1, max_sprites + 1):
-                try:
-                    w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
-                    if w > 0 and h > 0 and bgra:
-                        self.sprite_matcher.add_sprite(int(sprite_id), bytes(bgra), int(w), int(h))
-                        hashed_count += 1
-                except Exception:
-                    # Sprite doesn't exist or failed to load, skip
-                    continue
-
-            logger.info(f"Built sprite hash database: {hashed_count} sprites hashed from {max_sprites} total")
-
-        except ImportError:
-            logger.warning("CrossVersionClipboard not available")
+        """Build sprite hash database for cross-version clipboard matching asynchronously."""
+        # Skip if no assets loaded
+        if self.sprite_assets is None or self.id_mapper is None:
+            logger.debug("Skipping sprite hash database build - no assets loaded")
             self.sprite_matcher = None
-        except Exception as e:
-            logger.exception(f"Failed to build sprite hash database: {e}")
-            self.sprite_matcher = None
+            return
+
+        # Cancel existing thread if running
+        if hasattr(self, "_hash_thread") and self._hash_thread is not None:
+            if self._hash_thread.isRunning():
+                self._hash_thread.requestInterruption()
+                self._hash_thread.quit()
+                self._hash_thread.wait()
+            self._hash_thread = None
+
+        self.status.showMessage("Building sprite hash database...")
+
+        self._hash_thread = QThread()
+        self._hash_worker = SpriteHashWorker(self.sprite_assets)
+        self._hash_worker.moveToThread(self._hash_thread)
+
+        self._hash_thread.started.connect(self._hash_worker.run)
+        self._hash_worker.finished.connect(self._on_sprite_hash_built)
+        self._hash_worker.finished.connect(self._hash_thread.quit)
+        self._hash_worker.finished.connect(self._hash_worker.deleteLater)
+        self._hash_thread.finished.connect(self._hash_thread.deleteLater)
+        self._hash_thread.finished.connect(self._on_hash_thread_finished)
+
+        self._hash_thread.start()
+
+    def _on_sprite_hash_built(self: QtMapEditor, matcher: object) -> None:
+        """Slot called when sprite hash worker finishes."""
+        self.sprite_matcher = matcher
+        if matcher:
+            self.status.showMessage("Sprite hash database ready")
+        else:
+            self.status.showMessage("Failed to build sprite hash database")
+
+    def _on_hash_thread_finished(self: QtMapEditor) -> None:
+        """Slot called when hash thread finishes."""
+        self._hash_thread = None
+        self._hash_worker = None
