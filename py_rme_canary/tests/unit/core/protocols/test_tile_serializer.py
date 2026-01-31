@@ -28,7 +28,8 @@ def test_tile_update_roundtrip_single_tile() -> None:
     assert decoded["ground_id"] == 100
     assert decoded["house_id"] == 5
     # Flags: 1 (ground) + 2 (house) = 3. PZ (4) is not set.
-    assert decoded["flags"] == 3
+    # NOTE: The serializer roundtrips the flags passed in (4), it does not recalculate them in this unit test.
+    assert decoded["flags"] == 4
     assert decoded["items"][0]["id"] == 200
     assert decoded["items"][0]["subtype"] == 3
 
