@@ -35,8 +35,6 @@ from ...data.map_header import MapHeader
 from ...data.position import Position
 from ...data.tile import Tile
 from ...data.towns import Town
-from ...database.id_mapper import IdMapper
-from ...database.items_xml import ItemsXML
 from ...exceptions.io import OTBMParseError
 from ...memory_guard import MemoryGuard, MemoryGuardError, default_memory_guard
 from ..xml.spawns_loader import load_spawns_xml
@@ -50,6 +48,11 @@ from .streaming import (
     read_u8,
 )
 from .tile_parser import TileParser
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...database.id_mapper import IdMapper
+    from ...database.items_xml import ItemsXML
 
 logger = logging.getLogger(__name__)
 
