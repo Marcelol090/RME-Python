@@ -2,11 +2,12 @@
 set -Eeuo pipefail
 
 #############################################
-# QUALITY PIPELINE v2.2
+# QUALITY PIPELINE v2.3
 # Ferramentas Baseline: Ruff, Mypy, Radon, Pyright, Complexipy, Lizard
 # Ferramentas Complementar: Pylint, Prospector, Vulture, Skylos, jscpd
 # Ferramentas Segurança: Bandit, Semgrep, detect-secrets, Safety, pip-audit, OSV-Scanner
 # Ferramentas Docs/Testes: Interrogate, Pydocstyle, Mutmut
+# Ferramentas UI/UX: PyAutoGUI, Pywinauto, Lighthouse, Percy, Applitools
 # Projeto Local - Sem dependência de SonarQube Server
 #############################################
 
@@ -57,6 +58,7 @@ SKIP_SECURITY=false
 SKIP_SONARLINT=false
 SKIP_SECRETS=false
 SKIP_DEADCODE=false
+SKIP_UI_TESTS=false
 VERBOSE=false
 ENABLE_TELEMETRY=false
 PARALLEL_AVAILABLE=false
@@ -80,10 +82,10 @@ usage() {
   cat <<EOF
 Uso: $0 [opções]
 
-Quality Pipeline v2.2 - Análise de Código Completa para Projeto Local
+Quality Pipeline v2.3 - Análise de Código Completa + UI/UX Automation
 Ferramentas: Ruff, Mypy, Radon, Pyright, Complexipy, Lizard, Bandit, Semgrep, 
 detect-secrets, Vulture, Skylos, jscpd, pip-audit, OSV-Scanner, Interrogate, 
-Pydocstyle, Mutmut, Prospector
+Pydocstyle, Mutmut, Prospector, PyAutoGUI, Pywinauto, Lighthouse, Percy, Applitools
 
 Opções:
   --apply              Aplica alterações (padrão: dry-run)
@@ -94,6 +96,7 @@ Opções:
   --skip-sonarlint     Pula análise SonarLint CLI
   --skip-secrets       Pula secret scanning (detect-secrets, gitleaks)
   --skip-deadcode      Pula análise de código morto/duplicado (Vulture, Skylos, jscpd)
+  --skip-ui-tests      Pula testes de UI/UX automation (PyAutoGUI, Lighthouse, Percy)
   --verbose            Saída detalhada
   --telemetry          Habilita telemetria (OpenTelemetry)
   --help               Exibe esta ajuda
@@ -102,6 +105,7 @@ Exemplos:
   $0 --dry-run --verbose
   $0 --apply --skip-tests
   $0 --apply --skip-secrets --skip-deadcode
+  $0 --skip-ui-tests
 
 Ferramentas por fase:
   Fase 1 (Baseline):     Ruff, Mypy, Radon, Pyright, Complexipy, Lizard
@@ -109,7 +113,8 @@ Ferramentas por fase:
   Fase 3 (Complementar): Pylint, Prospector, Vulture, Skylos, jscpd
   Fase 4 (Segurança):    Bandit, Semgrep, detect-secrets, pip-audit, OSV-Scanner, Safety
   Fase 5 (Docs/Testes):  Interrogate, Pydocstyle, Mutmut
-  Fase 6 (Consolidação): Relatório final
+  Fase 6 (UI/UX):        PyAutoGUI, Pywinauto, Lighthouse, Percy, Applitools
+  Fase 7 (Consolidação): Relatório final
 EOF
 }
 
@@ -124,6 +129,7 @@ while [[ $# -gt 0 ]]; do
     --skip-sonarlint) SKIP_SONARLINT=true ;;
     --skip-secrets) SKIP_SECRETS=true ;;
     --skip-deadcode) SKIP_DEADCODE=true ;;
+    --skip-ui-tests) SKIP_UI_TESTS=true ;;
     --verbose) VERBOSE=true ;;
     --telemetry) ENABLE_TELEMETRY=true ;;
     --help) usage; exit 0 ;;
@@ -1144,6 +1150,222 @@ run_prospector() {
 }
 
 #############################################
+# PYAUTOGUI - UI AUTOMATION TESTING
+#############################################
+
+run_pyautogui_tests() {
+  if [[ "$SKIP_TESTS" == true ]] || [[ "$SKIP_UI_TESTS" == true ]]; then
+    log INFO "PyAutoGUI tests pulado (--skip-tests ou --skip-ui-tests)"
+    return 0
+  fi
+
+  log INFO "Executando PyAutoGUI UI automation tests..."
+
+  if ! $PYTHON_BIN -c "import pyautogui" 2>/dev/null; then
+    log WARN "PyAutoGUI não disponível - instale com: pip install pyautogui"
+    return 0
+  fi
+
+  local test_script="$ROOT_DIR/py_rme_canary/tests/ui/test_pyautogui.py"
+  local output_file="$REPORT_DIR/pyautogui_tests.log"
+
+  if [[ ! -f "$test_script" ]]; then
+    log DEBUG "Script de teste PyAutoGUI não encontrado: $test_script"
+    return 0
+  fi
+
+  $PYTHON_BIN "$test_script" > "$output_file" 2>&1 || true
+
+  if [[ -f "$output_file" ]]; then
+    local passed failed
+    passed=$(grep -c "PASSED" "$output_file" 2>/dev/null || echo 0)
+    failed=$(grep -c "FAILED" "$output_file" 2>/dev/null || echo 0)
+
+    log INFO "PyAutoGUI: $passed test(s) passado(s), $failed falhado(s)"
+  fi
+}
+
+#############################################
+# PYWINAUTO - WINDOWS GUI AUTOMATION
+#############################################
+
+run_pywinauto_tests() {
+  if [[ "$SKIP_TESTS" == true ]] || [[ "$SKIP_UI_TESTS" == true ]]; then
+    log INFO "Pywinauto tests pulado (--skip-tests ou --skip-ui-tests)"
+    return 0
+  fi
+
+  # Apenas para Windows
+  if [[ "${OS:-}" != "Windows_NT" ]] && [[ "${OSTYPE:-}" != msys* ]]; then
+    log DEBUG "Pywinauto requer Windows - pulando"
+    return 0
+  fi
+
+  log INFO "Executando Pywinauto Windows GUI automation tests..."
+
+  if ! $PYTHON_BIN -c "import pywinauto" 2>/dev/null; then
+    log WARN "Pywinauto não disponível - instale com: pip install pywinauto"
+    return 0
+  fi
+
+  local test_script="$ROOT_DIR/py_rme_canary/tests/ui/test_pywinauto.py"
+  local output_file="$REPORT_DIR/pywinauto_tests.log"
+
+  if [[ ! -f "$test_script" ]]; then
+    log DEBUG "Script de teste Pywinauto não encontrado: $test_script"
+    return 0
+  fi
+
+  $PYTHON_BIN "$test_script" > "$output_file" 2>&1 || true
+
+  if [[ -f "$output_file" ]]; then
+    local passed failed
+    passed=$(grep -c "PASSED" "$output_file" 2>/dev/null || echo 0)
+    failed=$(grep -c "FAILED" "$output_file" 2>/dev/null || echo 0)
+
+    log INFO "Pywinauto: $passed test(s) passado(s), $failed falhado(s)"
+  fi
+}
+
+#############################################
+# LIGHTHOUSE - WEB QUALITY AUDITS
+#############################################
+
+run_lighthouse() {
+  if [[ "$SKIP_UI_TESTS" == true ]]; then
+    log INFO "Lighthouse pulado (--skip-ui-tests)"
+    return 0
+  fi
+
+  log INFO "Executando Lighthouse (web quality audits)..."
+
+  if ! command -v lighthouse &>/dev/null; then
+    log WARN "Lighthouse não disponível - instale com: npm install -g lighthouse"
+    return 0
+  fi
+
+  local url="${LIGHTHOUSE_URL:-http://localhost:8000}"
+  local output_file="$REPORT_DIR/lighthouse.json"
+  local html_report="$REPORT_DIR/lighthouse.html"
+
+  # Verificar se há um servidor rodando
+  if ! curl -s --head "$url" &>/dev/null; then
+    log DEBUG "Nenhum servidor detectado em $url - pulando Lighthouse"
+    return 0
+  fi
+
+  lighthouse "$url" \
+    --output json \
+    --output html \
+    --output-path "$REPORT_DIR/lighthouse" \
+    --chrome-flags="--headless" \
+    --quiet \
+    2>/dev/null || true
+
+  if [[ -f "${REPORT_DIR}/lighthouse.report.json" ]]; then
+    mv "${REPORT_DIR}/lighthouse.report.json" "$output_file"
+    mv "${REPORT_DIR}/lighthouse.report.html" "$html_report" 2>/dev/null || true
+
+    local performance accessibility seo pwa best_practices
+    performance=$(jq '.categories.performance.score * 100 | floor' "$output_file" 2>/dev/null || echo 0)
+    accessibility=$(jq '.categories.accessibility.score * 100 | floor' "$output_file" 2>/dev/null || echo 0)
+    seo=$(jq '.categories.seo.score * 100 | floor' "$output_file" 2>/dev/null || echo 0)
+    pwa=$(jq '.categories.pwa.score * 100 | floor' "$output_file" 2>/dev/null || echo 0)
+    best_practices=$(jq '(.categories."best-practices".score // 0) * 100 | floor' "$output_file" 2>/dev/null || echo 0)
+
+    log INFO "Lighthouse: Performance=${performance}%, Accessibility=${accessibility}%, SEO=${seo}%, PWA=${pwa}%, Best Practices=${best_practices}%"
+
+    # Avisar se scores abaixo de threshold
+    if [[ "$performance" -lt 90 ]] || [[ "$accessibility" -lt 90 ]]; then
+      log WARN "Lighthouse: Performance ou Accessibility abaixo de 90%"
+    fi
+  fi
+}
+
+#############################################
+# PERCY - VISUAL TESTING
+#############################################
+
+run_percy() {
+  if [[ "$SKIP_UI_TESTS" == true ]]; then
+    log INFO "Percy pulado (--skip-ui-tests)"
+    return 0
+  fi
+
+  log INFO "Executando Percy (visual regression testing)..."
+
+  if ! command -v percy &>/dev/null; then
+    log WARN "Percy CLI não disponível - instale com: npm install -g @percy/cli"
+    log INFO "  Requer PERCY_TOKEN configurado como variável de ambiente"
+    return 0
+  fi
+
+  if [[ -z "${PERCY_TOKEN:-}" ]]; then
+    log DEBUG "PERCY_TOKEN não configurado - pulando Percy"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/percy.log"
+
+  # Percy executa junto com testes (ex: pytest com percy-python)
+  percy exec -- pytest py_rme_canary/tests/visual/ -v \
+    > "$output_file" 2>&1 || true
+
+  if [[ -f "$output_file" ]]; then
+    local snapshots
+    snapshots=$(grep -c "Percy snapshot" "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$snapshots" -gt 0 ]]; then
+      log INFO "Percy: $snapshots snapshot(s) capturado(s)"
+    else
+      log DEBUG "Percy: nenhum snapshot capturado"
+    fi
+  fi
+}
+
+#############################################
+# APPLITOOLS - AI-POWERED VISUAL VALIDATION
+#############################################
+
+run_applitools() {
+  if [[ "$SKIP_UI_TESTS" == true ]]; then
+    log INFO "Applitools pulado (--skip-ui-tests)"
+    return 0
+  fi
+
+  log INFO "Executando Applitools (AI visual validation)..."
+
+  if ! $PYTHON_BIN -c "import eyes_selenium" 2>/dev/null; then
+    log WARN "Applitools Eyes SDK não disponível - instale com: pip install eyes-selenium"
+    log INFO "  Requer APPLITOOLS_API_KEY configurado"
+    return 0
+  fi
+
+  if [[ -z "${APPLITOOLS_API_KEY:-}" ]]; then
+    log DEBUG "APPLITOOLS_API_KEY não configurado - pulando Applitools"
+    return 0
+  fi
+
+  local test_script="$ROOT_DIR/py_rme_canary/tests/visual/test_applitools.py"
+  local output_file="$REPORT_DIR/applitools.log"
+
+  if [[ ! -f "$test_script" ]]; then
+    log DEBUG "Script de teste Applitools não encontrado: $test_script"
+    return 0
+  fi
+
+  $PYTHON_BIN "$test_script" > "$output_file" 2>&1 || true
+
+  if [[ -f "$output_file" ]]; then
+    local passed failed
+    passed=$(grep -c "PASSED" "$output_file" 2>/dev/null || echo 0)
+    failed=$(grep -c "FAILED" "$output_file" 2>/dev/null || echo 0)
+
+    log INFO "Applitools: $passed validação(ões) passada(s), $failed falhada(s)"
+  fi
+}
+
+#############################################
 # AST-GREP - ANÁLISE ESTRUTURAL
 #############################################
 
@@ -1455,7 +1677,7 @@ PYTHON
 #############################################
 
 main() {
-  log INFO "=== Quality Pipeline v2.2 Iniciado ==="
+  log INFO "=== Quality Pipeline v2.3 Iniciado ==="
   log INFO "Modo: $MODE | Verbose: $VERBOSE"
 
   check_dependencies
@@ -1519,14 +1741,24 @@ main() {
   run_pydocstyle || true
   run_mutmut || true
 
-  # Fase 6: Consolidação
-  log INFO "=== FASE 6: CONSOLIDAÇÃO ==="
+  # Fase 6: UI/UX Automation e Visual Testing
+  if [[ "$SKIP_UI_TESTS" == false ]]; then
+    log INFO "=== FASE 6: UI/UX AUTOMATION ==="
+    run_pyautogui_tests || true
+    run_pywinauto_tests || true
+    run_lighthouse || true
+    run_percy || true
+    run_applitools || true
+  fi
+
+  # Fase 7: Consolidação
+  log INFO "=== FASE 7: CONSOLIDAÇÃO ==="
   normalize_issues
   index_symbols "$SYMBOL_INDEX_AFTER"
   compare_symbols
   generate_final_report
 
-  log SUCCESS "=== Pipeline v2.2 Concluído ==="
+  log SUCCESS "=== Pipeline v2.3 Concluído ==="
 
   if [[ "$MODE" == "dry-run" ]]; then
     log INFO "ℹ️  Modo dry-run: nenhuma alteração aplicada"
