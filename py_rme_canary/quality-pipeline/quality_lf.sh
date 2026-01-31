@@ -52,6 +52,8 @@ SKIP_TESTS=false
 SKIP_LIBCST=false
 SKIP_SECURITY=false
 SKIP_SONARLINT=false
+SKIP_SECRETS=false
+SKIP_DEADCODE=false
 VERBOSE=false
 ENABLE_TELEMETRY=false
 PARALLEL_AVAILABLE=false
@@ -75,16 +77,18 @@ usage() {
   cat <<EOF
 Uso: $0 [opções]
 
-Quality Pipeline v2.0 - Análise de Código para Projeto Local
-Ferramentas: Ruff, Mypy, Radon, Bandit, SonarLint CLI, Safety, Pylint
+Quality Pipeline v2.1 - Análise de Código Completa para Projeto Local
+Ferramentas: Ruff, Mypy, Radon, Bandit, Semgrep, detect-secrets, Vulture, jscpd, pip-audit, OSV-Scanner
 
 Opções:
   --apply              Aplica alterações (padrão: dry-run)
   --dry-run            Simula execução sem modificar arquivos
   --skip-tests         Pula execução de testes
   --skip-libcst        Pula transformações LibCST
-  --skip-security      Pula análise de segurança (Bandit, Safety)
+  --skip-security      Pula análise de segurança (Bandit, Semgrep, pip-audit, OSV-Scanner)
   --skip-sonarlint     Pula análise SonarLint CLI
+  --skip-secrets       Pula secret scanning (detect-secrets, gitleaks)
+  --skip-deadcode      Pula análise de código morto/duplicado (Vulture, jscpd)
   --verbose            Saída detalhada
   --telemetry          Habilita telemetria (OpenTelemetry)
   --help               Exibe esta ajuda
@@ -92,10 +96,14 @@ Opções:
 Exemplos:
   $0 --dry-run --verbose
   $0 --apply --skip-tests
-  $0 --apply --skip-sonarlint
+  $0 --apply --skip-secrets --skip-deadcode
 
-Nota: SonarQube Server NÃO é utilizado (projeto local).
-      Use SonarLint CLI ou sonarlint-ls-cli para análise local.
+Ferramentas por fase:
+  Fase 1 (Baseline):     Ruff, Mypy, Radon, Pyright
+  Fase 2 (Refatoração):  ast-grep, LibCST
+  Fase 3 (Complementar): Pylint, Vulture, jscpd
+  Fase 4 (Segurança):    Bandit, Semgrep, detect-secrets, pip-audit, OSV-Scanner, Safety
+  Fase 5 (Consolidação): Relatório final
 EOF
 }
 
@@ -108,6 +116,8 @@ while [[ $# -gt 0 ]]; do
     --skip-libcst) SKIP_LIBCST=true ;;
     --skip-security) SKIP_SECURITY=true ;;
     --skip-sonarlint) SKIP_SONARLINT=true ;;
+    --skip-secrets) SKIP_SECRETS=true ;;
+    --skip-deadcode) SKIP_DEADCODE=true ;;
     --verbose) VERBOSE=true ;;
     --telemetry) ENABLE_TELEMETRY=true ;;
     --help) usage; exit 0 ;;
@@ -596,6 +606,300 @@ run_sonarlint() {
 }
 
 #############################################
+# DETECT-SECRETS - SECRET SCANNING
+#############################################
+
+run_detect_secrets() {
+  if [[ "$SKIP_SECURITY" == true ]]; then
+    log INFO "Detect-secrets pulado (--skip-security)"
+    return 0
+  fi
+
+  log INFO "Executando detect-secrets (secret scanning)..."
+
+  local output_file="$REPORT_DIR/secrets.json"
+
+  # Tenta detect-secrets primeiro
+  if command -v detect-secrets &>/dev/null; then
+    detect-secrets scan \
+      --all-files \
+      --exclude-files '\.git/.*' \
+      --exclude-files '\.venv/.*' \
+      --exclude-files 'venv/.*' \
+      --exclude-files '__pycache__/.*' \
+      --exclude-files '\.quality_.*' \
+      > "$output_file" 2>/dev/null || true
+
+    local secret_count
+    secret_count=$(jq '.results | to_entries | map(.value | length) | add // 0' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$secret_count" -gt 0 ]]; then
+      log ERROR "detect-secrets: $secret_count segredo(s) potencial(is) encontrado(s)!"
+      log INFO "  Revise $output_file e use 'detect-secrets audit' para verificar"
+    else
+      log SUCCESS "detect-secrets: nenhum segredo detectado"
+    fi
+  # Fallback para gitleaks
+  elif command -v gitleaks &>/dev/null; then
+    log DEBUG "Usando gitleaks como alternativa"
+    gitleaks detect \
+      --source . \
+      --report-format json \
+      --report-path "$output_file" \
+      --no-git 2>/dev/null || true
+
+    if [[ -f "$output_file" ]]; then
+      local secret_count
+      secret_count=$(jq 'length' "$output_file" 2>/dev/null || echo 0)
+      if [[ "$secret_count" -gt 0 ]]; then
+        log ERROR "gitleaks: $secret_count segredo(s) encontrado(s)!"
+      else
+        log SUCCESS "gitleaks: nenhum segredo detectado"
+      fi
+    fi
+  else
+    log WARN "Nenhuma ferramenta de secret scanning disponível"
+    log INFO "  Instale: pip install detect-secrets"
+    log INFO "  Ou: brew install gitleaks / go install github.com/gitleaks/gitleaks/v8@latest"
+  fi
+}
+
+#############################################
+# SEMGREP - ANÁLISE DE PADRÕES
+#############################################
+
+run_semgrep() {
+  if [[ "$SKIP_SECURITY" == true ]]; then
+    log INFO "Semgrep pulado (--skip-security)"
+    return 0
+  fi
+
+  log INFO "Executando Semgrep (análise de padrões)..."
+
+  if ! command -v semgrep &>/dev/null; then
+    log WARN "Semgrep não disponível - instale com: pip install semgrep"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/semgrep.json"
+  local rules_dir="$ROOT_DIR/tools/semgrep_rules"
+
+  # Usa regras customizadas se existirem, senão usa auto
+  local rule_config="--config auto"
+  if [[ -d "$rules_dir" ]]; then
+    rule_config="--config $rules_dir"
+    log DEBUG "Usando regras customizadas de $rules_dir"
+  fi
+
+  # Regras para Python/Django/Flask/FastAPI
+  semgrep scan \
+    $rule_config \
+    --json \
+    --output "$output_file" \
+    --exclude '.venv' \
+    --exclude 'venv' \
+    --exclude '__pycache__' \
+    --exclude '.quality_*' \
+    --metrics off \
+    py_rme_canary 2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local issue_count
+    issue_count=$(jq '.results | length' "$output_file" 2>/dev/null || echo 0)
+    local error_count
+    error_count=$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$error_count" -gt 0 ]]; then
+      log ERROR "Semgrep: $error_count erro(s) crítico(s) encontrado(s)"
+    elif [[ "$issue_count" -gt 0 ]]; then
+      log WARN "Semgrep: $issue_count issue(s) encontrado(s)"
+    else
+      log SUCCESS "Semgrep: nenhum padrão problemático"
+    fi
+  fi
+}
+
+#############################################
+# VULTURE - CÓDIGO MORTO
+#############################################
+
+run_vulture() {
+  log INFO "Executando Vulture (código morto)..."
+
+  if ! "$PYTHON_BIN" -m vulture --version &>/dev/null 2>&1; then
+    log WARN "Vulture não disponível - instale com: pip install vulture"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/vulture.txt"
+  local whitelist="$ROOT_DIR/.vulture_whitelist.py"
+
+  local vulture_args=("py_rme_canary" "--min-confidence" "80")
+  if [[ -f "$whitelist" ]]; then
+    vulture_args+=("$whitelist")
+  fi
+
+  "$PYTHON_BIN" -m vulture "${vulture_args[@]}" > "$output_file" 2>/dev/null || true
+
+  if [[ -s "$output_file" ]]; then
+    local dead_code_count
+    dead_code_count=$(wc -l < "$output_file" | tr -d ' ')
+    log WARN "Vulture: $dead_code_count item(ns) de código morto detectado(s)"
+    log INFO "  Revise $output_file para detalhes"
+    log INFO "  Para ignorar falsos positivos, adicione ao .vulture_whitelist.py"
+  else
+    log SUCCESS "Vulture: nenhum código morto detectado"
+  fi
+}
+
+#############################################
+# JSCPD - CÓDIGO DUPLICADO
+#############################################
+
+run_jscpd() {
+  log INFO "Executando jscpd (código duplicado)..."
+
+  if ! command -v jscpd &>/dev/null; then
+    log WARN "jscpd não disponível - instale com: npm install -g jscpd"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/jscpd.json"
+
+  jscpd py_rme_canary \
+    --reporters json \
+    --output "$REPORT_DIR" \
+    --ignore '**/venv/**,**/__pycache__/**,**/.venv/**' \
+    --min-lines 10 \
+    --min-tokens 50 \
+    --format python \
+    2>/dev/null || true
+
+  # jscpd gera jscpd-report.json
+  if [[ -f "$REPORT_DIR/jscpd-report.json" ]]; then
+    mv "$REPORT_DIR/jscpd-report.json" "$output_file"
+    local dup_count
+    dup_count=$(jq '.duplicates | length' "$output_file" 2>/dev/null || echo 0)
+    local dup_percentage
+    dup_percentage=$(jq '.statistics.total.percentage // 0' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$dup_count" -gt 0 ]]; then
+      log WARN "jscpd: $dup_count bloco(s) duplicado(s) (${dup_percentage}% do código)"
+      log INFO "  Revise $output_file para detalhes"
+    else
+      log SUCCESS "jscpd: nenhuma duplicação significativa"
+    fi
+  else
+    log DEBUG "jscpd não gerou relatório"
+  fi
+}
+
+#############################################
+# PIP-AUDIT - VULNERABILIDADES DEPS (PyPI/OSV)
+#############################################
+
+run_pip_audit() {
+  if [[ "$SKIP_SECURITY" == true ]]; then
+    log INFO "pip-audit pulado (--skip-security)"
+    return 0
+  fi
+
+  log INFO "Executando pip-audit (vulnerabilidades em dependências - PyPI/OSV)..."
+
+  if ! "$PYTHON_BIN" -m pip_audit --version &>/dev/null 2>&1; then
+    log WARN "pip-audit não disponível - instale com: pip install pip-audit"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/pip_audit.json"
+
+  # pip-audit usa banco PyPI Advisory e OSV
+  if "$PYTHON_BIN" -m pip_audit \
+    --format json \
+    --output "$output_file" \
+    --progress-spinner off \
+    2>/dev/null; then
+    log SUCCESS "pip-audit: nenhuma vulnerabilidade conhecida"
+  else
+    if [[ -f "$output_file" ]]; then
+      local vuln_count
+      vuln_count=$(jq 'length' "$output_file" 2>/dev/null || echo 0)
+      log WARN "pip-audit: $vuln_count vulnerabilidade(s) em dependências"
+      log INFO "  Use 'pip-audit --fix' para corrigir automaticamente"
+    fi
+  fi
+}
+
+#############################################
+# OSV-SCANNER - VULNERABILIDADES MULTI-ECOSSISTEMA
+#############################################
+
+run_osv_scanner() {
+  if [[ "$SKIP_SECURITY" == true ]]; then
+    log INFO "OSV-Scanner pulado (--skip-security)"
+    return 0
+  fi
+
+  log INFO "Executando OSV-Scanner (vulnerabilidades multi-ecossistema)..."
+
+  if ! command -v osv-scanner &>/dev/null; then
+    log WARN "OSV-Scanner não disponível"
+    log INFO "  Instale: go install github.com/google/osv-scanner/cmd/osv-scanner@latest"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/osv_scanner.json"
+
+  osv-scanner scan \
+    --format json \
+    --output "$output_file" \
+    --recursive \
+    . 2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local vuln_count
+    vuln_count=$(jq '.results | map(.packages | map(.vulnerabilities | length) | add) | add // 0' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$vuln_count" -gt 0 ]]; then
+      log WARN "OSV-Scanner: $vuln_count vulnerabilidade(s) encontrada(s)"
+      log INFO "  Revise $output_file para detalhes e licenças"
+    else
+      log SUCCESS "OSV-Scanner: nenhuma vulnerabilidade"
+    fi
+  fi
+}
+
+#############################################
+# PYRIGHT - TYPE CHECKING AVANÇADO
+#############################################
+
+run_pyright() {
+  log INFO "Executando Pyright (type checking avançado)..."
+
+  if ! command -v pyright &>/dev/null; then
+    log DEBUG "Pyright não disponível - instale com: pip install pyright"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/pyright.json"
+
+  pyright py_rme_canary \
+    --outputjson \
+    > "$output_file" 2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local error_count
+    error_count=$(jq '.generalDiagnostics | length' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$error_count" -gt 0 ]]; then
+      log INFO "Pyright: $error_count diagnóstico(s) (complementar ao Mypy)"
+    else
+      log SUCCESS "Pyright: tipagem validada"
+    fi
+  fi
+}
+
+#############################################
 # AST-GREP - ANÁLISE ESTRUTURAL
 #############################################
 
@@ -907,19 +1211,20 @@ PYTHON
 #############################################
 
 main() {
-  log INFO "=== Quality Pipeline v2.0 Iniciado ==="
+  log INFO "=== Quality Pipeline v2.1 Iniciado ==="
   log INFO "Modo: $MODE | Verbose: $VERBOSE"
 
   check_dependencies
   snapshot
   setup_precommit
 
-  # Fase 1: Baseline
+  # Fase 1: Baseline (Linting, Types, Complexity)
   log INFO "=== FASE 1: BASELINE ==="
   index_symbols "$SYMBOL_INDEX_BEFORE"
   run_ruff ".ruff.json" || true
   run_mypy ".mypy_baseline.log" || true
   run_radon ".radon.json" || true
+  run_pyright || true
 
   # Fase 2: Refatoração (se apply)
   if [[ "$MODE" == "apply" ]]; then
@@ -931,15 +1236,34 @@ main() {
     run_tests || true
   fi
 
-  # Fase 3: Análise complementar
+  # Fase 3: Análise complementar (Dead Code, Duplication)
   log INFO "=== FASE 3: ANÁLISE COMPLEMENTAR ==="
   run_pylint || true
+  if [[ "$SKIP_DEADCODE" == false ]]; then
+    run_vulture || true
+    run_jscpd || true
+  fi
 
-  # Fase 4: Segurança
+  # Fase 4: Segurança (Multi-layer)
   log INFO "=== FASE 4: SEGURANÇA ==="
+  
+  # 4.1: Secret Scanning
+  if [[ "$SKIP_SECRETS" == false ]]; then
+    log INFO "--- Fase 4.1: Secret Scanning ---"
+    run_detect_secrets || true
+  fi
+  
+  # 4.2: Code Security Analysis
+  log INFO "--- Fase 4.2: Code Security ---"
   run_bandit || true
-  run_safety || true
+  run_semgrep || true
   run_sonarlint || true
+  
+  # 4.3: Dependency Vulnerabilities
+  log INFO "--- Fase 4.3: Dependency Vulnerabilities ---"
+  run_safety || true
+  run_pip_audit || true
+  run_osv_scanner || true
 
   # Fase 5: Consolidação
   log INFO "=== FASE 5: CONSOLIDAÇÃO ==="
@@ -948,7 +1272,7 @@ main() {
   compare_symbols
   generate_final_report
 
-  log SUCCESS "=== Pipeline Concluído ==="
+  log SUCCESS "=== Pipeline v2.1 Concluído ==="
 
   if [[ "$MODE" == "dry-run" ]]; then
     log INFO "ℹ️  Modo dry-run: nenhuma alteração aplicada"

@@ -178,6 +178,10 @@ class TileContextMenu:
         if tile:
             # Properties
             builder.add_action("📝 Properties...", cb("properties"))
+            
+            # Browse Tile (inspect item stack)
+            has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)
+            builder.add_action("🔍 Browse Tile...", cb("browse_tile"), enabled=has_items)
 
             builder.add_separator()
 
@@ -231,7 +235,7 @@ class ItemContextMenu:
         self._callbacks = callbacks
 
     def show_for_item(self, item: Item | None, tile: Tile | None = None) -> None:
-        """Show context menu for an item."""
+        """Show context menu for an item with smart actions."""
         self._item = item
 
         if not item:
@@ -244,40 +248,93 @@ class ItemContextMenu:
 
         builder = ContextMenuBuilder(self._parent)
 
-        # Item info
+        # Import detector for smart actions
+        from py_rme_canary.logic_layer.item_type_detector import ItemTypeDetector, ItemCategory
+
+        # Detect item category
+        category = ItemTypeDetector.get_category(item)
+
+        # Item info header
         builder.add_action(f"📦 Item #{item.id}", enabled=False)
         builder.add_separator()
 
-        # Actions
+        # Smart Brush Selection
+        if ItemTypeDetector.can_select_brush(category):
+            brush_name = ItemTypeDetector.get_brush_name(category)
+            builder.add_action(
+                f"✨ Select {brush_name}",
+                cb("select_brush"),
+                enabled=_enabled("select_brush")
+            )
+            builder.add_separator()
+
+        # Item-Specific Actions
+        has_specific_actions = False
+
+        # Door: Toggle Open/Close
+        if ItemTypeDetector.is_door(item):
+            is_open = ItemTypeDetector.is_door_open(item)
+            action_text = "🚪 Close Door" if is_open else "🚪 Open Door"
+            builder.add_action(action_text, cb("toggle_door"), enabled=_enabled("toggle_door"))
+            has_specific_actions = True
+
+        # Rotatable: Rotate Item
+        if ItemTypeDetector.is_rotatable(item):
+            builder.add_action("🔄 Rotate Item", cb("rotate_item"), enabled=_enabled("rotate_item"))
+            has_specific_actions = True
+
+        # Teleport: Go To Destination
+        if ItemTypeDetector.is_teleport(item):
+            dest = ItemTypeDetector.get_teleport_destination(item)
+            if dest:
+                builder.add_action(
+                    f"🚀 Go To Destination ({dest[0]}, {dest[1]}, {dest[2]})",
+                    cb("goto_teleport"),
+                    enabled=_enabled("goto_teleport")
+                )
+            else:
+                builder.add_action("🚀 Set Teleport Destination...", cb("set_teleport_dest"))
+            has_specific_actions = True
+
+        if has_specific_actions:
+            builder.add_separator()
+
+        # Standard Actions
         builder.add_action("📝 Properties...", cb("properties"), enabled=_enabled("properties"))
-        builder.add_action("📋 Copy", cb("copy"), enabled=_enabled("copy"))
-        builder.add_action("🗑️ Delete", cb("delete"), enabled=_enabled("delete"))
+        builder.add_action("🔍 Browse Tile...", cb("browse_tile"), enabled=_enabled("browse_tile"))
+        builder.add_separator()
+
+        # Copy Data Actions
+        builder.add_submenu("📋 Copy Data", "")
+        builder.add_action(f"Server ID ({item.id})", cb("copy_server_id"))
+        # TODO: Add Client ID when IdMapper is available
+        # builder.add_action(f"Client ID ({client_id})", cb("copy_client_id"))
+        builder.add_action("Item Name", cb("copy_item_name"))
+        if tile:
+            builder.add_action(f"Position ({tile.x}, {tile.y}, {tile.z})", cb("copy_position"))
+        builder.end_submenu()
 
         builder.add_separator()
 
-        # Item-specific
-        if hasattr(item, "destination") and item.destination:
-            builder.add_action("🚀 Go To Destination", cb("goto_destination"), enabled=_enabled("goto_destination"))
+        # Edit Actions
+        builder.add_action("📋 Copy", cb("copy"), enabled=_enabled("copy"))
+        builder.add_action("🗑️ Delete", cb("delete"), enabled=_enabled("delete"))
 
+        # Text editing
         if hasattr(item, "text") and item.text:
+            builder.add_separator()
             builder.add_action("📝 Edit Text...", cb("edit_text"), enabled=_enabled("edit_text"))
 
         builder.add_separator()
 
-        # Quick replace helpers
-        builder.add_action("🎯 Set as Find Item", cb("set_find"), enabled=_enabled("set_find"))
-        builder.add_action("🔁 Set as Replace Item", cb("set_replace"), enabled=_enabled("set_replace"))
-        builder.add_separator()
-
-        # Selection
-        builder.add_action("🔍 Find All of This Item", cb("find_all"), enabled=_enabled("find_all"))
-        builder.add_action("🔄 Replace All...", cb("replace_all"), enabled=_enabled("replace_all"))
+        # Find/Replace helpers
+        builder.add_action("🎯 Find All of This Item", cb("find_all"), enabled=_enabled("find_all"))
+        builder.add_action("🔁 Replace All...", cb("replace_all"), enabled=_enabled("replace_all"))
 
         builder.exec_at_cursor()
 
 
 class BrushContextMenu:
-    """Context menu for palette brushes."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         self._parent = parent
