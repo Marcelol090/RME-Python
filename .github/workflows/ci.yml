@@ -40,7 +40,7 @@ jobs:
 
       - name: Run quality pipeline (dry-run)
         run: |
-          ./quality.sh --dry-run --skip-tests --skip-libcst --skip-sonar
+          ./quality.sh --dry-run --skip-tests --skip-libcst --skip-sonarlint
 
       - name: Install package for tests
         run: |
