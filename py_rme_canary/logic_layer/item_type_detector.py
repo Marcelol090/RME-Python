@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class ItemCategory(str, Enum):
     """Item category for smart actions."""
+
     WALL = "wall"
     CARPET = "carpet"
     DOOR = "door"
@@ -67,15 +68,15 @@ class ItemTypeDetector:
     @staticmethod
     def get_category(item: Item) -> ItemCategory:
         """Detect item category.
-        
+
         Args:
             item: Item to categorize
-            
+
         Returns:
             ItemCategory enum
         """
         item_id = int(item.id)
-        
+
         # Check specific categories
         if item_id in WALL_IDS:
             return ItemCategory.WALL
@@ -93,16 +94,16 @@ class ItemTypeDetector:
             return ItemCategory.TELEPORT
         elif item_id in ROTATABLE_SEQUENCES:
             return ItemCategory.ROTATABLE
-        
+
         return ItemCategory.UNKNOWN
 
     @staticmethod
     def is_door(item: Item) -> bool:
         """Check if item is a door.
-        
+
         Args:
             item: Item to check
-            
+
         Returns:
             True if item is a door
         """
@@ -111,33 +112,33 @@ class ItemTypeDetector:
     @staticmethod
     def get_door_toggle_id(item: Item) -> int | None:
         """Get the ID to toggle door state (open <-> closed).
-        
+
         Args:
             item: Door item
-            
+
         Returns:
             ID of toggled state, or None if not a door
         """
         item_id = int(item.id)
-        
+
         # Check if it's a closed door
         if item_id in DOOR_PAIRS:
             return DOOR_PAIRS[item_id]
-        
+
         # Check if it's an open door (reverse lookup)
         for closed_id, open_id in DOOR_PAIRS.items():
             if item_id == open_id:
                 return closed_id
-        
+
         return None
 
     @staticmethod
     def is_door_open(item: Item) -> bool:
         """Check if door is in open state.
-        
+
         Args:
             item: Door item
-            
+
         Returns:
             True if door is open
         """
@@ -148,10 +149,10 @@ class ItemTypeDetector:
     @staticmethod
     def is_rotatable(item: Item) -> bool:
         """Check if item is rotatable.
-        
+
         Args:
             item: Item to check
-            
+
         Returns:
             True if item can be rotated
         """
@@ -160,31 +161,31 @@ class ItemTypeDetector:
     @staticmethod
     def get_next_rotation_id(item: Item) -> int | None:
         """Get the next rotation ID for a rotatable item.
-        
+
         Args:
             item: Rotatable item
-            
+
         Returns:
             Next rotation ID, or None if not rotatable
         """
         item_id = int(item.id)
-        
+
         if item_id not in ROTATABLE_SEQUENCES:
             return None
-        
+
         sequence = ROTATABLE_SEQUENCES[item_id]
         current_index = sequence.index(item_id)
         next_index = (current_index + 1) % len(sequence)
-        
+
         return sequence[next_index]
 
     @staticmethod
     def is_teleport(item: Item) -> bool:
         """Check if item is a teleport.
-        
+
         Args:
             item: Item to check
-            
+
         Returns:
             True if item is a teleport
         """
@@ -193,16 +194,16 @@ class ItemTypeDetector:
     @staticmethod
     def get_teleport_destination(item: Item) -> tuple[int, int, int] | None:
         """Get teleport destination coordinates.
-        
+
         Args:
             item: Teleport item
-            
+
         Returns:
             (x, y, z) tuple or None
         """
         if not ItemTypeDetector.is_teleport(item):
             return None
-        
+
         # Check if item has destination attributes
         # This depends on how destinations are stored in Item class
         if hasattr(item, "destination") and item.destination:
@@ -211,16 +212,16 @@ class ItemTypeDetector:
                 return item.destination
             elif hasattr(item.destination, "x"):
                 return (item.destination.x, item.destination.y, item.destination.z)
-        
+
         return None
 
     @staticmethod
     def get_brush_name(category: ItemCategory) -> str:
         """Get brush name for a category.
-        
+
         Args:
             category: Item category
-            
+
         Returns:
             Human-readable brush name
         """
@@ -238,10 +239,10 @@ class ItemTypeDetector:
     @staticmethod
     def can_select_brush(category: ItemCategory) -> bool:
         """Check if category supports brush selection.
-        
+
         Args:
             category: Item category
-            
+
         Returns:
             True if category has an associated brush
         """

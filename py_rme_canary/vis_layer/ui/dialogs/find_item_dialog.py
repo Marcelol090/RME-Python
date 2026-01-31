@@ -17,25 +17,23 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, pyqtSignal, QPoint
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
     QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
-    QSpinBox,
-    QComboBox,
-    QCheckBox,
-    QRadioButton,
-    QButtonGroup,
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QLabel,
+    QRadioButton,
+    QSpinBox,
+    QVBoxLayout,
     QWidget,
-    QDialogButtonBox,
 )
 
 if TYPE_CHECKING:
@@ -45,6 +43,7 @@ if TYPE_CHECKING:
 
 class SearchMode(str, Enum):
     """Search mode enum."""
+
     ID = "id"
     NAME = "name"
     TYPE = "type"
@@ -53,6 +52,7 @@ class SearchMode(str, Enum):
 @dataclass(slots=True)
 class SearchResult:
     """Represents a single search result."""
+
     item: Item
     position: tuple[int, int, int]  # (x, y, z)
     tile_item_index: int  # Index in tile.items (-1 for ground)
@@ -61,28 +61,29 @@ class SearchResult:
 @dataclass(slots=True)
 class SearchFilters:
     """Advanced search filters."""
+
     search_mode: SearchMode = SearchMode.ID
     search_value: str = ""
-    
+
     # Filters
     has_action_id: bool = False
     action_id_value: int = 0
-    
+
     has_unique_id: bool = False
     unique_id_value: int = 0
-    
+
     has_text: bool = False
     text_value: str = ""
-    
+
     specific_z: bool = False
     z_value: int = 7
-    
+
     selection_only: bool = False
 
 
 class SearchResultWidget(QWidget):
     """Widget displaying a single search result."""
-    
+
     clicked = pyqtSignal(tuple)  # Emits (x, y, z) position
 
     def __init__(self, result: SearchResult, parent: QWidget | None = None) -> None:
@@ -94,13 +95,13 @@ class SearchResultWidget(QWidget):
         """Setup widget UI."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 4, 8, 4)
-        
+
         # Item info
         item = self.result.item
         pos = self.result.position
-        
+
         info_text = f"ID {item.id} @ ({pos[0]}, {pos[1]}, Floor {pos[2]})"
-        
+
         # Add attributes
         attrs = []
         if item.action_id:
@@ -109,7 +110,7 @@ class SearchResultWidget(QWidget):
             attrs.append(f"UID:{item.unique_id}")
         if attrs:
             info_text += f" - {', '.join(attrs)}"
-        
+
         label = QLabel(info_text)
         label.setStyleSheet("""
             QLabel {
@@ -119,7 +120,7 @@ class SearchResultWidget(QWidget):
             }
         """)
         layout.addWidget(label, 1)
-        
+
         # Jump button
         jump_btn = QPushButton("Jump →")
         jump_btn.setFixedWidth(80)
@@ -143,7 +144,7 @@ class SearchResultWidget(QWidget):
 
 class FindItemDialog(QDialog):
     """Dialog for finding items across the map with advanced filters.
-    
+
     Features:
     - Search by ID, Name, or Type
     - Advanced filters (ActionID, UniqueID, Text, Z-layer)
@@ -151,22 +152,18 @@ class FindItemDialog(QDialog):
     - "Replace All" integration
     - Selection-only search mode
     """
-    
+
     jump_to_position = pyqtSignal(tuple)  # Emits (x, y, z) to jump in canvas
     replace_all_requested = pyqtSignal(list)  # Emits list of SearchResult
 
-    def __init__(
-        self,
-        game_map: GameMap | None = None,
-        parent: QWidget | None = None
-    ) -> None:
+    def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.game_map = game_map
         self._search_results: list[SearchResult] = []
-        
+
         self.setWindowTitle("Find Items")
         self.setMinimumSize(600, 700)
-        
+
         self._setup_ui()
         self._apply_style()
 
@@ -179,40 +176,40 @@ class FindItemDialog(QDialog):
         # Search Mode
         mode_group = QGroupBox("Search By")
         mode_layout = QHBoxLayout(mode_group)
-        
+
         self.mode_group = QButtonGroup(self)
-        
+
         self.id_radio = QRadioButton("ID")
         self.id_radio.setChecked(True)
         self.mode_group.addButton(self.id_radio, SearchMode.ID.value)
         mode_layout.addWidget(self.id_radio)
-        
+
         self.name_radio = QRadioButton("Name")
         self.mode_group.addButton(self.name_radio, SearchMode.NAME.value)
         mode_layout.addWidget(self.name_radio)
-        
+
         self.type_radio = QRadioButton("Type")
         self.mode_group.addButton(self.type_radio, SearchMode.TYPE.value)
         mode_layout.addWidget(self.type_radio)
-        
+
         mode_layout.addStretch()
         layout.addWidget(mode_group)
 
         # Search Input
         search_group = QGroupBox("Search")
         search_layout = QFormLayout(search_group)
-        
+
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter ID, name, or type...")
         self.search_input.returnPressed.connect(self._on_search)
         search_layout.addRow("Value:", self.search_input)
-        
+
         layout.addWidget(search_group)
 
         # Advanced Filters
         filters_group = QGroupBox("Filters")
         filters_layout = QFormLayout(filters_group)
-        
+
         # Action ID filter
         aid_layout = QHBoxLayout()
         self.has_aid_check = QCheckBox()
@@ -224,7 +221,7 @@ class FindItemDialog(QDialog):
         aid_layout.addWidget(self.aid_spin)
         aid_layout.addStretch()
         filters_layout.addRow("Has Action ID:", aid_layout)
-        
+
         # Unique ID filter
         uid_layout = QHBoxLayout()
         self.has_uid_check = QCheckBox()
@@ -236,7 +233,7 @@ class FindItemDialog(QDialog):
         uid_layout.addWidget(self.uid_spin)
         uid_layout.addStretch()
         filters_layout.addRow("Has Unique ID:", uid_layout)
-        
+
         # Text filter
         text_layout = QHBoxLayout()
         self.has_text_check = QCheckBox()
@@ -246,7 +243,7 @@ class FindItemDialog(QDialog):
         self.has_text_check.toggled.connect(self.text_input.setEnabled)
         text_layout.addWidget(self.text_input)
         filters_layout.addRow("Contains Text:", text_layout)
-        
+
         # Z-layer filter
         z_layout = QHBoxLayout()
         self.specific_z_check = QCheckBox()
@@ -259,11 +256,11 @@ class FindItemDialog(QDialog):
         z_layout.addWidget(self.z_spin)
         z_layout.addStretch()
         filters_layout.addRow("Specific Floor:", z_layout)
-        
+
         # Selection only
         self.selection_only_check = QCheckBox("Search in selection only")
         filters_layout.addRow("", self.selection_only_check)
-        
+
         layout.addWidget(filters_group)
 
         # Search Button
@@ -275,11 +272,11 @@ class FindItemDialog(QDialog):
         # Results
         results_group = QGroupBox("Results")
         results_layout = QVBoxLayout(results_group)
-        
+
         self.results_label = QLabel("No results yet")
         self.results_label.setStyleSheet("color: #A1A1AA; font-style: italic;")
         results_layout.addWidget(self.results_label)
-        
+
         self.results_list = QListWidget()
         self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self.results_list.setStyleSheet("""
@@ -304,23 +301,23 @@ class FindItemDialog(QDialog):
             }
         """)
         results_layout.addWidget(self.results_list)
-        
+
         layout.addWidget(results_group)
 
         # Action Buttons
         button_layout = QHBoxLayout()
-        
+
         self.replace_all_btn = QPushButton("Replace All...")
         self.replace_all_btn.clicked.connect(self._on_replace_all)
         self.replace_all_btn.setEnabled(False)
         button_layout.addWidget(self.replace_all_btn)
-        
+
         button_layout.addStretch()
-        
+
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
-        
+
         layout.addLayout(button_layout)
 
     def _on_search(self) -> None:
@@ -328,13 +325,13 @@ class FindItemDialog(QDialog):
         if not self.game_map:
             self.results_label.setText("⚠️ No map loaded")
             return
-        
+
         # Build filters
         filters = self._build_filters()
-        
+
         # Execute search
         self._search_results = self._perform_search(filters)
-        
+
         # Update UI
         self._display_results()
 
@@ -347,7 +344,7 @@ class FindItemDialog(QDialog):
             mode = SearchMode.NAME
         else:
             mode = SearchMode.TYPE
-        
+
         return SearchFilters(
             search_mode=mode,
             search_value=self.search_input.text().strip(),
@@ -359,56 +356,50 @@ class FindItemDialog(QDialog):
             text_value=self.text_input.text().strip(),
             specific_z=self.specific_z_check.isChecked(),
             z_value=self.z_spin.value(),
-            selection_only=self.selection_only_check.isChecked()
+            selection_only=self.selection_only_check.isChecked(),
         )
 
     def _perform_search(self, filters: SearchFilters) -> list[SearchResult]:
         """Perform search across the map.
-        
+
         Args:
             filters: Search filters
-            
+
         Returns:
             List of search results
         """
         results = []
-        
+
         if not self.game_map:
             return results
-        
+
         # Iterate all tiles
         for tile in self.game_map.iter_tiles():
             # Z-layer filter
             if filters.specific_z and tile.z != filters.z_value:
                 continue
-            
+
             # Check ground
             if tile.ground:
                 if self._item_matches(tile.ground, filters):
-                    results.append(SearchResult(
-                        item=tile.ground,
-                        position=(tile.x, tile.y, tile.z),
-                        tile_item_index=-1
-                    ))
-            
+                    results.append(
+                        SearchResult(item=tile.ground, position=(tile.x, tile.y, tile.z), tile_item_index=-1)
+                    )
+
             # Check items
             for i, item in enumerate(tile.items):
                 if self._item_matches(item, filters):
-                    results.append(SearchResult(
-                        item=item,
-                        position=(tile.x, tile.y, tile.z),
-                        tile_item_index=i
-                    ))
-        
+                    results.append(SearchResult(item=item, position=(tile.x, tile.y, tile.z), tile_item_index=i))
+
         return results
 
     def _item_matches(self, item: Item, filters: SearchFilters) -> bool:
         """Check if an item matches search filters.
-        
+
         Args:
             item: Item to check
             filters: Search filters
-            
+
         Returns:
             True if item matches
         """
@@ -421,54 +412,54 @@ class FindItemDialog(QDialog):
                         return False
                 except ValueError:
                     return False
-        
+
         elif filters.search_mode == SearchMode.NAME:
             # TODO: Implement name lookup via items.otb
             # For now, just search by ID
             if filters.search_value:
                 if filters.search_value.lower() not in str(item.id).lower():
                     return False
-        
+
         elif filters.search_mode == SearchMode.TYPE:
             # TODO: Implement type filtering
             pass
-        
+
         # Action ID filter
         if filters.has_action_id:
             if item.action_id != filters.action_id_value:
                 return False
-        
+
         # Unique ID filter
         if filters.has_unique_id:
             if item.unique_id != filters.unique_id_value:
                 return False
-        
+
         # Text filter
         if filters.has_text:
             if not item.text or filters.text_value.lower() not in item.text.lower():
                 return False
-        
+
         return True
 
     def _display_results(self) -> None:
         """Display search results in the list."""
         self.results_list.clear()
-        
+
         count = len(self._search_results)
-        
+
         if count == 0:
             self.results_label.setText("No results found")
             self.replace_all_btn.setEnabled(False)
             return
-        
+
         self.results_label.setText(f"Found {count} item{'s' if count != 1 else ''}")
         self.replace_all_btn.setEnabled(True)
-        
+
         # Add results to list
         for result in self._search_results:
             widget = SearchResultWidget(result)
             widget.clicked.connect(self._on_jump_to_result)
-            
+
             list_item = QListWidgetItem(self.results_list)
             list_item.setSizeHint(widget.sizeHint())
             self.results_list.addItem(list_item)

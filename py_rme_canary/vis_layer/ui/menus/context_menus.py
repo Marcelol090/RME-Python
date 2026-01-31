@@ -178,7 +178,7 @@ class TileContextMenu:
         if tile:
             # Properties
             builder.add_action("📝 Properties...", cb("properties"))
-            
+
             # Browse Tile (inspect item stack)
             has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)
             builder.add_action("🔍 Browse Tile...", cb("browse_tile"), enabled=has_items)
@@ -249,7 +249,7 @@ class ItemContextMenu:
         builder = ContextMenuBuilder(self._parent)
 
         # Import detector for smart actions
-        from py_rme_canary.logic_layer.item_type_detector import ItemTypeDetector, ItemCategory
+        from py_rme_canary.logic_layer.item_type_detector import ItemTypeDetector
 
         # Detect item category
         category = ItemTypeDetector.get_category(item)
@@ -261,11 +261,7 @@ class ItemContextMenu:
         # Smart Brush Selection
         if ItemTypeDetector.can_select_brush(category):
             brush_name = ItemTypeDetector.get_brush_name(category)
-            builder.add_action(
-                f"✨ Select {brush_name}",
-                cb("select_brush"),
-                enabled=_enabled("select_brush")
-            )
+            builder.add_action(f"✨ Select {brush_name}", cb("select_brush"), enabled=_enabled("select_brush"))
             builder.add_separator()
 
         # Item-Specific Actions
@@ -290,7 +286,7 @@ class ItemContextMenu:
                 builder.add_action(
                     f"🚀 Go To Destination ({dest[0]}, {dest[1]}, {dest[2]})",
                     cb("goto_teleport"),
-                    enabled=_enabled("goto_teleport")
+                    enabled=_enabled("goto_teleport"),
                 )
             else:
                 builder.add_action("🚀 Set Teleport Destination...", cb("set_teleport_dest"))
@@ -335,7 +331,6 @@ class ItemContextMenu:
 
 
 class BrushContextMenu:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         self._parent = parent
         self._callbacks: dict[str, Callable] = {}
