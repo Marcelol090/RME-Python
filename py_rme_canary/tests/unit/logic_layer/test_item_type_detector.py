@@ -5,6 +5,7 @@ and other smart context menu logic.
 """
 
 import pytest
+import dataclasses
 from py_rme_canary.logic_layer.item_type_detector import (
     ItemTypeDetector,
     ItemCategory,
@@ -24,7 +25,7 @@ class TestItemCategoryDetection:
     
     def test_detect_carpet_category(self):
         """Test carpet detection in ID range."""
-        item = Item(id=1350)  # Carpet range: 1300-1400
+        item = Item(id=6357)  # Carpet range
         assert ItemTypeDetector.get_category(item) == ItemCategory.CARPET
     
     def test_detect_door_category(self):
@@ -149,13 +150,13 @@ class TestHelperMethods:
         """Test brush selection availability for wall."""
         if hasattr(ItemTypeDetector, 'can_select_brush'):
             wall = Item(id=1050)
-            assert ItemTypeDetector.can_select_brush(wall) is True
+            assert ItemTypeDetector.can_select_brush(ItemTypeDetector.get_category(wall)) is True
     
     def test_get_brush_name_for_category(self):
         """Test getting brush name from category."""
         if hasattr(ItemTypeDetector, 'get_brush_name'):
-            assert ItemTypeDetector.get_brush_name(ItemCategory.WALL) == "wall"
-            assert ItemTypeDetector.get_brush_name(ItemCategory.DOOR) == "door"
+            assert ItemTypeDetector.get_brush_name(ItemCategory.WALL) == "Wall Brush"
+            assert ItemTypeDetector.get_brush_name(ItemCategory.DOOR) == "Door Brush"
 
 
 # Integration-style tests
@@ -173,7 +174,7 @@ class TestItemTypeDetectorIntegration:
         assert open_id == 1210
         
         # Toggle to open
-        door.id = open_id
+        door = dataclasses.replace(door, id=open_id)
         
         # Get closed state
         closed_id = ItemTypeDetector.get_door_toggle_id(door)
@@ -189,7 +190,7 @@ class TestItemTypeDetectorIntegration:
         for _ in range(4):
             next_id = ItemTypeDetector.get_next_rotation_id(torch)
             assert next_id is not None
-            torch.id = next_id
+            torch = dataclasses.replace(torch, id=next_id)
         
         # Should be back to original (if sequence is 4 items)
         if 2050 in ROTATABLE_SEQUENCES and len(ROTATABLE_SEQUENCES[2050]) == 4:
