@@ -1,8 +1,8 @@
-# Quality Pipeline v2.1 - Documentação
+# Quality Pipeline v2.2 - Documentação
 
 ## Visão Geral
 
-O Quality Pipeline v2.1 é uma solução completa de análise de código para **projetos locais**, integrando múltiplas ferramentas de análise estática, segurança, detecção de segredos, código morto/duplicado e vulnerabilidades em dependências.
+O Quality Pipeline v2.2 é uma solução completa de análise de código para **projetos locais**, integrando múltiplas ferramentas de análise estática, segurança, detecção de segredos, código morto/duplicado, documentação e vulnerabilidades em dependências.
 
 ## Decisões de Arquitetura
 
@@ -24,12 +24,16 @@ O Quality Pipeline v2.1 é uma solução completa de análise de código para **
 | **Mypy** | Type checking estático | `pip install mypy` |
 | **Radon** | Métricas de complexidade ciclomática | `pip install radon` |
 | **Pyright** | Type checking avançado (complementar) | `pip install pyright` |
+| **Complexipy** | Cognitive complexity (legibilidade) | `pip install complexipy` |
+| **Lizard** | Complexidade ciclomática multi-linguagem | `pip install lizard` |
 
-#### Fase 3: Análise Complementar (Dead Code, Duplication)
+#### Fase 3: Análise Complementar (Dead Code, Duplication, Quality)
 | Ferramenta | Propósito | Instalação |
 |------------|-----------|------------|
 | **Pylint** | Análise complementar (naming, dead code) | `pip install pylint` |
+| **Prospector** | Agregador de linters | `pip install prospector` |
 | **Vulture** | Detecção de código morto | `pip install vulture` |
+| **Skylos** | Código morto + segurança + qualidade | `pip install skylos` |
 | **jscpd** | Detecção de código duplicado | `npm install -g jscpd` |
 
 #### Fase 4: Segurança (Multi-layer)
@@ -44,6 +48,13 @@ O Quality Pipeline v2.1 é uma solução completa de análise de código para **
 | **pip-audit** | Vulnerabilidades (PyPI Advisory + OSV) | `pip install pip-audit` |
 | **OSV-Scanner** | Vulnerabilidades multi-ecossistema | `go install github.com/google/osv-scanner/cmd/osv-scanner@latest` |
 
+#### Fase 5: Documentação e Testes
+| Ferramenta | Propósito | Instalação |
+|------------|-----------|------------|
+| **Interrogate** | Cobertura de docstrings | `pip install interrogate` |
+| **Pydocstyle** | Conformidade PEP 257 (docstrings) | `pip install pydocstyle` |
+| **Mutmut** | Mutation testing (qualidade de testes) | `pip install mutmut` |
+
 ## Instalação
 
 ### Dependências Obrigatórias
@@ -55,8 +66,17 @@ pip install ruff mypy radon bandit safety pylint
 ### Ferramentas Adicionais Recomendadas
 
 ```bash
+# Análise de complexidade
+pip install complexipy lizard pyright
+
 # Análise complementar
-pip install vulture pyright
+pip install vulture skylos prospector
+
+# Documentação
+pip install interrogate pydocstyle
+
+# Testes
+pip install mutmut pytest-randomly pytest-xdist
 
 # Segurança avançada
 pip install detect-secrets semgrep pip-audit
@@ -83,6 +103,35 @@ detect-secrets scan > .secrets.baseline
 
 # Auditar segredos detectados
 detect-secrets audit .secrets.baseline
+```
+
+### Skylos (Código Morto + Segurança)
+
+```bash
+# Instalação
+pip install skylos
+
+# Inicializar configuração
+skylos init  # Adiciona [tool.skylos] no pyproject.toml
+
+# Executar análise com trace (reduz falsos positivos)
+skylos . --trace
+```
+
+### Mutmut (Mutation Testing)
+
+```bash
+# Instalação
+pip install mutmut
+
+# Executar mutation testing (computacionalmente intensivo)
+mutmut run --paths-to-mutate=py_rme_canary
+
+# Ver resultados
+mutmut results
+
+# Gerar relatório HTML
+mutmut html
 ```
 
 ### Semgrep (Análise de Padrões)
@@ -342,6 +391,18 @@ sed -i 's/\r$//' quality_lf.sh
 ```
 
 ## Changelog
+
+### v2.2 (2026-01-30)
+- ✅ Adicionado: Complexipy para cognitive complexity (legibilidade)
+- ✅ Adicionado: Skylos para código morto + segurança com taint analysis
+- ✅ Adicionado: Lizard para complexidade ciclomática multi-linguagem
+- ✅ Adicionado: Interrogate para cobertura de docstrings
+- ✅ Adicionado: Pydocstyle para conformidade PEP 257 (docstrings)
+- ✅ Adicionado: Mutmut para mutation testing (qualidade de testes)
+- ✅ Adicionado: Prospector como agregador de linters
+- ✅ Nova Fase 5: Documentação e Testes (Interrogate, Pydocstyle, Mutmut)
+- ✅ Reorganizado: Fase 3 inclui Prospector e Skylos
+- ✅ Reorganizado: Consolidação agora é Fase 6
 
 ### v2.1 (2026-01-30)
 - ✅ Adicionado: Pyright para type checking avançado (complementa Mypy)

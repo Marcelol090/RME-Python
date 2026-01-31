@@ -2,8 +2,11 @@
 set -Eeuo pipefail
 
 #############################################
-# QUALITY PIPELINE v2.0
-# Ferramentas: Ruff, Mypy, Radon, Bandit, SonarLint, Safety, Pylint
+# QUALITY PIPELINE v2.2
+# Ferramentas Baseline: Ruff, Mypy, Radon, Pyright, Complexipy, Lizard
+# Ferramentas Complementar: Pylint, Prospector, Vulture, Skylos, jscpd
+# Ferramentas Segurança: Bandit, Semgrep, detect-secrets, Safety, pip-audit, OSV-Scanner
+# Ferramentas Docs/Testes: Interrogate, Pydocstyle, Mutmut
 # Projeto Local - Sem dependência de SonarQube Server
 #############################################
 
@@ -77,8 +80,10 @@ usage() {
   cat <<EOF
 Uso: $0 [opções]
 
-Quality Pipeline v2.1 - Análise de Código Completa para Projeto Local
-Ferramentas: Ruff, Mypy, Radon, Bandit, Semgrep, detect-secrets, Vulture, jscpd, pip-audit, OSV-Scanner
+Quality Pipeline v2.2 - Análise de Código Completa para Projeto Local
+Ferramentas: Ruff, Mypy, Radon, Pyright, Complexipy, Lizard, Bandit, Semgrep, 
+detect-secrets, Vulture, Skylos, jscpd, pip-audit, OSV-Scanner, Interrogate, 
+Pydocstyle, Mutmut, Prospector
 
 Opções:
   --apply              Aplica alterações (padrão: dry-run)
@@ -88,7 +93,7 @@ Opções:
   --skip-security      Pula análise de segurança (Bandit, Semgrep, pip-audit, OSV-Scanner)
   --skip-sonarlint     Pula análise SonarLint CLI
   --skip-secrets       Pula secret scanning (detect-secrets, gitleaks)
-  --skip-deadcode      Pula análise de código morto/duplicado (Vulture, jscpd)
+  --skip-deadcode      Pula análise de código morto/duplicado (Vulture, Skylos, jscpd)
   --verbose            Saída detalhada
   --telemetry          Habilita telemetria (OpenTelemetry)
   --help               Exibe esta ajuda
@@ -99,11 +104,12 @@ Exemplos:
   $0 --apply --skip-secrets --skip-deadcode
 
 Ferramentas por fase:
-  Fase 1 (Baseline):     Ruff, Mypy, Radon, Pyright
+  Fase 1 (Baseline):     Ruff, Mypy, Radon, Pyright, Complexipy, Lizard
   Fase 2 (Refatoração):  ast-grep, LibCST
-  Fase 3 (Complementar): Pylint, Vulture, jscpd
+  Fase 3 (Complementar): Pylint, Prospector, Vulture, Skylos, jscpd
   Fase 4 (Segurança):    Bandit, Semgrep, detect-secrets, pip-audit, OSV-Scanner, Safety
-  Fase 5 (Consolidação): Relatório final
+  Fase 5 (Docs/Testes):  Interrogate, Pydocstyle, Mutmut
+  Fase 6 (Consolidação): Relatório final
 EOF
 }
 
@@ -900,6 +906,244 @@ run_pyright() {
 }
 
 #############################################
+# COMPLEXIPY - COGNITIVE COMPLEXITY
+#############################################
+
+run_complexipy() {
+  log INFO "Executando Complexipy (cognitive complexity)..."
+
+  if ! command -v complexipy &>/dev/null; then
+    log WARN "Complexipy não disponível - instale com: pip install complexipy"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/complexipy.json"
+  local threshold="${COMPLEXIPY_THRESHOLD:-15}"
+
+  complexipy py_rme_canary \
+    --threshold "$threshold" \
+    --format json \
+    > "$output_file" 2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local violations
+    violations=$(jq '[.[] | select(.cognitive_complexity > '"$threshold"')] | length' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$violations" -gt 0 ]]; then
+      log WARN "Complexipy: $violations função(ões) com complexidade cognitiva >$threshold"
+    else
+      log SUCCESS "Complexipy: complexidade cognitiva aceitável"
+    fi
+  fi
+}
+
+#############################################
+# SKYLOS - CÓDIGO MORTO + SEGURANÇA
+#############################################
+
+run_skylos() {
+  if [[ "$SKIP_DEADCODE" == true ]]; then
+    log INFO "Skylos pulado (--skip-deadcode)"
+    return 0
+  fi
+
+  log INFO "Executando Skylos (dead code + security analysis)..."
+
+  if ! command -v skylos &>/dev/null; then
+    log WARN "Skylos não disponível - instale com: pip install skylos"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/skylos.json"
+
+  # Executar skylos com trace para reduzir falsos positivos
+  skylos . --json > "$output_file" 2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local dead_code
+    local security_issues
+    local quality_issues
+
+    dead_code=$(jq '.dead_code | length' "$output_file" 2>/dev/null || echo 0)
+    security_issues=$(jq '.security | length' "$output_file" 2>/dev/null || echo 0)
+    quality_issues=$(jq '.quality | length' "$output_file" 2>/dev/null || echo 0)
+
+    log INFO "Skylos: $dead_code código(s) morto(s), $security_issues issue(s) segurança, $quality_issues issue(s) qualidade"
+  fi
+}
+
+#############################################
+# LIZARD - COMPLEXIDADE CICLOMÁTICA
+#############################################
+
+run_lizard() {
+  log INFO "Executando Lizard (cyclomatic complexity)..."
+
+  if ! command -v lizard &>/dev/null; then
+    log WARN "Lizard não disponível - instale com: pip install lizard"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/lizard.xml"
+  local ccn_threshold="${LIZARD_CCN_THRESHOLD:-15}"
+
+  lizard py_rme_canary \
+    --CCN "$ccn_threshold" \
+    --xml \
+    > "$output_file" 2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local violations
+    violations=$(grep -c "ccn=\"[0-9]\{2,\}\"" "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$violations" -gt 0 ]]; then
+      log WARN "Lizard: $violations função(ões) com CCN >$ccn_threshold"
+    else
+      log SUCCESS "Lizard: complexidade ciclomática aceitável"
+    fi
+  fi
+}
+
+#############################################
+# INTERROGATE - COBERTURA DE DOCSTRINGS
+#############################################
+
+run_interrogate() {
+  log INFO "Executando Interrogate (docstring coverage)..."
+
+  if ! command -v interrogate &>/dev/null; then
+    log WARN "Interrogate não disponível - instale com: pip install interrogate"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/interrogate.txt"
+  local min_coverage="${INTERROGATE_MIN_COVERAGE:-50}"
+
+  interrogate py_rme_canary \
+    --verbose \
+    --fail-under "$min_coverage" \
+    --generate-badge "$REPORT_DIR/interrogate_badge.svg" \
+    > "$output_file" 2>&1 || true
+
+  if [[ -f "$output_file" ]]; then
+    local coverage
+    coverage=$(grep -oP 'Result: \K[0-9.]+(?=%)' "$output_file" 2>/dev/null || echo "0")
+
+    if (( $(echo "$coverage < $min_coverage" | bc -l 2>/dev/null || echo 1) )); then
+      log WARN "Interrogate: ${coverage}% cobertura de docstrings (mínimo: ${min_coverage}%)"
+    else
+      log SUCCESS "Interrogate: ${coverage}% cobertura de docstrings"
+    fi
+  fi
+}
+
+#############################################
+# PYDOCSTYLE - CONFORMIDADE DE DOCSTRINGS
+#############################################
+
+run_pydocstyle() {
+  log INFO "Executando pydocstyle (PEP 257 compliance)..."
+
+  if ! command -v pydocstyle &>/dev/null; then
+    log WARN "pydocstyle não disponível - instale com: pip install pydocstyle"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/pydocstyle.txt"
+
+  pydocstyle py_rme_canary > "$output_file" 2>&1 || true
+
+  if [[ -f "$output_file" ]]; then
+    local violations
+    violations=$(wc -l < "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$violations" -gt 0 ]]; then
+      log WARN "pydocstyle: $violations violação(ões) PEP 257"
+    else
+      log SUCCESS "pydocstyle: docstrings conformes com PEP 257"
+    fi
+  fi
+}
+
+#############################################
+# MUTMUT - MUTATION TESTING
+#############################################
+
+run_mutmut() {
+  if [[ "$SKIP_TESTS" == true ]]; then
+    log INFO "Mutmut pulado (--skip-tests)"
+    return 0
+  fi
+
+  log INFO "Executando Mutmut (mutation testing)..."
+
+  if ! command -v mutmut &>/dev/null; then
+    log WARN "Mutmut não disponível - instale com: pip install mutmut"
+    log INFO "  Nota: Mutation testing é computacionalmente intensivo"
+    return 0
+  fi
+
+  local cache_file="$CACHE_DIR/.mutmut-cache"
+
+  # Executar mutmut de forma incremental
+  mutmut run \
+    --paths-to-mutate=py_rme_canary \
+    --tests-dir=py_rme_canary/tests \
+    --runner="pytest -x -q" \
+    --use-cache \
+    2>&1 | tee "$REPORT_DIR/mutmut.log" || true
+
+  # Gerar relatório HTML
+  mutmut html --directory="$REPORT_DIR/mutmut_html" 2>/dev/null || true
+
+  # Resumo de mutantes
+  local killed survived timeout suspicious
+  killed=$(mutmut results 2>/dev/null | grep -c "🎉 Killed" || echo 0)
+  survived=$(mutmut results 2>/dev/null | grep -c "BAD Survived" || echo 0)
+  timeout=$(mutmut results 2>/dev/null | grep -c "⏰ Timeout" || echo 0)
+  suspicious=$(mutmut results 2>/dev/null | grep -c "🤔 Suspicious" || echo 0)
+
+  log INFO "Mutmut: killed=$killed, survived=$survived, timeout=$timeout, suspicious=$suspicious"
+
+  if [[ "$survived" -gt 0 ]]; then
+    log WARN "Mutmut: $survived mutante(s) sobreviveram - melhorar testes"
+  fi
+}
+
+#############################################
+# PROSPECTOR - AGREGADOR DE LINTERS
+#############################################
+
+run_prospector() {
+  log INFO "Executando Prospector (linter aggregator)..."
+
+  if ! command -v prospector &>/dev/null; then
+    log WARN "Prospector não disponível - instale com: pip install prospector"
+    return 0
+  fi
+
+  local output_file="$REPORT_DIR/prospector.json"
+  local strictness="${PROSPECTOR_STRICTNESS:-medium}"
+
+  prospector py_rme_canary \
+    --strictness "$strictness" \
+    --output-format json \
+    --output-file "$output_file" \
+    2>/dev/null || true
+
+  if [[ -f "$output_file" ]]; then
+    local messages
+    messages=$(jq '.messages | length' "$output_file" 2>/dev/null || echo 0)
+
+    if [[ "$messages" -gt 0 ]]; then
+      log INFO "Prospector: $messages mensagem(ns) (strictness: $strictness)"
+    else
+      log SUCCESS "Prospector: nenhum issue detectado"
+    fi
+  fi
+}
+
+#############################################
 # AST-GREP - ANÁLISE ESTRUTURAL
 #############################################
 
@@ -1211,7 +1455,7 @@ PYTHON
 #############################################
 
 main() {
-  log INFO "=== Quality Pipeline v2.1 Iniciado ==="
+  log INFO "=== Quality Pipeline v2.2 Iniciado ==="
   log INFO "Modo: $MODE | Verbose: $VERBOSE"
 
   check_dependencies
@@ -1225,6 +1469,8 @@ main() {
   run_mypy ".mypy_baseline.log" || true
   run_radon ".radon.json" || true
   run_pyright || true
+  run_complexipy || true
+  run_lizard || true
 
   # Fase 2: Refatoração (se apply)
   if [[ "$MODE" == "apply" ]]; then
@@ -1236,11 +1482,13 @@ main() {
     run_tests || true
   fi
 
-  # Fase 3: Análise complementar (Dead Code, Duplication)
+  # Fase 3: Análise complementar (Dead Code, Duplication, Quality)
   log INFO "=== FASE 3: ANÁLISE COMPLEMENTAR ==="
   run_pylint || true
+  run_prospector || true
   if [[ "$SKIP_DEADCODE" == false ]]; then
     run_vulture || true
+    run_skylos || true
     run_jscpd || true
   fi
 
@@ -1265,14 +1513,20 @@ main() {
   run_pip_audit || true
   run_osv_scanner || true
 
-  # Fase 5: Consolidação
-  log INFO "=== FASE 5: CONSOLIDAÇÃO ==="
+  # Fase 5: Documentação e Qualidade de Testes
+  log INFO "=== FASE 5: DOCUMENTAÇÃO E TESTES ==="
+  run_interrogate || true
+  run_pydocstyle || true
+  run_mutmut || true
+
+  # Fase 6: Consolidação
+  log INFO "=== FASE 6: CONSOLIDAÇÃO ==="
   normalize_issues
   index_symbols "$SYMBOL_INDEX_AFTER"
   compare_symbols
   generate_final_report
 
-  log SUCCESS "=== Pipeline v2.1 Concluído ==="
+  log SUCCESS "=== Pipeline v2.2 Concluído ==="
 
   if [[ "$MODE" == "dry-run" ]]; then
     log INFO "ℹ️  Modo dry-run: nenhuma alteração aplicada"
