@@ -7,7 +7,7 @@ from py_rme_canary.core.data.houses import House
 from py_rme_canary.core.data.item import Position
 from py_rme_canary.core.exceptions.io import HousesXmlError
 from py_rme_canary.core.io.xml.base import as_bool, as_int
-from py_rme_canary.core.io.xml.safe import Element
+from py_rme_canary.core.io.xml.safe import Element, SubElement
 from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
@@ -81,10 +81,10 @@ def _indent(elem: Element, level: int = 0) -> None:
 
 
 def build_houses_xml(houses: Iterable[House]) -> str:
-    root = ET.Element("houses")
+    root = Element("houses")
 
     for house in sorted(houses, key=lambda h: int(h.id)):
-        node = ET.SubElement(root, "house")
+        node = SubElement(root, "house")
         node.set("name", str(house.name))
         node.set("houseid", str(int(house.id)))
 

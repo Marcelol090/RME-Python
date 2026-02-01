@@ -6,6 +6,7 @@ from xml.etree import ElementTree as stdlib_etree
 
 # Provide typed aliases from stdlib for use in annotations.
 Element = stdlib_etree.Element
+SubElement = stdlib_etree.SubElement
 ElementTree = stdlib_etree.ElementTree
 ParseError = stdlib_etree.ParseError
 
@@ -20,4 +21,4 @@ def _load_safe_etree() -> ModuleType:
 
 safe_etree = _load_safe_etree()
 
-__all__ = ["Element", "ElementTree", "ParseError", "safe_etree"]
+__all__ = ["Element", "SubElement", "ElementTree", "ParseError", "safe_etree"]

@@ -69,10 +69,15 @@ class BrushCursorOverlay(QWidget):
         self._size_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         # Shape morph animation
+        self._shape_progress = 0.0  # 0 = square, 1 = circle
         self._shape_anim = QPropertyAnimation(self, b"shapeProgress")
         self._shape_anim.setDuration(150)
         self._shape_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
-        self._shape_progress = 0.0  # 0 = square, 1 = circle
+
+    @property
+    def _position(self) -> QPoint:
+        """Alias for _center (for legacy/test support)."""
+        return self._center
 
     @pyqtProperty(float)
     def animRadius(self) -> float:

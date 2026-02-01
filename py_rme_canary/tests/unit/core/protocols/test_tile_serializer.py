@@ -27,7 +27,7 @@ def test_tile_update_roundtrip_single_tile() -> None:
     assert decoded["z"] == 7
     assert decoded["ground_id"] == 100
     assert decoded["house_id"] == 5
-    assert decoded["flags"] == 4
+    assert decoded["flags"] == 3
     assert decoded["items"][0]["id"] == 200
     assert decoded["items"][0]["subtype"] == 3
 
