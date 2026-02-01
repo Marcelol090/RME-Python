@@ -67,7 +67,7 @@ class FindEntityResult:
 
 
 class FindEntityDialog(QDialog):
-    def __init__(self, parent=None, *, title: str = "Find...") -> None:
+    def __init__(self, parent=None, *, title: str = "Find...", initial_mode: str = "item") -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
@@ -106,6 +106,13 @@ class FindEntityDialog(QDialog):
         l_house.addWidget(QLabel("House Name:"))
         l_house.addWidget(self._house_name_edit)
         self._tabs.addTab(self._tab_house, "House")
+
+        if initial_mode == "creature":
+            self._tabs.setCurrentIndex(1)
+        elif initial_mode == "house":
+            self._tabs.setCurrentIndex(2)
+        else:
+            self._tabs.setCurrentIndex(0)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
