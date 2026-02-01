@@ -27,8 +27,7 @@ def open_find_dialog(editor: "QtMapEditor", initial_mode: Literal["item", "creat
     """UI handler for Find actions."""
 
     dlg = FindEntityDialog(editor, title=f"Find {initial_mode.capitalize()}...")
-    # TODO: Select tab based on initial_mode if we expose a setter in dialog.
-    # For now, user clicks the tab.
+    dlg.set_mode(initial_mode)
 
     if dlg.exec() != dlg.DialogCode.Accepted:
         return

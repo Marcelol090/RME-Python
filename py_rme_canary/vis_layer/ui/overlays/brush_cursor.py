@@ -47,6 +47,7 @@ class BrushCursorOverlay(QWidget):
         self._is_circle = False
         self._pulse_phase = 0.0
         self._visible = False
+        self._shape_progress = 0.0  # 0 = square, 1 = circle
 
         # Colors
         self._primary_color = QColor(139, 92, 246, 180)  # Purple
