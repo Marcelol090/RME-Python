@@ -115,15 +115,6 @@ class FindEntityDialog(QDialog):
         layout.addWidget(self._tabs)
         layout.addWidget(buttons)
 
-    def set_mode(self, mode: str) -> None:
-        """Sets the initial tab based on the requested mode."""
-        if mode == "item":
-            self._tabs.setCurrentIndex(0)
-        elif mode == "creature":
-            self._tabs.setCurrentIndex(1)
-        elif mode == "house":
-            self._tabs.setCurrentIndex(2)
-
     def result_value(self) -> FindEntityResult:
         idx = self._tabs.currentIndex()
         title = self._tabs.tabText(idx)

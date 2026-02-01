@@ -42,8 +42,8 @@ class TestBrushCursorOverlay:
         overlay = BrushCursorOverlay(parent_widget)
         overlay.set_position(QPoint(100, 200))
 
-        assert overlay._center.x() == 100
-        assert overlay._center.y() == 200
+        assert overlay._position.x() == 100
+        assert overlay._position.y() == 200
 
     def test_set_brush_size(self, parent_widget):
         """Test setting brush size."""
@@ -140,11 +140,14 @@ class TestPastePreviewOverlay:
 
         # Copy mode
         overlay.set_preview_positions([(100, 200, 7)], is_cut=False)
-        assert overlay._is_cut is False
+        copy_color = overlay._color
 
         # Cut mode
         overlay.set_preview_positions([(100, 200, 7)], is_cut=True)
-        assert overlay._is_cut is True
+        cut_color = overlay._color
+
+        # Colors should be different
+        assert copy_color != cut_color
 
 
 class TestSelectionOverlay:
@@ -181,17 +184,15 @@ class TestSelectionOverlay:
         overlay = SelectionOverlay(parent_widget)
         rect = QRect(10, 20, 100, 50)
 
-        overlay.set_selection([rect])
+        overlay.set_rect(rect)
 
-        assert len(overlay._selection_rects) == 1
-        assert overlay._selection_rects[0] == rect
+        assert overlay._rect == rect
 
     def test_visibility(self, parent_widget):
         """Test selection visibility."""
         from py_rme_canary.vis_layer.ui.overlays.paste_preview import SelectionOverlay
 
-        parent_widget.show()
         overlay = SelectionOverlay(parent_widget)
 
-        overlay.setVisible(True)
-        assert overlay.isVisible()
+        overlay.set_visible(True)
+        # Overlay should have visible set

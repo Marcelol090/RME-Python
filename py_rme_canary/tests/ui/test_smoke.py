@@ -138,7 +138,7 @@ def test_smoke_workflow(editor, qtbot, monkeypatch, tmp_path):
         ) as mock_save:
             editor.act_save_as.trigger()
             # Verify save logic was called with correct path and map
-            mock_save.assert_called_once_with(save_path_str, editor.map, id_mapper=None)
+            mock_save.assert_called_once_with(save_path_str, editor.map)
 
     # ---------------------------------------------------------
     # 7. Selection

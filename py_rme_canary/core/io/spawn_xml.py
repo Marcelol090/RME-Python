@@ -12,7 +12,7 @@ from py_rme_canary.core.data.spawns import (
 )
 from py_rme_canary.core.exceptions.io import SpawnXmlError
 from py_rme_canary.core.io.xml.base import as_int
-from py_rme_canary.core.io.xml.safe import Element, ElementTree
+from py_rme_canary.core.io.xml.safe import Element, ElementTree, SubElement
 from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
@@ -195,17 +195,17 @@ def _indent(elem: Element, level: int = 0) -> None:
 
 
 def build_monster_spawns_xml(areas: Iterable[MonsterSpawnArea]) -> str:
-    root = ET.Element("monsters")
+    root = Element("monsters")
 
     for area in areas:
-        spawn = ET.SubElement(root, "monster")
+        spawn = SubElement(root, "monster")
         spawn.set("centerx", str(int(area.center.x)))
         spawn.set("centery", str(int(area.center.y)))
         spawn.set("centerz", str(int(area.center.z)))
         spawn.set("radius", str(int(area.radius)))
 
         for entry in area.monsters:
-            m = ET.SubElement(spawn, "monster")
+            m = SubElement(spawn, "monster")
             m.set("name", str(entry.name))
             m.set("x", str(int(entry.dx)))
             m.set("y", str(int(entry.dy)))
@@ -221,17 +221,17 @@ def build_monster_spawns_xml(areas: Iterable[MonsterSpawnArea]) -> str:
 
 
 def build_npc_spawns_xml(areas: Iterable[NpcSpawnArea]) -> str:
-    root = ET.Element("npcs")
+    root = Element("npcs")
 
     for area in areas:
-        spawn = ET.SubElement(root, "npc")
+        spawn = SubElement(root, "npc")
         spawn.set("centerx", str(int(area.center.x)))
         spawn.set("centery", str(int(area.center.y)))
         spawn.set("centerz", str(int(area.center.z)))
         spawn.set("radius", str(int(area.radius)))
 
         for entry in area.npcs:
-            n = ET.SubElement(spawn, "npc")
+            n = SubElement(spawn, "npc")
             n.set("name", str(entry.name))
             n.set("x", str(int(entry.dx)))
             n.set("y", str(int(entry.dy)))
