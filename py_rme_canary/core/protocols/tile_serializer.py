@@ -87,7 +87,7 @@ def decode_tile(payload: bytes, offset: int = 0) -> tuple[dict[str, Any], int]:
         return {}, offset
 
     x, y, z, flags, item_count = struct.unpack("<iiB B H", payload[offset : offset + 12])
-    offset += 11
+    offset += 12
 
     items: list[dict[str, int]] = []
     tile = {

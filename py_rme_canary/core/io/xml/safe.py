@@ -20,4 +20,13 @@ def _load_safe_etree() -> ModuleType:
 
 safe_etree = _load_safe_etree()
 
+# Ensure that 'Element' and 'SubElement' are available on the safe_etree module interface
+# because defusedxml doesn't expose them directly, but downstream code often expects `ET.Element`.
+if not hasattr(safe_etree, "Element"):
+    setattr(safe_etree, "Element", stdlib_etree.Element)
+if not hasattr(safe_etree, "SubElement"):
+    setattr(safe_etree, "SubElement", stdlib_etree.SubElement)
+if not hasattr(safe_etree, "tostring"):
+    setattr(safe_etree, "tostring", stdlib_etree.tostring)
+
 __all__ = ["Element", "ElementTree", "ParseError", "safe_etree"]

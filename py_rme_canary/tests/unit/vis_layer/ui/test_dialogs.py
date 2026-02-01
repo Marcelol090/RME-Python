@@ -26,15 +26,15 @@ class TestWelcomeDialog:
 
         dialog = WelcomeDialog()
         assert dialog is not None
-        assert dialog.windowTitle() == "Welcome"
+        assert dialog.windowTitle() == "Welcome to py_rme_canary"
 
     def test_welcome_dialog_with_recent_files(self, app):
         """Test welcome dialog with recent files."""
         from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
 
         recent = [
-            ("/path/to/map1.otbm", "map1.otbm"),
-            ("/path/to/map2.otbm", "map2.otbm"),
+            "/path/to/map1.otbm",
+            "/path/to/map2.otbm",
         ]
         dialog = WelcomeDialog(recent_files=recent)
 
@@ -210,9 +210,11 @@ class TestHouseDialog:
 
     def test_house_edit_dialog(self, app):
         """Test house edit dialog."""
+        from py_rme_canary.core.data.houses import House
         from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseEditDialog
 
-        dialog = HouseEditDialog(house_id=1, house_name="Test House")
+        house = House(id=1, name="Test House")
+        dialog = HouseEditDialog(house=house)
 
         assert dialog.name_input.text() == "Test House"
 
