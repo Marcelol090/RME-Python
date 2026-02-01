@@ -59,3 +59,4 @@ Remeres-map-editor-linux-4.0.0/
 
 # Archives
 *.zip
+__pycache__/
