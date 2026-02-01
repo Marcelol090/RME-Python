@@ -5,9 +5,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
-from xml.etree.ElementTree import Element
 
 from py_rme_canary.core.io.creatures_xml import default_monsters_path, default_npcs_path
+from py_rme_canary.core.io.xml.safe import Element, SubElement
 from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
@@ -174,7 +174,7 @@ def _ensure_parent_dir(path: Path) -> None:
 
 def _load_or_create_root(path: Path, root_tag: str) -> Element:
     if not path.exists():
-        return ET.Element(root_tag)
+        return Element(root_tag)
     try:
         root = ET.parse(path).getroot()
     except Exception as exc:
@@ -234,7 +234,7 @@ def _merge_definitions_into_xml(
             elem = existing[key]
             updated += 1
         else:
-            elem = ET.SubElement(root, child_tag)
+            elem = SubElement(root, child_tag)
             existing[key] = elem
             added += 1
         elem.set("name", creature.name)

@@ -1,0 +1,81 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PyQt6 6.10.2 -- Qt runtime 6.10.2 -- Qt compiled 6.10.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0, benchmark-5.2.3
+collected 21 items
+
+py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py FF............F... [ 85%]
+...                                                                      [100%]
+
+=================================== FAILURES ===================================
+________________ TestWelcomeDialog.test_welcome_dialog_creation ________________
+
+self = <unit.vis_layer.ui.test_dialogs.TestWelcomeDialog object at 0x7ff19b682900>
+app = <PyQt6.QtWidgets.QApplication object at 0x7ff19b6db250>
+
+    def test_welcome_dialog_creation(self, app):
+        """Test creating welcome dialog."""
+        from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
+
+        dialog = WelcomeDialog()
+        assert dialog is not None
+>       assert dialog.windowTitle() == "Welcome"
+E       AssertionError: assert 'Welcome to py_rme_canary' == 'Welcome'
+E
+E         - Welcome
+E         + Welcome to py_rme_canary
+
+py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py:29: AssertionError
+___________ TestWelcomeDialog.test_welcome_dialog_with_recent_files ____________
+
+self = <unit.vis_layer.ui.test_dialogs.TestWelcomeDialog object at 0x7ff19b6fa1b0>
+app = <PyQt6.QtWidgets.QApplication object at 0x7ff19b6db250>
+
+    def test_welcome_dialog_with_recent_files(self, app):
+        """Test welcome dialog with recent files."""
+        from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
+
+        recent = [
+            ("/path/to/map1.otbm", "map1.otbm"),
+            ("/path/to/map2.otbm", "map2.otbm"),
+        ]
+>       dialog = WelcomeDialog(recent_files=recent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py:39:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+py_rme_canary/vis_layer/ui/dialogs/welcome_dialog.py:116: in __init__
+    self._setup_ui()
+py_rme_canary/vis_layer/ui/dialogs/welcome_dialog.py:227: in _setup_ui
+    filename = os.path.basename(path)
+               ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+p = ('/path/to/map1.otbm', 'map1.otbm')
+
+>   ???
+E   TypeError: expected str, bytes or os.PathLike object, not tuple
+
+<frozen posixpath>:171: TypeError
+____________________ TestHouseDialog.test_house_edit_dialog ____________________
+
+self = <unit.vis_layer.ui.test_dialogs.TestHouseDialog object at 0x7ff19b719190>
+app = <PyQt6.QtWidgets.QApplication object at 0x7ff19b6db250>
+
+    def test_house_edit_dialog(self, app):
+        """Test house edit dialog."""
+        from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseEditDialog
+
+>       dialog = HouseEditDialog(house_id=1, house_name="Test House")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: HouseEditDialog.__init__() got an unexpected keyword argument 'house_id'
+
+py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py:215: TypeError
+=========================== short test summary info ============================
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py::TestWelcomeDialog::test_welcome_dialog_creation
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py::TestWelcomeDialog::test_welcome_dialog_with_recent_files
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py::TestHouseDialog::test_house_edit_dialog
+========================= 3 failed, 18 passed in 0.73s =========================

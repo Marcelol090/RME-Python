@@ -6,7 +6,7 @@ from pathlib import Path
 from py_rme_canary.core.data.zones import Zone
 from py_rme_canary.core.exceptions.io import ZonesXmlError
 from py_rme_canary.core.io.xml.base import as_int
-from py_rme_canary.core.io.xml.safe import Element
+from py_rme_canary.core.io.xml.safe import Element, SubElement
 from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
@@ -45,12 +45,12 @@ def _indent(elem: Element, level: int = 0) -> None:
 
 
 def build_zones_xml(zones: Iterable[Zone]) -> str:
-    root = ET.Element("zones")
+    root = Element("zones")
 
     for zone in sorted(zones, key=lambda z: int(z.id)):
         if int(zone.id) <= 0:
             continue
-        node = ET.SubElement(root, "zone")
+        node = SubElement(root, "zone")
         node.set("name", str(zone.name))
         node.set("zoneid", str(int(zone.id)))
 

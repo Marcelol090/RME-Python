@@ -1,0 +1,220 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PyQt6 6.10.2 -- Qt runtime 6.10.2 -- Qt compiled 6.10.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0, benchmark-5.2.3
+collected 13 items
+
+py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py FFEFFFF...F.FF    [100%]
+
+==================================== ERRORS ====================================
+________ ERROR at teardown of TestBrushCursorOverlay.test_set_position _________
+TEARDOWN ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+=================================== FAILURES ===================================
+_________________ TestBrushCursorOverlay.test_overlay_creation _________________
+CALL ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+___________________ TestBrushCursorOverlay.test_set_position ___________________
+
+self = <unit.vis_layer.ui.test_overlays.TestBrushCursorOverlay object at 0x7fbe19112450>
+parent_widget = <PyQt6.QtWidgets.QWidget object at 0x7fbe181fe3f0>
+
+    def test_set_position(self, parent_widget):
+        """Test setting cursor position."""
+        from PyQt6.QtCore import QPoint
+
+        from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay
+
+        overlay = BrushCursorOverlay(parent_widget)
+        overlay.set_position(QPoint(100, 200))
+
+>       assert overlay._position.x() == 100
+               ^^^^^^^^^^^^^^^^^
+E       AttributeError: 'BrushCursorOverlay' object has no attribute '_position'. Did you mean: 'set_position'?
+
+py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py:45: AttributeError
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+__________________ TestBrushCursorOverlay.test_set_brush_size __________________
+CALL ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+__________________ TestBrushCursorOverlay.test_set_tile_size ___________________
+CALL ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+_________________ TestBrushCursorOverlay.test_set_circle_shape _________________
+CALL ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+____________________ TestBrushCursorOverlay.test_visibility ____________________
+CALL ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+
+----------------------------- Captured stderr call -----------------------------
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "/app/py_rme_canary/vis_layer/ui/overlays/brush_cursor.py", line 88, in shapeProgress
+    return self._shape_progress
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BrushCursorOverlay' object has no attribute '_shape_progress'. Did you mean: 'shapeProgress'?
+________________________________________________________________________________
+_________________ TestPastePreviewOverlay.test_cut_mode_color __________________
+
+self = <unit.vis_layer.ui.test_overlays.TestPastePreviewOverlay object at 0x7fbe19113980>
+parent_widget = <PyQt6.QtWidgets.QWidget object at 0x7fbe182985f0>
+
+    def test_cut_mode_color(self, parent_widget):
+        """Test different color for cut mode."""
+        from py_rme_canary.vis_layer.ui.overlays.paste_preview import PastePreviewOverlay
+
+        overlay = PastePreviewOverlay(parent_widget)
+
+        # Copy mode
+        overlay.set_preview_positions([(100, 200, 7)], is_cut=False)
+>       copy_color = overlay._color
+                     ^^^^^^^^^^^^^^
+E       AttributeError: 'PastePreviewOverlay' object has no attribute '_color'
+
+py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py:143: AttributeError
+______________________ TestSelectionOverlay.test_set_rect ______________________
+
+self = <unit.vis_layer.ui.test_overlays.TestSelectionOverlay object at 0x7fbe191400b0>
+parent_widget = <PyQt6.QtWidgets.QWidget object at 0x7fbe181ffe30>
+
+    def test_set_rect(self, parent_widget):
+        """Test setting selection rectangle."""
+        from PyQt6.QtCore import QRect
+
+        from py_rme_canary.vis_layer.ui.overlays.paste_preview import SelectionOverlay
+
+        overlay = SelectionOverlay(parent_widget)
+        rect = QRect(10, 20, 100, 50)
+
+>       overlay.set_rect(rect)
+        ^^^^^^^^^^^^^^^^
+E       AttributeError: 'SelectionOverlay' object has no attribute 'set_rect'. Did you mean: 'setParent'?
+
+py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py:187: AttributeError
+_____________________ TestSelectionOverlay.test_visibility _____________________
+
+self = <unit.vis_layer.ui.test_overlays.TestSelectionOverlay object at 0x7fbe191403e0>
+parent_widget = <PyQt6.QtWidgets.QWidget object at 0x7fbe181ff610>
+
+    def test_visibility(self, parent_widget):
+        """Test selection visibility."""
+        from py_rme_canary.vis_layer.ui.overlays.paste_preview import SelectionOverlay
+
+        overlay = SelectionOverlay(parent_widget)
+
+>       overlay.set_visible(True)
+        ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SelectionOverlay' object has no attribute 'set_visible'. Did you mean: 'setVisible'?
+
+py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py:197: AttributeError
+=========================== short test summary info ============================
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_overlay_creation
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_set_position
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_set_brush_size
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_set_tile_size
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_set_circle_shape
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_visibility
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestPastePreviewOverlay::test_cut_mode_color
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestSelectionOverlay::test_set_rect
+FAILED py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestSelectionOverlay::test_visibility
+ERROR py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py::TestBrushCursorOverlay::test_set_position
+===================== 9 failed, 4 passed, 1 error in 0.50s =====================

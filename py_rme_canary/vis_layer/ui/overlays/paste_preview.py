@@ -74,6 +74,11 @@ class PastePreviewOverlay(QWidget):
         self._tile_size = size
         self.update()
 
+    @property
+    def _color(self) -> QColor:
+        """Get current fill color."""
+        return self._cut_fill_color if self._is_cut else self._fill_color
+
     def set_visible(self, visible: bool) -> None:
         """Show or hide the preview."""
         self._visible = visible
@@ -149,6 +154,7 @@ class SelectionOverlay(QWidget):
 
         self._selection_rects: list[QRect] = []
         self._march_offset: int = 0
+        self._visible = False
 
         # Colors
         self._selection_color = QColor(59, 130, 246, 100)  # Blue
@@ -179,6 +185,23 @@ class SelectionOverlay(QWidget):
 
         self.update()
 
+    @property
+    def _rect(self) -> QRect:
+        """Get first selection rect (legacy)."""
+        return self._selection_rects[0] if self._selection_rects else QRect()
+
+    def set_rect(self, rect: QRect) -> None:
+        """Set single selection rectangle (legacy)."""
+        self.set_selection([rect])
+
+    def set_visible(self, visible: bool) -> None:
+        """Set visibility."""
+        self._visible = visible
+        if visible:
+            self.show()
+        else:
+            self.hide()
+
     def clear_selection(self) -> None:
         """Clear the selection."""
         self._selection_rects.clear()
@@ -192,7 +215,7 @@ class SelectionOverlay(QWidget):
 
     def paintEvent(self, event: object) -> None:
         """Paint the selection overlay."""
-        if not self._selection_rects:
+        if not self._visible or not self._selection_rects:
             return
 
         painter = QPainter(self)

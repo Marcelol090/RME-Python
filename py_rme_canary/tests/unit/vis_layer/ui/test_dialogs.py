@@ -214,7 +214,7 @@ class TestHouseDialog:
         from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseEditDialog
 
         house = House(id=1, name="Test House")
-        dialog = HouseEditDialog(house=house)
+        dialog = HouseEditDialog(house)
 
         assert dialog.name_input.text() == "Test House"
 

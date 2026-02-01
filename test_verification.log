@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+PyQt6 6.10.2 -- Qt runtime 6.10.2 -- Qt compiled 6.10.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-7.0.0, qt-4.5.0, benchmark-5.2.3
+collected 32 items
+
+py_rme_canary/tests/unit/vis_layer/ui/test_overlays.py .............     [ 40%]
+py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py .................. [ 96%]
+.                                                                        [100%]
+
+============================== 32 passed in 0.54s ==============================
