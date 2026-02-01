@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
 if TYPE_CHECKING:
@@ -33,7 +34,7 @@ class AddItemDialog(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         *,
         items_db: ItemsDatabase | None = None,
         tileset_name: str = "",
@@ -104,13 +105,15 @@ class AddItemDialog(QDialog):
             QMessageBox.warning(self, "Invalid Item", "Please select a valid item ID.")
             return
 
-        # TODO: Actually add item to tileset via materials manager
-        # For now, just show confirmation
-        QMessageBox.information(
-            self,
-            "Item Added",
-            f"Item {self._selected_item_id} has been added to tileset '{self._tileset_name}'.",
-        )
+        # If tileset name is provided, show confirmation (legacy behavior)
+        # TODO: Actually add item to tileset via materials manager if tileset_name is present
+        if self._tileset_name:
+            QMessageBox.information(
+                self,
+                "Item Added",
+                f"Item {self._selected_item_id} has been added to tileset '{self._tileset_name}'.",
+            )
+
         self.accept()
 
     def get_selected_item_id(self) -> int:
