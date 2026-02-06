@@ -50,7 +50,11 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const pr = String(core.getInput("pr_number"));
+            const pr = String("${{ inputs.pr_number }}").trim();
+            if (!pr) {
+              core.setFailed("Missing required input: pr_number");
+              return;
+            }
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
