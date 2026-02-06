@@ -165,7 +165,8 @@ class Updater:
                 return version("py-rme-canary")
             except PackageNotFoundError:
                 return None
-        except Exception:
+        except Exception as e:
+            log.warning("Failed to detect current version: %s", e)
             return None
 
     @staticmethod
@@ -186,8 +187,8 @@ class Updater:
                     url = decoded.get("html_url") or decoded.get("url")
                     notes = decoded.get("body")
                     return UpdateInfo(latest_version=latest_version, url=url, notes=notes)
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("JSON update parse failed (falling back to plaintext): %s", e)
 
         # Fallback: plaintext
         # Common patterns: "1.2.3" or "ver=1.2.3" or "1.2.3|https://..."

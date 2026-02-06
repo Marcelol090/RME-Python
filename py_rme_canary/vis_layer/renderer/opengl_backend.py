@@ -45,8 +45,8 @@ class _SpriteTextureCache:
         try:
             ids = list(self._entries.values())
             self._gl.glDeleteTextures(ids)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed to clear OpenGL textures: %s", e)
         self._entries.clear()
 
     def get_or_create(self, sprite_id: int, create_fn: Callable[[], int | None]) -> int | None:
@@ -70,8 +70,8 @@ class _SpriteTextureCache:
                 old_sid, old_tex = self._entries.popitem(last=False)
                 self._gl.glDeleteTextures([int(old_tex)])
                 logger.debug("Evicted OpenGL texture for sprite_id=%s", old_sid)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to delete evicted texture: %s", e)
 
         return int(tex)
 

@@ -13,12 +13,15 @@ Architecture Notes:
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol
 
 from py_rme_canary.logic_layer.drawing_options import DrawingOptions
 from py_rme_canary.logic_layer.settings.light_settings import LightMode
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -403,7 +406,8 @@ class MapDrawer:
                 x = int(cursor.get("x", 0))
                 y = int(cursor.get("y", 0))
                 z = int(cursor.get("z", 0))
-            except Exception:
+            except Exception as e:
+                logger.warning("Invalid live cursor data: %s", e)
                 continue
             if int(z) != int(self._floor):
                 continue
@@ -414,7 +418,8 @@ class MapDrawer:
             color = cursor.get("color", (255, 255, 255))
             try:
                 r, g, b = color
-            except Exception:
+            except Exception as e:
+                logger.debug("Invalid live cursor color: %s", e)
                 r, g, b = (255, 255, 255)
             backend.draw_selection_rect(px, py, tile_size, tile_size, int(r), int(g), int(b), 200)
             name = str(cursor.get("name", ""))
