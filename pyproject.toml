@@ -48,3 +48,7 @@ exclude = ["py_rme_canary/tools/"]
 [[tool.mypy.overrides]]
 module = "py_rme_canary.vis_layer.*"
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "PyQt6.*"
+ignore_missing_imports = true
