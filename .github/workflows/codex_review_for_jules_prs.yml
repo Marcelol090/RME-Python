@@ -125,7 +125,9 @@ jobs:
           fi
 
       - name: Checkout PR merge ref (with deploy key)
+        id: checkout_ssh
         if: ${{ steps.gate.outputs.should_review == 'true' && steps.secrets.outputs.has_deploy_key == 'true' }}
+        continue-on-error: true
         uses: actions/checkout@v5
         with:
           ref: refs/pull/${{ steps.pr.outputs.number }}/merge
@@ -133,7 +135,11 @@ jobs:
           ssh-key: ${{ secrets.CODEX_DEPLOY_KEY }}
 
       - name: Checkout PR merge ref (with GITHUB_TOKEN)
-        if: ${{ steps.gate.outputs.should_review == 'true' && steps.secrets.outputs.has_deploy_key != 'true' }}
+        if: >-
+          ${{
+            steps.gate.outputs.should_review == 'true' &&
+            (steps.secrets.outputs.has_deploy_key != 'true' || steps.checkout_ssh.outcome != 'success')
+          }}
         uses: actions/checkout@v5
         with:
           ref: refs/pull/${{ steps.pr.outputs.number }}/merge

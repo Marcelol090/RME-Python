@@ -28,18 +28,20 @@ jobs:
           fi
 
       - name: Checkout (SSH deploy key)
+        id: checkout_ssh
         if: ${{ steps.secrets.outputs.has_deploy_key == 'true' }}
+        continue-on-error: true
         uses: actions/checkout@v5
         with:
           ssh-key: ${{ secrets.CODEX_DEPLOY_KEY }}
           persist-credentials: false
 
       - name: Checkout (GITHUB_TOKEN)
-        if: ${{ steps.secrets.outputs.has_deploy_key != 'true' }}
+        if: ${{ steps.secrets.outputs.has_deploy_key != 'true' || steps.checkout_ssh.outcome != 'success' }}
         uses: actions/checkout@v5
 
       - name: Use SSH remote (deploy key)
-        if: ${{ steps.secrets.outputs.has_deploy_key == 'true' }}
+        if: ${{ steps.secrets.outputs.has_deploy_key == 'true' && steps.checkout_ssh.outcome == 'success' }}
         run: |
           git remote set-url origin git@github.com:${{ github.repository }}.git
 
