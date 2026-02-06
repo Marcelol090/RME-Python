@@ -67,10 +67,11 @@
   - Critério de aceite: ações de contexto editam mapa de fato e atualizam undo/redo.
   - Status (2026-02-06): callbacks completos conectados no canvas/software renderer com cobertura de testes.
 
-- [ ] `P0-BORDER-005` Evoluir Border Builder para autor de regras persistentes.
+- [x] `P0-BORDER-005` Evoluir Border Builder para autor de regras persistentes.
   - Permitir criar/editar/remover regras e salvar no armazenamento de brush definitions.
   - Aplicar reload seguro no `AutoBorderProcessor` sem reiniciar editor.
   - Critério de aceite: regra criada no UI impacta resultado de borderize.
+  - Status (2026-02-06): Border Builder ganhou editor de regra por máscara (apply/clear), persistência em `brushes.overrides.json`, reload em runtime e carga automática no startup.
 
 - [x] `P1-PREFS-006` Persistência real de preferências.
   - Ligar `PreferencesDialog` ao `ConfigurationManager`/config de projeto.

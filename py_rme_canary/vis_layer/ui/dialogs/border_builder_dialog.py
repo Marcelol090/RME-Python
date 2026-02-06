@@ -9,6 +9,7 @@ Reference: AutoBorderProcessor in logic_layer/borders/processor.py
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -22,7 +23,9 @@ from PyQt6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMessageBox,
     QPushButton,
+    QSpinBox,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -204,6 +207,8 @@ class BorderBuilderDialog(QDialog):
     def __init__(self, brush_manager: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.brush_manager = brush_manager
+        self._current_brush: BrushDefinition | None = None
+        self._current_pattern_key: str | None = None
 
         self.setWindowTitle("Border Builder")
         self.setMinimumSize(800, 600)
@@ -211,6 +216,7 @@ class BorderBuilderDialog(QDialog):
 
         self._setup_ui()
         self._apply_style()
+        self._load_saved_overrides()
         self._load_brushes()
 
     def _setup_ui(self) -> None:
@@ -220,13 +226,13 @@ class BorderBuilderDialog(QDialog):
         layout.setSpacing(12)
 
         # Title
-        title = QLabel("🧱 Border Builder")
+        title = QLabel("Border Builder")
         title.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
         layout.addWidget(title)
 
         description = QLabel(
             "View and manage border patterns for auto-connecting brushes. "
-            "Select a brush to see its border sprite mappings."
+            "Select a brush to see, edit, and persist border sprite mappings."
         )
         description.setWordWrap(True)
         description.setStyleSheet("color: #A1A1AA; margin-bottom: 8px;")
@@ -341,6 +347,65 @@ class BorderBuilderDialog(QDialog):
         info_layout.addRow("Borders:", self.info_border_count)
 
         right_layout.addWidget(info_group)
+
+        # Rule editor
+        editor_group = QGroupBox("Rule Editor")
+        editor_group.setStyleSheet(
+            """
+            QGroupBox {
+                color: #E5E5E7;
+                font-weight: bold;
+                border: 1px solid #363650;
+                border-radius: 4px;
+                margin-top: 8px;
+                padding-top: 8px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+            }
+        """
+        )
+        editor_layout = QFormLayout(editor_group)
+        editor_layout.setSpacing(8)
+
+        self.rule_pattern = QLabel("—")
+        self.rule_pattern.setStyleSheet("color: #E5E5E7;")
+        editor_layout.addRow("Pattern:", self.rule_pattern)
+
+        self.rule_item_id = QSpinBox()
+        self.rule_item_id.setRange(0, 2_147_483_647)
+        self.rule_item_id.setToolTip("Set to 0 to clear this pattern mapping")
+        editor_layout.addRow("Border Item ID:", self.rule_item_id)
+
+        buttons_row = QHBoxLayout()
+        self.btn_apply_rule = QPushButton("Apply Rule")
+        self.btn_apply_rule.clicked.connect(self._apply_rule)
+        buttons_row.addWidget(self.btn_apply_rule)
+
+        self.btn_clear_rule = QPushButton("Clear Rule")
+        self.btn_clear_rule.clicked.connect(self._clear_rule)
+        buttons_row.addWidget(self.btn_clear_rule)
+        editor_layout.addRow("", buttons_row)
+
+        save_row = QHBoxLayout()
+        self.btn_save_overrides = QPushButton("Save Overrides")
+        self.btn_save_overrides.clicked.connect(self._save_overrides)
+        save_row.addWidget(self.btn_save_overrides)
+
+        self.btn_reload_overrides = QPushButton("Reload Overrides")
+        self.btn_reload_overrides.clicked.connect(self._reload_overrides)
+        save_row.addWidget(self.btn_reload_overrides)
+        editor_layout.addRow("", save_row)
+
+        right_layout.addWidget(editor_group)
+
+        self.message_label = QLabel("")
+        self.message_label.setStyleSheet("color: #A1A1AA;")
+        self.message_label.setWordWrap(True)
+        right_layout.addWidget(self.message_label)
+
         right_layout.addStretch()
 
         splitter.addWidget(right_panel)
@@ -414,17 +479,23 @@ class BorderBuilderDialog(QDialog):
 
         if self.brush_list.count() > 0:
             self.brush_list.setCurrentRow(0)
+        if self.pattern_list.list_widget.count() > 0:
+            self.pattern_list.list_widget.setCurrentRow(0)
 
     def _on_brush_selected(self, current: QListWidgetItem | None, previous: QListWidgetItem | None) -> None:
         """Handle brush selection."""
         if current is None:
             self.pattern_list.set_brush(None)
             self._update_info(None)
+            self._current_brush = None
+            self._refresh_rule_editor()
             return
 
         brush = current.data(Qt.ItemDataRole.UserRole)
+        self._current_brush = brush
         self.pattern_list.set_brush(brush)
         self._update_info(brush)
+        self._refresh_rule_editor()
 
     def _update_info(self, brush: Any) -> None:
         """Update brush info panel."""
@@ -447,4 +518,128 @@ class BorderBuilderDialog(QDialog):
 
     def _on_pattern_selected(self, mask: int, key: str) -> None:
         """Handle pattern selection in list."""
+        self._current_pattern_key = str(key)
         self.preview_widget.set_pattern(mask, key)
+        self._refresh_rule_editor()
+
+    def _refresh_rule_editor(self) -> None:
+        brush = self._current_brush
+        key = self._current_pattern_key
+        enabled = bool(brush is not None and key)
+
+        self.btn_apply_rule.setEnabled(enabled)
+        self.btn_clear_rule.setEnabled(enabled)
+        self.rule_item_id.setEnabled(enabled)
+
+        if not enabled:
+            self.rule_pattern.setText("—")
+            self.rule_item_id.setValue(0)
+            return
+
+        assert key is not None
+        self.rule_pattern.setText(str(key))
+        border_id = getattr(brush, "get_border", lambda _k: None)(str(key))
+        self.rule_item_id.setValue(int(border_id) if border_id is not None else 0)
+
+    def _reload_current_brush(self) -> None:
+        brush = self._current_brush
+        if brush is None:
+            return
+        get_brush = getattr(self.brush_manager, "get_brush", None)
+        if not callable(get_brush):
+            return
+        fresh = get_brush(int(getattr(brush, "server_id", 0)))
+        if fresh is None:
+            return
+        self._current_brush = fresh
+        row = self.brush_list.currentRow()
+        current_item = self.brush_list.item(row) if row >= 0 else None
+        if current_item is not None:
+            current_item.setData(Qt.ItemDataRole.UserRole, fresh)
+        self.pattern_list.set_brush(fresh)
+        self._update_info(fresh)
+        self._refresh_rule_editor()
+
+    def _set_message(self, message: str) -> None:
+        self.message_label.setText(str(message))
+        parent = self.parent()
+        status = getattr(parent, "status", None) if parent is not None else None
+        if status is not None and hasattr(status, "showMessage"):
+            with contextlib.suppress(Exception):
+                status.showMessage(str(message))
+
+    def _apply_rule(self) -> None:
+        brush = self._current_brush
+        key = self._current_pattern_key
+        if brush is None or not key:
+            return
+
+        setter = getattr(self.brush_manager, "set_border_override", None)
+        if not callable(setter):
+            self._set_message("Current brush manager does not support border editing.")
+            return
+
+        border_id = int(self.rule_item_id.value())
+        changed = bool(
+            setter(
+                int(getattr(brush, "server_id", 0)),
+                str(key),
+                int(border_id) if border_id > 0 else None,
+            )
+        )
+        if not changed:
+            self._set_message("No changes applied.")
+            return
+
+        self._reload_current_brush()
+        server_id = int(getattr(self._current_brush, "server_id", 0))
+        self._set_message(f"Rule {str(key)} updated for brush #{server_id}.")
+        parent = self.parent()
+        canvas = getattr(parent, "canvas", None) if parent is not None else None
+        if canvas is not None and hasattr(canvas, "update"):
+            with contextlib.suppress(Exception):
+                canvas.update()
+
+    def _clear_rule(self) -> None:
+        self.rule_item_id.setValue(0)
+        self._apply_rule()
+
+    def _load_saved_overrides(self) -> None:
+        loader = getattr(self.brush_manager, "load_border_overrides_file", None)
+        if not callable(loader):
+            return
+        try:
+            changed = int(loader())
+        except Exception as exc:
+            self._set_message(f"Failed to load border overrides: {exc}")
+            return
+        if changed > 0:
+            self._set_message(f"Loaded {changed} border override(s).")
+
+    def _save_overrides(self) -> None:
+        saver = getattr(self.brush_manager, "save_border_overrides_file", None)
+        if not callable(saver):
+            self._set_message("Current brush manager does not support persisted overrides.")
+            return
+        try:
+            target = saver()
+        except Exception as exc:
+            QMessageBox.critical(self, "Border Builder", f"Failed to save overrides:\n{exc}")
+            return
+        if target is None:
+            self._set_message("No override path available.")
+            return
+        self._set_message(f"Overrides saved to {target}.")
+
+    def _reload_overrides(self) -> None:
+        loader = getattr(self.brush_manager, "load_border_overrides_file", None)
+        if not callable(loader):
+            self._set_message("Current brush manager does not support persisted overrides.")
+            return
+        try:
+            changed = int(loader())
+        except Exception as exc:
+            QMessageBox.critical(self, "Border Builder", f"Failed to reload overrides:\n{exc}")
+            return
+        self._reload_current_brush()
+        self._set_message(f"Reloaded overrides ({changed} brush(es) changed).")

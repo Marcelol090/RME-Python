@@ -105,6 +105,8 @@ class QtMapEditorSessionMixin:
 
         dialog = BorderBuilderDialog(brush_manager, parent=self._as_editor())
         dialog.exec()
+        with contextlib.suppress(Exception):
+            self.canvas.update()
 
     def _export_png(self) -> None:
         """Open PNG export dialog."""
