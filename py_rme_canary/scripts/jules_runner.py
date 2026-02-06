@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import re
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,15 +22,12 @@ from jules_api import (
     write_json,
 )
 
-try:
-    from datetime import UTC as UTC_TZ
-except ImportError:
-    UTC_TZ = UTC_TZ
+UTC_TZ = getattr(dt, "UTC", dt.timezone.utc)  # noqa: UP017
 
 
 def utc_now_iso() -> str:
     """Return ISO-8601 UTC timestamp."""
-    return datetime.now(UTC_TZ).replace(microsecond=0).isoformat()
+    return dt.datetime.now(UTC_TZ).replace(microsecond=0).isoformat()
 
 
 def truncate_text(value: str, limit: int = 300) -> str:
