@@ -547,8 +547,59 @@ class TransactionalBrushStroke:
         brush_type = brush_def.brush_type if brush_def is not None else "wall"
         brush_type_norm = str(brush_type).strip().lower()
 
-        # Legacy-inspired Variation (MVP): if the brush defines `randomize_ids`,
-        # treat variation as a deterministic selector over (main_id + randomize_ids).
+        effective_server_id = self._resolve_effective_id(
+            x, y, z, selected_server_id, brush_def, brush_type_norm
+        )
+
+        if self._should_skip_replace_context(before, brush_type_norm, alt):
+            return
+
+        tile = before
+        if tile is None:
+            tile = self.game_map.ensure_tile(x, y, z)
+
+        after = None
+        if brush_type_norm == "flag":
+            after = self._paint_flag(tile, selected_server_id, alt)
+        elif brush_type_norm == "zone":
+            after = self._paint_zone(tile, selected_server_id, alt)
+        elif brush_type_norm == "house":
+            after = self._paint_house(tile, selected_server_id, alt)
+            if after is None:
+                return
+        elif brush_type_norm == "optional_border":
+            after = self._paint_optional_border(tile, selected_server_id, alt)
+            if after is None:
+                return
+        elif brush_type_norm == "doodad" and brush_def is not None:
+            self._paint_doodad(x, y, z, selected_server_id, brush_def, before, alt)
+            return
+        elif brush_type_norm == "carpet" and brush_def is not None:
+            after = self._paint_carpet(tile, effective_server_id, brush_def)
+        elif brush_type_norm == "table" and brush_def is not None:
+            after = self._paint_table(tile, effective_server_id, brush_def)
+        else:
+            after = replace_top_item(tile, new_server_id=int(effective_server_id), brush_type=brush_type)
+
+        if after is not None:
+            after = replace(after, modified=True)
+
+        if before == after:
+            return
+
+        self.action.record_tile_change((x, y, z), before, after)
+        self.game_map.set_tile(after)
+        self.dirty.add((x, y, z))
+
+    def _resolve_effective_id(
+        self,
+        x: int,
+        y: int,
+        z: int,
+        selected_server_id: int,
+        brush_def: BrushDefinition | None,
+        brush_type_norm: str,
+    ) -> int:
         effective_server_id = int(selected_server_id)
         if brush_def is not None and brush_type_norm == "ground":
             variants = (int(getattr(brush_def, "server_id", selected_server_id)),) + tuple(
@@ -589,224 +640,202 @@ class TransactionalBrushStroke:
             if base_id is not None:
                 effective_server_id = int(base_id)
 
-        # Legacy Replace tool (Alt) for ground brushes:
-        # - If replace_source_ground_id is None: only apply to empty tiles (no ground).
-        # - Else: only apply to tiles whose current ground matches replace_source_ground_id.
-        # IMPORTANT: this filter is applied only while Alt is currently held.
-        if bool(alt) and self._replace_context_enabled and str(brush_type).lower() == "ground":
+        return effective_server_id
+
+    def _should_skip_replace_context(self, before: Tile | None, brush_type_norm: str, alt: bool) -> bool:
+        if bool(alt) and self._replace_context_enabled and brush_type_norm == "ground":
             current_ground_id = None if before is None or before.ground is None else int(before.ground.id)
 
             if self._replace_source_ground_id is None:
                 if current_ground_id is not None:
-                    return
+                    return True
             elif current_ground_id != int(self._replace_source_ground_id):
+                return True
+        return False
+
+    def _paint_flag(self, tile: Tile, selected_server_id: int, alt: bool) -> Tile:
+        sid = int(selected_server_id)
+        if VIRTUAL_FLAG_BASE <= sid < VIRTUAL_FLAG_BASE + VIRTUAL_FLAG_BITS:
+            bit = int(sid - VIRTUAL_FLAG_BASE)
+            mask = int(1 << bit)
+        else:
+            # Allow explicit bitmask ids if user defines custom flag brushes.
+            mask = int(sid)
+
+        cur = int(getattr(tile, "map_flags", 0) or 0)
+        new_flags = (cur & ~mask) if bool(alt) else (cur | mask)
+        return replace(tile, map_flags=int(new_flags))
+
+    def _paint_zone(self, tile: Tile, selected_server_id: int, alt: bool) -> Tile:
+        sid = int(selected_server_id)
+        if VIRTUAL_ZONE_BASE <= sid < VIRTUAL_ZONE_BASE + VIRTUAL_ZONE_MAX:
+            zone_id = int(sid - VIRTUAL_ZONE_BASE)
+        else:
+            zone_id = int(sid)
+
+        cur_zones = set(getattr(tile, "zones", frozenset()) or frozenset())
+        if bool(alt):
+            cur_zones.discard(int(zone_id))
+        elif int(zone_id) != 0:
+            cur_zones.add(int(zone_id))
+        return replace(tile, zones=frozenset(int(z) for z in cur_zones if int(z) != 0))
+
+    def _paint_house(self, tile: Tile, selected_server_id: int, alt: bool) -> Tile | None:
+        sid = int(selected_server_id)
+        if VIRTUAL_HOUSE_BASE <= sid < VIRTUAL_HOUSE_BASE + VIRTUAL_HOUSE_MAX:
+            house_id = int(sid - VIRTUAL_HOUSE_BASE)
+        else:
+            house_id = int(sid)
+
+        if bool(alt):
+            return replace(tile, house_id=None)
+        else:
+            if int(house_id) <= 0:
+                return None
+            return replace(tile, house_id=int(house_id))
+
+    def _paint_optional_border(self, tile: Tile, selected_server_id: int, alt: bool) -> Tile | None:
+        sid = int(selected_server_id)
+        if sid != int(VIRTUAL_OPTIONAL_BORDER_ID):
+            return None
+
+        gravel_id = int(DEFAULT_OPTIONAL_BORDER_CARPET_ID)
+        gravel_def = self.brush_manager.get_brush(int(gravel_id))
+        if gravel_def is None:
+            return None
+
+        fam = {int(v) for v in gravel_def.family_ids}
+        kept = [it for it in tile.items if int(it.id) not in fam]
+        if bool(alt):
+            return replace(tile, items=kept)
+        else:
+            kept.insert(0, Item(id=int(gravel_id)))
+            return replace(tile, items=kept)
+
+    def _paint_doodad(
+        self,
+        x: int,
+        y: int,
+        z: int,
+        selected_server_id: int,
+        brush_def: BrushDefinition,
+        before: Tile | None,
+        alt: bool,
+    ) -> None:
+        target_id = int(getattr(brush_def, "server_id", selected_server_id))
+        if target_id <= 0:
+            return
+
+        doodad_spec = getattr(brush_def, "doodad_spec", None)
+
+        if doodad_spec is not None and (not bool(getattr(doodad_spec, "draggable", True))):
+            origin = self._stroke_origin
+            if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
                 return
 
-        tile = before
-        if tile is None:
-            tile = self.game_map.ensure_tile(x, y, z)
+        if (
+            doodad_spec is not None
+            and (not bool(getattr(doodad_spec, "on_blocking", False)))
+            and (before is None or before.ground is None)
+        ):
+            return
 
-        if brush_type_norm == "flag":
-            sid = int(selected_server_id)
-            if VIRTUAL_FLAG_BASE <= sid < VIRTUAL_FLAG_BASE + VIRTUAL_FLAG_BITS:
-                bit = int(sid - VIRTUAL_FLAG_BASE)
-                mask = int(1 << bit)
-            else:
-                # Allow explicit bitmask ids if user defines custom flag brushes.
-                mask = int(sid)
+        if doodad_spec is not None and bool(getattr(doodad_spec, "one_size", False)):
+            origin = self._stroke_origin
+            if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
+                return
 
-            cur = int(getattr(tile, "map_flags", 0) or 0)
-            new_flags = (cur & ~mask) if bool(alt) else (cur | mask)
-            after = replace(tile, map_flags=int(new_flags))
+        if not self._should_place_doodad_at(
+            x=int(x),
+            y=int(y),
+            z=int(z),
+            selected_server_id=int(selected_server_id),
+            spec=doodad_spec,
+        ) and not bool(alt):
+            return
 
-        elif brush_type_norm == "zone":
-            sid = int(selected_server_id)
-            if VIRTUAL_ZONE_BASE <= sid < VIRTUAL_ZONE_BASE + VIRTUAL_ZONE_MAX:
-                zone_id = int(sid - VIRTUAL_ZONE_BASE)
-            else:
-                zone_id = int(sid)
-
-            cur_zones = set(getattr(tile, "zones", frozenset()) or frozenset())
+        if doodad_spec is None:
             if bool(alt):
-                cur_zones.discard(int(zone_id))
-            elif int(zone_id) != 0:
-                cur_zones.add(int(zone_id))
-            after = replace(tile, zones=frozenset(int(z) for z in cur_zones if int(z) != 0))
-
-        elif brush_type_norm == "house":
-            sid = int(selected_server_id)
-            if VIRTUAL_HOUSE_BASE <= sid < VIRTUAL_HOUSE_BASE + VIRTUAL_HOUSE_MAX:
-                house_id = int(sid - VIRTUAL_HOUSE_BASE)
+                self._apply_doodad_remove_one(x=int(x), y=int(y), z=int(z), item_id=int(target_id))
             else:
-                house_id = int(sid)
+                self._apply_doodad_add(x=int(x), y=int(y), z=int(z), item_id=int(target_id), allow_duplicates=True)
+            return
 
-            if bool(alt):
-                after = replace(tile, house_id=None)
-            else:
-                if int(house_id) <= 0:
-                    return
-                after = replace(tile, house_id=int(house_id))
+        owned_ids = self._doodad_owned_ids(doodad_spec)
+        erase_ids = owned_ids
+        if not bool(self.doodad_erase_like):
+            all_ids = self.brush_manager.doodad_owned_ids()
+            if all_ids:
+                erase_ids = all_ids
 
-        elif brush_type_norm == "optional_border":
-            # MVP: legacy "Optional Border" behaves like a gravel tool.
-            # Implement as paint/erase of the default gravel carpet brush.
-            sid = int(selected_server_id)
-            if sid != int(VIRTUAL_OPTIONAL_BORDER_ID):
-                return
-
-            gravel_id = int(DEFAULT_OPTIONAL_BORDER_CARPET_ID)
-            gravel_def = self.brush_manager.get_brush(int(gravel_id))
-            if gravel_def is None:
-                return
-
-            fam = {int(v) for v in gravel_def.family_ids}
-            kept = [it for it in tile.items if int(it.id) not in fam]
-            if bool(alt):
-                after = replace(tile, items=kept)
-            else:
-                kept.insert(0, Item(id=int(gravel_id)))
-                after = replace(tile, items=kept)
-
-        elif brush_type_norm == "doodad" and brush_def is not None:
-            target_id = int(getattr(brush_def, "server_id", selected_server_id))
-            if target_id <= 0:
-                return
-
-            doodad_spec = getattr(brush_def, "doodad_spec", None)
-
-            # Legacy: canSmear is gated by `draggable`.
-            if doodad_spec is not None and (not bool(getattr(doodad_spec, "draggable", True))):
-                origin = self._stroke_origin
-                if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
-                    return
-
-            # Legacy: if on_blocking is false, only place on non-blocking tiles.
-            # We don't have full movement flagging yet, so use a conservative
-            # approximation: require a tile with ground.
-            if (
-                doodad_spec is not None
-                and (not bool(getattr(doodad_spec, "on_blocking", False)))
-                and (before is None or before.ground is None)
-            ):
-                return
-
-            # If the brush declares one_size, only apply on the origin tile.
-            if doodad_spec is not None and bool(getattr(doodad_spec, "one_size", False)):
-                origin = self._stroke_origin
-                if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
-                    return
-
-            if not self._should_place_doodad_at(
+        if bool(alt):
+            self._apply_doodad_remove_owned_all(
                 x=int(x),
                 y=int(y),
                 z=int(z),
-                selected_server_id=int(selected_server_id),
-                spec=doodad_spec,
-            ) and not bool(alt):
-                return
+                owned_ids=erase_ids,
+            )
+            return
 
-            if doodad_spec is None:
-                # Fallback behavior (MVP): treat doodad as a simple decoration item id.
-                if bool(alt):
-                    self._apply_doodad_remove_one(x=int(x), y=int(y), z=int(z), item_id=int(target_id))
-                else:
-                    self._apply_doodad_add(x=int(x), y=int(y), z=int(z), item_id=int(target_id), allow_duplicates=True)
-                return
+        alt_spec = self._doodad_pick_alternative(doodad_spec)
+        seed = f"doodad:{int(x)},{int(y)},{int(z)}:{int(target_id)}:{int(self.brush_variation)}".encode()
+        kind, obj = self._choose_doodad_candidate(alt=alt_spec, seed=seed)
+        if kind is None or obj is None:
+            return
 
-            owned_ids = self._doodad_owned_ids(doodad_spec)
-            erase_ids = owned_ids
-            if not bool(self.doodad_erase_like):
-                all_ids = self.brush_manager.doodad_owned_ids()
-                if all_ids:
-                    erase_ids = all_ids
+        allow_dupes = bool(getattr(doodad_spec, "on_duplicate", False))
 
-            if bool(alt):
-                self._apply_doodad_remove_owned_all(
-                    x=int(x),
-                    y=int(y),
-                    z=int(z),
-                    owned_ids=erase_ids,
-                )
-                return
+        if kind == "item":
+            it = obj
+            assert isinstance(it, DoodadItemChoice)
+            self._apply_doodad_add(
+                x=int(x),
+                y=int(y),
+                z=int(z),
+                item_id=int(it.id),
+                allow_duplicates=bool(allow_dupes),
+                owned_ids=owned_ids,
+            )
+            return
 
-            alt_spec = self._doodad_pick_alternative(doodad_spec)
-            seed = f"doodad:{int(x)},{int(y)},{int(z)}:{int(target_id)}:{int(self.brush_variation)}".encode()
-            kind, obj = self._choose_doodad_candidate(alt=alt_spec, seed=seed)
-            if kind is None or obj is None:
-                return
+        comp = obj
+        assert isinstance(comp, DoodadCompositeChoice)
+        for placement in tuple(comp.tiles or ()):
+            assert isinstance(placement, DoodadTilePlacement)
+            tx = int(x) + int(placement.dx)
+            ty = int(y) + int(placement.dy)
+            tz = int(z) + int(placement.dz)
 
-            allow_dupes = bool(getattr(doodad_spec, "on_duplicate", False))
+            if doodad_spec is not None and not bool(getattr(doodad_spec, "on_blocking", False)):
+                dest_before = self.game_map.get_tile(int(tx), int(ty), int(tz))
+                if dest_before is None or dest_before.ground is None:
+                    continue
 
-            if kind == "item":
-                it = obj
-                assert isinstance(it, DoodadItemChoice)
+            item_seed = f"tile:{int(tx)},{int(ty)},{int(tz)}:{int(target_id)}:{int(self.brush_variation)}".encode()
+            chosen_ids = self._choose_tile_items(placement=placement, seed=item_seed)
+            for iid in chosen_ids:
+                if int(iid) <= 0:
+                    continue
                 self._apply_doodad_add(
-                    x=int(x),
-                    y=int(y),
-                    z=int(z),
-                    item_id=int(it.id),
+                    x=int(tx),
+                    y=int(ty),
+                    z=int(tz),
+                    item_id=int(iid),
                     allow_duplicates=bool(allow_dupes),
                     owned_ids=owned_ids,
                 )
-                return
 
-            comp = obj
-            assert isinstance(comp, DoodadCompositeChoice)
-            for placement in tuple(comp.tiles or ()):
-                assert isinstance(placement, DoodadTilePlacement)
-                tx = int(x) + int(placement.dx)
-                ty = int(y) + int(placement.dy)
-                tz = int(z) + int(placement.dz)
+    def _paint_carpet(self, tile: Tile, effective_server_id: int, brush_def: BrushDefinition) -> Tile:
+        fam = {int(v) for v in brush_def.family_ids}
+        kept = [it for it in tile.items if int(it.id) not in fam]
+        kept.insert(0, Item(id=int(effective_server_id)))
+        return replace(tile, items=kept)
 
-                # Respect on_blocking=false for each composite tile too.
-                if doodad_spec is not None and not bool(getattr(doodad_spec, "on_blocking", False)):
-                    dest_before = self.game_map.get_tile(int(tx), int(ty), int(tz))
-                    if dest_before is None or dest_before.ground is None:
-                        continue
-
-                item_seed = f"tile:{int(tx)},{int(ty)},{int(tz)}:{int(target_id)}:{int(self.brush_variation)}".encode()
-                chosen_ids = self._choose_tile_items(placement=placement, seed=item_seed)
-                for iid in chosen_ids:
-                    if int(iid) <= 0:
-                        continue
-                    self._apply_doodad_add(
-                        x=int(tx),
-                        y=int(ty),
-                        z=int(tz),
-                        item_id=int(iid),
-                        allow_duplicates=bool(allow_dupes),
-                        owned_ids=owned_ids,
-                    )
-            return
-
-        elif brush_type_norm == "carpet" and brush_def is not None:
-            # Carpets are floor decorations: never clobber unrelated top items.
-            fam = {int(v) for v in brush_def.family_ids}
-            kept = [it for it in tile.items if int(it.id) not in fam]
-            # Insert at bottom (rendered below other items).
-            kept.insert(0, Item(id=int(effective_server_id)))
-            after = replace(tile, items=kept)
-
-        elif brush_type_norm == "table" and brush_def is not None:
-            # Tables/counters: behave like wall-like items, but never clobber unrelated stack.
-            fam = {int(v) for v in brush_def.family_ids}
-            kept = [it for it in tile.items if int(it.id) not in fam]
-            # Place on top.
-            kept.append(Item(id=int(effective_server_id)))
-            after = replace(tile, items=kept)
-
-        else:
-            after = replace_top_item(tile, new_server_id=int(effective_server_id), brush_type=brush_type)
-
-        if after is not None:
-            after = replace(after, modified=True)
-
-        if before == after:
-            return
-
-        self.action.record_tile_change((x, y, z), before, after)
-        self.game_map.set_tile(after)
-        self.dirty.add((x, y, z))
+    def _paint_table(self, tile: Tile, effective_server_id: int, brush_def: BrushDefinition) -> Tile:
+        fam = {int(v) for v in brush_def.family_ids}
+        kept = [it for it in tile.items if int(it.id) not in fam]
+        kept.append(Item(id=int(effective_server_id)))
+        return replace(tile, items=kept)
 
     def _apply_table_alignment(self, *, brush_def: BrushDefinition) -> None:
         if self.action is None:
