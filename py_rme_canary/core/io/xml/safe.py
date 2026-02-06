@@ -26,10 +26,14 @@ safe_etree = _load_safe_etree()
 # borrow the safe stdlib equivalents so code (and tests) can create XML trees.
 if not hasattr(safe_etree, "Element"):
     safe_etree.Element = stdlib_etree.Element  # type: ignore[attr-defined]
+if not hasattr(safe_etree, "ElementTree"):
+    safe_etree.ElementTree = stdlib_etree.ElementTree  # type: ignore[attr-defined]
 if not hasattr(safe_etree, "SubElement"):
     safe_etree.SubElement = stdlib_etree.SubElement  # type: ignore[attr-defined]
 if not hasattr(safe_etree, "tostring"):
     safe_etree.tostring = stdlib_etree.tostring  # type: ignore[attr-defined]
+if not hasattr(safe_etree, "indent") and hasattr(stdlib_etree, "indent"):
+    safe_etree.indent = stdlib_etree.indent  # type: ignore[attr-defined]
 
 # Export parse and fromstring from safe_etree
 parse = safe_etree.parse
