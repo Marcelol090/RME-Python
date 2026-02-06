@@ -1,38 +1,34 @@
-# py_rme_canary
+# py_rme_canary Reference
 
-**Porte Moderno do Remere's Map Editor para Python (PyQt6 + OpenGL)**
+`py_rme_canary` is a modern map editor initiative built around a PyQt6-first architecture with optional Rust acceleration for selected hot paths.
 
-Bem-vindo ao repositório do `py_rme_canary`. Este projeto visa modernizar o clássico editor de mapas de Tibia, utilizando tecnologias atuais e uma arquitetura limpa e modular.
+## Documentation Entry Points
 
-## 📚 Documentação
-A documentação completa pode ser acessada através do [Índice Principal](docs/INDEX.md).
+- Main index: `py_rme_canary/docs/Reference/INDEX.md`
+- Product requirements: `py_rme_canary/docs/Reference/PRD.md`
+- Quality policy (XML): `py_rme_canary/docs/Reference/quality_pipeline.xml`
+- Quality operations guide: `py_rme_canary/docs/Reference/Guides/quality_pipeline_guide.md`
+- Jules API integration: `py_rme_canary/docs/Reference/Guides/jules_api_integration.md`
+- Rust acceleration bridge: `py_rme_canary/docs/Reference/Guides/rust_acceleration_bridge.md`
+- Release channel updates: `py_rme_canary/docs/Reference/Guides/release_update_channels_guide.md`
 
-### Pontos de Partida
-*   **Para Desenvolvedores:** Consulte a [Arquitetura do Sistema](docs/architecture/system_architecture.xml) e as [Tarefas do Projeto](docs/tracking/project_tasks.json).
-*   **Para Gerentes/Produto:** Veja o [Roadmap](docs/tracking/roadmap.json) e o [PRD](docs/PRD.md).
+## Engineering Direction
 
-## 🚀 Como Iniciar
+1. Keep UI/UX orchestration in Python and PyQt6.
+2. Move only profiled CPU-bound loops to Rust through narrow interfaces.
+3. Maintain deterministic behavior with and without optional accelerators.
+4. Enforce checksum-first release manifests and rollback metadata.
 
-### Pré-requisitos
-*   Python 3.10+
-*   Dependências listadas em `pyproject.toml`
+## Quality Workflow
 
-### Instalação
+Use the quality pipeline before integration:
+
 ```bash
-pip install -r requirements.txt
+./quality.sh --dry-run --skip-libcst --skip-sonarlint
 ```
 
-### Executando
-```bash
-python main.py
-```
+For local Jules automation:
 
-## 🧪 Qualidade e Testes
-Utilize o script de pipeline para verificar a integridade do código:
 ```bash
-./quality.sh
+python py_rme_canary/scripts/jules_runner.py --project-root . generate-suggestions
 ```
-Consulte o [Pipeline de Qualidade](docs/quality/quality_pipeline.xml) para detalhes sobre as verificações.
-
-## 🤝 Contribuição
-Leia o [Guia de Contribuição](docs/guides/CONTRIBUTING.md) para entender os padrões de código e fluxo de trabalho.

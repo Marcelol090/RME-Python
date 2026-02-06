@@ -1,0 +1,13 @@
+[package]
+name = "py_rme_canary_rust"
+version = "0.1.0"
+edition = "2021"
+description = "Optional Rust accelerators for py_rme_canary."
+license = "MIT"
+
+[lib]
+name = "py_rme_canary_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.26", features = ["extension-module", "abi3-py310"] }

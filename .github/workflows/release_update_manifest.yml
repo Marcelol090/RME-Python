@@ -1,0 +1,154 @@
+name: Release Update Manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release channel"
+        required: true
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+      version:
+        description: "Release version (for example 1.4.0)"
+        required: true
+        type: string
+      base_url:
+        description: "Base URL used to download artifacts"
+        required: true
+        type: string
+      asset_glob:
+        description: "Asset glob relative to repository root"
+        required: false
+        default: "dist/*"
+        type: string
+      previous_manifest:
+        description: "Optional path to previous manifest JSON"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve assets
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .quality_tmp
+          shopt -s nullglob
+          pattern="${{ inputs.asset_glob }}"
+          assets=($pattern)
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "No assets found for pattern: $pattern" >&2
+            exit 1
+          fi
+          printf '%s\n' "${assets[@]}" > .quality_tmp/release_assets.txt
+          echo "asset_count=${#assets[@]}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate update manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .quality_reports/release .quality_tmp
+          args=()
+          while IFS= read -r asset; do
+            args+=(--asset "$asset")
+          done < .quality_tmp/release_assets.txt
+
+          prev_args=()
+          if [ -n "${{ inputs.previous_manifest }}" ]; then
+            prev_args+=(--previous-manifest "${{ inputs.previous_manifest }}")
+          fi
+
+          python py_rme_canary/tools/release/generate_update_manifest.py \
+            --channel "${{ inputs.channel }}" \
+            --version "${{ inputs.version }}" \
+            "${args[@]}" \
+            --base-url "${{ inputs.base_url }}" \
+            --output-json ".quality_reports/release/manifest.${{ inputs.channel }}.json" \
+            --output-xml ".quality_reports/release/manifest.${{ inputs.channel }}.xml" \
+            "${prev_args[@]}"
+
+      - name: Validate manifest schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          schema = json.loads(Path("py_rme_canary/release/update_manifest.schema.json").read_text(encoding="utf-8"))
+          manifest = json.loads(Path(".quality_reports/release/manifest.${{ inputs.channel }}.json").read_text(encoding="utf-8"))
+
+          required = schema.get("required", [])
+          missing = [name for name in required if name not in manifest]
+          if missing:
+              raise SystemExit(f"Missing required fields: {missing}")
+
+          if manifest.get("channel") not in {"stable", "beta", "nightly"}:
+              raise SystemExit("Invalid channel")
+
+          assets = manifest.get("assets", [])
+          if not assets:
+              raise SystemExit("Manifest has no assets")
+
+          for item in assets:
+              if len(str(item.get("sha256", ""))) != 64:
+                  raise SystemExit("Invalid sha256 length")
+          print("Manifest schema checks passed")
+          PY
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign manifest when key is available
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=".quality_reports/release/manifest.${{ inputs.channel }}.json"
+          if [ -z "${COSIGN_PRIVATE_KEY:-}" ]; then
+            echo "COSIGN_PRIVATE_KEY not set. Keeping signature status as unsigned."
+            exit 0
+          fi
+
+          cosign sign-blob \
+            --key env://COSIGN_PRIVATE_KEY \
+            --output-signature ".quality_reports/release/manifest.${{ inputs.channel }}.sig" \
+            "$manifest"
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(".quality_reports/release/manifest.${{ inputs.channel }}.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          security = payload.setdefault("security", {})
+          signature = security.setdefault("signature", {})
+          signature["status"] = "signed"
+          path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+          PY
+
+      - name: Upload manifest artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-manifest-${{ inputs.channel }}-${{ inputs.version }}
+          path: .quality_reports/release/
+          if-no-files-found: error

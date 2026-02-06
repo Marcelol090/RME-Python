@@ -3,8 +3,8 @@ You are GPT-5.2-Codex acting as a PR reviewer and aligner between Jules and the 
 Inputs you MUST use:
 - reports/jules/suggestions.json OR reports/jules/security_suggestions.json (if present)
 - reports/jules/*.md (if present)
-- .codex_context/jules_pr_context.md (snapshot consolidado)
-- .codex_context/jules_pr_context.json (payload bruto do snapshot)
+- .codex_context/jules_pr_context.md (consolidated snapshot)
+- .codex_context/jules_pr_context.json (raw snapshot payload)
 
 Goals:
 1) Verify the PR matches Jules's own "implemented" list.
