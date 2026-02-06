@@ -74,6 +74,7 @@ def apply_theme_to_window(window: QMainWindow) -> None:
     """
     try:
         # Set window background
+<<<<<<< Updated upstream
         window.setStyleSheet(
             """
             QMainWindow {
@@ -81,6 +82,13 @@ def apply_theme_to_window(window: QMainWindow) -> None:
             }
         """
         )
+=======
+        window.setStyleSheet("""
+            QMainWindow {
+                background-color: #1E1E2E;
+            }
+        """)
+>>>>>>> Stashed changes
 
         # Set minimum size for good UX
         window.setMinimumSize(1024, 768)
