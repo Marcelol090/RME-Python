@@ -60,3 +60,7 @@ def toggle_dark_mode(editor, value: bool) -> None:
 
 def toggle_live_log_dock(editor, value: bool) -> None:
     editor._toggle_live_log_dock(bool(value))
+
+
+def toggle_friends_dock(editor, value: bool) -> None:
+    editor._toggle_friends_dock(bool(value))

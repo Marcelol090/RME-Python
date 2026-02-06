@@ -46,6 +46,7 @@ from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_dialogs import QtMapEd
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_docks import QtMapEditorDocksMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_edit import QtMapEditorEditMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_file import QtMapEditorFileMixin
+from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_friends import QtMapEditorFriendsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_mirror import QtMapEditorMirrorMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_modern_ux import QtMapEditorModernUXMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_navigation import QtMapEditorNavigationMixin
@@ -67,6 +68,7 @@ class QtMapEditor(
     QtMapEditorMirrorMixin,
     QtMapEditorFileMixin,
     QtMapEditorEditMixin,
+    QtMapEditorFriendsMixin,
     QtMapEditorBrushesMixin,
     QtMapEditorNavigationMixin,
     QtMapEditorSessionMixin,
@@ -185,6 +187,7 @@ class QtMapEditor(
     act_palette_large_icons: QAction
     act_window_minimap: QAction
     act_window_actions_history: QAction
+    act_window_friends: QAction
     act_clear_invalid_tiles_selection: QAction
     act_clear_invalid_tiles_map: QAction
     act_randomize_selection: QAction
@@ -250,8 +253,10 @@ class QtMapEditor(
     # Docks/widgets built by builders
     dock_minimap: QDockWidget | None
     dock_actions_history: QDockWidget | None
+    dock_friends: QDockWidget | None
     dock_sprite_preview: QDockWidget
     minimap_widget: MinimapWidget | None
+    friends_sidebar: object | None
     sprite_id_spin: QSpinBox
     sprite_preview: QLabel
 
@@ -292,6 +297,10 @@ class QtMapEditor(
     drawing_options_coordinator: DrawingOptionsCoordinator
     map_drawer: MapDrawer
     asset_profile: object | None
+    friends_service: object | None
+    friends_local_user_id: int | None
+    friends_privacy_mode: str
+    _friends_timer: QTimer | None
 
     def __init__(self) -> None:
         super().__init__()
@@ -428,6 +437,12 @@ class QtMapEditor(
         self.dock_minimap: QDockWidget | None = None
         self.minimap_widget: MinimapWidget | None = None
         self.dock_actions_history: QDockWidget | None = None
+        self.dock_friends: QDockWidget | None = None
+        self.friends_sidebar = None
+        self.friends_service = None
+        self.friends_local_user_id = None
+        self.friends_privacy_mode = "friends_only"
+        self._friends_timer = None
 
         self.canvas = OpenGLCanvasWidget(self, editor=self)
         self.setCentralWidget(self.canvas)
@@ -544,6 +559,7 @@ class QtMapEditor(
 
         self._build_menus_and_toolbars()
         self._build_docks()
+        self._init_friends()
 
         self.session.set_live_chat_callback(self._handle_live_chat)
         self.session.set_live_client_list_callback(self._handle_live_client_list)

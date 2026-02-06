@@ -584,6 +584,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_window_live_log.setCheckable(True)
     editor.act_window_live_log.toggled.connect(lambda v: window_tools.toggle_live_log_dock(editor, v))
 
+    editor.act_window_friends = QAction("Friends", editor)
+    editor.act_window_friends.setCheckable(True)
+    editor.act_window_friends.toggled.connect(lambda v: window_tools.toggle_friends_dock(editor, v))
+
     # Assets
     editor.act_manage_client_profiles = QAction("Manage Client Profiles...", editor)
     editor.act_manage_client_profiles.triggered.connect(lambda _c=False: assets_tools.manage_client_profiles(editor))

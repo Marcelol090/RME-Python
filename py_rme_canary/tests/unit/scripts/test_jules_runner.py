@@ -172,3 +172,5 @@ def test_build_quality_prompt_contains_structured_contract() -> None:
     assert "single ```json fenced block" in prompt
     assert '"jules_suggestions"' in prompt
     assert "Task: quality-pipeline-jules" in prompt
+    assert "<quality_report>" in prompt
+    assert "Evidence -> Risk -> Action -> Verification" in prompt

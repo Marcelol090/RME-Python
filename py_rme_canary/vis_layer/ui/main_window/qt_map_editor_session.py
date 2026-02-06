@@ -1087,8 +1087,12 @@ class QtMapEditorSessionMixin:
 
     def _handle_live_client_list(self, clients: list[dict[str, object]]) -> None:
         if not hasattr(self, "dock_live_log") or self.dock_live_log is None:
-            return
-        self.dock_live_log.update_user_list(clients)
+            pass
+        else:
+            self.dock_live_log.update_user_list(clients)
+        if hasattr(self, "_friends_sync_live_clients"):
+            with contextlib.suppress(Exception):
+                self._friends_sync_live_clients(clients)
 
     def _handle_live_cursor(self, _client_id: int, _x: int, _y: int, _z: int) -> None:
         self.canvas.update()

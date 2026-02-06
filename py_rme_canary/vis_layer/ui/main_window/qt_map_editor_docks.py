@@ -47,3 +47,15 @@ class QtMapEditorDocksMixin:
             editor.dock_live_log.raise_()
         else:
             editor.dock_live_log.hide()
+
+    def _toggle_friends_dock(self, checked: bool) -> None:
+        editor = cast("QtMapEditor", self)
+        if editor.dock_friends is None:
+            return
+        if bool(checked):
+            editor.dock_friends.show()
+            editor.dock_friends.raise_()
+            with contextlib.suppress(Exception):
+                editor._refresh_friends_sidebar()
+        else:
+            editor.dock_friends.hide()

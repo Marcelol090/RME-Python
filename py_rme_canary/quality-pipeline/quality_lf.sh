@@ -47,6 +47,7 @@ PROJECT_LOGIC="${PROJECT_LOGIC:-$PROJECT_DIR/logic_layer}"
 PROJECT_VIS="${PROJECT_VIS:-$PROJECT_DIR/vis_layer}"
 PROJECT_TESTS="${PROJECT_TESTS:-$PROJECT_DIR/tests}"
 QUALITY_HASH_TARGETS="${QUALITY_HASH_TARGETS:-$PROJECT_CORE,$PROJECT_LOGIC,$PROJECT_VIS,$PROJECT_TESTS}"
+QUALITY_FAST_HASH="${QUALITY_FAST_HASH:-true}"
 
 SCAN_TARGETS=()
 for scan_dir in "$PROJECT_CORE" "$PROJECT_LOGIC" "$PROJECT_VIS" "$PROJECT_TESTS"; do
@@ -472,6 +473,36 @@ _compute_source_hash() {
   fi
   if [[ ${#hash_targets[@]} -eq 0 ]]; then
     hash_targets=("${SCAN_TARGETS[@]}")
+  fi
+
+  if [[ "$QUALITY_FAST_HASH" == "true" ]] && git -C "$ROOT_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
+    local head_sha=""
+    head_sha=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || true)
+    if [[ -n "$head_sha" ]]; then
+      local -a git_targets=()
+      local target=""
+      for target in "${hash_targets[@]}"; do
+        [[ -n "$target" ]] || continue
+        if [[ "$target" == "$ROOT_DIR"* ]]; then
+          target="${target#$ROOT_DIR/}"
+        fi
+        git_targets+=("$target")
+      done
+
+      local dirty=""
+      if [[ ${#git_targets[@]} -gt 0 ]]; then
+        dirty=$(git -C "$ROOT_DIR" status --porcelain -- "${git_targets[@]}" 2>/dev/null || true)
+      else
+        dirty=$(git -C "$ROOT_DIR" status --porcelain 2>/dev/null || true)
+      fi
+
+      local git_hash=""
+      git_hash=$(printf "%s\n%s\n" "$head_sha" "$dirty" | md5sum 2>/dev/null | cut -d' ' -f1)
+      if [[ -n "$git_hash" ]]; then
+        echo "$git_hash"
+        return 0
+      fi
+    fi
   fi
 
   if [[ -f "$QUALITY_SCRIPTS_DIR/hash_python.py" ]]; then

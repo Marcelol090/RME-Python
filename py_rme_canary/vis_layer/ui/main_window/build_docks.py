@@ -57,6 +57,19 @@ def build_docks(editor: QtMapEditor) -> None:
     editor.dock_live_log.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_window_live_log, v))
     editor.act_window_live_log.setChecked(False)
 
+    # Friends dock
+    from py_rme_canary.vis_layer.ui.docks.friends_sidebar import FriendsDock
+
+    friends_widget = FriendsDock(editor)
+    editor.friends_sidebar = friends_widget.sidebar
+    editor.dock_friends = QDockWidget("Friends", editor)
+    editor.dock_friends.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
+    editor.dock_friends.setWidget(friends_widget)
+    editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_friends)
+    editor.dock_friends.hide()
+    editor.dock_friends.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_window_friends, v))
+    editor.act_window_friends.setChecked(False)
+
     # Sprite preview dock
     asset_dock = QDockWidget("Sprite Preview", editor)
     editor.dock_sprite_preview = asset_dock

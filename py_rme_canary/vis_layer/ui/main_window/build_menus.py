@@ -391,6 +391,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_window.addAction(editor.act_window_minimap)
     m_window.addAction(editor.act_window_actions_history)
     m_window.addAction(editor.act_window_live_log)
+    if hasattr(editor, "act_window_friends"):
+        m_window.addAction(editor.act_window_friends)
 
     m_window.addSeparator()
     m_window.addAction(editor.act_new_palette)

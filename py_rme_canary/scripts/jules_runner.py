@@ -8,7 +8,6 @@ import json
 import os
 import re
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +25,7 @@ from jules_api import (
 try:
     from datetime import UTC
 except ImportError:
-    UTC = timezone.utc
+    UTC = UTC
 
 
 def utc_now_iso() -> str:
@@ -112,8 +111,8 @@ def build_quality_prompt(*, report_text: str, task: str) -> str:
     context_block = report_text if report_text else "Quality report context is not available."
     return (
         "You are Jules, a senior Python quality engineer for a PyQt6 map editor project.\n"
-        "Your objective is to convert the provided quality report into precise, actionable next steps.\n"
-        "Work in linear steps internally: observe report evidence, identify risks, then propose prioritized actions.\n"
+        "Objective: convert report evidence into high-impact, low-risk implementation steps.\n"
+        "Execution style: linear and verifiable (Evidence -> Risk -> Action -> Verification).\n"
         "\n"
         "Hard constraints:\n"
         "1) Use only evidence present in the report context.\n"
@@ -121,6 +120,13 @@ def build_quality_prompt(*, report_text: str, task: str) -> str:
         "3) Keep suggestions small enough to become isolated PRs.\n"
         "4) Do not include markdown commentary outside the requested JSON block.\n"
         "5) If data is missing, explain uncertainty in the `rationale` field.\n"
+        "6) For each suggestion, include at least one concrete verification step in the rationale.\n"
+        "\n"
+        "Reasoning protocol (apply in this order):\n"
+        "- Step 1: Extract concrete evidence lines and classify impact (security, correctness, maintainability, performance).\n"
+        "- Step 2: Rank by severity and blast-radius.\n"
+        "- Step 3: Propose minimal PR-sized actions with explicit file targets.\n"
+        "- Step 4: Add validation guidance (tests/lint/quality command).\n"
         "\n"
         "Output format (required): return a single ```json fenced block with this top-level shape:\n"
         "{\n"
@@ -139,9 +145,17 @@ def build_quality_prompt(*, report_text: str, task: str) -> str:
         "- implemented: maximum 4 entries.\n"
         "- suggested_next: maximum 8 entries.\n"
         "\n"
+        "Quality bar for each `suggested_next` item:\n"
+        "- `summary`: one concrete change, no vague wording.\n"
+        "- `files`: repository-relative paths likely touched.\n"
+        "- `rationale`: why now, risk if skipped, and how to verify.\n"
+        "- `severity`: choose CRITICAL/HIGH/MED/LOW using report evidence only.\n"
+        "\n"
         f"Task: {task}\n"
-        "Quality report context:\n"
+        "Quality report context (bounded by tags):\n"
+        "<quality_report>\n"
         f"{context_block}\n"
+        "</quality_report>\n"
     )
 
 

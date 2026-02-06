@@ -137,6 +137,7 @@ QUALITY_HASH_TARGETS=py_rme_canary/core,py_rme_canary/logic_layer,py_rme_canary/
 Notas:
 - `PROJECT_DIR`: limita análise para o projeto alvo (evita varredura desnecessária do monorepo).
 - `QUALITY_HASH_TARGETS`: controla quais caminhos entram no hash de cache.
+- `QUALITY_FAST_HASH=true` (padrão): usa hash rápido baseado em `git HEAD + status` antes do hash completo.
 - `--timeout`: limita execução de ferramentas lentas para evitar travamentos prolongados.
 - `--no-cache`: força reexecução completa quando necessário.
 
