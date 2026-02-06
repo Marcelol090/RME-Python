@@ -23,14 +23,14 @@ from jules_api import (
 )
 
 try:
-    from datetime import UTC
+    from datetime import UTC as UTC_TZ
 except ImportError:
-    UTC = UTC
+    UTC_TZ = UTC_TZ
 
 
 def utc_now_iso() -> str:
     """Return ISO-8601 UTC timestamp."""
-    return datetime.now(UTC).replace(microsecond=0).isoformat()
+    return datetime.now(UTC_TZ).replace(microsecond=0).isoformat()
 
 
 def truncate_text(value: str, limit: int = 300) -> str:
@@ -59,9 +59,8 @@ def _compress_quality_report(raw: str) -> str:
         is_header = stripped.startswith("##")
         if is_header:
             if in_artifacts and artifact_total > artifact_kept:
-                output.append(
-                    f"- ... {artifact_total - artifact_kept} additional artifacts omitted for prompt compactness"
-                )
+                omitted = artifact_total - artifact_kept
+                output.append(f"- ... {omitted} additional artifacts omitted for prompt compactness")
             in_artifacts = "artefatos gerados" in stripped.lower()
             artifact_kept = 0
             artifact_total = 0
@@ -80,7 +79,8 @@ def _compress_quality_report(raw: str) -> str:
         output.append(line)
 
     if in_artifacts and artifact_total > artifact_kept:
-        output.append(f"- ... {artifact_total - artifact_kept} additional artifacts omitted for prompt compactness")
+        omitted = artifact_total - artifact_kept
+        output.append(f"- ... {omitted} additional artifacts omitted for prompt compactness")
 
     compact = "\n".join(output).strip()
     compact = re.sub(r"\n{3,}", "\n\n", compact)
@@ -123,7 +123,8 @@ def build_quality_prompt(*, report_text: str, task: str) -> str:
         "6) For each suggestion, include at least one concrete verification step in the rationale.\n"
         "\n"
         "Reasoning protocol (apply in this order):\n"
-        "- Step 1: Extract concrete evidence lines and classify impact (security, correctness, maintainability, performance).\n"
+        "- Step 1: Extract concrete evidence lines and classify impact "
+        "(security, correctness, maintainability, performance).\n"
         "- Step 2: Rank by severity and blast-radius.\n"
         "- Step 3: Propose minimal PR-sized actions with explicit file targets.\n"
         "- Step 4: Add validation guidance (tests/lint/quality command).\n"
@@ -269,7 +270,7 @@ def _extract_first_activity(payload: object) -> object:
     if isinstance(payload, dict):
         for key in ("activity", "latestActivity"):
             candidate = payload.get(key)
-            if isinstance(candidate, (dict, list)):
+            if isinstance(candidate, dict | list):
                 return candidate
         activities = payload.get("activities")
         if isinstance(activities, list) and activities:
@@ -358,7 +359,7 @@ def validate_contract(payload: dict[str, Any], schema_path: Path | None) -> list
                 if key not in payload:
                     errors.append(f"Schema required field missing: {key}")
             enum_values = schema.get("properties", {}).get("category", {}).get("enum", [])
-            if enum_values and category not in set(str(v) for v in enum_values):
+            if enum_values and category not in {str(v) for v in enum_values}:
                 errors.append(f"Category outside schema enum: {category}")
         except Exception as exc:  # pragma: no cover - defensive path
             errors.append(f"Unable to parse schema file: {exc}")

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElementTree
 from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -22,6 +22,7 @@ from py_rme_canary.core.io.lua_creature_import import (
 from py_rme_canary.core.io.map_detection import detect_map_file
 from py_rme_canary.core.io.otbm_loader import OTBMLoader
 from py_rme_canary.core.io.otbm_saver import save_game_map_bundle_atomic
+from py_rme_canary.core.io.otmm_saver import save_otmm_atomic
 from py_rme_canary.logic_layer.editor_session import EditorSession
 from py_rme_canary.logic_layer.map_format_conversion import (
     analyze_map_format_conversion,
@@ -306,31 +307,23 @@ class QtMapEditorFileMixin:
 
     def _export_otmm(self: QtMapEditor) -> None:
         if self.map is None:
-            QMessageBox.information(self, "Export Minimap (OTMM)", "No map loaded.")
+            QMessageBox.information(self, "Export OTMM", "No map loaded.")
             return
 
-        out_path, _ = QFileDialog.getSaveFileName(self, "Export Minimap (OTMM)", "", "OTMM (*.otmm);;All Files (*)")
+        out_path, _ = QFileDialog.getSaveFileName(self, "Export OTMM", "", "OTMM (*.otmm);;All Files (*)")
         if not out_path:
             return
         if not out_path.lower().endswith(".otmm"):
             out_path += ".otmm"
 
-        default_z = int(getattr(self.viewport, "z", 7))
-        z_level, ok = QInputDialog.getInt(self, "Export Minimap (OTMM)", "Z-level:", int(default_z), 0, 15, 1)
-        if not ok:
-            return
-
-        from py_rme_canary.logic_layer.minimap_exporter import get_minimap_exporter
-
         try:
-            exporter = get_minimap_exporter()
-            exporter.export(self.map, out_path, z_level=int(z_level))
+            save_otmm_atomic(out_path, self.map)
         except Exception as exc:
-            logger.exception("OTMM minimap export failed")
-            QMessageBox.critical(self, "Export Minimap (OTMM)", str(exc))
+            logger.exception("OTMM map export failed")
+            QMessageBox.critical(self, "Export OTMM", str(exc))
             return
 
-        QMessageBox.information(self, "Export Minimap (OTMM)", f"Minimap exported successfully:\n{out_path}")
+        QMessageBox.information(self, "Export OTMM", f"Map exported successfully:\n{out_path}")
 
     def _collect_tilesets_by_type(self: QtMapEditor) -> dict[str, list[object]]:
         grouped: dict[str, list[object]] = defaultdict(list)
@@ -394,7 +387,7 @@ class QtMapEditorFileMixin:
         }
 
     def _write_tilesets_xml(self: QtMapEditor, payload: dict[str, object], output_path: Path) -> None:
-        root = ET.Element(
+        root = ElementTree.Element(
             "tilesets",
             {
                 "format_version": str(payload.get("format_version", 1)),
@@ -407,7 +400,7 @@ class QtMapEditorFileMixin:
             for tileset in tilesets_raw:
                 if not isinstance(tileset, dict):
                     continue
-                ts_node = ET.SubElement(
+                ts_node = ElementTree.SubElement(
                     root,
                     "tileset",
                     {
@@ -421,7 +414,7 @@ class QtMapEditorFileMixin:
                 for brush in brushes_raw:
                     if not isinstance(brush, dict):
                         continue
-                    b_node = ET.SubElement(
+                    b_node = ElementTree.SubElement(
                         ts_node,
                         "brush",
                         {
@@ -433,12 +426,12 @@ class QtMapEditorFileMixin:
                     family_ids = brush.get("family_ids", [])
                     if isinstance(family_ids, list):
                         for family_id in family_ids:
-                            ET.SubElement(b_node, "family_id", {"value": str(int(family_id))})
+                            ElementTree.SubElement(b_node, "family_id", {"value": str(int(family_id))})
 
                     borders = brush.get("borders", {})
                     if isinstance(borders, dict):
                         for side, item_id in sorted(borders.items(), key=lambda kv: str(kv[0])):
-                            ET.SubElement(
+                            ElementTree.SubElement(
                                 b_node,
                                 "border",
                                 {
@@ -450,10 +443,10 @@ class QtMapEditorFileMixin:
                     transitions = brush.get("transition_borders", {})
                     if isinstance(transitions, dict):
                         for to_id, transition_borders in sorted(transitions.items(), key=lambda kv: str(kv[0])):
-                            t_node = ET.SubElement(b_node, "transition", {"to_id": str(to_id)})
+                            t_node = ElementTree.SubElement(b_node, "transition", {"to_id": str(to_id)})
                             if isinstance(transition_borders, dict):
                                 for side, item_id in sorted(transition_borders.items(), key=lambda kv: str(kv[0])):
-                                    ET.SubElement(
+                                    ElementTree.SubElement(
                                         t_node,
                                         "border",
                                         {
@@ -465,11 +458,11 @@ class QtMapEditorFileMixin:
                     randomize_ids = brush.get("randomize_ids", [])
                     if isinstance(randomize_ids, list):
                         for randomize_id in randomize_ids:
-                            ET.SubElement(b_node, "randomize_id", {"value": str(int(randomize_id))})
+                            ElementTree.SubElement(b_node, "randomize_id", {"value": str(int(randomize_id))})
 
-        tree = ET.ElementTree(root)
+        tree = ElementTree.ElementTree(root)
         with contextlib.suppress(Exception):
-            ET.indent(tree, space="  ")
+            ElementTree.indent(tree, space="  ")
         tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
     def _export_tilesets(self: QtMapEditor) -> None:

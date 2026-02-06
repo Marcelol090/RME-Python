@@ -105,7 +105,9 @@ class SpriteListModel(QAbstractListModel):
                     i for i, s in enumerate(self._sprites) if self._filter_text.lower() in str(s.sprite_id).lower()
                 ]
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: QModelIndex | None = None) -> int:
+        if parent is not None and parent.isValid():
+            return 0
         return len(self._filtered_indices)
 
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
@@ -177,7 +179,7 @@ class SpriteDelegate(QStyledItemDelegate):
 
                 if not sprite.is_valid:
                     painter.setPen(QColor("#EF4444"))
-                    painter.drawText(sprite_rect, Qt.AlignmentFlag.AlignCenter, "✗")
+                    painter.drawText(sprite_rect, Qt.AlignmentFlag.AlignCenter, "X")
 
             # Draw ID label
             painter.setPen(QColor("#A1A1AA"))
@@ -326,7 +328,7 @@ class SpriteDetailPanel(QFrame):
         self._info_values[2].setText(f"{sprite.height}px")
         self._info_values[3].setText(str(sprite.layers))
         self._info_values[4].setText(str(sprite.frames))
-        self._info_values[5].setText("✓ Valid" if sprite.is_valid else "✗ Invalid")
+        self._info_values[5].setText("Valid" if sprite.is_valid else "Invalid")
         self._info_values[5].setStyleSheet(
             "color: #10B981; font-weight: bold;" if sprite.is_valid else "color: #EF4444; font-weight: bold;"
         )

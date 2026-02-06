@@ -223,7 +223,7 @@ class TilesetBrowser(QWidget):
 
         # Search bar
         self.search = QLineEdit()
-        self.search.setPlaceholderText("🔍 Search brushes...")
+        self.search.setPlaceholderText("Search brushes...")
         self.search.setStyleSheet(
             """
             QLineEdit {
@@ -380,7 +380,7 @@ class TilesetBrowser(QWidget):
         text_lower = text.lower()
         filtered = [b for b in self._brushes if text_lower in b.name.lower() or text_lower in str(b.brush_id)]
 
-        self.category_header.setText(f"🔍 Search: {len(filtered)} results")
+        self.category_header.setText(f"Search: {len(filtered)} results")
 
         # Clear and rebuild grid
         for item in self._brush_items:

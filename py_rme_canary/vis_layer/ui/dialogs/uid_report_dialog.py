@@ -125,7 +125,7 @@ class UIDReportDialog(QDialog):
                     pos_str += f" (+{len(conflict.positions) - 2})"
                 self._table.setItem(row, 3, QTableWidgetItem(pos_str))
         else:
-            self._status_label.setText(f"✓ No duplicate UIDs found ({result.total_items_scanned} items scanned)")
+            self._status_label.setText(f"No duplicate UIDs found ({result.total_items_scanned} items scanned)")
             self._status_label.setStyleSheet("color: #81c784; font-weight: bold;")
 
     def _on_goto(self) -> None:

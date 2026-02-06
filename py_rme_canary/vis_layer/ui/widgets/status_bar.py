@@ -74,7 +74,7 @@ class PositionIndicator(StatusBarSection):
     """Shows current position (X, Y, Z)."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="📍", text="0, 0, 7", tooltip="Current position (X, Y, Z)", parent=parent)
+        super().__init__(icon="Pos", text="0, 0, 7", tooltip="Current position (X, Y, Z)", parent=parent)
 
         self._x = 0
         self._y = 0
@@ -92,7 +92,7 @@ class ZoomIndicator(StatusBarSection):
     """Shows current zoom level."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="🔍", text="100%", tooltip="Zoom level", parent=parent)
+        super().__init__(icon="Zoom", text="100%", tooltip="Zoom level", parent=parent)
 
         self._zoom = 1.0
 
@@ -183,7 +183,7 @@ class MapInfoIndicator(StatusBarSection):
     """Shows map dimensions and tile count."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="🗺️", text="No map", tooltip="Map info", parent=parent)
+        super().__init__(icon="Map", text="No map", tooltip="Map info", parent=parent)
 
     def set_map_info(self, width: int, height: int, tile_count: int = 0) -> None:
         """Update map info display."""

@@ -188,4 +188,6 @@ class QtMapEditorFriendsMixin:
     def closeEvent(self, event) -> None:  # noqa: N802
         editor = cast("QtMapEditor", self)
         editor._friends_mark_offline()
-        super().closeEvent(event)
+        parent_close_event = getattr(super(), "closeEvent", None)
+        if callable(parent_close_event):
+            parent_close_event(event)

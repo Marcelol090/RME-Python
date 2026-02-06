@@ -61,7 +61,7 @@ class SpawnCard(QFrame):
         # Header
         header = QHBoxLayout()
 
-        icon = "👹" if self._spawn_type == "monster" else "👤"
+        icon = "M" if self._spawn_type == "monster" else "N"
         type_name = "Monster Spawn" if self._spawn_type == "monster" else "NPC Spawn"
 
         title = QLabel(f"{icon} {type_name}")
@@ -88,7 +88,7 @@ class SpawnCard(QFrame):
 
         # Position
         center = self._spawn.center
-        pos = f"📍 ({int(center.x)}, {int(center.y)}, {int(center.z)})"
+        pos = f"({int(center.x)}, {int(center.y)}, {int(center.z)})"
         pos_label = QLabel(pos)
         pos_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
         layout.addWidget(pos_label)
@@ -187,7 +187,7 @@ class SpawnEditDialog(QDialog):
         self._spawn = spawn
         self._spawn_type = spawn_type
 
-        icon = "👹" if spawn_type == "monster" else "👤"
+        icon = "M" if spawn_type == "monster" else "N"
         self.setWindowTitle(f"{icon} Edit {'Monster' if spawn_type == 'monster' else 'NPC'} Spawn")
         self.setMinimumWidth(400)
         self.setModal(True)
@@ -203,7 +203,7 @@ class SpawnEditDialog(QDialog):
 
         # Position
         center = self._spawn.center
-        pos_label = QLabel(f"📍 Position: ({int(center.x)}, {int(center.y)}, {int(center.z)})")
+        pos_label = QLabel(f"Position: ({int(center.x)}, {int(center.y)}, {int(center.z)})")
         pos_label.setStyleSheet("color: #A1A1AA; font-size: 12px;")
         layout.addWidget(pos_label)
 
@@ -380,7 +380,7 @@ class SpawnManagerDialog(QDialog):
         # Header
         header_layout = QHBoxLayout()
 
-        header = QLabel("👹 Spawn Manager")
+        header = QLabel("Spawn Manager")
         header.setStyleSheet(
             """
             font-size: 18px;
@@ -437,7 +437,7 @@ class SpawnManagerDialog(QDialog):
         monster_scroll.setWidget(self.monster_container)
         monster_layout.addWidget(monster_scroll)
 
-        self.tabs.addTab(monster_tab, "👹 Monsters")
+        self.tabs.addTab(monster_tab, "Monsters")
 
         # NPC spawns tab
         npc_tab = QWidget()
@@ -456,7 +456,7 @@ class SpawnManagerDialog(QDialog):
         npc_scroll.setWidget(self.npc_container)
         npc_layout.addWidget(npc_scroll)
 
-        self.tabs.addTab(npc_tab, "👤 NPCs")
+        self.tabs.addTab(npc_tab, "NPCs")
 
         layout.addWidget(self.tabs)
 

@@ -10,9 +10,9 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
 - [x] `TASK-03` Implementar serviço de domínio para pedidos, aceites/rejeições, snapshot e presença.
 - [x] `TASK-04` Implementar dock PyQt6 de amigos (status, pedidos pendentes, privacidade, ação de "View Map").
 - [x] `TASK-05` Integrar backend social ao `QtMapEditor` (init, refresh, timer, sync com sessão live).
-- [ ] `TASK-06` Refinar prompts Jules com estratégia estruturada orientada a passos lineares.
-- [ ] `TASK-07` Otimizar `quality_lf.sh` para cenários de cache pesado e timeout.
-- [ ] `TASK-08` Rodar quality, suíte de testes, workflows locais e sincronização final de branches.
+- [x] `TASK-06` Refinar prompts Jules com estratégia estruturada orientada a passos lineares.
+- [x] `TASK-07` Otimizar `quality_lf.sh` para cenários de cache pesado e timeout.
+- [x] `TASK-08` Rodar quality, suíte de testes, workflows locais e sincronização final de branches.
 
 ## Critérios de aceite
 
@@ -20,4 +20,3 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
 - Mudanças de amizade e presença persistem em banco local.
 - Privacidade (`public`, `friends_only`, `private`) afeta exibição de atividade de mapa.
 - P0 busca/contexto segue verde em testes direcionados.
-

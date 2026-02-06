@@ -166,10 +166,10 @@ class LayerManager(QFrame):
     DEFAULT_LAYERS = [
         Layer("ground", "Ground", "🟫"),
         Layer("items", "Items", "📦"),
-        Layer("creatures", "Creatures", "👹"),
-        Layer("houses", "Houses", "🏠"),
-        Layer("zones", "Zones", "🗺️"),
-        Layer("waypoints", "Waypoints", "📍"),
+        Layer("creatures", "Creatures", "CR"),
+        Layer("houses", "Houses", "HS"),
+        Layer("zones", "Zones", "ZN"),
+        Layer("waypoints", "Waypoints", "WP"),
         Layer("spawns", "Spawns", "⭕"),
         Layer("grid", "Grid", "📐", visible=True, opacity=0.5),
     ]
@@ -199,7 +199,7 @@ class LayerManager(QFrame):
         header.addStretch()
 
         # Show all button
-        btn_show_all = QPushButton("👁️")
+        btn_show_all = QPushButton("Show")
         btn_show_all.setFixedSize(24, 24)
         btn_show_all.setToolTip("Show all layers")
         btn_show_all.clicked.connect(self._show_all)

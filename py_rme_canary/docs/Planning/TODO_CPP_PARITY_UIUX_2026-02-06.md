@@ -79,16 +79,17 @@
   - Critério de aceite: reiniciar app preserva ajustes de preferência.
   - Status (2026-02-06): persistência completa via `QSettings` (`UserSettings`) para todos campos do diálogo.
 
-- [ ] `P1-EXPORT-007` Concluir exportação OTMM no fluxo de UI.
+- [x] `P1-EXPORT-007` Concluir exportação OTMM no fluxo de UI.
   - Implementar `_export_otmm` no editor e dialog/opções mínimas de export.
   - Conectar com `core/io/otmm_saver.py` e validação de caminho/erro.
   - Critério de aceite: menu exporta `.otmm` válido para mapa de teste.
-  - Status parcial (2026-02-06): `_export_otmm` implementado e funcional via `logic_layer/minimap_exporter.py`; falta consolidar alinhamento final com `otmm_saver` (se o escopo migrar de minimap para mapa OTMM completo).
+  - Status (2026-02-06): exportação consolidada para mapa OTMM completo via `core/io/otmm_saver.py` com validação de caminho/erro no fluxo de UI.
 
 - [ ] `P1-UIUX-008` Migrar UI para iconografia própria (sem emojis).
   - Criar pacote de ícones (`resources/icons`) para ações, ferramentas e categorias.
   - Substituir labels com emoji em menus, dialogs, status widgets e tooltips.
   - Critério de aceite: interface usa ícones consistentes e sem emoji-format icon.
+  - Status parcial (2026-02-06): labels/ações com emoji removidas dos módulos ativos de UI; pendente consolidar pacote dedicado de ícones próprios.
 
 - [ ] `P1-UX-009` Paridade de Toolbars/Docks e integração moderna.
   - Ajustar builder para expor `menu_file/menu_edit` e ativar ações modernas hoje órfãs.
@@ -101,17 +102,17 @@
   - Rodar `quality_lf.sh`, otimizar gargalos de cache/IO das ferramentas de quality.
   - Executar workflows locais equivalentes ao CI e anexar relatório final.
   - Critério de aceite: pipeline verde e tempo de quality reduzido de forma mensurável.
-  - Status parcial (2026-02-06): `quality_lf.sh` e `quality.sh` executados em dry-run com cache ativo; fluxo Jules local validado.
+  - Status parcial (2026-02-06): `quality_lf.sh` executado em dry-run com cache ativo, Jules local validado (`status=ok`) e testes `tests/ui` + `tests/unit` verdes.
 
 ## Progresso executado (2026-02-06)
-- Menus/actions/handlers implementados para `Preferences`, `Reload Data`, `Export Tilesets`, `Extensions`, `Goto Website`, `Export Minimap (OTMM)`.
+- Menus/actions/handlers implementados para `Preferences`, `Reload Data`, `Export Tilesets`, `Extensions`, `Goto Website`, `Export OTMM`.
 - Menus `Search` e `Selection` adicionados para aproximar a estrutura legada C++.
 - Compatibilidade de workflow Jules corrigida para Python 3.10 (`datetime.UTC` fallback em scripts).
 - Validação local concluída:
   - `python -m pytest -q py_rme_canary/tests/ui` -> 11 passed
-  - `python -m pytest -q py_rme_canary/tests/unit` -> 371 passed
-  - `python -m pytest -q py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> 5 passed
-  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --skip-ui-tests --skip-jules --timeout 900 --jobs 4`
+  - `python -m pytest -q py_rme_canary/tests/unit` -> 394 passed
+  - `python -m pytest -q py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> 7 passed
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --timeout 900 --jobs 4`
   - `bash ./quality.sh --dry-run --skip-tests --skip-libcst --skip-sonarlint`
 
 ## Ordem de execução recomendada
