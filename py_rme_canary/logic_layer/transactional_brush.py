@@ -530,7 +530,68 @@ class TransactionalBrushStroke:
         self._stroke_origin = (int(x), int(y), int(z))
         self.paint(x=x, y=y, z=z, selected_server_id=int(selected_server_id), alt=bool(alt))
 
-    def _determine_effective_id(
+    def paint(self, *, x: int, y: int, z: int, selected_server_id: int, alt: bool = False) -> None:
+        """Apply the base brush silently and record tile change.
+
+        This does NOT run auto-border. Auto-border is applied only on `end()`.
+        """
+
+        if self.action is None:
+            raise RuntimeError("Stroke not started. Call begin() first.")
+
+        x, y, z = int(x), int(y), int(z)
+        selected_server_id = int(selected_server_id)
+
+        brush_def = self.brush_manager.get_brush(selected_server_id)
+        before = self.game_map.get_tile(x, y, z)
+        brush_type = brush_def.brush_type if brush_def is not None else "wall"
+        brush_type_norm = str(brush_type).strip().lower()
+
+        effective_server_id = self._resolve_effective_id(
+            x, y, z, selected_server_id, brush_def, brush_type_norm
+        )
+
+        if self._should_skip_replace_context(before, brush_type_norm, alt):
+            return
+
+        tile = before
+        if tile is None:
+            tile = self.game_map.ensure_tile(x, y, z)
+
+        after = None
+        if brush_type_norm == "flag":
+            after = self._paint_flag(tile, selected_server_id, alt)
+        elif brush_type_norm == "zone":
+            after = self._paint_zone(tile, selected_server_id, alt)
+        elif brush_type_norm == "house":
+            after = self._paint_house(tile, selected_server_id, alt)
+            if after is None:
+                return
+        elif brush_type_norm == "optional_border":
+            after = self._paint_optional_border(tile, selected_server_id, alt)
+            if after is None:
+                return
+        elif brush_type_norm == "doodad" and brush_def is not None:
+            self._paint_doodad(x, y, z, selected_server_id, brush_def, before, alt)
+            return
+        elif brush_type_norm == "carpet" and brush_def is not None:
+            after = self._paint_carpet(tile, effective_server_id, brush_def)
+        elif brush_type_norm == "table" and brush_def is not None:
+            after = self._paint_table(tile, effective_server_id, brush_def)
+        else:
+            after = replace_top_item(tile, new_server_id=int(effective_server_id), brush_type=brush_type)
+
+        if after is not None:
+            after = replace(after, modified=True)
+
+        if before == after:
+            return
+
+        self.action.record_tile_change((x, y, z), before, after)
+        self.game_map.set_tile(after)
+        self.dirty.add((x, y, z))
+
+    def _resolve_effective_id(
         self,
         x: int,
         y: int,
@@ -566,7 +627,7 @@ class TransactionalBrushStroke:
             if base_id is not None:
                 effective_server_id = int(base_id)
 
-        elif brush_def is not None and brush_type_norm == "carpet" and brush_def.carpet_spec is not None:
+        if brush_def is not None and brush_type_norm == "carpet" and brush_def.carpet_spec is not None:
             carpet_spec = brush_def.carpet_spec
             seed = (
                 f"carpet-base:{int(x)},{int(y)},{int(z)}:{int(brush_def.server_id)}:{int(self.brush_variation)}"
@@ -582,6 +643,17 @@ class TransactionalBrushStroke:
                 effective_server_id = int(base_id)
 
         return effective_server_id
+
+    def _should_skip_replace_context(self, before: Tile | None, brush_type_norm: str, alt: bool) -> bool:
+        if bool(alt) and self._replace_context_enabled and brush_type_norm == "ground":
+            current_ground_id = None if before is None or before.ground is None else int(before.ground.id)
+
+            if self._replace_source_ground_id is None:
+                if current_ground_id is not None:
+                    return True
+            elif current_ground_id != int(self._replace_source_ground_id):
+                return True
+        return False
 
     def _paint_flag(self, tile: Tile, selected_server_id: int, alt: bool) -> Tile:
         sid = int(selected_server_id)
@@ -647,9 +719,9 @@ class TransactionalBrushStroke:
         x: int,
         y: int,
         z: int,
-        before: Tile | None,
         selected_server_id: int,
         brush_def: BrushDefinition,
+        before: Tile | None,
         alt: bool,
     ) -> None:
         target_id = int(getattr(brush_def, "server_id", selected_server_id))
@@ -658,15 +730,11 @@ class TransactionalBrushStroke:
 
         doodad_spec = getattr(brush_def, "doodad_spec", None)
 
-        # Legacy: canSmear is gated by `draggable`.
         if doodad_spec is not None and (not bool(getattr(doodad_spec, "draggable", True))):
             origin = self._stroke_origin
             if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
                 return
 
-        # Legacy: if on_blocking is false, only place on non-blocking tiles.
-        # We don't have full movement flagging yet, so use a conservative
-        # approximation: require a tile with ground.
         if (
             doodad_spec is not None
             and (not bool(getattr(doodad_spec, "on_blocking", False)))
@@ -674,7 +742,6 @@ class TransactionalBrushStroke:
         ):
             return
 
-        # If the brush declares one_size, only apply on the origin tile.
         if doodad_spec is not None and bool(getattr(doodad_spec, "one_size", False)):
             origin = self._stroke_origin
             if origin is None or (int(x), int(y), int(z)) != (int(origin[0]), int(origin[1]), int(origin[2])):
@@ -690,7 +757,6 @@ class TransactionalBrushStroke:
             return
 
         if doodad_spec is None:
-            # Fallback behavior (MVP): treat doodad as a simple decoration item id.
             if bool(alt):
                 self._apply_doodad_remove_one(x=int(x), y=int(y), z=int(z), item_id=int(target_id))
             else:
@@ -742,7 +808,6 @@ class TransactionalBrushStroke:
             ty = int(y) + int(placement.dy)
             tz = int(z) + int(placement.dz)
 
-            # Respect on_blocking=false for each composite tile too.
             if doodad_spec is not None and not bool(getattr(doodad_spec, "on_blocking", False)):
                 dest_before = self.game_map.get_tile(int(tx), int(ty), int(tz))
                 if dest_before is None or dest_before.ground is None:
@@ -763,97 +828,16 @@ class TransactionalBrushStroke:
                 )
 
     def _paint_carpet(self, tile: Tile, effective_server_id: int, brush_def: BrushDefinition) -> Tile:
-        # Carpets are floor decorations: never clobber unrelated top items.
         fam = {int(v) for v in brush_def.family_ids}
         kept = [it for it in tile.items if int(it.id) not in fam]
-        # Insert at bottom (rendered below other items).
         kept.insert(0, Item(id=int(effective_server_id)))
         return replace(tile, items=kept)
 
     def _paint_table(self, tile: Tile, effective_server_id: int, brush_def: BrushDefinition) -> Tile:
-        # Tables/counters: behave like wall-like items, but never clobber unrelated stack.
         fam = {int(v) for v in brush_def.family_ids}
         kept = [it for it in tile.items if int(it.id) not in fam]
-        # Place on top.
         kept.append(Item(id=int(effective_server_id)))
         return replace(tile, items=kept)
-
-    def _paint_default(self, tile: Tile, effective_server_id: int, brush_type: str, x: int, y: int, z: int) -> Tile | None:
-        return replace_top_item(tile, new_server_id=int(effective_server_id), brush_type=brush_type)
-
-    def paint(self, *, x: int, y: int, z: int, selected_server_id: int, alt: bool = False) -> None:
-        """Apply the base brush silently and record tile change.
-
-        This does NOT run auto-border. Auto-border is applied only on `end()`.
-        """
-
-        if self.action is None:
-            raise RuntimeError("Stroke not started. Call begin() first.")
-
-        x, y, z = int(x), int(y), int(z)
-        selected_server_id = int(selected_server_id)
-
-        brush_def = self.brush_manager.get_brush(selected_server_id)
-        before = self.game_map.get_tile(x, y, z)
-        brush_type = brush_def.brush_type if brush_def is not None else "wall"
-        brush_type_norm = str(brush_type).strip().lower()
-
-        effective_server_id = self._determine_effective_id(
-            x, y, z, selected_server_id, brush_def, brush_type_norm
-        )
-
-        # Legacy Replace tool (Alt) for ground brushes:
-        if bool(alt) and self._replace_context_enabled and str(brush_type).lower() == "ground":
-            current_ground_id = None if before is None or before.ground is None else int(before.ground.id)
-
-            if self._replace_source_ground_id is None:
-                if current_ground_id is not None:
-                    return
-            elif current_ground_id != int(self._replace_source_ground_id):
-                return
-
-        tile = before
-        if tile is None:
-            tile = self.game_map.ensure_tile(x, y, z)
-
-        after = None
-
-        if brush_type_norm == "flag":
-            after = self._paint_flag(tile, selected_server_id, alt)
-
-        elif brush_type_norm == "zone":
-            after = self._paint_zone(tile, selected_server_id, alt)
-
-        elif brush_type_norm == "house":
-            after = self._paint_house(tile, selected_server_id, alt)
-
-        elif brush_type_norm == "optional_border":
-            after = self._paint_optional_border(tile, selected_server_id, alt)
-
-        elif brush_type_norm == "doodad" and brush_def is not None:
-             self._paint_doodad(x, y, z, before, selected_server_id, brush_def, alt)
-             # _paint_doodad handles updates and dirty flagging internally
-             return
-
-        elif brush_type_norm == "carpet" and brush_def is not None:
-            after = self._paint_carpet(tile, effective_server_id, brush_def)
-
-        elif brush_type_norm == "table" and brush_def is not None:
-            after = self._paint_table(tile, effective_server_id, brush_def)
-
-        else:
-            after = self._paint_default(tile, effective_server_id, brush_type, x, y, z)
-
-        if after is not None:
-            after = replace(after, modified=True)
-
-        if before == after:
-            return
-
-        if after is not None:
-            self.action.record_tile_change((x, y, z), before, after)
-            self.game_map.set_tile(after)
-            self.dirty.add((x, y, z))
 
     def _apply_table_alignment(self, *, brush_def: BrushDefinition) -> None:
         if self.action is None:
