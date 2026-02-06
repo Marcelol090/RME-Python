@@ -57,8 +57,13 @@ jobs:
               prNumber = Number(context.payload.pull_request.number);
             } else if (context.eventName === "issue_comment" && context.payload.issue?.pull_request) {
               prNumber = Number(context.payload.issue.number);
-            } else if (core.getInput("pr_number")) {
-              prNumber = Number(core.getInput("pr_number"));
+            } else {
+              const workflowInput = `${{ inputs.pr_number || '' }}`.trim();
+              const payloadInput = String(context.payload.inputs?.pr_number || "").trim();
+              const candidate = workflowInput || payloadInput;
+              if (candidate) {
+                prNumber = Number(candidate);
+              }
             }
 
             if (!prNumber) core.setFailed("No PR number found.");
