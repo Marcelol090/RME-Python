@@ -106,7 +106,7 @@ class SelectionIndicator(StatusBarSection):
     """Shows selection info."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="🔲", text="No selection", tooltip="Selection info", parent=parent)
+        super().__init__(icon="SEL", text="No selection", tooltip="Selection info", parent=parent)
 
     def set_selection(self, count: int, width: int = 0, height: int = 0) -> None:
         """Update selection display."""
@@ -122,7 +122,7 @@ class BrushIndicator(StatusBarSection):
     """Shows current brush/tool."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="🖌️", text="No brush", tooltip="Current brush", parent=parent)
+        super().__init__(icon="BR", text="No brush", tooltip="Current brush", parent=parent)
 
     def set_brush(self, name: str, size: int = 1) -> None:
         """Update brush display."""
@@ -147,14 +147,14 @@ class SelectionModeIndicator(StatusBarSection):
 
     # Mode configurations
     MODES = {
-        "normal": ("⬜", "Normal", "#A1A1AA"),
-        "additive": ("➕", "Add", "#22C55E"),
-        "subtractive": ("➖", "Subtract", "#EF4444"),
-        "intersection": ("🔀", "Intersect", "#8B5CF6"),
+        "normal": ("N", "Normal", "#A1A1AA"),
+        "additive": ("+", "Add", "#22C55E"),
+        "subtractive": ("-", "Subtract", "#EF4444"),
+        "intersection": ("INT", "Intersect", "#8B5CF6"),
     }
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="⬜", text="Normal", tooltip="Selection mode", parent=parent)
+        super().__init__(icon="N", text="Normal", tooltip="Selection mode", parent=parent)
         self._mode = "normal"
 
     def set_mode(self, mode: str) -> None:
@@ -200,7 +200,7 @@ class MemoryIndicator(StatusBarSection):
     """Shows memory usage."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(icon="💾", text="0 MB", tooltip="Memory usage", parent=parent)
+        super().__init__(icon="MEM", text="0 MB", tooltip="Memory usage", parent=parent)
 
         # Update timer
         self._timer = QTimer()

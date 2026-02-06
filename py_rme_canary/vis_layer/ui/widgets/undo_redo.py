@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 class HistoryEntry:
     """Single history entry."""
 
-    def __init__(self, action_name: str, icon: str = "✏️", details: str = "", timestamp: float = 0.0) -> None:
+    def __init__(self, action_name: str, icon: str = "ACT", details: str = "", timestamp: float = 0.0) -> None:
         self.action_name = action_name
         self.icon = icon
         self.details = details
@@ -60,7 +60,7 @@ class UndoRedoPanel(QFrame):
         # Header
         header = QHBoxLayout()
 
-        title = QLabel("📜 History")
+        title = QLabel("History")
         title.setStyleSheet("font-size: 13px; font-weight: 600; color: #E5E5E7;")
         header.addWidget(title)
 
@@ -81,12 +81,12 @@ class UndoRedoPanel(QFrame):
         button_row = QHBoxLayout()
         button_row.setSpacing(8)
 
-        self.btn_undo = QPushButton("↩ Undo")
+        self.btn_undo = QPushButton("Undo")
         self.btn_undo.setEnabled(False)
         self.btn_undo.clicked.connect(self._undo)
         button_row.addWidget(self.btn_undo)
 
-        self.btn_redo = QPushButton("↪ Redo")
+        self.btn_redo = QPushButton("Redo")
         self.btn_redo.setEnabled(False)
         self.btn_redo.clicked.connect(self._redo)
         button_row.addWidget(self.btn_redo)
@@ -246,13 +246,13 @@ class QuickUndoRedo(QFrame):
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(2)
 
-        self.btn_undo = QPushButton("↩")
+        self.btn_undo = QPushButton("U")
         self.btn_undo.setFixedSize(32, 28)
         self.btn_undo.setToolTip("Undo (Ctrl+Z)")
         self.btn_undo.clicked.connect(self.undo_clicked.emit)
         layout.addWidget(self.btn_undo)
 
-        self.btn_redo = QPushButton("↪")
+        self.btn_redo = QPushButton("R")
         self.btn_redo.setFixedSize(32, 28)
         self.btn_redo.setToolTip("Redo (Ctrl+Y)")
         self.btn_redo.clicked.connect(self.redo_clicked.emit)

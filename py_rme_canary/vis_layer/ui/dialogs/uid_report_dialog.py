@@ -104,7 +104,7 @@ class UIDReportDialog(QDialog):
 
         if result.has_duplicates:
             self._status_label.setText(
-                f"⚠️ Found {result.duplicate_count} duplicate UID(s) ({result.total_items_scanned} items scanned)"
+                f"Found {result.duplicate_count} duplicate UID(s) ({result.total_items_scanned} items scanned)"
             )
             self._status_label.setStyleSheet("color: #e57373; font-weight: bold;")
 

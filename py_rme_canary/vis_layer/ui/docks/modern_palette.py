@@ -399,7 +399,7 @@ class SectionHeader(QWidget):
         layout.setContentsMargins(8, 4, 8, 4)
 
         # Expand/collapse indicator
-        self.arrow = QLabel("▼" if expanded else "▶")
+        self.arrow = QLabel("-" if expanded else "+")
         self.arrow.setStyleSheet("color: #A1A1AA; font-size: 10px;")
         layout.addWidget(self.arrow)
 
@@ -446,6 +446,6 @@ class SectionHeader(QWidget):
     def mousePressEvent(self, event: object) -> None:
         """Toggle on click."""
         self._expanded = not self._expanded
-        self.arrow.setText("▼" if self._expanded else "▶")
+        self.arrow.setText("-" if self._expanded else "+")
         self.toggled.emit(self._expanded)
         super().mousePressEvent(event)

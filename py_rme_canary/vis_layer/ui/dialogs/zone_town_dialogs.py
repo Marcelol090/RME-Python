@@ -130,16 +130,16 @@ class ZoneListDialog(QDialog):
         action_layout = QHBoxLayout()
         action_layout.setSpacing(8)
 
-        self.btn_add = QPushButton("➕ New Zone")
+        self.btn_add = QPushButton("New Zone")
         self.btn_add.clicked.connect(self._on_add)
         action_layout.addWidget(self.btn_add)
 
-        self.btn_edit = QPushButton("✏️ Edit")
+        self.btn_edit = QPushButton("Edit")
         self.btn_edit.setEnabled(False)
         self.btn_edit.clicked.connect(self._on_edit)
         action_layout.addWidget(self.btn_edit)
 
-        self.btn_delete = QPushButton("🗑️ Delete")
+        self.btn_delete = QPushButton("Delete")
         self.btn_delete.setEnabled(False)
         self.btn_delete.clicked.connect(self._on_delete)
         action_layout.addWidget(self.btn_delete)
@@ -451,11 +451,11 @@ class TownListDialog(QDialog):
         action_layout = QHBoxLayout()
         action_layout.setSpacing(8)
 
-        self.btn_add = QPushButton("➕ New Town")
+        self.btn_add = QPushButton("New Town")
         self.btn_add.clicked.connect(self._on_add)
         action_layout.addWidget(self.btn_add)
 
-        self.btn_goto = QPushButton("🚀 Go To Temple")
+        self.btn_goto = QPushButton("Go To Temple")
         self.btn_goto.setEnabled(False)
         self.btn_goto.clicked.connect(self._on_goto_temple)
         action_layout.addWidget(self.btn_goto)
@@ -465,8 +465,8 @@ class TownListDialog(QDialog):
         self.btn_set_temple.clicked.connect(self._on_set_temple)
         action_layout.addWidget(self.btn_set_temple)
 
-        self.btn_delete = QPushButton("🗑️")
-        self.btn_delete.setFixedWidth(40)
+        self.btn_delete = QPushButton("Delete")
+        self.btn_delete.setFixedWidth(72)
         self.btn_delete.setEnabled(False)
         self.btn_delete.clicked.connect(self._on_delete)
         action_layout.addWidget(self.btn_delete)

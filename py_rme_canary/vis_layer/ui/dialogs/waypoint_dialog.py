@@ -92,21 +92,21 @@ class WaypointListDialog(QDialog):
         action_layout = QHBoxLayout()
         action_layout.setSpacing(8)
 
-        self.btn_goto = QPushButton("🚀 Go To")
+        self.btn_goto = QPushButton("Go To")
         self.btn_goto.setEnabled(False)
         self.btn_goto.clicked.connect(self._on_goto)
         action_layout.addWidget(self.btn_goto)
 
-        self.btn_add = QPushButton("➕ Add Here")
+        self.btn_add = QPushButton("Add Here")
         self.btn_add.clicked.connect(self._on_add)
         action_layout.addWidget(self.btn_add)
 
-        self.btn_edit = QPushButton("✏️ Rename")
+        self.btn_edit = QPushButton("Rename")
         self.btn_edit.setEnabled(False)
         self.btn_edit.clicked.connect(self._on_rename)
         action_layout.addWidget(self.btn_edit)
 
-        self.btn_delete = QPushButton("🗑️ Delete")
+        self.btn_delete = QPushButton("Delete")
         self.btn_delete.setEnabled(False)
         self.btn_delete.clicked.connect(self._on_delete)
         action_layout.addWidget(self.btn_delete)

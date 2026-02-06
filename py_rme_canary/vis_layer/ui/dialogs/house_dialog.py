@@ -61,7 +61,7 @@ class HouseCard(QFrame):
         header = QHBoxLayout()
 
         # House icon + name
-        name = QLabel(f"🏠 {self._house.name or 'Unnamed House'}")
+        name = QLabel(f"House: {self._house.name or 'Unnamed House'}")
         name.setStyleSheet("font-weight: 600; color: #E5E5E7; font-size: 13px;")
         header.addWidget(name)
 
@@ -89,13 +89,13 @@ class HouseCard(QFrame):
 
         # Rent
         rent = self._house.rent or 0
-        rent_label = QLabel(f"💰 {rent:,} gold")
+        rent_label = QLabel(f"Rent: {rent:,} gold")
         rent_label.setStyleSheet("color: #F59E0B; font-size: 11px;")
         info.addWidget(rent_label)
 
         # Guildhall indicator
         if getattr(self._house, "guildhall", False):
-            guild_label = QLabel("⚔️ Guildhall")
+            guild_label = QLabel("Guildhall")
             guild_label.setStyleSheet("color: #8B5CF6; font-size: 11px;")
             info.addWidget(guild_label)
 
@@ -105,7 +105,7 @@ class HouseCard(QFrame):
 
         # Entry position
         entry = self._house.entry
-        entry_text = f"📍 Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})" if entry else "📍 Entry: Not set"
+        entry_text = f"Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})" if entry else "Entry: Not set"
 
         entry_label = QLabel(entry_text)
         entry_label.setStyleSheet("color: #52525B; font-size: 10px;")
@@ -214,7 +214,7 @@ class HouseListDialog(QDialog):
         # Header
         header_layout = QHBoxLayout()
 
-        header = QLabel("🏠 Houses")
+        header = QLabel("Houses")
         header.setStyleSheet(
             """
             font-size: 18px;
@@ -234,7 +234,7 @@ class HouseListDialog(QDialog):
 
         # Search
         self.search = QLineEdit()
-        self.search.setPlaceholderText("🔍 Search houses...")
+        self.search.setPlaceholderText("Search houses...")
         self.search.textChanged.connect(self._filter_list)
         layout.addWidget(self.search)
 
@@ -263,11 +263,11 @@ class HouseListDialog(QDialog):
         # Action buttons
         action_layout = QHBoxLayout()
 
-        self.btn_add = QPushButton("➕ New House")
+        self.btn_add = QPushButton("New House")
         self.btn_add.clicked.connect(self._on_add)
         action_layout.addWidget(self.btn_add)
 
-        self.btn_delete = QPushButton("🗑️ Delete")
+        self.btn_delete = QPushButton("Delete")
         self.btn_delete.setEnabled(False)
         self.btn_delete.clicked.connect(self._on_delete)
         action_layout.addWidget(self.btn_delete)

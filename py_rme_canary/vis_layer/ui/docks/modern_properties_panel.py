@@ -95,7 +95,7 @@ class ModernPropertiesPanel(QDockWidget):
         self.spawn_tab = self._create_spawn_tab()
 
         self.tabs.addTab(self.tile_tab, "Tile")
-        self.tabs.addTab(self.item_tab, "📦 Item")
+        self.tabs.addTab(self.item_tab, "Item")
         self.tabs.addTab(self.house_tab, "House")
         self.tabs.addTab(self.spawn_tab, "Spawn")
 

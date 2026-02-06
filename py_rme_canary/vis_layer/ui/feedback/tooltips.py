@@ -27,7 +27,7 @@ class RichTooltip(QWidget):
             title="Terrain Brush",
             description="Paint ground tiles with auto-bordering",
             shortcut="B",
-            icon="🎨"
+            icon="Brush"
         )
         tooltip.show_at(QPoint(100, 100))
     """
@@ -185,7 +185,7 @@ class TooltipManager:
             title="Save Map",
             description="Save the current map to disk",
             shortcut="Ctrl+S",
-            icon="💾"
+            icon="Save"
         )
     """
 
@@ -219,7 +219,7 @@ class TooltipManager:
             title: Tooltip title
             description: Detailed description
             shortcut: Keyboard shortcut text
-            icon: Emoji or text icon
+            icon: Text icon label
             delay_ms: Custom delay (or use default)
         """
         delay = delay_ms if delay_ms is not None else self._delay_ms
@@ -288,8 +288,8 @@ class StatusToast(QWidget):
         layout.setContentsMargins(16, 12, 16, 12)
 
         # Icon based on variant
-        icons = {"info": "ℹ️", "success": "✅", "warning": "⚠️", "error": "❌"}
-        icon = icons.get(self._variant, "ℹ️")
+        icons = {"info": "i", "success": "ok", "warning": "!", "error": "x"}
+        icon = icons.get(self._variant, "i")
 
         icon_label = QLabel(icon)
         icon_label.setStyleSheet("font-size: 16px;")

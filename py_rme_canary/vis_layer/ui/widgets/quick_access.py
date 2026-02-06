@@ -28,7 +28,7 @@ class FavoriteItem:
 
     item_id: int
     name: str
-    icon: str = "🖌️"
+    icon: str = "BR"
     category: str = ""
 
 
@@ -98,7 +98,7 @@ class FavoriteButton(QPushButton):
         """
         )
 
-        remove_action = menu.addAction("🗑️ Remove from favorites")
+        remove_action = menu.addAction("Remove from favorites")
 
         action = menu.exec(event.globalPos())
         if action == remove_action:
@@ -130,7 +130,7 @@ class QuickAccessBar(QFrame):
         layout.setSpacing(4)
 
         # Label
-        label = QLabel("⭐")
+        label = QLabel("Fav")
         label.setToolTip("Favorites")
         label.setStyleSheet("color: #F59E0B;")
         layout.addWidget(label)

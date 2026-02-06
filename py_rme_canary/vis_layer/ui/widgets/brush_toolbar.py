@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -19,6 +19,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 if TYPE_CHECKING:
     pass
@@ -101,10 +103,11 @@ class BrushToolbar(QFrame):
         layout.addWidget(sep2)
 
         # Automagic toggle
-        self.btn_automagic = QPushButton("✨")
+        self.btn_automagic = QPushButton("Auto")
         self.btn_automagic.setFixedSize(32, 28)
         self.btn_automagic.setCheckable(True)
         self.btn_automagic.setChecked(True)
+        self.btn_automagic.setIcon(load_icon("tool_automagic"))
         self.btn_automagic.setToolTip("Automagic borders (A)")
         self.btn_automagic.clicked.connect(self._on_automagic_clicked)
         layout.addWidget(self.btn_automagic)
@@ -195,12 +198,12 @@ class ToolSelector(QFrame):
     tool_changed = pyqtSignal(str)
 
     TOOLS = [
-        ("pointer", "👆", "Select/Move (V)"),
-        ("pencil", "✏️", "Draw (B)"),
-        ("eraser", "🧹", "Erase (E)"),
-        ("fill", "🪣", "Fill (G)"),
-        ("select", "🔲", "Rectangle Select (M)"),
-        ("picker", "💉", "Color Picker (I)"),
+        ("pointer", "tool_pointer", "Select/Move (V)"),
+        ("pencil", "tool_pencil", "Draw (B)"),
+        ("eraser", "tool_eraser", "Erase (E)"),
+        ("fill", "tool_fill", "Fill (G)"),
+        ("select", "tool_select", "Rectangle Select (M)"),
+        ("picker", "tool_picker", "Color Picker (I)"),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -219,12 +222,18 @@ class ToolSelector(QFrame):
 
         self._tool_buttons = {}
 
-        for tool_id, icon, tooltip in self.TOOLS:
-            btn = QPushButton(icon)
+        for tool_id, icon_name, tooltip in self.TOOLS:
+            btn = QPushButton()
             btn.setFixedSize(36, 36)
             btn.setCheckable(True)
             btn.setToolTip(tooltip)
             btn.setProperty("toolId", tool_id)
+            icon = load_icon(icon_name)
+            if not icon.isNull():
+                btn.setIcon(icon)
+                btn.setIconSize(QSize(18, 18))
+            else:
+                btn.setText(tool_id[:1].upper())
             btn.clicked.connect(lambda checked, t=tool_id: self._on_tool_clicked(t))
             layout.addWidget(btn)
             self._tool_buttons[tool_id] = btn
@@ -256,7 +265,7 @@ class ToolSelector(QFrame):
                 background: #363650;
             }
 
-            QPushbutton:checked {
+            QPushButton:checked {
                 background: #8B5CF6;
             }
         """

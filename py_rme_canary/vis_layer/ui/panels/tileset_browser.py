@@ -94,7 +94,7 @@ class CategoryList(QListWidget):
         self.clear()
 
         for cat in categories:
-            icon = cat.icon or "📁"
+            icon = cat.icon or "CAT"
             text = f"{icon} {cat.name}"
             if cat.brush_count > 0:
                 text += f" ({cat.brush_count})"

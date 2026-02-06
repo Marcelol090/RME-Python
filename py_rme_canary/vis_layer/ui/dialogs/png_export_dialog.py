@@ -194,7 +194,7 @@ class PNGExportDialog(QDialog):
         if config.format == "tiled":
             self._memory_label.setText("Mode: Tiled (low memory usage)")
         elif mem_mb > 1000:
-            self._memory_label.setText(f"⚠️ Est. memory: {mem_mb:.0f} MB - consider tiled export")
+            self._memory_label.setText(f"Warning: est. memory {mem_mb:.0f} MB - consider tiled export")
         else:
             self._memory_label.setText(f"Est. memory: {mem_mb:.1f} MB")
 

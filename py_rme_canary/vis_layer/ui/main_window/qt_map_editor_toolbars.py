@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, cast
 
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
 
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -64,16 +64,7 @@ class QtMapEditorToolbarsMixin:
         editor.size_spin.setValue(0)
         editor.size_spin.valueChanged.connect(lambda _v: editor._set_brush_size(editor.size_spin.value()))
 
-        # Populate Toolbars submenu now that toolbars exist.
         m_toolbars = getattr(editor, "_menu_toolbars", None)
-        if m_toolbars is not None:
-            try:
-                m_toolbars.addAction(editor.tb_standard.toggleViewAction())
-                m_toolbars.addAction(editor.tb_brushes.toggleViewAction())
-                m_toolbars.addAction(editor.tb_position.toggleViewAction())
-                m_toolbars.addAction(editor.tb_sizes.toggleViewAction())
-            except Exception:
-                pass
 
         editor.tb_sizes.addWidget(editor.size_spin)
 
@@ -111,6 +102,13 @@ class QtMapEditorToolbarsMixin:
                 editor.act_automagic.blockSignals(False)
 
             editor.automagic_cb.stateChanged.connect(_sync_act_from_cb)
+
+            def _sync_cb_from_act(checked: bool) -> None:
+                editor.automagic_cb.blockSignals(True)
+                editor.automagic_cb.setChecked(bool(checked))
+                editor.automagic_cb.blockSignals(False)
+
+            editor.act_automagic.toggled.connect(_sync_cb_from_act)
         except Exception:
             pass
         editor.tb_sizes.addSeparator()
@@ -165,9 +163,7 @@ class QtMapEditorToolbarsMixin:
         editor.z_spin.valueChanged.connect(lambda _v: editor._set_z(editor.z_spin.value()))
         editor.tb_position.addWidget(editor.z_spin)
         go_btn = QPushButton("Go", editor)
-        go_icon = os.path.join("icons", "position_go.png")
-        if os.path.exists(go_icon):
-            go_btn.setIcon(QIcon(go_icon))
+        go_btn.setIcon(load_icon("action_go_to"))
         go_btn.clicked.connect(editor._goto_position_from_fields)
         editor.tb_position.addWidget(go_btn)
 
@@ -189,29 +185,36 @@ class QtMapEditorToolbarsMixin:
         editor.tb_indicators.setMovable(False)
         editor.addToolBar(editor.tb_indicators)
 
-        hooks_path = os.path.join("icons", "toolbar_hooks.png")
-        pickup_path = os.path.join("icons", "toolbar_pickupables.png")
-        move_path = os.path.join("icons", "toolbar_moveables.png")
-
-        editor.act_tb_hooks = QAction(
-            QIcon(hooks_path) if os.path.exists(hooks_path) else QIcon(), "Wall Hooks", editor
-        )
+        editor.act_tb_hooks = QAction(load_icon("indicator_hooks"), "Wall Hooks", editor)
         editor.act_tb_hooks.setCheckable(True)
-        editor.act_tb_pickupables = QAction(
-            QIcon(pickup_path) if os.path.exists(pickup_path) else QIcon(), "Pickupables", editor
-        )
+        editor.act_tb_pickupables = QAction(load_icon("indicator_pickupables"), "Pickupables", editor)
         editor.act_tb_pickupables.setCheckable(True)
-        editor.act_tb_moveables = QAction(
-            QIcon(move_path) if os.path.exists(move_path) else QIcon(), "Moveables", editor
-        )
+        editor.act_tb_moveables = QAction(load_icon("indicator_moveables"), "Moveables", editor)
         editor.act_tb_moveables.setCheckable(True)
-        editor.act_tb_avoidables = QAction("Avoidables", editor)
+        editor.act_tb_avoidables = QAction(load_icon("indicator_avoidables"), "Avoidables", editor)
         editor.act_tb_avoidables.setCheckable(True)
 
-        editor.act_tb_hooks.toggled.connect(editor.act_show_wall_hooks.setChecked)
-        editor.act_tb_pickupables.toggled.connect(editor.act_show_pickupables.setChecked)
-        editor.act_tb_moveables.toggled.connect(editor.act_show_moveables.setChecked)
-        editor.act_tb_avoidables.toggled.connect(editor.act_show_avoidables.setChecked)
+        def _sync_toggle(source: QAction, target: QAction) -> None:
+            def _apply(checked: bool) -> None:
+                target.blockSignals(True)
+                target.setChecked(bool(checked))
+                target.blockSignals(False)
+
+            source.toggled.connect(_apply)
+
+        _sync_toggle(editor.act_tb_hooks, editor.act_show_wall_hooks)
+        _sync_toggle(editor.act_show_wall_hooks, editor.act_tb_hooks)
+        _sync_toggle(editor.act_tb_pickupables, editor.act_show_pickupables)
+        _sync_toggle(editor.act_show_pickupables, editor.act_tb_pickupables)
+        _sync_toggle(editor.act_tb_moveables, editor.act_show_moveables)
+        _sync_toggle(editor.act_show_moveables, editor.act_tb_moveables)
+        _sync_toggle(editor.act_tb_avoidables, editor.act_show_avoidables)
+        _sync_toggle(editor.act_show_avoidables, editor.act_tb_avoidables)
+
+        editor.act_tb_hooks.setChecked(bool(editor.act_show_wall_hooks.isChecked()))
+        editor.act_tb_pickupables.setChecked(bool(editor.act_show_pickupables.isChecked()))
+        editor.act_tb_moveables.setChecked(bool(editor.act_show_moveables.isChecked()))
+        editor.act_tb_avoidables.setChecked(bool(editor.act_show_avoidables.isChecked()))
 
         editor.tb_indicators.addAction(editor.act_tb_hooks)
         editor.tb_indicators.addAction(editor.act_tb_pickupables)
@@ -236,6 +239,17 @@ class QtMapEditorToolbarsMixin:
         editor.act_view_toolbar_indicators.setCheckable(True)
         editor.act_view_toolbar_indicators.setChecked(True)
 
+        def _bind_toolbar_visibility(action: QAction, toolbar: QToolBar) -> None:
+            action.toggled.connect(lambda visible: toolbar.setVisible(bool(visible)))
+
+            def _update_action(visible: bool) -> None:
+                action.blockSignals(True)
+                action.setChecked(bool(visible))
+                action.blockSignals(False)
+
+            toolbar.visibilityChanged.connect(_update_action)
+            action.setChecked(bool(toolbar.isVisible()))
+
         if m_toolbars is not None:
             m_toolbars.addAction(editor.act_view_toolbar_brushes)
             m_toolbars.addAction(editor.act_view_toolbar_position)
@@ -243,11 +257,11 @@ class QtMapEditorToolbarsMixin:
             m_toolbars.addAction(editor.act_view_toolbar_standard)
             m_toolbars.addAction(editor.act_view_toolbar_indicators)
 
-        editor.act_view_toolbar_brushes.toggled.connect(lambda v: editor.tb_brushes.setVisible(bool(v)))
-        editor.act_view_toolbar_position.toggled.connect(lambda v: editor.tb_position.setVisible(bool(v)))
-        editor.act_view_toolbar_sizes.toggled.connect(lambda v: editor.tb_sizes.setVisible(bool(v)))
-        editor.act_view_toolbar_standard.toggled.connect(lambda v: editor.tb_standard.setVisible(bool(v)))
-        editor.act_view_toolbar_indicators.toggled.connect(lambda v: editor.tb_indicators.setVisible(bool(v)))
+        _bind_toolbar_visibility(editor.act_view_toolbar_brushes, editor.tb_brushes)
+        _bind_toolbar_visibility(editor.act_view_toolbar_position, editor.tb_position)
+        _bind_toolbar_visibility(editor.act_view_toolbar_sizes, editor.tb_sizes)
+        _bind_toolbar_visibility(editor.act_view_toolbar_standard, editor.tb_standard)
+        _bind_toolbar_visibility(editor.act_view_toolbar_indicators, editor.tb_indicators)
 
         # Keep mirror UI in sync with initial state
         editor._sync_mirror_actions()

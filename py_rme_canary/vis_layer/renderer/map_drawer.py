@@ -168,6 +168,22 @@ class MapDrawer:
         self._end_x = self._start_x + self.viewport.tiles_wide
         self._end_y = self._start_y + self.viewport.tiles_high
 
+        # Viewport culling: clamp tile iteration bounds to map dimensions.
+        header = getattr(self.game_map, "header", None) if self.game_map is not None else None
+        if header is not None:
+            width = max(0, int(getattr(header, "width", 0)))
+            height = max(0, int(getattr(header, "height", 0)))
+            if width <= 0 or height <= 0:
+                self._start_x = 0
+                self._end_x = 0
+                self._start_y = 0
+                self._end_y = 0
+            else:
+                self._start_x = min(max(0, int(self._start_x)), width)
+                self._start_y = min(max(0, int(self._start_y)), height)
+                self._end_x = min(max(self._start_x, int(self._end_x)), width)
+                self._end_y = min(max(self._start_y, int(self._end_y)), height)
+
         # Floor range based on show_all_floors
         if self.options.show_all_floors:
             if self._floor < 8:
@@ -291,6 +307,9 @@ class MapDrawer:
         if self.game_map is None:
             return
 
+        if self._start_x >= self._end_x or self._start_y >= self._end_y:
+            return
+
         tile_size = self.viewport.tile_px
         for z in range(self._start_z, self._end_z - 1, -1):
             for y in range(self._start_y, self._end_y):
@@ -394,7 +413,7 @@ class MapDrawer:
                 continue
             if int(z) != int(self._floor):
                 continue
-            if not (self._start_x <= x <= self._end_x and self._start_y <= y <= self._end_y):
+            if not (self._start_x <= x < self._end_x and self._start_y <= y < self._end_y):
                 continue
             px = (int(x) - int(self._start_x)) * int(tile_size)
             py = (int(y) - int(self._start_y)) * int(tile_size)
@@ -457,7 +476,7 @@ class MapDrawer:
         if not (self._start_z <= hz <= self._end_z) and not (self._end_z <= hz <= self._start_z):
             return
 
-        if not (self._start_x <= hx <= self._end_x and self._start_y <= hy <= self._end_y):
+        if not (self._start_x <= hx < self._end_x and self._start_y <= hy < self._end_y):
             return
 
         tile_size = self.viewport.tile_px

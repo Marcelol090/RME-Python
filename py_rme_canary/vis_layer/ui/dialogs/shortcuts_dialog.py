@@ -114,14 +114,14 @@ class KeyboardShortcutsDialog(QDialog):
     """Dialog showing all keyboard shortcuts."""
 
     SHORTCUTS = {
-        "📁 File": [
+        "File": [
             ("Ctrl+N", "New map"),
             ("Ctrl+O", "Open map"),
             ("Ctrl+S", "Save map"),
             ("Ctrl+Shift+S", "Save as"),
             ("Ctrl+W", "Close map"),
         ],
-        "✏️ Edit": [
+        "Edit": [
             ("Ctrl+Z", "Undo"),
             ("Ctrl+Y", "Redo"),
             ("Ctrl+C", "Copy"),
@@ -131,7 +131,7 @@ class KeyboardShortcutsDialog(QDialog):
             ("Ctrl+A", "Select all"),
             ("Escape", "Deselect / Cancel"),
         ],
-        "👀 View": [
+        "View": [
             ("Ctrl++", "Zoom in"),
             ("Ctrl+-", "Zoom out"),
             ("Ctrl+0", "Reset zoom"),
@@ -140,7 +140,7 @@ class KeyboardShortcutsDialog(QDialog):
             ("F3", "Toggle grid"),
             ("F5", "Refresh view"),
         ],
-        "🖌️ Tools": [
+        "Tools": [
             ("V", "Selection tool"),
             ("B", "Brush / Draw"),
             ("E", "Eraser"),
@@ -180,7 +180,7 @@ class KeyboardShortcutsDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Header
-        header = QLabel("⌨️ Keyboard Shortcuts")
+        header = QLabel("Keyboard Shortcuts")
         header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
         layout.addWidget(header)
 

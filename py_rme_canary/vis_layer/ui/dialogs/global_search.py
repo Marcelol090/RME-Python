@@ -291,7 +291,7 @@ class GlobalSearchDialog(QDialog):
         search_row = QHBoxLayout()
 
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Search for items, houses, spawns, waypoints...")
+        self.search_input.setPlaceholderText("Search for items, houses, spawns, waypoints...")
         self.search_input.returnPressed.connect(self._do_search)
         search_row.addWidget(self.search_input)
 
@@ -348,7 +348,7 @@ class GlobalSearchDialog(QDialog):
         # Buttons
         button_row = QHBoxLayout()
 
-        self.btn_goto = QPushButton("🚀 Go To")
+        self.btn_goto = QPushButton("Go To")
         self.btn_goto.setEnabled(False)
         self.btn_goto.clicked.connect(self._on_goto)
         button_row.addWidget(self.btn_goto)
@@ -492,11 +492,11 @@ class GlobalSearchDialog(QDialog):
 
         # Create list item
         icon = {
-            SearchType.ITEM: "📦",
-            SearchType.HOUSE: "🏠",
-            SearchType.SPAWN: "👹",
-            SearchType.WAYPOINT: "📍",
-            SearchType.ZONE: "🗺️",
+            SearchType.ITEM: "ITM",
+            SearchType.HOUSE: "HSE",
+            SearchType.SPAWN: "SPN",
+            SearchType.WAYPOINT: "WPT",
+            SearchType.ZONE: "ZON",
         }.get(result.result_type, "•")
 
         text = f"{icon} {result.name}"

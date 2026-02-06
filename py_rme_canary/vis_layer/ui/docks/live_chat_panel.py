@@ -182,7 +182,7 @@ class UserListWidget(QFrame):
             # Name (with local indicator)
             name = user.name
             if user.is_local:
-                name = f"★ {name}"
+                name = f"[Local] {name}"
             name_item = QTableWidgetItem(name)
             self.table.setItem(row, 2, name_item)
 
@@ -262,7 +262,7 @@ class ChatLogWidget(QTextEdit):
 
         # Build HTML
         if msg.is_system:
-            html_line = f'<span style="color: #A1A1AA;">[{time_str}] ⚙ {html.escape(msg.text)}</span>'
+            html_line = f'<span style="color: #A1A1AA;">[{time_str}] [system] {html.escape(msg.text)}</span>'
         else:
             r, g, b = msg.color
             name_color = f"rgb({r},{g},{b})"

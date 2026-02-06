@@ -278,7 +278,7 @@ class FindItemDialog(QDialog):
         self.search_spin.setMinimumWidth(120)
         search_layout.addWidget(self.search_spin)
 
-        self.btn_search = QPushButton("🔍 Search")
+        self.btn_search = QPushButton("Search")
         self.btn_search.clicked.connect(self._do_search)
         search_layout.addWidget(self.btn_search)
 

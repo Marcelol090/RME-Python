@@ -339,7 +339,7 @@ class FindItemDialog(QDialog):
     def _on_search(self) -> None:
         """Execute search based on current filters."""
         if not self.game_map:
-            self.results_label.setText("⚠️ No map loaded")
+            self.results_label.setText("No map loaded")
             return
 
         # Build filters

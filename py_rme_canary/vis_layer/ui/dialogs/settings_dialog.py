@@ -478,9 +478,9 @@ class SettingsDialog(QDialog):
 
         # Add default categories
         self._add_category("General", "general", GeneralSettings())
-        self._add_category("✏️ Editor", "editor", EditorSettings())
-        self._add_category("🎨 Appearance", "appearance", AppearanceSettings())
-        self._add_category("🚀 Performance", "performance", PerformanceSettings())
+        self._add_category("Editor", "editor", EditorSettings())
+        self._add_category("Appearance", "appearance", AppearanceSettings())
+        self._add_category("Performance", "performance", PerformanceSettings())
 
         # Select first
         self.category_list.setCurrentRow(0)

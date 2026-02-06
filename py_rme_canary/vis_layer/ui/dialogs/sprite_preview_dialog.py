@@ -374,22 +374,22 @@ class SpritePreviewDialog(QDialog):
         anim_layout = QHBoxLayout()
 
         # Play/Pause
-        self.play_btn = QPushButton("▶")
-        self.play_btn.setFixedSize(32, 32)
+        self.play_btn = QPushButton("Play")
+        self.play_btn.setFixedSize(48, 32)
         self.play_btn.clicked.connect(self._toggle_play)
         self.play_btn.setStyleSheet(self._button_style())
         anim_layout.addWidget(self.play_btn)
 
         # Prev frame
-        prev_btn = QPushButton("◀|")
-        prev_btn.setFixedSize(32, 32)
+        prev_btn = QPushButton("Prev")
+        prev_btn.setFixedSize(48, 32)
         prev_btn.clicked.connect(self.canvas.prev_frame)
         prev_btn.setStyleSheet(self._button_style())
         anim_layout.addWidget(prev_btn)
 
         # Next frame
-        next_btn = QPushButton("|▶")
-        next_btn.setFixedSize(32, 32)
+        next_btn = QPushButton("Next")
+        next_btn.setFixedSize(48, 32)
         next_btn.clicked.connect(self.canvas.next_frame_manual)
         next_btn.setStyleSheet(self._button_style())
         anim_layout.addWidget(next_btn)
@@ -522,7 +522,7 @@ class SpritePreviewDialog(QDialog):
         """Toggle animation playback."""
         playing = not self.canvas.playing
         self.canvas.playing = playing
-        self.play_btn.setText("⏸" if playing else "▶")
+        self.play_btn.setText("Pause" if playing else "Play")
 
     def _on_frame_changed(self, frame: int) -> None:
         """Handle frame change from canvas."""

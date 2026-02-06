@@ -133,11 +133,11 @@ class ItemFindReplaceDialog(QDialog):
         # Buttons
         button_layout = QHBoxLayout()
 
-        self.btn_find = QPushButton("🔍 Find All")
+        self.btn_find = QPushButton("Find All")
         self.btn_find.clicked.connect(self._do_find)
         button_layout.addWidget(self.btn_find)
 
-        self.btn_replace_all = QPushButton("🔄 Replace All")
+        self.btn_replace_all = QPushButton("Replace All")
         self.btn_replace_all.setEnabled(False)
         self.btn_replace_all.clicked.connect(self._do_replace_all)
         button_layout.addWidget(self.btn_replace_all)
@@ -229,12 +229,12 @@ class ItemFindReplaceDialog(QDialog):
     def _do_find(self) -> None:
         """Find all matching items."""
         if not self._game_map:
-            self.results_label.setText("❌ No map loaded")
+            self.results_label.setText("No map loaded")
             return
 
         find_id = self.find_id.value()
         if find_id == 0:
-            self.results_label.setText("❌ Please specify an item ID")
+            self.results_label.setText("Please specify an item ID")
             return
 
         self.progress.show()
@@ -269,10 +269,10 @@ class ItemFindReplaceDialog(QDialog):
         self.progress.hide()
 
         if count > 0:
-            self.results_label.setText(f"✅ Found {count} match{'es' if count != 1 else ''}")
+            self.results_label.setText(f"Found {count} match{'es' if count != 1 else ''}")
             self.btn_replace_all.setEnabled(True)
         else:
-            self.results_label.setText("❌ No matches found")
+            self.results_label.setText("No matches found")
             self.btn_replace_all.setEnabled(False)
 
     def _do_replace_all(self) -> None:
@@ -327,6 +327,6 @@ class ItemFindReplaceDialog(QDialog):
                         break
 
         self.progress.hide()
-        self.results_label.setText(f"✅ Replaced {replaced} item{'s' if replaced != 1 else ''}")
+        self.results_label.setText(f"Replaced {replaced} item{'s' if replaced != 1 else ''}")
         self._match_count = 0
         self.btn_replace_all.setEnabled(False)

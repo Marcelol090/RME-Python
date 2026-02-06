@@ -354,7 +354,7 @@ class StatisticsGraphsDialog(QDialog):
 
         # Header
         header = QHBoxLayout()
-        title = QLabel("📊 Map Statistics Visualization")
+        title = QLabel("Map Statistics Visualization")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: #E5E5E7;")
         header.addWidget(title)
         header.addStretch()
@@ -380,7 +380,7 @@ class StatisticsGraphsDialog(QDialog):
         # Buttons
         button_layout = QHBoxLayout()
 
-        refresh_btn = QPushButton("🔄 Refresh")
+        refresh_btn = QPushButton("Refresh")
         refresh_btn.clicked.connect(self._refresh_all)
         button_layout.addWidget(refresh_btn)
 

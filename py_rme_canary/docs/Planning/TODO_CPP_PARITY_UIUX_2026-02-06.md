@@ -85,34 +85,36 @@
   - Critério de aceite: menu exporta `.otmm` válido para mapa de teste.
   - Status (2026-02-06): exportação consolidada para mapa OTMM completo via `core/io/otmm_saver.py` com validação de caminho/erro no fluxo de UI.
 
-- [ ] `P1-UIUX-008` Migrar UI para iconografia própria (sem emojis).
+- [x] `P1-UIUX-008` Migrar UI para iconografia própria (sem emojis).
   - Criar pacote de ícones (`resources/icons`) para ações, ferramentas e categorias.
   - Substituir labels com emoji em menus, dialogs, status widgets e tooltips.
   - Critério de aceite: interface usa ícones consistentes e sem emoji-format icon.
-  - Status parcial (2026-02-06): labels/ações com emoji removidas dos módulos ativos de UI; pendente consolidar pacote dedicado de ícones próprios.
+  - Status (2026-02-06): pacote `vis_layer/ui/resources/icons` criado (SVG próprios), ações/toolbars migradas para `icon_pack.py` e emojis removidos dos módulos ativos de UI.
 
-- [ ] `P1-UX-009` Paridade de Toolbars/Docks e integração moderna.
+- [x] `P1-UX-009` Paridade de Toolbars/Docks e integração moderna.
   - Ajustar builder para expor `menu_file/menu_edit` e ativar ações modernas hoje órfãs.
   - Reforçar toolbar de brushes/indicators com assets reais e estados sincronizados.
   - Critério de aceite: todas ações modernas aparecem no menu correto e executam.
-  - Status parcial (2026-02-06): `menu_file/menu_edit/menu_help` agora são expostos no builder, ativando hooks do Modern UX.
+  - Status (2026-02-06): sincronização bidirecional menu↔toolbar concluída (indicators, visibilidade de toolbars, automagic) com cobertura de integração em `tests/ui/test_toolbar_menu_sync.py`.
 
-- [ ] `P2-QA-010` Endurecimento de qualidade, performance e validação final.
+- [x] `P2-QA-010` Endurecimento de qualidade, performance e validação final.
   - Adicionar testes de integração UI↔session para features críticas.
   - Rodar `quality_lf.sh`, otimizar gargalos de cache/IO das ferramentas de quality.
   - Executar workflows locais equivalentes ao CI e anexar relatório final.
   - Critério de aceite: pipeline verde e tempo de quality reduzido de forma mensurável.
-  - Status parcial (2026-02-06): `quality_lf.sh` executado em dry-run com cache ativo, Jules local validado (`status=ok`) e testes `tests/ui` + `tests/unit` verdes.
+  - Status (2026-02-06): suíte `pytest -q` verde (591 passed), `quality_lf.sh` e `quality.sh` em dry-run concluídos com cache ativo e Jules local `status=ok`; execução otimizada de quality medida em ~296s -> ~172s.
 
 ## Progresso executado (2026-02-06)
 - Menus/actions/handlers implementados para `Preferences`, `Reload Data`, `Export Tilesets`, `Extensions`, `Goto Website`, `Export OTMM`.
 - Menus `Search` e `Selection` adicionados para aproximar a estrutura legada C++.
 - Compatibilidade de workflow Jules corrigida para Python 3.10 (`datetime.UTC` fallback em scripts).
 - Validação local concluída:
-  - `python -m pytest -q py_rme_canary/tests/ui` -> 11 passed
+  - `python -m pytest -q py_rme_canary/tests/ui` -> 16 passed
   - `python -m pytest -q py_rme_canary/tests/unit` -> 394 passed
   - `python -m pytest -q py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> 7 passed
+  - `python -m pytest -q` -> 591 passed
   - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --timeout 900 --jobs 4`
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --skip-tests --skip-libcst --skip-sonarlint --timeout 120 --jobs 4` (cache/escopo otimizado)
   - `bash ./quality.sh --dry-run --skip-tests --skip-libcst --skip-sonarlint`
 
 ## Ordem de execução recomendada

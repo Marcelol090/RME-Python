@@ -121,8 +121,8 @@ class UpdateDialog(QDialog):
         # Header
         header_layout = QHBoxLayout()
 
-        icon = QLabel("🔄")
-        icon.setStyleSheet("font-size: 32px;")
+        icon = QLabel("UPD")
+        icon.setStyleSheet("font-size: 20px; font-weight: 700; color: #8B5CF6;")
         header_layout.addWidget(icon)
 
         title_layout = QVBoxLayout()

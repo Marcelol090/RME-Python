@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
-from PyQt6.QtGui import QAction, QActionGroup, QIcon, QKeySequence
+from PyQt6.QtGui import QAction, QActionGroup, QKeySequence
 
 from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
 from py_rme_canary.vis_layer.ui.main_window import find_item, live_connect
@@ -15,13 +14,10 @@ from py_rme_canary.vis_layer.ui.main_window.menubar.mirror import tools as mirro
 from py_rme_canary.vis_layer.ui.main_window.menubar.mode import tools as mode_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.view import tools as view_tools
 from py_rme_canary.vis_layer.ui.main_window.menubar.window import tools as window_tools
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
-
-
-def _icon_if_exists(path: str) -> QIcon:
-    return QIcon(path) if os.path.exists(path) else QIcon()
 
 
 def build_actions(editor: QtMapEditor) -> None:
@@ -31,10 +27,10 @@ def build_actions(editor: QtMapEditor) -> None:
     """
 
     # File
-    editor.act_new = QAction("New", editor)
-    editor.act_open = QAction("Open…", editor)
-    editor.act_save = QAction("Save", editor)
-    editor.act_save_as = QAction("Save As…", editor)
+    editor.act_new = QAction(load_icon("action_new"), "New", editor)
+    editor.act_open = QAction(load_icon("action_open"), "Open…", editor)
+    editor.act_save = QAction(load_icon("action_save"), "Save", editor)
+    editor.act_save_as = QAction(load_icon("action_save_as"), "Save As…", editor)
     editor.act_exit = QAction("Exit", editor)
     editor.act_import_monsters_npcs = QAction("Import Monsters/NPC...", editor)
     editor.act_import_monster_folder = QAction("Import Monster Folder...", editor)
@@ -88,8 +84,8 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_check_uid.triggered.connect(lambda _c=False: edit_tools.check_uid(editor))
 
     # Edit
-    editor.act_undo = QAction("Undo", editor)
-    editor.act_redo = QAction("Redo", editor)
+    editor.act_undo = QAction(load_icon("action_undo"), "Undo", editor)
+    editor.act_redo = QAction(load_icon("action_redo"), "Redo", editor)
     editor.act_undo.setShortcut(QKeySequence.StandardKey.Undo)
     editor.act_redo.setShortcut(QKeySequence.StandardKey.Redo)
     editor.act_undo.triggered.connect(lambda _c=False: edit_tools.undo(editor))
@@ -99,12 +95,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_cancel.setShortcut(QKeySequence("Esc"))
     editor.act_cancel.triggered.connect(lambda _c=False: edit_tools.cancel(editor))
 
-    editor.act_copy = QAction(_icon_if_exists(os.path.join("icons", "mini_copy.png")), "Copy", editor)
-    editor.act_cut = QAction(_icon_if_exists(os.path.join("icons", "mini_cut.png")), "Cut", editor)
-    editor.act_paste = QAction(_icon_if_exists(os.path.join("icons", "mini_paste.png")), "Paste", editor)
-    editor.act_delete_selection = QAction(
-        _icon_if_exists(os.path.join("icons", "mini_delete.png")), "Delete Selection", editor
-    )
+    editor.act_copy = QAction(load_icon("action_copy"), "Copy", editor)
+    editor.act_cut = QAction(load_icon("action_cut"), "Cut", editor)
+    editor.act_paste = QAction(load_icon("action_paste"), "Paste", editor)
+    editor.act_delete_selection = QAction(load_icon("action_delete"), "Delete Selection", editor)
 
     editor.act_copy.setShortcut(QKeySequence.StandardKey.Copy)
     editor.act_cut.setShortcut(QKeySequence.StandardKey.Cut)
@@ -139,9 +133,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_duplicate_selection.setShortcut(QKeySequence("Ctrl+D"))
     editor.act_duplicate_selection.triggered.connect(lambda _c=False: edit_tools.duplicate_selection(editor))
 
-    editor.act_clear_selection = QAction(
-        _icon_if_exists(os.path.join("icons", "mini_unselect.png")), "Clear Selection", editor
-    )
+    editor.act_clear_selection = QAction(load_icon("action_clear_selection"), "Clear Selection", editor)
     editor.act_clear_selection.setShortcut(QKeySequence("Esc"))
     editor.act_clear_selection.triggered.connect(lambda _c=False: edit_tools.escape_pressed(editor))
 
@@ -176,7 +168,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_symmetry_horizontal.setShortcut(QKeySequence("Ctrl+Shift+H"))
     editor.act_symmetry_horizontal.toggled.connect(lambda v: edit_tools.toggle_symmetry_horizontal(editor, v))
 
-    editor.act_fill = QAction(_icon_if_exists(os.path.join("icons", "mini_fill.png")), "Fill", editor)
+    editor.act_fill = QAction(load_icon("action_fill"), "Fill", editor)
     editor.act_fill.setShortcut(QKeySequence("Ctrl+Shift+D"))
     editor.act_fill.triggered.connect(lambda _c=False: edit_tools.arm_fill(editor))
 
@@ -194,9 +186,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_merge_paste.triggered.connect(lambda _c=False: edit_tools.apply_ui_state_to_session(editor))
     editor.act_borderize_paste.triggered.connect(lambda _c=False: edit_tools.apply_ui_state_to_session(editor))
 
-    editor.act_selection_mode = QAction(
-        _icon_if_exists(os.path.join("icons", "mini_select.png")), "Selection Mode", editor
-    )
+    editor.act_selection_mode = QAction(load_icon("action_select"), "Selection Mode", editor)
     editor.act_selection_mode.setCheckable(True)
     editor.act_selection_mode.triggered.connect(lambda _c=False: mode_tools.toggle_selection_mode(editor))
 

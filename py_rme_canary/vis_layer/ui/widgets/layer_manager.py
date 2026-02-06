@@ -164,14 +164,14 @@ class LayerManager(QFrame):
     layer_opacity_changed = pyqtSignal(str, float)
 
     DEFAULT_LAYERS = [
-        Layer("ground", "Ground", "🟫"),
-        Layer("items", "Items", "📦"),
+        Layer("ground", "Ground", "GR"),
+        Layer("items", "Items", "IT"),
         Layer("creatures", "Creatures", "CR"),
         Layer("houses", "Houses", "HS"),
         Layer("zones", "Zones", "ZN"),
         Layer("waypoints", "Waypoints", "WP"),
-        Layer("spawns", "Spawns", "⭕"),
-        Layer("grid", "Grid", "📐", visible=True, opacity=0.5),
+        Layer("spawns", "Spawns", "SP"),
+        Layer("grid", "Grid", "GD", visible=True, opacity=0.5),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -192,7 +192,7 @@ class LayerManager(QFrame):
         # Header
         header = QHBoxLayout()
 
-        title = QLabel("📚 Layers")
+        title = QLabel("Layers")
         title.setStyleSheet("font-size: 13px; font-weight: 600; color: #E5E5E7;")
         header.addWidget(title)
 
@@ -200,14 +200,14 @@ class LayerManager(QFrame):
 
         # Show all button
         btn_show_all = QPushButton("Show")
-        btn_show_all.setFixedSize(24, 24)
+        btn_show_all.setFixedSize(44, 24)
         btn_show_all.setToolTip("Show all layers")
         btn_show_all.clicked.connect(self._show_all)
         header.addWidget(btn_show_all)
 
         # Hide all button
-        btn_hide_all = QPushButton("🙈")
-        btn_hide_all.setFixedSize(24, 24)
+        btn_hide_all = QPushButton("Hide")
+        btn_hide_all.setFixedSize(44, 24)
         btn_hide_all.setToolTip("Hide all layers")
         btn_hide_all.clicked.connect(self._hide_all)
         header.addWidget(btn_hide_all)

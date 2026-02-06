@@ -320,8 +320,8 @@ class AboutDialog(QDialog):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Logo/Icon placeholder
-        icon = QLabel("🗺️")
-        icon.setStyleSheet("font-size: 48px;")
+        icon = QLabel("RME")
+        icon.setStyleSheet("font-size: 28px; font-weight: 700; color: #8B5CF6;")
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(icon)
 
