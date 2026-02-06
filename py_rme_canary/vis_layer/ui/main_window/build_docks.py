@@ -23,6 +23,13 @@ def build_docks(editor: QtMapEditor) -> None:
     # editor.brush_filter and editor.brush_list are not directly exposed on ModernPaletteDock
     # We might need to mock them if tests fail, but for now we follow the Modern UX plan.
 
+    # Friends Dock
+    from py_rme_canary.vis_layer.ui.docks.friends import FriendsDock
+    editor.dock_friends = FriendsDock(editor.friends_client, editor)
+    editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_friends)
+    editor.dock_friends.hide() # Hidden by default
+    # Note: connect to action happens in build_actions or via sync_dock_action if action exists
+
     # Minimap dock
     editor.dock_minimap = QDockWidget("Minimap", editor)
     editor.dock_minimap.setAllowedAreas(
@@ -84,3 +91,10 @@ def build_docks(editor: QtMapEditor) -> None:
 
     asset_dock.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_show_preview, v))
     asset_dock.setVisible(bool(getattr(editor, "show_preview", True)))
+
+    # We delay connecting friends action until actions are built, but actions build calls this?
+    # No, editor calls build_actions THEN build_docks.
+    # So we can connect friends dock here if the action exists.
+    if hasattr(editor, "act_window_friends"):
+        editor.dock_friends.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_window_friends, v))
+        editor.dock_friends.setVisible(editor.act_window_friends.isChecked())

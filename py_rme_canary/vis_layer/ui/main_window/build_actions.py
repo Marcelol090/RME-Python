@@ -555,6 +555,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_window_live_log.setCheckable(True)
     editor.act_window_live_log.toggled.connect(lambda v: window_tools.toggle_live_log_dock(editor, v))
 
+    editor.act_window_friends = QAction("Friends", editor)
+    editor.act_window_friends.setCheckable(True)
+    editor.act_window_friends.toggled.connect(lambda v: window_tools.toggle_friends_dock(editor, v))
+
     # Assets
     editor.act_set_assets_dir = QAction("Set Assets Directory…", editor)
     editor.act_set_assets_dir.triggered.connect(lambda _c=False: assets_tools.choose_assets_dir(editor))
