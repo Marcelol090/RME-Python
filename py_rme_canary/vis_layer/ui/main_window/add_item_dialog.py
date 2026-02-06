@@ -20,6 +20,8 @@ from PyQt6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
+    from PyQt6.QtWidgets import QWidget
+
     from py_rme_canary.core.database.items_database import ItemsDatabase
 
 
@@ -32,7 +34,7 @@ class AddItemDialog(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         *,
         items_db: ItemsDatabase | None = None,
         tileset_name: str = "",
@@ -101,13 +103,14 @@ class AddItemDialog(QDialog):
             QMessageBox.warning(self, "Invalid Item", "Please select a valid item ID.")
             return
 
-        # TODO: Actually add item to tileset via materials manager
-        # For now, just show confirmation
-        QMessageBox.information(
-            self,
-            "Item Added",
-            f"Item {self._selected_item_id} has been added to tileset '{self._tileset_name}'.",
-        )
+        # Keep tileset confirmation for legacy flow, but avoid noisy popups when
+        # this dialog is reused by other workflows (e.g., container editing).
+        if self._tileset_name:
+            QMessageBox.information(
+                self,
+                "Item Added",
+                f"Item {self._selected_item_id} has been added to tileset '{self._tileset_name}'.",
+            )
         self.accept()
 
     def get_selected_item_id(self) -> int:

@@ -114,6 +114,14 @@ class FindEntityDialog(QDialog):
         layout.addWidget(self._tabs)
         layout.addWidget(buttons)
 
+    def set_mode(self, mode: str) -> None:
+        """Set current search tab by mode name."""
+        normalized = str(mode).strip().lower()
+        index_by_mode = {"item": 0, "creature": 1, "house": 2}
+        idx = index_by_mode.get(normalized)
+        if idx is not None:
+            self._tabs.setCurrentIndex(idx)
+
     def result_value(self) -> FindEntityResult:
         idx = self._tabs.currentIndex()
         title = self._tabs.tabText(idx)

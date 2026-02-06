@@ -6,7 +6,6 @@ Provides UI for editing container item properties.
 
 from __future__ import annotations
 
-import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import (
@@ -21,8 +20,13 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from py_rme_canary.core.data.item import Item
+
+from .add_item_dialog import AddItemDialog
+
 if TYPE_CHECKING:
-    from py_rme_canary.core.data.item import Item
+    from PyQt6.QtWidgets import QWidget
+
     from py_rme_canary.core.database.items_database import ItemsDatabase
 
 
@@ -38,7 +42,7 @@ class ContainerPropertiesDialog(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         *,
         container_item: Item | None = None,
         items_db: ItemsDatabase | None = None,
@@ -50,6 +54,7 @@ class ContainerPropertiesDialog(QDialog):
 
         self._container = container_item
         self._items_db = items_db
+        self._working_items: list[Item] = list(container_item.items) if container_item else []
 
         # Create UI
         layout = QVBoxLayout(self)
@@ -98,12 +103,7 @@ class ContainerPropertiesDialog(QDialog):
     def _update_items_list(self) -> None:
         """Update the container items list."""
         self._items_list.clear()
-
-        if not self._container or not hasattr(self._container, "container_items"):
-            return
-
-        # Add container items
-        for item in getattr(self._container, "container_items", []):
+        for item in self._working_items:
             item_name = self._get_item_name(item.id)
             item_text = f"{item.id} - {item_name}"
             list_item = QListWidgetItem(item_text)
@@ -120,10 +120,16 @@ class ContainerPropertiesDialog(QDialog):
 
     def _on_add_item(self) -> None:
         """Add item to container."""
-        # TODO: Open AddItemDialog and add selected item
-        from PyQt6.QtWidgets import QMessageBox
+        dialog = AddItemDialog(self, items_db=self._items_db)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
 
-        QMessageBox.information(self, "Add Item", "Add item functionality will be implemented.")
+        item_id = int(dialog.get_selected_item_id())
+        if item_id <= 0:
+            return
+
+        self._working_items.append(Item(id=item_id))
+        self._update_items_list()
 
     def _on_remove_item(self) -> None:
         """Remove selected item from container."""
@@ -131,14 +137,11 @@ class ContainerPropertiesDialog(QDialog):
         if not selected:
             return
 
-        # Remove from container
         for list_item in selected:
             item = list_item.data(100)
-            if hasattr(self._container, "container_items"):
-                with contextlib.suppress(ValueError):
-                    self._container.container_items.remove(item)
+            if item in self._working_items:
+                self._working_items.remove(item)
 
-        # Update list
         self._update_items_list()
 
     def get_container(self) -> Item | None:
@@ -147,4 +150,6 @@ class ContainerPropertiesDialog(QDialog):
         Returns:
             Container item with modifications
         """
-        return self._container
+        if not self._container:
+            return None
+        return self._container.with_container_items(tuple(self._working_items))
