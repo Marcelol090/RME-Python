@@ -3207,6 +3207,88 @@ class EditorSession:
                 continue
         return positions
 
+    def _handle_live_client_packet(self, pkt_type: int, payload: bytes) -> None:
+        """Handle a single packet from the live client connection."""
+        if int(pkt_type) == int(PacketType.LOGIN_SUCCESS):
+            if self._live_client:
+                if len(payload) >= 4:
+                    self._live_client.client_id = int.from_bytes(payload[0:4], "little", signed=False)
+                self._live_client.state = ConnectionState.AUTHENTICATED
+                if not self._live_sync_started:
+                    self._live_sync_started = True
+                    self.game_map.tiles.clear()
+                    width = max(1, int(self.game_map.header.width))
+                    height = max(1, int(self.game_map.header.height))
+                    for z in range(0, 16):
+                        self._live_client.request_map(
+                            x_min=0,
+                            y_min=0,
+                            x_max=width - 1,
+                            y_max=height - 1,
+                            z=int(z),
+                        )
+        elif int(pkt_type) == int(PacketType.LOGIN_ERROR) or int(pkt_type) == int(PacketType.KICK):
+            if self._live_client:
+                self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
+            self.disconnect_live()
+        elif int(pkt_type) == int(PacketType.CLIENT_LIST):
+            clients = decode_client_list(payload)
+            self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
+            if self._on_live_client_list:
+                self._on_live_client_list(list(clients))
+        elif int(pkt_type) == int(PacketType.MESSAGE):
+            client_id, name, message = decode_chat(payload)
+            if self._on_live_chat:
+                self._on_live_chat(int(client_id), str(name), str(message))
+        elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
+            client_id, x, y, z = decode_cursor(payload)
+            self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
+            if self._on_live_cursor:
+                self._on_live_cursor(int(client_id), int(x), int(y), int(z))
+        elif int(pkt_type) == int(PacketType.TILE_UPDATE):
+            tiles, ok = decode_tile_update(payload)
+            if ok and tiles:
+                changed = self._apply_live_tiles(tiles)
+                if changed:
+                    self._emit_tiles_changed(changed, broadcast=False)
+            else:
+                positions = self._decode_live_positions(payload)
+                if positions:
+                    self._emit_tiles_changed(set(positions), broadcast=False)
+        elif int(pkt_type) == int(PacketType.MAP_CHUNK):
+            chunk = decode_map_chunk(payload)
+            tiles = chunk.get("tiles", [])
+            changed = self._apply_live_tiles(list(tiles))
+            if changed:
+                self._emit_tiles_changed(changed, broadcast=False)
+
+    def _handle_live_server_packet(self, pkt_type: int, payload: bytes) -> None:
+        """Handle a single packet from the live server connection."""
+        if int(pkt_type) == int(PacketType.MESSAGE):
+            client_id, name, message = decode_chat(payload)
+            if self._on_live_chat:
+                self._on_live_chat(int(client_id), str(name), str(message))
+        elif int(pkt_type) == int(PacketType.CLIENT_LIST):
+            clients = decode_client_list(payload)
+            self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
+            if self._on_live_client_list:
+                self._on_live_client_list(list(clients))
+        elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
+            client_id, x, y, z = decode_cursor(payload)
+            self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
+            if self._on_live_cursor:
+                self._on_live_cursor(int(client_id), int(x), int(y), int(z))
+        elif int(pkt_type) == int(PacketType.TILE_UPDATE):
+            tiles, ok = decode_tile_update(payload)
+            if ok and tiles:
+                changed = self._apply_live_tiles(tiles)
+                if changed:
+                    self._emit_tiles_changed(changed, broadcast=False)
+            else:
+                positions = self._decode_live_positions(payload)
+                if positions:
+                    self._emit_tiles_changed(set(positions), broadcast=False)
+
     def process_live_events(self) -> int:
         """Poll incoming packets from Live Client and apply them.
 
@@ -3219,97 +3301,27 @@ class EditorSession:
         count = 0
         if self._live_client is not None:
             while True:
+                if self._live_client is None:
+                    break
                 pkt = self._live_client.pop_packet()
                 if not pkt:
                     break
-
                 pkt_type, payload = pkt
-                if int(pkt_type) == int(PacketType.LOGIN_SUCCESS):
-                    if len(payload) >= 4:
-                        self._live_client.client_id = int.from_bytes(payload[0:4], "little", signed=False)
-                    self._live_client.state = ConnectionState.AUTHENTICATED
-                    if not self._live_sync_started:
-                        self._live_sync_started = True
-                        self.game_map.tiles.clear()
-                        width = max(1, int(self.game_map.header.width))
-                        height = max(1, int(self.game_map.header.height))
-                        for z in range(0, 16):
-                            self._live_client.request_map(
-                                x_min=0,
-                                y_min=0,
-                                x_max=width - 1,
-                                y_max=height - 1,
-                                z=int(z),
-                            )
-                elif int(pkt_type) == int(PacketType.LOGIN_ERROR) or int(pkt_type) == int(PacketType.KICK):
-                    self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
-                    self.disconnect_live()
-                elif int(pkt_type) == int(PacketType.CLIENT_LIST):
-                    clients = decode_client_list(payload)
-                    self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
-                    if self._on_live_client_list:
-                        self._on_live_client_list(list(clients))
-                elif int(pkt_type) == int(PacketType.MESSAGE):
-                    client_id, name, message = decode_chat(payload)
-                    if self._on_live_chat:
-                        self._on_live_chat(int(client_id), str(name), str(message))
-                elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
-                    client_id, x, y, z = decode_cursor(payload)
-                    self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
-                    if self._on_live_cursor:
-                        self._on_live_cursor(int(client_id), int(x), int(y), int(z))
-                elif int(pkt_type) == int(PacketType.TILE_UPDATE):
-                    tiles, ok = decode_tile_update(payload)
-                    if ok and tiles:
-                        changed = self._apply_live_tiles(tiles)
-                        if changed:
-                            self._emit_tiles_changed(changed, broadcast=False)
-                    else:
-                        positions = self._decode_live_positions(payload)
-                        if positions:
-                            self._emit_tiles_changed(set(positions), broadcast=False)
-                elif int(pkt_type) == int(PacketType.MAP_CHUNK):
-                    chunk = decode_map_chunk(payload)
-                    tiles = chunk.get("tiles", [])
-                    changed = self._apply_live_tiles(list(tiles))
-                    if changed:
-                        self._emit_tiles_changed(changed, broadcast=False)
+                self._handle_live_client_packet(int(pkt_type), payload)
                 count += 1
 
         if self._live_server is not None:
             while True:
+                if self._live_server is None:
+                    break
                 pkt = self._live_server.pop_packet()
                 if not pkt:
                     break
                 pkt_type, payload = pkt
-                if int(pkt_type) == int(PacketType.MESSAGE):
-                    client_id, name, message = decode_chat(payload)
-                    if self._on_live_chat:
-                        self._on_live_chat(int(client_id), str(name), str(message))
-                elif int(pkt_type) == int(PacketType.CLIENT_LIST):
-                    clients = decode_client_list(payload)
-                    self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
-                    if self._on_live_client_list:
-                        self._on_live_client_list(list(clients))
-                elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
-                    client_id, x, y, z = decode_cursor(payload)
-                    self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
-                    if self._on_live_cursor:
-                        self._on_live_cursor(int(client_id), int(x), int(y), int(z))
-                elif int(pkt_type) == int(PacketType.TILE_UPDATE):
-                    tiles, ok = decode_tile_update(payload)
-                    if ok and tiles:
-                        changed = self._apply_live_tiles(tiles)
-                        if changed:
-                            self._emit_tiles_changed(changed, broadcast=False)
-                    else:
-                        positions = self._decode_live_positions(payload)
-                        if positions:
-                            self._emit_tiles_changed(set(positions), broadcast=False)
+                self._handle_live_server_packet(int(pkt_type), payload)
                 count += 1
 
         return count
-
     @staticmethod
     def _changed_keys_for_action(action: EditorAction) -> set[TileKey]:
         try:
