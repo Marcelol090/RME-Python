@@ -13,7 +13,8 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING
-from xml.etree import ElementTree as ET
+
+import py_rme_canary.core.io.xml.safe as ET
 
 if TYPE_CHECKING:
     from py_rme_canary.logic_layer.map_statistics import MapStatistics

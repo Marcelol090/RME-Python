@@ -6,11 +6,12 @@ Automatically detects Tibia version (ServerID vs ClientID) and loads appropriate
 import contextlib
 import json
 import os
-import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+
+import py_rme_canary.core.io.xml.safe as ET
 from typing import Any
 
 

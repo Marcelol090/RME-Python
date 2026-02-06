@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: S603,S607,PLR2004
+# ruff: noqa: S603,PLR2004
 """
 AI Agent - Autonomous Code Refactoring (v3.0)
 Event-sourced state machine with rollback support
@@ -11,6 +11,7 @@ import argparse
 import json
 import logging
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -94,7 +95,7 @@ class AgentContext:
         # Git state
         self.rollback_commit: str | None = None
 
-    def emit_event(self, to_state: AgentState, payload: dict[str, Any], success: bool = True, error: str | None = None):
+    def emit_event(self, to_state: AgentState, payload: dict[str, Any], success: bool = True, error: str | None = None) -> None:
         """Record state transition"""
         event = Event(
             timestamp=time.time(),
@@ -113,7 +114,7 @@ class AgentContext:
         else:
             log.error(f"Transition failed: {self.state.value} → {to_state.value}")
 
-    def snapshot(self):
+    def snapshot(self) -> None:
         """Create state snapshot"""
         self.snapshots[self.state] = {
             "issues": [vars(i) for i in self.issues],
@@ -121,7 +122,7 @@ class AgentContext:
             "applied_fixes": self.applied_fixes.copy(),
         }
 
-    def restore_snapshot(self, state: AgentState):
+    def restore_snapshot(self, state: AgentState) -> None:
         """Restore from snapshot"""
         if state not in self.snapshots:
             raise ValueError(f"No snapshot for state: {state}")
@@ -149,6 +150,33 @@ class StateMachine:
             AgentState.ROLLBACK: self._handle_rollback,
             AgentState.COMMIT: self._handle_commit,
         }
+
+    def _run_cmd(self, cmd_list: list[str], cwd: Path, capture_output: bool = True) -> subprocess.CompletedProcess:
+        """Run a command securely with full path resolution"""
+        if not cmd_list:
+            return subprocess.CompletedProcess(args=[], returncode=1, stderr="Empty command")
+
+        tool = cmd_list[0]
+        full_path = shutil.which(tool)
+        if not full_path:
+            msg = f"Tool not found in PATH: {tool}"
+            log.error(msg)
+            return subprocess.CompletedProcess(args=cmd_list, returncode=127, stdout="", stderr=msg)
+
+        # Replace tool name with full path
+        safe_cmd = [full_path] + cmd_list[1:]
+
+        try:
+            return subprocess.run(
+                safe_cmd,
+                check=False,
+                cwd=cwd,
+                capture_output=capture_output,
+                text=True
+            )
+        except Exception as e:
+            log.exception(f"Failed to execute {safe_cmd}: {e}")
+            return subprocess.CompletedProcess(args=safe_cmd, returncode=1, stdout="", stderr=str(e))
 
     def run(self) -> bool:
         """Execute state machine until terminal state"""
@@ -189,32 +217,31 @@ class StateMachine:
 
         return success
 
-    def _handle_init(self):
+    def _handle_init(self) -> None:
         """Initialize agent (create git snapshot)"""
 
         # Create rollback point
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"], check=False, cwd=self.ctx.project_root, capture_output=True, text=True
+        result = self._run_cmd(
+            ["git", "rev-parse", "HEAD"], cwd=self.ctx.project_root
         )
 
         if result.returncode == 0:
             self.ctx.rollback_commit = result.stdout.strip()
             log.info(f"Rollback commit: {self.ctx.rollback_commit[:8]}")
+        else:
+            log.warning(f"Failed to get git commit: {result.stderr}")
 
         self.ctx.emit_event(AgentState.ANALYZE, {"rollback_commit": self.ctx.rollback_commit})
 
-    def _handle_analyze(self):
+    def _handle_analyze(self) -> None:
         """Analyze codebase with all tools"""
 
         log.info("Running analysis tools...")
 
         # Run Ruff
-        ruff_result = subprocess.run(
+        ruff_result = self._run_cmd(
             ["ruff", "check", ".", "--output-format=json"],
-            check=False,
             cwd=self.ctx.project_root,
-            capture_output=True,
-            text=True,
         )
 
         # Parse Ruff output
@@ -235,33 +262,36 @@ class StateMachine:
 
             except json.JSONDecodeError:
                 log.warning("Failed to parse Ruff output")
+        else:
+            log.error(f"Ruff failed: {ruff_result.stderr}")
 
         # Run Mypy
-        mypy_result = subprocess.run(
-            ["mypy", ".", "--no-error-summary"], check=False, cwd=self.ctx.project_root, capture_output=True, text=True
+        mypy_result = self._run_cmd(
+            ["mypy", ".", "--no-error-summary"], cwd=self.ctx.project_root
         )
 
-        # Parse Mypy errors (simplified)
-        for line in mypy_result.stderr.split("\n"):
-            if ": error:" in line:
-                parts = line.split(":")
-                if len(parts) >= 4:
-                    issue = Issue(
-                        file=Path(parts[0]),
-                        line=int(parts[1]) if parts[1].isdigit() else 0,
-                        rule_id="mypy",
-                        severity="high",
-                        message=":".join(parts[3:]).strip(),
-                        fix_confidence=0.3,  # Lower for type errors
-                    )
-                    self.ctx.issues.append(issue)
+        if mypy_result.returncode != 0:
+            # Parse Mypy errors (simplified)
+            for line in mypy_result.stderr.split("\n"):
+                if ": error:" in line:
+                    parts = line.split(":")
+                    if len(parts) >= 4:
+                        issue = Issue(
+                            file=Path(parts[0]),
+                            line=int(parts[1]) if parts[1].isdigit() else 0,
+                            rule_id="mypy",
+                            severity="high",
+                            message=":".join(parts[3:]).strip(),
+                            fix_confidence=0.3,  # Lower for type errors
+                        )
+                        self.ctx.issues.append(issue)
 
         log.info(f"Found {len(self.ctx.issues)} issue(s)")
 
         self.ctx.snapshot()
         self.ctx.emit_event(AgentState.PRIORITIZE, {"issues_count": len(self.ctx.issues)})
 
-    def _handle_prioritize(self):
+    def _handle_prioritize(self) -> None:
         """Score and sort issues by impact"""
 
         log.info("Prioritizing issues...")
@@ -301,7 +331,7 @@ class StateMachine:
         self.ctx.snapshot()
         self.ctx.emit_event(AgentState.PLAN, {"plan_size": len(self.ctx.plan)})
 
-    def _handle_plan(self):
+    def _handle_plan(self) -> None:
         """Generate execution plan (dependency ordering)"""
 
         log.info("Building execution plan...")
@@ -311,7 +341,7 @@ class StateMachine:
 
         self.ctx.emit_event(AgentState.EXECUTE, {"plan_ready": True})
 
-    def _handle_execute(self):
+    def _handle_execute(self) -> None:
         """Execute fixes incrementally"""
 
         log.info("Executing fixes...")
@@ -328,7 +358,7 @@ class StateMachine:
 
             # Execute fix command
             cmd = shlex.split(plan.fix_command)
-            result = subprocess.run(cmd, check=False, cwd=self.ctx.project_root, capture_output=True, text=True)
+            result = self._run_cmd(cmd, cwd=self.ctx.project_root)
 
             if result.returncode == 0:
                 self.ctx.applied_fixes.append(str(plan.issue.file))
@@ -341,7 +371,7 @@ class StateMachine:
 
         self.ctx.emit_event(AgentState.VALIDATE, {"fixes_applied": applied})
 
-    def _handle_validate(self):
+    def _handle_validate(self) -> None:
         """Validate fixes (run tests)"""
 
         log.info("Validating fixes...")
@@ -351,7 +381,7 @@ class StateMachine:
 
         if self.ctx.config.get("run_tests", True):
             test_cmd_list = shlex.split(test_cmd) if isinstance(test_cmd, str) else list(test_cmd)
-            result = subprocess.run(test_cmd_list, check=False, cwd=self.ctx.project_root, capture_output=True)
+            result = self._run_cmd(test_cmd_list, cwd=self.ctx.project_root)
 
             if result.returncode != 0:
                 log.error("Tests failed after fixes")
@@ -359,35 +389,34 @@ class StateMachine:
                 return
 
         # Validate with Mypy
-        mypy_result = subprocess.run(["mypy", "."], check=False, cwd=self.ctx.project_root, capture_output=True)
+        mypy_result = self._run_cmd(["mypy", "."], cwd=self.ctx.project_root)
 
         if mypy_result.returncode != 0:
             log.warning("Mypy found issues (non-fatal)")
 
         self.ctx.emit_event(AgentState.COMMIT, {"validation": "passed"})
 
-    def _handle_rollback(self):
+    def _handle_rollback(self) -> None:
         """Rollback to snapshot"""
 
         log.info("Rolling back changes...")
 
         if self.ctx.rollback_commit:
-            subprocess.run(["git", "reset", "--hard", self.ctx.rollback_commit], check=False, cwd=self.ctx.project_root)
+            self._run_cmd(["git", "reset", "--hard", self.ctx.rollback_commit], cwd=self.ctx.project_root)
             log.info("Rollback complete")
 
         self.ctx.emit_event(AgentState.FAILED, {"rollback": "completed"})
 
-    def _handle_commit(self):
+    def _handle_commit(self) -> None:
         """Commit successful fixes"""
 
         log.info("Committing fixes...")
 
         if self.ctx.config.get("auto_commit", False):
-            subprocess.run(["git", "add", "-A"], check=False, cwd=self.ctx.project_root)
+            self._run_cmd(["git", "add", "-A"], cwd=self.ctx.project_root)
 
-            subprocess.run(
+            self._run_cmd(
                 ["git", "commit", "-m", "refactor: automated quality improvements"],
-                check=False,
                 cwd=self.ctx.project_root,
             )
 
