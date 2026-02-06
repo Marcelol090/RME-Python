@@ -162,7 +162,7 @@ def npc_virtual_id(name: str, *, used: set[int] | None = None) -> int:
 def _parse_border_group_value(value: object | None) -> int | None:
     if value is None:
         return None
-    if isinstance(value, (str, int, float)):
+    if isinstance(value, str | int | float):
         try:
             return int(value)
         except (TypeError, ValueError):
@@ -432,6 +432,8 @@ class BrushManager:
     _family_index: dict[int, int] = field(default_factory=dict)
     _border_groups: BorderGroupRegistry = field(default_factory=BorderGroupRegistry)
     _ground_equivalents: GroundEquivalentRegistry = field(default_factory=GroundEquivalentRegistry)
+    _primary_brushes_path: Path | None = None
+    _base_borders_snapshot: dict[int, dict[str, int]] = field(default_factory=dict)
 
     # Optional doodad specs from RME materials XML.
     # Keyed by real server id (lookid/server_lookid).
@@ -510,6 +512,8 @@ class BrushManager:
 
     def load_from_file(self, json_path: str) -> None:
         resolved = self._resolve_brushes_path(json_path)
+        if self._primary_brushes_path is None:
+            self._primary_brushes_path = resolved
         with resolved.open(encoding="utf-8") as f:
             data = json.load(f)
 
@@ -661,7 +665,120 @@ class BrushManager:
                         hate_friends=bool(payload.get("hate", False)),
                     )
 
+        self._rebuild_runtime_indexes()
+        self._capture_base_borders_snapshot()
+
+    def _rebuild_runtime_indexes(self) -> None:
+        self._family_index.clear()
+        for brush in self._brushes.values():
+            for fid in brush.family_ids:
+                self._family_index.setdefault(int(fid), int(brush.server_id))
         self._rebuild_registries()
+
+    def _capture_base_borders_snapshot(self) -> None:
+        self._base_borders_snapshot = {
+            int(server_id): {str(k): int(v) for k, v in brush.borders.items()}
+            for server_id, brush in self._brushes.items()
+        }
+
+    def default_border_overrides_path(self) -> Path | None:
+        source = self._primary_brushes_path
+        if source is None:
+            return None
+        return source.with_name(f"{source.stem}.overrides.json")
+
+    def set_border_override(self, server_id: int, alignment: str, border_server_id: int | None) -> bool:
+        sid = int(server_id)
+        brush = self._brushes.get(sid)
+        if brush is None:
+            return False
+
+        key = str(alignment or "").strip().upper()
+        if not key:
+            return False
+
+        updated = {str(k): int(v) for k, v in brush.borders.items()}
+        if border_server_id is None or int(border_server_id) <= 0:
+            updated.pop(key, None)
+        else:
+            updated[key] = int(border_server_id)
+
+        if updated == {str(k): int(v) for k, v in brush.borders.items()}:
+            return False
+
+        self._brushes[sid] = replace(brush, borders=updated, family_ids=frozenset())
+        self._rebuild_runtime_indexes()
+        return True
+
+    def apply_border_overrides(self, overrides: dict[str, dict[str, int]]) -> int:
+        changed = 0
+        for raw_sid, raw_borders in overrides.items():
+            try:
+                sid = int(raw_sid)
+            except (TypeError, ValueError):
+                continue
+            brush = self._brushes.get(int(sid))
+            if brush is None or not isinstance(raw_borders, dict):
+                continue
+
+            normalized: dict[str, int] = {}
+            for raw_key, raw_value in raw_borders.items():
+                key = str(raw_key or "").strip().upper()
+                if not key:
+                    continue
+                try:
+                    border_id = int(raw_value)
+                except (TypeError, ValueError):
+                    continue
+                if border_id > 0:
+                    normalized[key] = int(border_id)
+
+            current = {str(k): int(v) for k, v in brush.borders.items()}
+            if normalized == current:
+                continue
+
+            self._brushes[int(sid)] = replace(brush, borders=normalized, family_ids=frozenset())
+            changed += 1
+
+        if changed > 0:
+            self._rebuild_runtime_indexes()
+        return int(changed)
+
+    def collect_border_overrides(self) -> dict[str, dict[str, int]]:
+        overrides: dict[str, dict[str, int]] = {}
+        for sid, brush in self._brushes.items():
+            current = {str(k): int(v) for k, v in brush.borders.items()}
+            baseline = self._base_borders_snapshot.get(int(sid), {})
+            if current != baseline:
+                overrides[str(int(sid))] = current
+        return overrides
+
+    def load_border_overrides_file(self, path: str | None = None) -> int:
+        target = Path(path) if path else self.default_border_overrides_path()
+        if target is None or not target.exists():
+            return 0
+
+        payload = json.loads(target.read_text(encoding="utf-8"))
+        raw_overrides = payload.get("borders", payload) if isinstance(payload, dict) else {}
+        if not isinstance(raw_overrides, dict):
+            return 0
+        return self.apply_border_overrides(raw_overrides)
+
+    def save_border_overrides_file(self, path: str | None = None) -> Path | None:
+        target = Path(path) if path else self.default_border_overrides_path()
+        if target is None:
+            return None
+
+        overrides = self.collect_border_overrides()
+        if not overrides:
+            if target.exists():
+                target.unlink()
+            return target
+
+        payload = {"version": 1, "borders": overrides}
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
+        return target
 
     def _rebuild_registries(self) -> None:
         self._border_groups.clear()

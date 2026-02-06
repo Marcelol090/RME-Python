@@ -311,6 +311,12 @@ class QtMapEditor(
                 self.brush_mgr.load_door_brushes_from_materials(materials_brushs)
             except Exception as exc:
                 logger.warning("Failed to load table/carpet/door brushes from %s: %s", materials_brushs, exc)
+        try:
+            changed = int(self.brush_mgr.load_border_overrides_file())
+            if changed > 0:
+                logger.info("Loaded %d border override(s) for brushes", changed)
+        except Exception as exc:
+            logger.warning("Failed to load brush border overrides: %s", exc)
 
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
