@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import QSpinBox
@@ -10,6 +11,8 @@ from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
+
+logger = logging.getLogger(__name__)
 
 
 class QtMapEditorNavigationMixin:
@@ -34,8 +37,8 @@ class QtMapEditorNavigationMixin:
         try:
             if hasattr(self, "map_drawer") and self.map_drawer is not None:
                 self.map_drawer.set_highlight_tile(int(x), int(y), int(z))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Error highlighting tile: %s", e)
         self.canvas.update()
         if self.minimap_widget is not None:
             self.minimap_widget.update()
@@ -87,6 +90,7 @@ class QtMapEditorNavigationMixin:
         try:
             stack = self.canvas._server_ids_for_tile_stack(x, y, z)
         except Exception:
+            # Fallback to empty stack on error
             stack = []
 
         if stack:
@@ -111,8 +115,8 @@ class QtMapEditorNavigationMixin:
                 self.dock_brushes.show()
             self.brush_filter.setFocus()
             self.brush_filter.selectAll()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Error focusing brush filter: %s", e)
 
     def _jump_to_item(self: QtMapEditor, _checked: bool = False) -> None:
         try:
@@ -120,8 +124,8 @@ class QtMapEditorNavigationMixin:
             le = self.brush_id_entry.lineEdit()
             if le is not None:
                 le.selectAll()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Error focusing item entry: %s", e)
 
     def _new_view(self: QtMapEditor) -> None:
         w = type(self)()
@@ -133,8 +137,8 @@ class QtMapEditorNavigationMixin:
             w.viewport.origin_x = int(self.viewport.origin_x)
             w.viewport.origin_y = int(self.viewport.origin_y)
             w._set_z(int(self.viewport.z))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Error mirroring view state: %s", e)
         w.show()
         self._extra_views.append(w)
 
@@ -157,8 +161,8 @@ class QtMapEditorNavigationMixin:
                 self.act_lasso_select.blockSignals(True)
                 self.act_lasso_select.setChecked(False)
                 self.act_lasso_select.blockSignals(False)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Error unchecking lasso action: %s", e)
             self.lasso_enabled = False
             if hasattr(self, "canvas"):
                 with contextlib.suppress(Exception):
@@ -175,8 +179,8 @@ class QtMapEditorNavigationMixin:
                     self.act_selection_mode.blockSignals(True)
                     self.act_selection_mode.setChecked(True)
                     self.act_selection_mode.blockSignals(False)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Error checking selection mode action: %s", e)
             self.selection_mode = True
             self.session.cancel_gesture()
         if not self.lasso_enabled and hasattr(self, "canvas"):
@@ -201,5 +205,5 @@ class QtMapEditorNavigationMixin:
                     act.blockSignals(True)
                     act.setChecked(current == depth_mode)
                     act.blockSignals(False)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Error updating selection depth action %s: %s", attr, e)
