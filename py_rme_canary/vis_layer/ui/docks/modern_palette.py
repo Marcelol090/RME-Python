@@ -256,7 +256,7 @@ class ModernPaletteWidget(QWidget):
 
         # Search bar
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("🔍 Search brushes...")
+        self.search_bar.setPlaceholderText("Search brushes...")
         self.search_bar.setStyleSheet(
             """
             QLineEdit {

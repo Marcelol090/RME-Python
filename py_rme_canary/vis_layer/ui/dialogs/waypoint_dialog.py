@@ -66,7 +66,7 @@ class WaypointListDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Header
-        header = QLabel("📍 Waypoints")
+        header = QLabel("Waypoints")
         header.setStyleSheet(
             """
             font-size: 18px;
@@ -78,7 +78,7 @@ class WaypointListDialog(QDialog):
 
         # Search
         self.search = QLineEdit()
-        self.search.setPlaceholderText("🔍 Search waypoints...")
+        self.search.setPlaceholderText("Search waypoints...")
         self.search.textChanged.connect(self._filter_list)
         layout.addWidget(self.search)
 
@@ -197,7 +197,7 @@ class WaypointListDialog(QDialog):
         waypoints = getattr(self._game_map, "waypoints", {}) or {}
 
         for name, pos in sorted(waypoints.items()):
-            text = f"📍 {name}"
+            text = str(name)
             subtitle = f"({int(pos.x)}, {int(pos.y)}, {int(pos.z)})"
 
             item = QListWidgetItem(f"{text}\n    {subtitle}")
@@ -345,7 +345,7 @@ class WaypointQuickAdd(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Position info
-        pos_label = QLabel(f"📍 Position: ({self._position[0]}, {self._position[1]}, {self._position[2]})")
+        pos_label = QLabel(f"Position: ({self._position[0]}, {self._position[1]}, {self._position[2]})")
         pos_label.setStyleSheet("color: #A1A1AA;")
         layout.addWidget(pos_label)
 

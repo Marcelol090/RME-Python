@@ -57,7 +57,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_export_png = QAction("Export as PNG...", editor)
     editor.act_export_png.triggered.connect(lambda _c=False: file_tools.export_png(editor))
 
-    editor.act_export_otmm = QAction("Export Minimap (OTMM)...", editor)
+    editor.act_export_otmm = QAction("Export OTMM...", editor)
     editor.act_export_otmm.triggered.connect(lambda _c=False: file_tools.export_otmm(editor))
     editor.act_export_tilesets = QAction("Export Tilesets...", editor)
     editor.act_export_tilesets.triggered.connect(lambda _c=False: file_tools.export_tilesets(editor))

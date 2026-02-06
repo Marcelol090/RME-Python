@@ -46,11 +46,13 @@ class ActionCard(QFrame):
 
         # Title
         title_label = QLabel(title)
-        title_label.setStyleSheet("""
+        title_label.setStyleSheet(
+            """
             font-size: 14px;
             font-weight: 600;
             color: #E5E5E7;
-        """)
+        """
+        )
         layout.addWidget(title_label)
 
         # Description
@@ -61,7 +63,8 @@ class ActionCard(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             ActionCard {
                 background: #2A2A3E;
                 border: 2px solid #363650;
@@ -71,7 +74,8 @@ class ActionCard(QFrame):
                 background: #363650;
                 border-color: #8B5CF6;
             }
-        """)
+        """
+        )
 
     def mousePressEvent(self, event: object) -> None:
         """Emit clicked signal."""
@@ -120,12 +124,14 @@ class WelcomeDialog(QDialog):
         left_layout.setContentsMargins(32, 32, 32, 32)
 
         # Header
-        header = QLabel("🗺️ py_rme_canary")
-        header.setStyleSheet("""
+        header = QLabel("py_rme_canary")
+        header.setStyleSheet(
+            """
             font-size: 20px;
             font-weight: 700;
             color: #E5E5E7;
-        """)
+        """
+        )
         left_layout.addWidget(header)
 
         subtitle = QLabel("Modern Map Editor for Open Tibia")
@@ -136,19 +142,21 @@ class WelcomeDialog(QDialog):
 
         # Quick Start label
         qs_label = QLabel("Quick Start")
-        qs_label.setStyleSheet("""
+        qs_label.setStyleSheet(
+            """
             font-size: 13px;
             font-weight: 600;
             color: #A1A1AA;
-        """)
+        """
+        )
         left_layout.addWidget(qs_label)
 
         # Action cards
-        new_card = ActionCard("📄", "New Map", "Create a blank map with custom dimensions")
+        new_card = ActionCard("N", "New Map", "Create a blank map with custom dimensions")
         new_card.clicked.connect(self._on_new)
         left_layout.addWidget(new_card)
 
-        open_card = ActionCard("📂", "Open Map", "Open an existing .otbm map file")
+        open_card = ActionCard("O", "Open Map", "Open an existing .otbm map file")
         open_card.clicked.connect(self._on_open)
         left_layout.addWidget(open_card)
 
@@ -170,16 +178,19 @@ class WelcomeDialog(QDialog):
 
         # Recent header
         recent_header = QLabel("Recent Files")
-        recent_header.setStyleSheet("""
+        recent_header.setStyleSheet(
+            """
             font-size: 14px;
             font-weight: 600;
             color: #E5E5E7;
-        """)
+        """
+        )
         right_layout.addWidget(recent_header)
 
         # Recent files list
         self.recent_list = QListWidget()
-        self.recent_list.setStyleSheet("""
+        self.recent_list.setStyleSheet(
+            """
             QListWidget {
                 background: transparent;
                 border: none;
@@ -198,14 +209,15 @@ class WelcomeDialog(QDialog):
             QListWidget::item:selected {
                 background: #8B5CF6;
             }
-        """)
+        """
+        )
         self.recent_list.itemDoubleClicked.connect(self._on_recent_selected)
 
         # Populate recent files
         if self._recent_files:
             for entry in self._recent_files[:10]:
                 # Support both (path, label) tuples and plain paths
-                if isinstance(entry, (list, tuple)) and len(entry) >= 1:
+                if isinstance(entry, list | tuple) and len(entry) >= 1:
                     path = entry[0]
                     filename = entry[1] if len(entry) > 1 else None
                 else:
@@ -215,7 +227,7 @@ class WelcomeDialog(QDialog):
                 import os
 
                 filename = filename or os.path.basename(path)
-                item = QListWidgetItem(f"📄 {filename}")
+                item = QListWidgetItem(str(filename))
                 item.setData(Qt.ItemDataRole.UserRole, path)
                 item.setToolTip(path)
                 self.recent_list.addItem(item)
@@ -231,11 +243,13 @@ class WelcomeDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply overall styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
-        """)
+        """
+        )
 
     def _on_new(self) -> None:
         """Handle new map action."""

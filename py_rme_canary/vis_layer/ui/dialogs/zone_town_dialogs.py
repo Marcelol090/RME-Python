@@ -110,7 +110,7 @@ class ZoneListDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Header
-        header = QLabel("🗺️ Zones")
+        header = QLabel("Zones")
         header.setStyleSheet(
             """
             font-size: 18px;
@@ -431,7 +431,7 @@ class TownListDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Header
-        header = QLabel("🏰 Towns")
+        header = QLabel("Towns")
         header.setStyleSheet(
             """
             font-size: 18px;
@@ -460,7 +460,7 @@ class TownListDialog(QDialog):
         self.btn_goto.clicked.connect(self._on_goto_temple)
         action_layout.addWidget(self.btn_goto)
 
-        self.btn_set_temple = QPushButton("📍 Set Temple Here")
+        self.btn_set_temple = QPushButton("Set Temple Here")
         self.btn_set_temple.setEnabled(False)
         self.btn_set_temple.clicked.connect(self._on_set_temple)
         action_layout.addWidget(self.btn_set_temple)
@@ -548,7 +548,7 @@ class TownListDialog(QDialog):
 
             temple_text = f"({int(temple.x)}, {int(temple.y)}, {int(temple.z)})" if temple else "Temple not set"
 
-            text = f"🏰 {name}\n    ID: {town_id} | {temple_text}"
+            text = f"{name}\n    ID: {town_id} | {temple_text}"
 
             item = QListWidgetItem(text)
             item.setData(Qt.ItemDataRole.UserRole, {"id": town_id, "name": name, "temple": temple})

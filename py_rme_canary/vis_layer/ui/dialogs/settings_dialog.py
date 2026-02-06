@@ -397,18 +397,21 @@ class SettingsDialog(QDialog):
         sidebar_layout.setSpacing(4)
 
         # Title
-        title = QLabel("⚙️ Settings")
-        title.setStyleSheet("""
+        title = QLabel("Settings")
+        title.setStyleSheet(
+            """
             font-size: 16px;
             font-weight: 700;
             color: #E5E5E7;
             padding: 8px 0;
-        """)
+        """
+        )
         sidebar_layout.addWidget(title)
 
         # Category list
         self.category_list = QListWidget()
-        self.category_list.setStyleSheet("""
+        self.category_list.setStyleSheet(
+            """
             QListWidget {
                 background: transparent;
                 border: none;
@@ -428,7 +431,8 @@ class SettingsDialog(QDialog):
                 background: #8B5CF6;
                 color: white;
             }
-        """)
+        """
+        )
         self.category_list.currentRowChanged.connect(self._on_category_changed)
         sidebar_layout.addWidget(self.category_list)
 
@@ -473,7 +477,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(right_panel)
 
         # Add default categories
-        self._add_category("⚙️ General", "general", GeneralSettings())
+        self._add_category("General", "general", GeneralSettings())
         self._add_category("✏️ Editor", "editor", EditorSettings())
         self._add_category("🎨 Appearance", "appearance", AppearanceSettings())
         self._add_category("🚀 Performance", "performance", PerformanceSettings())
@@ -497,7 +501,8 @@ class SettingsDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background: #1E1E2E;
             }
@@ -577,7 +582,8 @@ class SettingsDialog(QDialog):
             QLabel {
                 color: #A1A1AA;
             }
-        """)
+        """
+        )
 
     def _on_apply(self) -> None:
         """Apply settings and close."""

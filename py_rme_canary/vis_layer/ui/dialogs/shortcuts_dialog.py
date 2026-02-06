@@ -152,7 +152,7 @@ class KeyboardShortcutsDialog(QDialog):
             ("[", "Decrease brush size"),
             ("]", "Increase brush size"),
         ],
-        "🔍 Navigation": [
+        "Navigation": [
             ("Ctrl+G", "Go to position"),
             ("Ctrl+F", "Find"),
             ("Ctrl+Shift+F", "Global search"),
@@ -186,7 +186,7 @@ class KeyboardShortcutsDialog(QDialog):
 
         # Search
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Search shortcuts...")
+        self.search_input.setPlaceholderText("Search shortcuts...")
         self.search_input.textChanged.connect(self._on_search)
         layout.addWidget(self.search_input)
 

@@ -199,7 +199,7 @@ class QtMapEditorModernUXMixin:
                 # Check if separator already exists to avoid duplicates? PyQt handles this usually
                 self.menu_edit.addSeparator()
 
-                act_global_search = QAction("🔍 Global Search...", self)
+                act_global_search = QAction("Global Search...", self)
                 act_global_search.setShortcut(QKeySequence("Ctrl+Shift+F"))
                 act_global_search.triggered.connect(self.show_global_search)
                 self.menu_edit.addAction(act_global_search)
@@ -208,30 +208,30 @@ class QtMapEditorModernUXMixin:
             if hasattr(self, "menu_tools"):
                 self.menu_tools.addSeparator()
 
-                act_waypoints = QAction("📍 Waypoint Manager...", self)
+                act_waypoints = QAction("Waypoint Manager...", self)
                 act_waypoints.triggered.connect(self.show_waypoint_manager)
                 self.menu_tools.addAction(act_waypoints)
 
-                act_houses = QAction("🏠 House Manager...", self)
+                act_houses = QAction("House Manager...", self)
                 act_houses.triggered.connect(self.show_house_manager)
                 self.menu_tools.addAction(act_houses)
 
-                act_spawns = QAction("👹 Spawn Manager...", self)
+                act_spawns = QAction("Spawn Manager...", self)
                 act_spawns.triggered.connect(self.show_spawn_manager)
                 self.menu_tools.addAction(act_spawns)
 
-                act_zones = QAction("🗺️ Zone Manager...", self)
+                act_zones = QAction("Zone Manager...", self)
                 act_zones.triggered.connect(self.show_zone_manager)
                 self.menu_tools.addAction(act_zones)
 
-                act_towns = QAction("🏰 Town Manager...", self)
+                act_towns = QAction("Town Manager...", self)
                 act_towns.triggered.connect(self.show_town_manager)
                 self.menu_tools.addAction(act_towns)
 
             # Settings in appropriate menu
             if hasattr(self, "menu_file"):
                 self.menu_file.addSeparator()
-                act_settings = QAction("⚙️ Settings...", self)
+                act_settings = QAction("Settings...", self)
                 act_settings.triggered.connect(self.show_settings_dialog)
                 self.menu_file.addAction(act_settings)
 

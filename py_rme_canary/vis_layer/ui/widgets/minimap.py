@@ -335,7 +335,7 @@ class FloorMinimapPanel(QFrame):
         layout.setSpacing(8)
 
         # Title
-        title = QLabel("🗺️ Navigation")
+        title = QLabel("Navigation")
         title.setStyleSheet(
             """
             font-size: 12px;

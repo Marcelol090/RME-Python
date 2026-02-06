@@ -179,7 +179,7 @@ class ReplaceItemsDialog(QDialog):
             if result.exceeded_limit:
                 msg += f" (limit of {limit} reached)"
 
-            self._result_label.setText(f"✓ {msg}")
+            self._result_label.setText(str(msg))
 
             # Trigger redraw
             if hasattr(self._session, "request_redraw"):

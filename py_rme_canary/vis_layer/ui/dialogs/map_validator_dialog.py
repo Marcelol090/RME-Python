@@ -366,7 +366,7 @@ class MapValidatorDialog(QDialog):
 
         # Summary
         if not issues:
-            self._summary.setText("✓ No issues found! Map is valid.")
+            self._summary.setText("No issues found. Map is valid.")
             self._summary.setStyleSheet("color: #22C55E; font-size: 11px;")
         else:
             self._summary.setText(f"Found {errors} error(s), {warnings} warning(s)")
