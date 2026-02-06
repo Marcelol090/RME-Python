@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import logging
+import xml.etree.ElementTree as ET
+from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import QUrl
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMessageBox
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
@@ -271,3 +276,291 @@ class QtMapEditorFileMixin:
         apply_map_format_version(self.map, target_version=int(target_version))
         self._update_status_capabilities(prefix=f"Map format converted to OTBM {int(target_version)}")
         self.canvas.update()
+
+    def _open_preferences(self: QtMapEditor) -> None:
+        from py_rme_canary.vis_layer.ui.main_window.preferences_dialog import PreferencesDialog
+
+        dialog = PreferencesDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        with contextlib.suppress(Exception):
+            self._update_status_capabilities(prefix="Preferences updated")
+        self.status.showMessage("Preferences updated")
+
+    def _reload_data_files(self: QtMapEditor) -> None:
+        try:
+            clear_creature_name_cache()
+
+            profile = getattr(self, "asset_profile", None)
+            if profile is not None:
+                self._apply_asset_profile(profile)
+
+            with contextlib.suppress(Exception):
+                self.palettes.refresh_primary_list()
+
+            self.canvas.update()
+            self._update_status_capabilities(prefix="Data files reloaded")
+        except Exception as exc:
+            logger.exception("Failed to reload data files")
+            QMessageBox.critical(self, "Reload Data Files", str(exc))
+
+    def _export_otmm(self: QtMapEditor) -> None:
+        if self.map is None:
+            QMessageBox.information(self, "Export Minimap (OTMM)", "No map loaded.")
+            return
+
+        out_path, _ = QFileDialog.getSaveFileName(self, "Export Minimap (OTMM)", "", "OTMM (*.otmm);;All Files (*)")
+        if not out_path:
+            return
+        if not out_path.lower().endswith(".otmm"):
+            out_path += ".otmm"
+
+        default_z = int(getattr(self.viewport, "z", 7))
+        z_level, ok = QInputDialog.getInt(self, "Export Minimap (OTMM)", "Z-level:", int(default_z), 0, 15, 1)
+        if not ok:
+            return
+
+        from py_rme_canary.logic_layer.minimap_exporter import get_minimap_exporter
+
+        try:
+            exporter = get_minimap_exporter()
+            exporter.export(self.map, out_path, z_level=int(z_level))
+        except Exception as exc:
+            logger.exception("OTMM minimap export failed")
+            QMessageBox.critical(self, "Export Minimap (OTMM)", str(exc))
+            return
+
+        QMessageBox.information(self, "Export Minimap (OTMM)", f"Minimap exported successfully:\n{out_path}")
+
+    def _collect_tilesets_by_type(self: QtMapEditor) -> dict[str, list[object]]:
+        grouped: dict[str, list[object]] = defaultdict(list)
+        brushes = getattr(getattr(self, "brush_mgr", None), "_brushes", None)
+        if not isinstance(brushes, dict):
+            return {}
+
+        for brush in brushes.values():
+            brush_type = str(getattr(brush, "brush_type", "misc") or "misc").strip().lower()
+            grouped[brush_type].append(brush)
+
+        for brush_list in grouped.values():
+            brush_list.sort(key=lambda b: int(getattr(b, "server_id", 0)))
+        return dict(sorted(grouped.items(), key=lambda kv: kv[0]))
+
+    def _build_tilesets_payload(
+        self: QtMapEditor, *, selected_tilesets: list[str], include_items: bool
+    ) -> dict[str, object]:
+        grouped = self._collect_tilesets_by_type()
+        tilesets_payload: list[dict[str, object]] = []
+
+        for raw_name in selected_tilesets:
+            name = str(raw_name).strip().lower()
+            brushes = grouped.get(name, [])
+            brush_payload: list[dict[str, object]] = []
+
+            for brush in brushes:
+                row: dict[str, object] = {
+                    "id": int(getattr(brush, "server_id", 0)),
+                    "name": str(getattr(brush, "name", "")),
+                    "type": str(getattr(brush, "brush_type", "")),
+                }
+                if include_items:
+                    family_ids = sorted(int(v) for v in getattr(brush, "family_ids", ()) or ())
+                    borders_raw = getattr(brush, "borders", {}) or {}
+                    borders = {str(side): int(item_id) for side, item_id in dict(borders_raw).items()}
+                    transitions_raw = getattr(brush, "transition_borders", {}) or {}
+                    transitions: dict[str, dict[str, int]] = {}
+                    for target_id, transition_borders in dict(transitions_raw).items():
+                        transitions[str(int(target_id))] = {
+                            str(side): int(item_id) for side, item_id in dict(transition_borders).items()
+                        }
+                    row["family_ids"] = family_ids
+                    row["borders"] = borders
+                    row["transition_borders"] = transitions
+                    row["randomize_ids"] = [int(v) for v in getattr(brush, "randomize_ids", ()) or ()]
+                brush_payload.append(row)
+
+            tilesets_payload.append(
+                {
+                    "name": str(raw_name),
+                    "count": int(len(brush_payload)),
+                    "brushes": brush_payload,
+                }
+            )
+
+        return {
+            "format_version": 1,
+            "generated_by": "py_rme_canary",
+            "tilesets": tilesets_payload,
+        }
+
+    def _write_tilesets_xml(self: QtMapEditor, payload: dict[str, object], output_path: Path) -> None:
+        root = ET.Element(
+            "tilesets",
+            {
+                "format_version": str(payload.get("format_version", 1)),
+                "generated_by": str(payload.get("generated_by", "py_rme_canary")),
+            },
+        )
+
+        tilesets_raw = payload.get("tilesets", [])
+        if isinstance(tilesets_raw, list):
+            for tileset in tilesets_raw:
+                if not isinstance(tileset, dict):
+                    continue
+                ts_node = ET.SubElement(
+                    root,
+                    "tileset",
+                    {
+                        "name": str(tileset.get("name", "")),
+                        "count": str(int(tileset.get("count", 0) or 0)),
+                    },
+                )
+                brushes_raw = tileset.get("brushes", [])
+                if not isinstance(brushes_raw, list):
+                    continue
+                for brush in brushes_raw:
+                    if not isinstance(brush, dict):
+                        continue
+                    b_node = ET.SubElement(
+                        ts_node,
+                        "brush",
+                        {
+                            "id": str(int(brush.get("id", 0) or 0)),
+                            "name": str(brush.get("name", "")),
+                            "type": str(brush.get("type", "")),
+                        },
+                    )
+                    family_ids = brush.get("family_ids", [])
+                    if isinstance(family_ids, list):
+                        for family_id in family_ids:
+                            ET.SubElement(b_node, "family_id", {"value": str(int(family_id))})
+
+                    borders = brush.get("borders", {})
+                    if isinstance(borders, dict):
+                        for side, item_id in sorted(borders.items(), key=lambda kv: str(kv[0])):
+                            ET.SubElement(
+                                b_node,
+                                "border",
+                                {
+                                    "side": str(side),
+                                    "item_id": str(int(item_id)),
+                                },
+                            )
+
+                    transitions = brush.get("transition_borders", {})
+                    if isinstance(transitions, dict):
+                        for to_id, transition_borders in sorted(transitions.items(), key=lambda kv: str(kv[0])):
+                            t_node = ET.SubElement(b_node, "transition", {"to_id": str(to_id)})
+                            if isinstance(transition_borders, dict):
+                                for side, item_id in sorted(transition_borders.items(), key=lambda kv: str(kv[0])):
+                                    ET.SubElement(
+                                        t_node,
+                                        "border",
+                                        {
+                                            "side": str(side),
+                                            "item_id": str(int(item_id)),
+                                        },
+                                    )
+
+                    randomize_ids = brush.get("randomize_ids", [])
+                    if isinstance(randomize_ids, list):
+                        for randomize_id in randomize_ids:
+                            ET.SubElement(b_node, "randomize_id", {"value": str(int(randomize_id))})
+
+        tree = ET.ElementTree(root)
+        with contextlib.suppress(Exception):
+            ET.indent(tree, space="  ")
+        tree.write(output_path, encoding="utf-8", xml_declaration=True)
+
+    def _export_tilesets(self: QtMapEditor) -> None:
+        from py_rme_canary.vis_layer.ui.dialogs.export_tilesets_dialog import ExportFormat, ExportTilesetsDialog
+
+        grouped = self._collect_tilesets_by_type()
+        if not grouped:
+            QMessageBox.information(self, "Export Tilesets", "No tilesets available to export.")
+            return
+
+        dialog = ExportTilesetsDialog(tilesets=list(grouped.keys()), default_path=Path.cwd(), parent=self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        selected = dialog.get_selected_tilesets()
+        if not selected:
+            QMessageBox.information(self, "Export Tilesets", "No tilesets selected.")
+            return
+
+        output_path = dialog.get_export_path()
+        options = dialog.get_options()
+        include_items = bool(options.get("include_items", True))
+        pretty_print = bool(options.get("pretty_print", True))
+        payload = self._build_tilesets_payload(selected_tilesets=selected, include_items=include_items)
+
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            export_format = dialog.get_export_format()
+            if export_format == ExportFormat.JSON:
+                with output_path.open("w", encoding="utf-8") as fp:
+                    if pretty_print:
+                        json.dump(payload, fp, ensure_ascii=False, indent=2)
+                    else:
+                        json.dump(payload, fp, ensure_ascii=False, separators=(",", ":"))
+            else:
+                self._write_tilesets_xml(payload, output_path)
+        except Exception as exc:
+            logger.exception("Tileset export failed")
+            QMessageBox.critical(self, "Export Tilesets", str(exc))
+            return
+
+        QMessageBox.information(self, "Export Tilesets", f"Tilesets exported successfully:\n{output_path}")
+
+    def _discover_extensions(self: QtMapEditor) -> list[object]:
+        from py_rme_canary.vis_layer.ui.dialogs.extensions_dialog import MaterialExtension
+
+        ext_dir = Path.home() / ".py_rme_canary" / "extensions"
+        if not ext_dir.exists():
+            return []
+
+        out: list[object] = []
+        for path in sorted(ext_dir.iterdir(), key=lambda p: p.name.casefold()):
+            if path.name.startswith("."):
+                continue
+
+            if path.is_file() and path.suffix.lower() == ".json":
+                try:
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    out.append(
+                        MaterialExtension(
+                            name=str(data.get("name") or path.stem),
+                            author=str(data.get("author") or ""),
+                            description=str(data.get("description") or ""),
+                            version_string=str(data.get("version") or ""),
+                            url=str(data.get("url") or ""),
+                            author_url=str(data.get("author_url") or ""),
+                            file_path=str(path),
+                        )
+                    )
+                    continue
+                except Exception:
+                    logger.exception("Failed to parse extension metadata: %s", path)
+
+            out.append(
+                MaterialExtension(
+                    name=str(path.stem if path.is_file() else path.name),
+                    author="",
+                    description=f"Detected local extension entry: {path.name}",
+                    version_string="",
+                    file_path=str(path),
+                )
+            )
+        return out
+
+    def _open_extensions_dialog(self: QtMapEditor) -> None:
+        from py_rme_canary.vis_layer.ui.dialogs.extensions_dialog import ExtensionsDialog
+
+        dialog = ExtensionsDialog(parent=self, extensions=self._discover_extensions())
+        dialog.exec()
+
+    def _goto_website(self: QtMapEditor) -> None:
+        target_url = "https://github.com/Marcelol090/RME-Python"
+        if not QDesktopServices.openUrl(QUrl(target_url)):
+            QMessageBox.warning(self, "Goto Website", f"Could not open browser for:\n{target_url}")

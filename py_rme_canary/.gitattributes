@@ -1,0 +1,12 @@
+# Handle line endings automatically for files detected as text
+# and leave binary files untouched.
+* text=auto
+
+# Explicitly declare text files to make sure they are not treated as binary
+*.py text
+*.js text
+*.md text
+*.xml text
+*.json text
+*.txt text
+*.sh text eol=lf

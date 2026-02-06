@@ -4,6 +4,13 @@ from threading import Lock
 
 from PyQt6.QtCore import QSettings
 
+from py_rme_canary.core.config.client_profiles import (
+    ClientProfile,
+    dump_client_profiles,
+    parse_client_profiles,
+    resolve_active_client_profile,
+)
+
 _DEFAULT_ORG = "py_rme_canary"
 _DEFAULT_APP = "py_rme_canary"
 
@@ -67,6 +74,42 @@ class UserSettings:
         """Set sprite match on paste preference."""
         self._settings.setValue("preferences/sprite_match_on_paste", bool(value))
         self._settings.sync()
+
+    def get_client_profiles(self) -> list[ClientProfile]:
+        """Get all persisted client profiles."""
+        try:
+            raw = self._settings.value("profiles/client_profiles_v1", "[]")
+        except Exception:
+            return []
+        return parse_client_profiles(raw)
+
+    def set_client_profiles(self, profiles: list[ClientProfile]) -> None:
+        """Persist client profiles to settings."""
+        payload = dump_client_profiles(profiles)
+        self._settings.setValue("profiles/client_profiles_v1", payload)
+        self._settings.sync()
+
+    def get_active_client_profile_id(self) -> str:
+        """Get active profile id."""
+        try:
+            return str(self._settings.value("profiles/active_client_profile_id", "") or "")
+        except Exception:
+            return ""
+
+    def set_active_client_profile_id(self, profile_id: str) -> None:
+        """Persist active profile id."""
+        self._settings.setValue("profiles/active_client_profile_id", str(profile_id or ""))
+        self._settings.sync()
+
+    def get_active_client_profile(self, *, client_version: int | None = None) -> ClientProfile | None:
+        """Resolve active profile from stored id and optional version hint."""
+        profiles = self.get_client_profiles()
+        active_id = self.get_active_client_profile_id()
+        return resolve_active_client_profile(
+            profiles=profiles,
+            active_profile_id=active_id,
+            client_version=client_version,
+        )
 
 
 _settings_lock = Lock()

@@ -59,6 +59,23 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_export_otmm = QAction("Export Minimap (OTMM)...", editor)
     editor.act_export_otmm.triggered.connect(lambda _c=False: file_tools.export_otmm(editor))
+    editor.act_export_tilesets = QAction("Export Tilesets...", editor)
+    editor.act_export_tilesets.triggered.connect(lambda _c=False: file_tools.export_tilesets(editor))
+
+    editor.act_reload_data = QAction("Reload Data Files", editor)
+    editor.act_reload_data.setShortcut(QKeySequence("F5"))
+    editor.act_reload_data.triggered.connect(lambda _c=False: file_tools.reload_data(editor))
+
+    editor.act_preferences = QAction("Preferences...", editor)
+    editor.act_preferences.triggered.connect(lambda _c=False: file_tools.open_preferences(editor))
+
+    editor.act_extensions = QAction("Extensions...", editor)
+    editor.act_extensions.setShortcut(QKeySequence("F2"))
+    editor.act_extensions.triggered.connect(lambda _c=False: file_tools.open_extensions(editor))
+
+    editor.act_goto_website = QAction("Goto Website", editor)
+    editor.act_goto_website.setShortcut(QKeySequence("F3"))
+    editor.act_goto_website.triggered.connect(lambda _c=False: file_tools.goto_website(editor))
 
     # Replace Items
     editor.act_replace_items = QAction("Replace Items...", editor)
@@ -376,6 +393,18 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_randomize_map.triggered.connect(lambda _c=False: editor._randomize(selection_only=False))
 
     # Map Tools (New Legacy Parity)
+    editor.act_remove_item_map = QAction("Remove Item...", editor)
+    editor.act_remove_item_map.triggered.connect(lambda _c=False: editor._map_remove_item_global())
+
+    editor.act_remove_corpses_map = QAction("Remove Corpses", editor)
+    editor.act_remove_corpses_map.triggered.connect(lambda _c=False: editor._map_remove_corpses())
+
+    editor.act_remove_unreachable_map = QAction("Remove Unreachable", editor)
+    editor.act_remove_unreachable_map.triggered.connect(lambda _c=False: editor._map_remove_unreachable())
+
+    editor.act_clear_invalid_house_tiles_map = QAction("Clear Invalid House Tiles", editor)
+    editor.act_clear_invalid_house_tiles_map.triggered.connect(lambda _c=False: editor._map_clear_invalid_house_tiles())
+
     editor.act_remove_monsters_selection = QAction("Remove Monsters", editor)
     editor.act_remove_monsters_selection.triggered.connect(
         lambda _c=False: map_tools.remove_monsters(editor, selection_only=True)
@@ -556,6 +585,9 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_window_live_log.toggled.connect(lambda v: window_tools.toggle_live_log_dock(editor, v))
 
     # Assets
+    editor.act_manage_client_profiles = QAction("Manage Client Profiles...", editor)
+    editor.act_manage_client_profiles.triggered.connect(lambda _c=False: assets_tools.manage_client_profiles(editor))
+
     editor.act_set_assets_dir = QAction("Set Assets Directory…", editor)
     editor.act_set_assets_dir.triggered.connect(lambda _c=False: assets_tools.choose_assets_dir(editor))
 

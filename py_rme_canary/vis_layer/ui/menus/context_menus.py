@@ -261,6 +261,16 @@ class ItemContextMenu:
 
         asset_mgr = AssetManager.instance()
         item_name = asset_mgr.get_item_name(item.id)
+        item_meta = asset_mgr.get_item_metadata(item.id)
+        client_id = getattr(item, "client_id", None)
+        if client_id is None and item_meta is not None:
+            client_id = item_meta.client_id
+        if client_id is None:
+            mapper = getattr(asset_mgr, "_id_mapper", None)
+            if mapper is not None and hasattr(mapper, "get_client_id"):
+                client_id = mapper.get_client_id(int(item.id))
+        if client_id is None:
+            client_id = int(item.id)
 
         # Item info header with name
         header_text = f"📦 {item_name} (#{item.id})" if item_name != f"Item #{item.id}" else f"📦 Item #{item.id}"
@@ -312,8 +322,7 @@ class ItemContextMenu:
         # Copy Data Actions
         builder.add_submenu("📋 Copy Data", "")
         builder.add_action(f"Server ID ({item.id})", cb("copy_server_id"))
-        # TODO: Add Client ID when IdMapper is available
-        # builder.add_action(f"Client ID ({client_id})", cb("copy_client_id"))
+        builder.add_action(f"Client ID ({int(client_id)})", cb("copy_client_id"), enabled=_enabled("copy_client_id"))
         builder.add_action("Item Name", cb("copy_item_name"))
         if tile:
             builder.add_action(f"Position ({tile.x}, {tile.y}, {tile.z})", cb("copy_position"))
@@ -333,6 +342,13 @@ class ItemContextMenu:
         builder.add_separator()
 
         # Find/Replace helpers
+        if _enabled("set_find"):
+            builder.add_action("🎯 Set as Find Item", cb("set_find"), enabled=True)
+        if _enabled("set_replace"):
+            builder.add_action("🎯 Set as Replace Item", cb("set_replace"), enabled=True)
+        if _enabled("set_find") or _enabled("set_replace"):
+            builder.add_separator()
+
         builder.add_action("🎯 Find All of This Item", cb("find_all"), enabled=_enabled("find_all"))
         builder.add_action("🔁 Replace All...", cb("replace_all"), enabled=_enabled("replace_all"))
 

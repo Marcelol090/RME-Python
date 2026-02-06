@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QDockWidget, QSplitter, QTabWidget, QVBoxLayout, QWi
 
 from py_rme_canary.vis_layer.ui.docks.modern_palette import BrushCardData, ModernPaletteWidget
 from py_rme_canary.vis_layer.ui.docks.modern_tool_options import ModernToolOptionsWidget
+from py_rme_canary.vis_layer.ui.docks.palette import _resolve_materials_brushs_path
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -71,6 +72,7 @@ class ModernPaletteDock(QDockWidget):
             ("Terrain", "terrain"),
             ("Doodad", "doodad"),
             ("Item", "item"),
+            ("Recent", "recent"),
             ("House", "house"),
             ("Creature", "creature"),
             ("NPC", "npc"),
@@ -82,7 +84,14 @@ class ModernPaletteDock(QDockWidget):
         self._palette_widgets: dict[str, ModernPaletteWidget] = {}
 
         for label, key in categories:
-            widget = ModernPaletteWidget()
+            sprite_lookup = None
+            if hasattr(self.editor, "_sprite_pixmap_for_server_id"):
+
+                def _lookup(sid: int, size: int):
+                    return self.editor._sprite_pixmap_for_server_id(int(sid), tile_px=int(size))
+
+                sprite_lookup = _lookup
+            widget = ModernPaletteWidget(sprite_lookup=sprite_lookup)
             # We will populate the widget when tab is selected or initially
             widget.brush_selected.connect(self._on_brush_selected)
 
@@ -126,6 +135,8 @@ class ModernPaletteDock(QDockWidget):
             VIRTUAL_DOOR_TOOL_NORMAL,
             VIRTUAL_DOOR_TOOL_QUEST,
             VIRTUAL_DOOR_TOOL_WINDOW,
+            VIRTUAL_HOUSE_BASE,
+            VIRTUAL_HOUSE_EXIT_BASE,
             VIRTUAL_MONSTER_BASE,
             VIRTUAL_MONSTER_MAX,
             VIRTUAL_NPC_BASE,
@@ -133,8 +144,12 @@ class ModernPaletteDock(QDockWidget):
             VIRTUAL_OPTIONAL_BORDER_ID,
             VIRTUAL_SPAWN_MONSTER_TOOL_ID,
             VIRTUAL_SPAWN_NPC_TOOL_ID,
+            VIRTUAL_WAYPOINT_BASE,
+            VIRTUAL_WAYPOINT_MAX,
+            VIRTUAL_ZONE_BASE,
             monster_virtual_id,
             npc_virtual_id,
+            waypoint_virtual_id,
         )
 
         editor = self.editor
@@ -146,9 +161,9 @@ class ModernPaletteDock(QDockWidget):
             doodads = []
             try:
                 if hasattr(editor.brush_mgr, "ensure_doodads_loaded"):
-                    # We skip the complex path resolution for now, mimicking palette.py's try block
-                    # In a full implementation, we'd copy _resolve_materials_brushs_path
-                    pass
+                    materials_path = _resolve_materials_brushs_path()
+                    if materials_path:
+                        editor.brush_mgr.ensure_doodads_loaded(materials_path)
                 doodads = list(editor.brush_mgr.iter_doodad_brushes())
             except Exception:
                 doodads = []
@@ -229,6 +244,87 @@ class ModernPaletteDock(QDockWidget):
                         brushes.append(BrushCardData(brush_id=vid, name=str(nm), brush_type="npc"))
                 except Exception:
                     continue
+
+        # 5. House
+        elif key_norm == "house":
+            houses = getattr(getattr(editor, "session", None), "game_map", None)
+            houses = getattr(houses, "houses", None) or {}
+            for h in sorted(houses.values(), key=lambda hh: int(getattr(hh, "id", 0))):
+                hid = int(getattr(h, "id", 0))
+                if hid <= 0:
+                    continue
+                name = str(getattr(h, "name", "") or "").strip()
+                label = f"{int(hid)}: {name}" if name else str(int(hid))
+                brushes.append(BrushCardData(brush_id=int(VIRTUAL_HOUSE_BASE + hid), name=label, brush_type="house"))
+                exit_label = f"Exit: {int(hid)}: {name}" if name else f"Exit: {int(hid)}"
+                brushes.append(
+                    BrushCardData(
+                        brush_id=int(VIRTUAL_HOUSE_EXIT_BASE + hid),
+                        name=exit_label,
+                        brush_type="house_exit",
+                    )
+                )
+
+        # 6. Waypoints
+        elif key_norm == "waypoint":
+            gm = getattr(getattr(editor, "session", None), "game_map", None)
+            waypoints = getattr(gm, "waypoints", None) or {}
+            used: set[int] = set()
+            names = sorted((str(k) for k in waypoints), key=lambda s: s.casefold())
+            name_to_vid: dict[str, int] = {}
+            for nm in names:
+                try:
+                    vid = int(waypoint_virtual_id(nm, used=used))
+                except Exception:
+                    continue
+                name_to_vid[str(nm)] = int(vid)
+
+            for nm in names:
+                pos = waypoints.get(nm)
+                if pos is None:
+                    continue
+                vid = name_to_vid.get(nm)
+                if vid is None or not (
+                    VIRTUAL_WAYPOINT_BASE <= int(vid) < VIRTUAL_WAYPOINT_BASE + int(VIRTUAL_WAYPOINT_MAX)
+                ):
+                    continue
+                label = f"{nm} @ ({int(getattr(pos, 'x', 0))},{int(getattr(pos, 'y', 0))},{int(getattr(pos, 'z', 0))})"
+                brushes.append(BrushCardData(brush_id=int(vid), name=label, brush_type="waypoint"))
+
+        # 7. Zones
+        elif key_norm == "zones":
+            zones = getattr(getattr(editor, "session", None), "game_map", None)
+            zones = getattr(zones, "zones", None) or {}
+            for z in sorted(zones.values(), key=lambda zz: int(getattr(zz, "id", 0))):
+                zid = int(getattr(z, "id", 0))
+                if zid <= 0:
+                    continue
+                name = str(getattr(z, "name", "") or "").strip()
+                label = f"{int(zid)}: {name}" if name else str(int(zid))
+                brushes.append(BrushCardData(brush_id=int(VIRTUAL_ZONE_BASE + zid), name=label, brush_type="zone"))
+
+        # 8. Recent
+        elif key_norm == "recent":
+            session = getattr(editor, "session", None)
+            recent = list(getattr(session, "recent_brushes", []) or [])
+            for sid in recent:
+                try:
+                    bd = editor.brush_mgr.get_brush(int(sid))
+                except Exception:
+                    bd = None
+                btype = str(getattr(bd, "brush_type", "") or "").strip().lower() if bd is not None else ""
+                name = str(getattr(bd, "name", "") or "").strip() if bd is not None else ""
+                label = f"{int(sid)}: {name}" if name else str(int(sid))
+                if btype:
+                    label = f"{label} ({btype})"
+                brushes.append(
+                    BrushCardData(
+                        brush_id=int(sid),
+                        name=label,
+                        brush_type=btype,
+                        sprite_id=int(getattr(bd, "server_id", 0)) if bd is not None else None,
+                    )
+                )
 
         # 5. Items (and others)
         else:

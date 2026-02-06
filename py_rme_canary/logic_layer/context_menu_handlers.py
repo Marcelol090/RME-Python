@@ -13,11 +13,11 @@ These handlers connect context menu UI to actual map editing operations.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import replace
+from contextlib import suppress
 from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QClipboard
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QWidget
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.item import Item
@@ -46,6 +46,55 @@ class ContextMenuActionHandlers:
         self.palette = palette
         self._clipboard: QClipboard | None = QApplication.clipboard()
 
+    def _resolve_editor(self) -> object | None:
+        """Resolve editor instance from known UI anchors."""
+        for candidate in (self.canvas, self.palette):
+            if candidate is None:
+                continue
+
+            editor = getattr(candidate, "_editor", None)
+            if editor is not None:
+                return editor
+
+            editor = getattr(candidate, "editor", None)
+            if editor is not None:
+                return editor
+
+        return None
+
+    def _show_status(self, message: str) -> None:
+        """Show status in editor bar when available; fallback to stdout."""
+        editor = self._resolve_editor()
+        if editor is not None:
+            status = getattr(editor, "status", None)
+            if status is not None and hasattr(status, "showMessage"):
+                with suppress(Exception):
+                    status.showMessage(str(message))
+                    return
+        print(str(message))
+
+    def _set_selected_brush(self, brush_id: int) -> bool:
+        """Best-effort brush selection through palette/editor/session."""
+        sid = int(brush_id)
+
+        if self.palette is not None and hasattr(self.palette, "select_brush"):
+            with suppress(Exception):
+                self.palette.select_brush(sid)
+                return True
+
+        editor = self._resolve_editor()
+        if editor is not None and hasattr(editor, "_set_selected_brush_id"):
+            with suppress(Exception):
+                editor._set_selected_brush_id(sid)
+                return True
+
+        if self.editor_session is not None and hasattr(self.editor_session, "set_selected_brush"):
+            with suppress(Exception):
+                self.editor_session.set_selected_brush(sid)
+                return True
+
+        return False
+
     # ========================
     # Smart Brush Selection
     # ========================
@@ -56,25 +105,29 @@ class ContextMenuActionHandlers:
         Args:
             item: Item to detect brush for
         """
-        from py_rme_canary.logic_layer.item_type_detector import ItemCategory, ItemTypeDetector
+        from py_rme_canary.logic_layer.item_type_detector import ItemTypeDetector
 
         category = ItemTypeDetector.get_category(item)
 
         if not ItemTypeDetector.can_select_brush(category):
             return
 
-        # Map category to brush name
-        brush_map = {
-            ItemCategory.WALL: "wall",
-            ItemCategory.CARPET: "carpet",
-            ItemCategory.DOOR: "door",
-            ItemCategory.TABLE: "table",
-        }
+        brush_name = ItemTypeDetector.get_brush_name(category)
+        brush_id = int(item.id)
 
-        brush_name = brush_map.get(category)
-        if brush_name and self.palette:
-            # TODO: Implement palette.select_brush(brush_name)
-            print(f"[Select Brush] {brush_name} brush selected for item {item.id}")
+        if self.editor_session is not None:
+            brush_manager = getattr(self.editor_session, "brush_manager", None)
+            if brush_manager is not None and hasattr(brush_manager, "get_brush_any"):
+                with suppress(Exception):
+                    brush_def = brush_manager.get_brush_any(int(item.id))
+                    if brush_def is not None:
+                        brush_id = int(getattr(brush_def, "server_id", int(item.id)))
+
+        if self._set_selected_brush(brush_id):
+            self._show_status(f"[Select Brush] {brush_name} brush selected ({brush_id})")
+            return
+
+        self._show_status(f"[Select Brush] Unable to select brush for item {int(item.id)}")
 
     # ========================
     # Door Toggle
@@ -103,18 +156,18 @@ class ContextMenuActionHandlers:
             if action is not None:
                 return
 
-        # Update item ID (local-only fallback)
-        old_id = item.id
-        updated_item = replace(item, id=toggle_id)
+        # Local-only fallback: mutate selected item directly.
+        old_id = int(item.id)
+        item.id = int(toggle_id)
 
         # TODO: Wrap in EditorAction for undo/redo
         # if self.editor_session:
         #     action = ModifyItemAction(position, old_id, toggle_id)
         #     self.editor_session.execute_action(action)
 
-        is_open = ItemTypeDetector.is_door_open(updated_item)
+        is_open = ItemTypeDetector.is_door_open(item)
         state = "opened" if is_open else "closed"
-        print(f"[Toggle Door] Door {old_id} → {toggle_id} ({state})")
+        self._show_status(f"[Toggle Door] Door {old_id} → {int(toggle_id)} ({state})")
 
     # ========================
     # Item Rotation
@@ -135,11 +188,11 @@ class ContextMenuActionHandlers:
         if next_id is None:
             return
 
-        old_id = item.id
-        updated_item = replace(item, id=next_id)
+        old_id = int(item.id)
+        item.id = int(next_id)
 
         # TODO: Wrap in EditorAction for undo/redo
-        print(f"[Rotate Item] Item {old_id} → {updated_item.id}")
+        self._show_status(f"[Rotate Item] Item {old_id} → {int(item.id)}")
 
     # ========================
     # Teleport Navigation
@@ -161,11 +214,26 @@ class ContextMenuActionHandlers:
             print("[Go To Teleport] No destination set")
             return
 
-        if self.canvas:
-            # TODO: canvas.jump_to_position(dest)
-            print(f"[Go To Teleport] Jumping to {dest}")
-        else:
-            print(f"[Go To Teleport] Destination: {dest}")
+        if self.canvas and hasattr(self.canvas, "jump_to_position"):
+            with suppress(Exception):
+                self.canvas.jump_to_position(dest)
+                return
+
+        editor = self._resolve_editor()
+        if editor is not None and hasattr(editor, "center_view_on"):
+            x, y, z = (int(dest[0]), int(dest[1]), int(dest[2]))
+            with suppress(Exception):
+                editor.center_view_on(x, y, z, push_history=True)
+                session = getattr(editor, "session", None)
+                if session is not None and hasattr(session, "set_single_selection"):
+                    session.set_single_selection(x=x, y=y, z=z)
+                canvas = getattr(editor, "canvas", None)
+                if canvas is not None and hasattr(canvas, "update"):
+                    canvas.update()
+                self._show_status(f"[Go To Teleport] Jumped to {x}, {y}, {z}")
+                return
+
+        self._show_status(f"[Go To Teleport] Destination: {dest}")
 
     # ========================
     # Copy Data Actions
@@ -190,15 +258,16 @@ class ContextMenuActionHandlers:
         Args:
             item: Item to copy name from
         """
-        # TODO: Look up name from items.otb
-        # For now, use placeholder
-        name = f"Item_{item.id}"  # Placeholder
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+        asset_mgr = AssetManager.instance()
+        name = asset_mgr.get_item_name(int(item.id))
 
         clipboard = self._clipboard
         if clipboard is None:
             return
         clipboard.setText(name, QClipboard.Mode.Clipboard)
-        print(f"[Copy] Item name '{name}' copied to clipboard")
+        self._show_status(f"[Copy] Item name '{name}' copied to clipboard")
 
     def copy_position(self, position: tuple[int, int, int]) -> None:
         """Copy position to clipboard.
@@ -219,16 +288,32 @@ class ContextMenuActionHandlers:
         Args:
             item: Item to copy client ID from
         """
-        # TODO: Implement ID mapping via IdMapper
-        # client_id = id_mapper.server_to_client(item.id)
-        client_id = item.id  # Placeholder
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+        client_id: int | None = int(item.client_id) if item.client_id is not None else None
+
+        asset_mgr = AssetManager.instance()
+        if client_id is None:
+            metadata = asset_mgr.get_item_metadata(int(item.id))
+            if metadata is not None and metadata.client_id is not None:
+                client_id = int(metadata.client_id)
+
+        if client_id is None:
+            mapper = getattr(asset_mgr, "_id_mapper", None)
+            if mapper is not None and hasattr(mapper, "get_client_id"):
+                mapped = mapper.get_client_id(int(item.id))
+                if mapped is not None:
+                    client_id = int(mapped)
+
+        if client_id is None:
+            client_id = int(item.id)
 
         clipboard = self._clipboard
         if clipboard is None:
             return
         text = str(client_id)
         clipboard.setText(text, QClipboard.Mode.Clipboard)
-        print(f"[Copy] Client ID {text} copied to clipboard")
+        self._show_status(f"[Copy] Client ID {text} copied to clipboard")
 
     # ========================
     # Find/Replace Actions
@@ -240,8 +325,15 @@ class ContextMenuActionHandlers:
         Args:
             item: Item to search for
         """
-        # TODO: Open FindItemDialog with ID pre-filled
-        print(f"[Find All] Searching for all items with ID {item.id}")
+        item_id = int(item.id)
+        editor = self._resolve_editor()
+
+        if editor is not None and hasattr(editor, "_find_item_by_id"):
+            with suppress(Exception):
+                editor._find_item_by_id(item_id)
+                return
+
+        self._show_status(f"[Find All] Searching for all items with ID {item_id}")
 
     def replace_all_items(self, item: Item) -> None:
         """Open Replace Items dialog with this item as source.
@@ -249,8 +341,25 @@ class ContextMenuActionHandlers:
         Args:
             item: Item to replace
         """
-        # TODO: Open ReplaceItemsDialog
-        print(f"[Replace All] Opening replace dialog for item {item.id}")
+        item_id = int(item.id)
+        editor = self._resolve_editor()
+
+        if (
+            editor is not None
+            and hasattr(editor, "_set_quick_replace_source")
+            and hasattr(editor, "_open_replace_items_dialog")
+        ):
+            with suppress(Exception):
+                editor._set_quick_replace_source(item_id)
+                editor._open_replace_items_dialog()
+                return
+
+        from py_rme_canary.vis_layer.ui.dialogs.replace_items_dialog import ReplaceItemsDialog
+
+        parent = editor if isinstance(editor, QWidget) else None
+        dialog = ReplaceItemsDialog(parent=parent, session=self.editor_session)
+        dialog.set_source_id(item_id)
+        dialog.exec()
 
     # ========================
     # Browse Tile

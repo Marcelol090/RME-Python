@@ -78,6 +78,11 @@ class QtMapEditor(
 
     # Menus created by builders
     _menu_toolbars: QMenu
+    menu_file: QMenu
+    menu_edit: QMenu
+    menu_search: QMenu
+    menu_selection: QMenu
+    menu_help: QMenu
     menu_find_on_map: QMenu
     menu_tools: QMenu
 
@@ -90,6 +95,13 @@ class QtMapEditor(
     act_import_monsters_npcs: QAction
     act_import_monster_folder: QAction
     act_import_map: QAction
+    act_export_png: QAction
+    act_export_otmm: QAction
+    act_export_tilesets: QAction
+    act_reload_data: QAction
+    act_preferences: QAction
+    act_extensions: QAction
+    act_goto_website: QAction
     act_undo: QAction
     act_redo: QAction
     act_cancel: QAction
@@ -156,6 +168,7 @@ class QtMapEditor(
     act_show_avoidables: QAction
     act_show_lights: QAction
     act_show_indicators_simple: QAction
+    act_manage_client_profiles: QAction
     act_set_assets_dir: QAction
     act_goto_position: QAction
     act_goto_previous_position: QAction
@@ -180,6 +193,10 @@ class QtMapEditor(
     act_waypoint_delete: QAction
     act_switch_door_here: QAction
     act_convert_map_format: QAction
+    act_remove_item_map: QAction
+    act_remove_corpses_map: QAction
+    act_remove_unreachable_map: QAction
+    act_clear_invalid_house_tiles_map: QAction
     act_town_add_edit: QAction
     act_town_set_temple_here: QAction
     act_town_delete: QAction
@@ -208,6 +225,7 @@ class QtMapEditor(
     # Editor-owned actions (created in editor.py)
     act_find_item: QAction
     act_map_statistics: QAction
+    act_map_statistics_graphs: QAction
     act_replace_items: QAction
     act_replace_items_on_selection: QAction
     act_remove_item_on_selection: QAction
@@ -415,6 +433,10 @@ class QtMapEditor(
         self.act_map_statistics = QAction("Map Statistics...", self)
         self.act_map_statistics.triggered.connect(self._show_map_statistics)
 
+        self.act_map_statistics_graphs = QAction("Map Statistics (Graphs)...", self)
+        self.act_map_statistics_graphs.setShortcut(QKeySequence("Ctrl+Shift+G"))
+        self.act_map_statistics_graphs.triggered.connect(self._show_map_statistics_graphs)
+
         self.act_replace_items = QAction("Replace Items...", self)
         self.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
         self.act_replace_items.triggered.connect(self._open_replace_items_dialog)
@@ -541,6 +563,10 @@ class QtMapEditor(
 
         # Initialize Modern UX features (theme, overlays, menus)
         self.init_modern_ux()
+        if hasattr(self, "act_toggle_dark_mode"):
+            self.act_toggle_dark_mode.blockSignals(True)
+            self.act_toggle_dark_mode.setChecked(True)
+            self.act_toggle_dark_mode.blockSignals(False)
 
         self._enable_action_logging()
 

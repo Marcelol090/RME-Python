@@ -29,9 +29,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.core.config.user_settings import get_user_settings
+
 if TYPE_CHECKING:
     from py_rme_canary.core.config.configuration_manager import ConfigurationManager
-    from py_rme_canary.core.config.user_settings import get_user_settings
 
 
 class PreferencesDialog(QDialog):

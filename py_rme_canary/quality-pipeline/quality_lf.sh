@@ -36,6 +36,27 @@ REPORT_DIR="${REPORT_DIR:-.quality_reports}"
 TMP_DIR="${TMP_DIR:-.quality_tmp}"
 CACHE_DIR="${CACHE_DIR:-.quality_cache}"
 RADON_TARGETS="${RADON_TARGETS:-$ROOT_DIR/py_rme_canary/core,$ROOT_DIR/py_rme_canary/logic_layer}"
+PROJECT_DIR="${PROJECT_DIR:-py_rme_canary}"
+
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  PROJECT_DIR="."
+fi
+
+PROJECT_CORE="${PROJECT_CORE:-$PROJECT_DIR/core}"
+PROJECT_LOGIC="${PROJECT_LOGIC:-$PROJECT_DIR/logic_layer}"
+PROJECT_VIS="${PROJECT_VIS:-$PROJECT_DIR/vis_layer}"
+PROJECT_TESTS="${PROJECT_TESTS:-$PROJECT_DIR/tests}"
+QUALITY_HASH_TARGETS="${QUALITY_HASH_TARGETS:-$PROJECT_CORE,$PROJECT_LOGIC,$PROJECT_VIS,$PROJECT_TESTS}"
+
+SCAN_TARGETS=()
+for scan_dir in "$PROJECT_CORE" "$PROJECT_LOGIC" "$PROJECT_VIS" "$PROJECT_TESTS"; do
+  if [[ -d "$scan_dir" ]]; then
+    SCAN_TARGETS+=("$scan_dir")
+  fi
+done
+if [[ ${#SCAN_TARGETS[@]} -eq 0 ]]; then
+  SCAN_TARGETS+=("$PROJECT_DIR")
+fi
 
 # Arquivos de relatório
 SYMBOL_INDEX_BEFORE="$REPORT_DIR/symbols_before.json"
@@ -59,7 +80,12 @@ SKIP_SONARLINT=false
 SKIP_SECRETS=false
 SKIP_DEADCODE=false
 SKIP_UI_TESTS=false
+SKIP_JULES=false
 VERBOSE=false
+FULL_MODE=false
+NO_CACHE=false
+PARALLEL_JOBS="$(nproc 2>/dev/null || echo 4)"
+TOOL_TIMEOUT=3600
 ENABLE_TELEMETRY=false
 PARALLEL_AVAILABLE=false
 
@@ -83,8 +109,8 @@ usage() {
 Uso: $0 [opções]
 
 Quality Pipeline v2.3 - Análise de Código Completa + UI/UX Automation
-Ferramentas: Ruff, Mypy, Radon, Pyright, Complexipy, Lizard, Bandit, Semgrep, 
-detect-secrets, Vulture, Skylos, jscpd, pip-audit, OSV-Scanner, Interrogate, 
+Ferramentas: Ruff, Mypy, Radon, Pyright, Complexipy, Lizard, Bandit, Semgrep,
+detect-secrets, Vulture, Skylos, jscpd, pip-audit, OSV-Scanner, Interrogate,
 Pydocstyle, Mutmut, Prospector, PyAutoGUI, Pywinauto, Lighthouse, Percy, Applitools
 
 Opções:
@@ -97,7 +123,12 @@ Opções:
   --skip-secrets       Pula secret scanning (detect-secrets, gitleaks)
   --skip-deadcode      Pula análise de código morto/duplicado (Vulture, Skylos, jscpd)
   --skip-ui-tests      Pula testes de UI/UX automation (PyAutoGUI, Lighthouse, Percy)
+  --skip-jules         Pula integração local Jules (API + suggestions contract)
   --verbose            Saída detalhada
+  --full               Executa todas as ferramentas no modo mais completo
+  --no-cache           Desabilita cache de resultados
+  --jobs N             Define número de jobs paralelos (padrão: nproc)
+  --timeout N          Define timeout em segundos para cada ferramenta
   --telemetry          Habilita telemetria (OpenTelemetry)
   --help               Exibe esta ajuda
 
@@ -106,6 +137,7 @@ Exemplos:
   $0 --apply --skip-tests
   $0 --apply --skip-secrets --skip-deadcode
   $0 --skip-ui-tests
+  $0 --dry-run --skip-ui-tests --skip-jules
 
 Ferramentas por fase:
   Fase 1 (Baseline):     Ruff, Mypy, Radon, Pyright, Complexipy, Lizard
@@ -114,7 +146,7 @@ Ferramentas por fase:
   Fase 4 (Segurança):    Bandit, Semgrep, detect-secrets, pip-audit, OSV-Scanner, Safety
   Fase 5 (Docs/Testes):  Interrogate, Pydocstyle, Mutmut
   Fase 6 (UI/UX):        PyAutoGUI, Pywinauto, Lighthouse, Percy, Applitools
-  Fase 7 (Consolidação): Relatório final
+  Fase 7 (Consolidação): Relatório final + Jules suggestions
 EOF
 }
 
@@ -130,7 +162,12 @@ while [[ $# -gt 0 ]]; do
     --skip-secrets) SKIP_SECRETS=true ;;
     --skip-deadcode) SKIP_DEADCODE=true ;;
     --skip-ui-tests) SKIP_UI_TESTS=true ;;
+    --skip-jules) SKIP_JULES=true ;;
     --verbose) VERBOSE=true ;;
+    --full) FULL_MODE=true ;;
+    --no-cache) NO_CACHE=true ;;
+    --jobs) shift; PARALLEL_JOBS="$1" ;;
+    --timeout) shift; TOOL_TIMEOUT="$1" ;;
     --telemetry) ENABLE_TELEMETRY=true ;;
     --help) usage; exit 0 ;;
     *) echo -e "${RED}Opção desconhecida: $1${NC}"; usage; exit 1 ;;
@@ -163,6 +200,62 @@ log() {
   fi
 }
 
+# Performance tracking
+declare -A TOOL_TIMES
+PERFORMANCE_LOG="$REPORT_DIR/performance.log"
+
+start_timer() {
+  local tool_name="$1"
+  TOOL_TIMES["${tool_name}_start"]=$(date +%s)
+  log DEBUG "⏱️  Iniciando $tool_name"
+}
+
+end_timer() {
+  local tool_name="$1"
+  local start_time="${TOOL_TIMES[${tool_name}_start]}"
+
+  if [[ -n "$start_time" ]]; then
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+    TOOL_TIMES["${tool_name}_duration"]=$duration
+
+    # Log performance
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | $tool_name | ${duration}s" >> "$PERFORMANCE_LOG"
+
+    if [[ $duration -lt 10 ]]; then
+      log DEBUG "✓ $tool_name completou em ${duration}s"
+    elif [[ $duration -lt 60 ]]; then
+      log INFO "⏱️  $tool_name completou em ${duration}s"
+    else
+      local minutes=$((duration / 60))
+      local seconds=$((duration % 60))
+      log WARN "⏱️  $tool_name demorou ${minutes}m${seconds}s"
+    fi
+  fi
+}
+
+# Execute with timeout wrapper
+run_with_timeout() {
+  local timeout_duration="$1"
+  shift
+  local tool_name="$1"
+  shift
+
+  if command -v timeout &>/dev/null; then
+    timeout "$timeout_duration" "$@" || {
+      local exit_code=$?
+      if [[ $exit_code -eq 124 ]]; then
+        log ERROR "$tool_name excedeu timeout de ${timeout_duration}s"
+        return 124
+      fi
+      return $exit_code
+    }
+  else
+    # Fallback sem timeout
+    "$@"
+  fi
+}
+
 # Prefer uv when available for faster installs
 if command -v uv &>/dev/null; then
   PYTHON_INSTALL_CMD="uv pip install"
@@ -180,6 +273,13 @@ require() {
   local cmd="$1"
   local install_hint="${2:-}"
 
+  # Prefer python3 in Unix-like shells when `python` alias is absent.
+  if [[ "$cmd" == "python" ]] && command -v python3 &>/dev/null; then
+    PYTHON_BIN="python3"
+    log DEBUG "python resolvido para: $(command -v python3)"
+    return 0
+  fi
+
   if command -v "$cmd" &>/dev/null; then
     log DEBUG "$cmd encontrado: $(command -v "$cmd")"
     return 0
@@ -187,7 +287,12 @@ require() {
 
   if command -v "${cmd}.exe" &>/dev/null; then
     log DEBUG "$cmd encontrado: $(command -v "${cmd}.exe")"
-    [[ "$cmd" == "python" ]] && PYTHON_BIN="${cmd}.exe"
+    if [[ "$cmd" == "python" ]]; then
+      # Only bind to *.exe in native Windows-like shells.
+      if [[ "${OS:-}" == "Windows_NT" || "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then
+        PYTHON_BIN="${cmd}.exe"
+      fi
+    fi
     return 0
   fi
 
@@ -213,7 +318,7 @@ check_dependencies() {
   # Ferramentas de segurança
   if [[ "$SKIP_SECURITY" == false ]]; then
     require bandit "pip install bandit" || log WARN "Bandit não encontrado - análise de segurança parcial"
-    
+
     # Safety para vulnerabilidades em dependências
     if ! "$PYTHON_BIN" -m safety --version &>/dev/null 2>&1; then
       log WARN "Safety não encontrado - instale com: pip install safety"
@@ -331,10 +436,20 @@ index_symbols() {
   local output="$1"
   log INFO "Indexando símbolos → $output"
 
+  local symbols_cache_file="$CACHE_DIR/symbols_index.json"
+  if cache_hit "symbols_index" "$symbols_cache_file"; then
+    cp "$symbols_cache_file" "$output" 2>/dev/null || true
+    log SUCCESS "Símbolos: cache hit"
+    return 0
+  fi
+
   if [[ -d "$QUALITY_SCRIPTS_DIR" ]] && [[ -f "$QUALITY_SCRIPTS_DIR/index_symbols.py" ]]; then
-    if ! "$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/index_symbols.py" "$output" 2>/dev/null; then
+    if ! "$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/index_symbols.py" "$output" "${SCAN_TARGETS[@]}" 2>/dev/null; then
       log WARN "Falha ao indexar símbolos - continuando..."
       echo '{"symbols":[]}' > "$output"
+    else
+      cp "$output" "$symbols_cache_file" 2>/dev/null || true
+      cache_mark "symbols_index"
     fi
   else
     log DEBUG "Script de indexação não encontrado - criando índice vazio"
@@ -346,32 +461,109 @@ index_symbols() {
 # CACHE DE EXECUÇÃO
 #############################################
 
-run_with_cache() {
-  local cache_key="$1"
-  local cache_file="$CACHE_DIR/${cache_key}.hash"
-  shift 1
+SOURCE_HASH=""
 
-  local current_hash=""
-  if [[ -d "$QUALITY_SCRIPTS_DIR" ]] && [[ -f "$QUALITY_SCRIPTS_DIR/hash_python.py" ]]; then
-    current_hash=$("$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/hash_python.py" 2>/dev/null || echo "no-hash")
+_compute_source_hash() {
+  local -a hash_targets=()
+  local targets_csv="$QUALITY_HASH_TARGETS"
+
+  if [[ -n "$targets_csv" ]]; then
+    IFS=',' read -r -a hash_targets <<< "$targets_csv"
+  fi
+  if [[ ${#hash_targets[@]} -eq 0 ]]; then
+    hash_targets=("${SCAN_TARGETS[@]}")
+  fi
+
+  if [[ -f "$QUALITY_SCRIPTS_DIR/hash_python.py" ]]; then
+    local py_hash=""
+    local -a hash_cmd=("$PYTHON_BIN" "$QUALITY_SCRIPTS_DIR/hash_python.py" --mode metadata)
+    hash_cmd+=("${hash_targets[@]}")
+    py_hash=$("${hash_cmd[@]}" 2>/dev/null || true)
+    if [[ -n "$py_hash" ]]; then
+      echo "$py_hash"
+      return 0
+    fi
+  fi
+
+  local current_hash
+  current_hash=$(
+    for target in "${hash_targets[@]}"; do
+      [[ -n "$target" ]] || continue
+      [[ -e "$target" ]] || continue
+      find "$target" -type f \( -name "*.py" -o -name "pyproject.toml" -o -name "pytest.ini" -o -name "setup.py" \) \
+        -not -path "*/__pycache__/*" \
+        -not -path "*/.venv/*" \
+        -not -path "*/venv/*" \
+        -not -path "*/.quality_cache/*" \
+        -not -path "*/.quality_reports/*" \
+        -not -path "*/.quality_tmp/*" \
+        -exec md5sum {} \; 2>/dev/null
+    done | sort | md5sum 2>/dev/null | cut -d' ' -f1
+  )
+
+  if [[ -z "$current_hash" ]]; then
+    echo "no-hash"
   else
-    current_hash=$(find py_rme_canary -name "*.py" -exec md5sum {} \; 2>/dev/null | md5sum | cut -d' ' -f1 || echo "no-hash")
+    echo "$current_hash"
+  fi
+}
+
+get_source_hash() {
+  if [[ -z "$SOURCE_HASH" ]]; then
+    SOURCE_HASH=$(_compute_source_hash)
+  fi
+  echo "$SOURCE_HASH"
+}
+
+cache_hit() {
+  local cache_key="$1"
+  shift
+  local cache_file="$CACHE_DIR/${cache_key}.hash"
+  local output_files=("$@")
+
+  if [[ "$NO_CACHE" == true ]] || [[ "$MODE" != "dry-run" ]]; then
+    return 1
+  fi
+
+  local current_hash
+  current_hash=$(get_source_hash)
+  if [[ "$current_hash" == "no-hash" ]]; then
+    return 1
   fi
 
   local previous_hash=""
   [[ -f "$cache_file" ]] && previous_hash=$(cat "$cache_file")
 
-  if [[ "$current_hash" == "$previous_hash" ]] && [[ "$current_hash" != "no-hash" ]]; then
-    log INFO "Cache HIT para $cache_key"
+  if [[ "$current_hash" != "$previous_hash" ]]; then
+    return 1
+  fi
+
+  local output_file
+  for output_file in "${output_files[@]}"; do
+    if [[ ! -f "$output_file" ]]; then
+      return 1
+    fi
+  done
+
+  log INFO "Cache HIT para $cache_key"
+  return 0
+}
+
+cache_mark() {
+  local cache_key="$1"
+  local cache_file="$CACHE_DIR/${cache_key}.hash"
+
+  if [[ "$NO_CACHE" == true ]] || [[ "$MODE" != "dry-run" ]]; then
     return 0
   fi
 
-  log INFO "Cache MISS para $cache_key"
-  if "$@"; then
-    echo "$current_hash" > "$cache_file"
+  local current_hash
+  current_hash=$(get_source_hash)
+  if [[ "$current_hash" == "no-hash" ]]; then
     return 0
   fi
-  return 1
+
+  echo "$current_hash" > "$cache_file"
 }
 
 #############################################
@@ -380,17 +572,35 @@ run_with_cache() {
 
 run_ruff() {
   local output_file="${1:-.ruff.json}"
+  start_timer "Ruff"
   log INFO "Executando Ruff (linter + formatter)..."
 
   local ruff_select="F,E,W,I,N,UP,B,C4,SIM,PERF,PL,RUF,S"
+  local cache_key="ruff_${MODE}"
+
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_issue_count
+    cached_issue_count=$(jq 'length' "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_issue_count" -eq 0 ]]; then
+      log SUCCESS "Ruff (cache): nenhum issue encontrado"
+    else
+      log WARN "Ruff (cache): $cached_issue_count issue(s) detectado(s)"
+    fi
+    end_timer "Ruff"
+    return 0
+  fi
 
   if [[ "$MODE" == "dry-run" ]]; then
-    ruff check . --select "$ruff_select" --config "$RUFF_CONFIG" --exit-zero --output-format=json > "$output_file" 2>/dev/null || true
+    run_with_timeout "$TOOL_TIMEOUT" "ruff-check" \
+      ruff check "${SCAN_TARGETS[@]}" --select "$ruff_select" --config "$RUFF_CONFIG" --exit-zero --output-format=json \
+      > "$output_file" 2>/dev/null || true
   else
     log INFO "Aplicando correções automáticas..."
-    ruff check . --select "$ruff_select" --config "$RUFF_CONFIG" --fix --exit-zero --output-format=json > "$output_file" 2>/dev/null || true
+    run_with_timeout "$TOOL_TIMEOUT" "ruff-check-fix" \
+      ruff check "${SCAN_TARGETS[@]}" --select "$ruff_select" --config "$RUFF_CONFIG" --fix --exit-zero --output-format=json \
+      > "$output_file" 2>/dev/null || true
     log INFO "Formatando código..."
-    ruff format . --config "$RUFF_CONFIG" 2>/dev/null || true
+    run_with_timeout "$TOOL_TIMEOUT" "ruff-format" ruff format "${SCAN_TARGETS[@]}" --config "$RUFF_CONFIG" 2>/dev/null || true
   fi
 
   local issue_count
@@ -401,6 +611,8 @@ run_ruff() {
   else
     log WARN "Ruff: $issue_count issue(s) detectado(s)"
   fi
+  cache_mark "$cache_key"
+  end_timer "Ruff"
 }
 
 #############################################
@@ -409,15 +621,31 @@ run_ruff() {
 
 run_mypy() {
   local output_file="${1:-.mypy_baseline.log}"
+  start_timer "Mypy"
   log INFO "Executando Mypy (type checking)..."
+  local cache_key="mypy_${MODE}"
+
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_errors
+    cached_errors=$(grep -c "error:" "$output_file" 2>/dev/null || true)
+    cached_errors="${cached_errors:-0}"
+    if [[ "$cached_errors" -gt 0 ]]; then
+      log WARN "Mypy (cache): erros de tipagem detectados"
+      end_timer "Mypy"
+      return 1
+    fi
+    log SUCCESS "Mypy (cache): tipagem validada"
+    end_timer "Mypy"
+    return 0
+  fi
 
   local mypy_cache="$CACHE_DIR/mypy_cache"
   mkdir -p "$mypy_cache"
 
   local mypy_targets=""
-  [[ -d "py_rme_canary/core" ]] && mypy_targets="py_rme_canary/core"
-  [[ -d "py_rme_canary/logic_layer" ]] && mypy_targets="$mypy_targets py_rme_canary/logic_layer"
-  [[ -d "py_rme_canary/vis_layer" ]] && mypy_targets="$mypy_targets py_rme_canary/vis_layer"
+  [[ -d "$PROJECT_CORE" ]] && mypy_targets="$PROJECT_CORE"
+  [[ -d "$PROJECT_LOGIC" ]] && mypy_targets="$mypy_targets $PROJECT_LOGIC"
+  [[ -d "$PROJECT_VIS" ]] && mypy_targets="$mypy_targets $PROJECT_VIS"
 
   if [[ -z "$mypy_targets" ]]; then
     log WARN "Nenhum diretório para análise Mypy"
@@ -425,17 +653,24 @@ run_mypy() {
   fi
 
   # shellcheck disable=SC2086
-  if mypy $mypy_targets \
+  if run_with_timeout "$TOOL_TIMEOUT" "mypy" \
+    mypy $mypy_targets \
     --config-file "$MYPY_CONFIG" \
     --cache-dir "$mypy_cache" \
     --no-error-summary \
     --show-column-numbers \
     --show-error-codes \
-    2>&1 | tee "$output_file"; then
+    > "$output_file" 2>&1; then
+    cat "$output_file"
     log SUCCESS "Mypy: tipagem validada"
+    cache_mark "$cache_key"
+    end_timer "Mypy"
     return 0
   else
+    [[ -f "$output_file" ]] && cat "$output_file"
     log WARN "Mypy: erros de tipagem detectados"
+    cache_mark "$cache_key"
+    end_timer "Mypy"
     return 1
   fi
 }
@@ -445,20 +680,37 @@ run_mypy() {
 #############################################
 
 run_pylint() {
+  start_timer "Pylint"
   log INFO "Executando Pylint (análise complementar)..."
 
   if ! "$PYTHON_BIN" -m pylint --version &>/dev/null 2>&1; then
     log DEBUG "Pylint não disponível - pulando"
+    end_timer "Pylint"
     return 0
   fi
 
   local output_file="$REPORT_DIR/pylint.json"
+  local cache_key="pylint"
 
-  "$PYTHON_BIN" -m pylint py_rme_canary \
-    --output-format=json \
-    --exit-zero \
-    --disable=C0114,C0115,C0116 \
-    > "$output_file" 2>/dev/null || true
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_issue_count
+    cached_issue_count=$(jq 'length' "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_issue_count" -gt 0 ]]; then
+      log INFO "Pylint (cache): $cached_issue_count issue(s) encontrado(s)"
+    else
+      log SUCCESS "Pylint (cache): nenhum issue"
+    fi
+    end_timer "Pylint"
+    return 0
+  fi
+
+  run_with_timeout "$TOOL_TIMEOUT" "pylint" \
+    "$PYTHON_BIN" -m pylint "$PROJECT_DIR" \
+      --output-format=json \
+      --jobs "$PARALLEL_JOBS" \
+      --exit-zero \
+      --disable=C0114,C0115,C0116 \
+      > "$output_file" 2>/dev/null || true
 
   local issue_count
   issue_count=$(jq 'length' "$output_file" 2>/dev/null || echo 0)
@@ -468,6 +720,8 @@ run_pylint() {
   else
     log SUCCESS "Pylint: nenhum issue"
   fi
+  cache_mark "$cache_key"
+  end_timer "Pylint"
 }
 
 #############################################
@@ -476,15 +730,30 @@ run_pylint() {
 
 run_radon() {
   local output_file="${1:-.radon.json}"
+  start_timer "Radon"
   log INFO "Executando Radon (complexidade)..."
+  local cache_key="radon"
+  local mi_output="${output_file%.json}_mi.json"
+
+  if cache_hit "$cache_key" "$output_file" "$mi_output"; then
+    local cached_high_complexity
+    cached_high_complexity=$(jq --arg thresh "$RADON_CC_THRESHOLD" '[.. | objects | select(.complexity > ($thresh | tonumber))] | length' "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_high_complexity" -gt 0 ]]; then
+      log WARN "Radon (cache): $cached_high_complexity função(ões) com complexidade > $RADON_CC_THRESHOLD"
+    else
+      log SUCCESS "Radon (cache): complexidade dentro dos limites"
+    fi
+    end_timer "Radon"
+    return 0
+  fi
 
   local radon_excludes=".venv,venv,__pycache__,.quality_cache,.quality_reports,.quality_tmp"
   IFS=',' read -r -a radon_targets <<< "$RADON_TARGETS"
 
-  radon cc "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$output_file" 2>/dev/null || true
-
-  local mi_output="${output_file%.json}_mi.json"
-  radon mi "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$mi_output" 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "radon-cc" \
+    radon cc "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$output_file" 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "radon-mi" \
+    radon mi "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$mi_output" 2>/dev/null || true
 
   local high_complexity
   high_complexity=$(jq --arg thresh "$RADON_CC_THRESHOLD" '[.. | objects | select(.complexity > ($thresh | tonumber))] | length' "$output_file" 2>/dev/null || echo 0)
@@ -494,6 +763,8 @@ run_radon() {
   else
     log SUCCESS "Radon: complexidade dentro dos limites"
   fi
+  cache_mark "$cache_key"
+  end_timer "Radon"
 }
 
 #############################################
@@ -516,12 +787,13 @@ run_bandit() {
   fi
 
   local bandit_excludes=".venv,venv,tests,__pycache__,.quality_cache,.quality_reports,.quality_tmp"
-  "$PYTHON_BIN" -m bandit -q -r . \
-    -f json \
-    -o "$output_file" \
-    -x "$bandit_excludes" \
-    --severity-level medium \
-    --confidence-level medium 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "bandit" \
+    "$PYTHON_BIN" -m bandit -q -r "$PROJECT_DIR" \
+      -f json \
+      -o "$output_file" \
+      -x "$bandit_excludes" \
+      --severity-level medium \
+      --confidence-level medium 2>/dev/null || true
 
   if [[ ! -f "$output_file" ]]; then
     log WARN "Bandit não gerou relatório"
@@ -557,7 +829,7 @@ run_safety() {
 
   local output_file="$REPORT_DIR/safety.json"
 
-  if "$PYTHON_BIN" -m safety check --json > "$output_file" 2>/dev/null; then
+  if run_with_timeout "$TOOL_TIMEOUT" "safety" "$PYTHON_BIN" -m safety check --json > "$output_file" 2>/dev/null; then
     log SUCCESS "Safety: nenhuma vulnerabilidade conhecida"
   else
     local vuln_count
@@ -585,7 +857,7 @@ run_sonarlint() {
   if command -v sonarlint-ls-cli &>/dev/null; then
     log DEBUG "Usando sonarlint-ls-cli"
     sonarlint-ls-cli analyze \
-      --src py_rme_canary \
+      --src "$PROJECT_DIR" \
       --output "$output_file" \
       --format json 2>/dev/null || {
       log WARN "sonarlint-ls-cli falhou"
@@ -594,7 +866,7 @@ run_sonarlint() {
   elif command -v sonarlint &>/dev/null; then
     log DEBUG "Usando sonarlint CLI"
     sonarlint \
-      --src py_rme_canary \
+      --src "$PROJECT_DIR" \
       --output "$output_file" 2>/dev/null || {
       log WARN "sonarlint CLI falhou"
       return 0
@@ -633,13 +905,14 @@ run_detect_secrets() {
 
   # Tenta detect-secrets primeiro
   if command -v detect-secrets &>/dev/null; then
-    detect-secrets scan \
-      --all-files \
+    run_with_timeout "$TOOL_TIMEOUT" "detect-secrets" detect-secrets scan "$PROJECT_DIR" \
       --exclude-files '\.git/.*' \
       --exclude-files '\.venv/.*' \
       --exclude-files 'venv/.*' \
       --exclude-files '__pycache__/.*' \
       --exclude-files '\.quality_.*' \
+      --exclude-files '^awesome-copilot/.*' \
+      --exclude-files '^remeres-map-editor-redux/.*' \
       --exclude-files '.*\.(otbm|otb|xml|json|spr|dat|pic|png|jpg|jpeg|gif|bmp|tiff|ico)$' \
       > "$output_file" 2>/dev/null || true
 
@@ -655,8 +928,8 @@ run_detect_secrets() {
   # Fallback para gitleaks
   elif command -v gitleaks &>/dev/null; then
     log DEBUG "Usando gitleaks como alternativa"
-    gitleaks detect \
-      --source . \
+    run_with_timeout "$TOOL_TIMEOUT" "gitleaks" gitleaks detect \
+      --source "$PROJECT_DIR" \
       --report-format json \
       --report-path "$output_file" \
       --no-git 2>/dev/null || true
@@ -705,7 +978,7 @@ run_semgrep() {
   fi
 
   # Regras para Python/Django/Flask/FastAPI
-  semgrep scan \
+  run_with_timeout "$TOOL_TIMEOUT" "semgrep" semgrep scan \
     $rule_config \
     --json \
     --output "$output_file" \
@@ -714,7 +987,7 @@ run_semgrep() {
     --exclude '__pycache__' \
     --exclude '.quality_*' \
     --metrics off \
-    py_rme_canary 2>/dev/null || true
+    "${SCAN_TARGETS[@]}" 2>/dev/null || true
 
   if [[ -f "$output_file" ]]; then
     local issue_count
@@ -747,12 +1020,12 @@ run_vulture() {
   local output_file="$REPORT_DIR/vulture.txt"
   local whitelist="$ROOT_DIR/.vulture_whitelist.py"
 
-  local vulture_args=("py_rme_canary" "--min-confidence" "80")
+  local vulture_args=("${SCAN_TARGETS[@]}" "--min-confidence" "80")
   if [[ -f "$whitelist" ]]; then
     vulture_args+=("$whitelist")
   fi
 
-  "$PYTHON_BIN" -m vulture "${vulture_args[@]}" > "$output_file" 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "vulture" "$PYTHON_BIN" -m vulture "${vulture_args[@]}" > "$output_file" 2>/dev/null || true
 
   if [[ -s "$output_file" ]]; then
     local dead_code_count
@@ -779,7 +1052,7 @@ run_jscpd() {
 
   local output_file="$REPORT_DIR/jscpd.json"
 
-  jscpd py_rme_canary \
+  run_with_timeout "$TOOL_TIMEOUT" "jscpd" jscpd "${SCAN_TARGETS[@]}" \
     --reporters json \
     --output "$REPORT_DIR" \
     --ignore '**/venv/**,**/__pycache__/**,**/.venv/**,**/tests/**,**/*.json,**/*.xml,**/*.otbm,**/*.otb' \
@@ -827,11 +1100,12 @@ run_pip_audit() {
   local output_file="$REPORT_DIR/pip_audit.json"
 
   # pip-audit usa banco PyPI Advisory e OSV
-  if "$PYTHON_BIN" -m pip_audit \
-    --format json \
-    --output "$output_file" \
-    --progress-spinner off \
-    2>/dev/null; then
+  if run_with_timeout "$TOOL_TIMEOUT" "pip-audit" \
+    "$PYTHON_BIN" -m pip_audit \
+      --format json \
+      --output "$output_file" \
+      --progress-spinner off \
+      2>/dev/null; then
     log SUCCESS "pip-audit: nenhuma vulnerabilidade conhecida"
   else
     if [[ -f "$output_file" ]]; then
@@ -863,11 +1137,12 @@ run_osv_scanner() {
 
   local output_file="$REPORT_DIR/osv_scanner.json"
 
-  osv-scanner scan \
-    --format json \
-    --output "$output_file" \
-    --recursive \
-    . 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "osv-scanner" \
+    osv-scanner scan \
+      --format json \
+      --output "$output_file" \
+      --recursive \
+      "$PROJECT_DIR" 2>/dev/null || true
 
   if [[ -f "$output_file" ]]; then
     local vuln_count
@@ -887,18 +1162,58 @@ run_osv_scanner() {
 #############################################
 
 run_pyright() {
+  start_timer "Pyright"
   log INFO "Executando Pyright (type checking avançado)..."
 
   if ! command -v pyright &>/dev/null; then
     log DEBUG "Pyright não disponível - instale com: pip install pyright"
+    end_timer "Pyright"
     return 0
   fi
 
   local output_file="$REPORT_DIR/pyright.json"
+  local cache_key="pyright"
 
-  pyright py_rme_canary \
-    --outputjson \
-    > "$output_file" 2>/dev/null || true
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_error_count
+    cached_error_count=$(jq '.generalDiagnostics | length' "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_error_count" -gt 0 ]]; then
+      log INFO "Pyright (cache): $cached_error_count diagnóstico(s)"
+    else
+      log SUCCESS "Pyright (cache): tipagem validada"
+    fi
+    end_timer "Pyright"
+    return 0
+  fi
+
+  # Diretórios específicos (evita analisar tudo)
+  local targets=(
+    "$PROJECT_CORE"
+    "$PROJECT_LOGIC"
+    "$PROJECT_VIS"
+  )
+
+  # Verifica quais existem
+  local existing_targets=()
+  for target in "${targets[@]}"; do
+    if [[ -d "$target" ]]; then
+      existing_targets+=("$target")
+    fi
+  done
+
+  # Se nenhum existe, usa o diretório de projeto
+  if [[ ${#existing_targets[@]} -eq 0 ]]; then
+    existing_targets=("$PROJECT_DIR")
+  fi
+
+  log DEBUG "Pyright analisando: ${existing_targets[*]}"
+
+  # Executar com threads paralelas se disponível
+  run_with_timeout "$TOOL_TIMEOUT" "pyright" \
+    pyright "${existing_targets[@]}" \
+      --outputjson \
+      --threads \
+      > "$output_file" 2>/dev/null || true
 
   if [[ -f "$output_file" ]]; then
     local error_count
@@ -910,6 +1225,8 @@ run_pyright() {
       log SUCCESS "Pyright: tipagem validada"
     fi
   fi
+  cache_mark "$cache_key"
+  end_timer "Pyright"
 }
 
 #############################################
@@ -917,20 +1234,36 @@ run_pyright() {
 #############################################
 
 run_complexipy() {
+  start_timer "Complexipy"
   log INFO "Executando Complexipy (cognitive complexity)..."
 
   if ! command -v complexipy &>/dev/null; then
     log WARN "Complexipy não disponível - instale com: pip install complexipy"
+    end_timer "Complexipy"
     return 0
   fi
 
   local output_file="$REPORT_DIR/complexipy.json"
   local threshold="${COMPLEXIPY_THRESHOLD:-15}"
+  local cache_key="complexipy"
 
-  complexipy py_rme_canary \
-    --threshold "$threshold" \
-    --format json \
-    > "$output_file" 2>/dev/null || true
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_violations
+    cached_violations=$(jq '[.[] | select(.cognitive_complexity > '"$threshold"')] | length' "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_violations" -gt 0 ]]; then
+      log WARN "Complexipy (cache): $cached_violations função(ões) com complexidade cognitiva >$threshold"
+    else
+      log SUCCESS "Complexipy (cache): complexidade cognitiva aceitável"
+    fi
+    end_timer "Complexipy"
+    return 0
+  fi
+
+  run_with_timeout "$TOOL_TIMEOUT" "complexipy" \
+    complexipy "$PROJECT_DIR" \
+      --threshold "$threshold" \
+      --format json \
+      > "$output_file" 2>/dev/null || true
 
   if [[ -f "$output_file" ]]; then
     local violations
@@ -942,6 +1275,8 @@ run_complexipy() {
       log SUCCESS "Complexipy: complexidade cognitiva aceitável"
     fi
   fi
+  cache_mark "$cache_key"
+  end_timer "Complexipy"
 }
 
 #############################################
@@ -964,7 +1299,7 @@ run_skylos() {
   local output_file="$REPORT_DIR/skylos.json"
 
   # Executar skylos com trace para reduzir falsos positivos
-  skylos . --json > "$output_file" 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "skylos" skylos "$PROJECT_DIR" --json > "$output_file" 2>/dev/null || true
 
   if [[ -f "$output_file" ]]; then
     local dead_code
@@ -984,31 +1319,116 @@ run_skylos() {
 #############################################
 
 run_lizard() {
+  start_timer "Lizard"
   log INFO "Executando Lizard (cyclomatic complexity)..."
 
-  if ! command -v lizard &>/dev/null; then
+  if ! "$PYTHON_BIN" -m lizard --version &>/dev/null 2>&1; then
     log WARN "Lizard não disponível - instale com: pip install lizard"
+    end_timer "Lizard"
     return 0
   fi
 
-  local output_file="$REPORT_DIR/lizard.xml"
   local ccn_threshold="${LIZARD_CCN_THRESHOLD:-15}"
+  local length_threshold="${LIZARD_LENGTH_THRESHOLD:-1000}"
+  local args_threshold="${LIZARD_ARGS_THRESHOLD:-15}"
+  local xml_file="$REPORT_DIR/lizard.xml"
+  local html_file="$REPORT_DIR/lizard.html"
+  local csv_file="$REPORT_DIR/lizard.csv"
+  local cache_key="lizard"
 
-  lizard py_rme_canary \
-    --CCN "$ccn_threshold" \
-    --xml \
-    > "$output_file" 2>/dev/null || true
+  if cache_hit "$cache_key" "$xml_file" "$html_file" "$csv_file"; then
+    local cached_violations
+    cached_violations=$(grep -c "ccn=\"[0-9]\{2,\}\"" "$xml_file" 2>/dev/null || true)
+    cached_violations="${cached_violations:-0}"
+    if [[ "$cached_violations" -gt 0 ]]; then
+      log WARN "Lizard (cache): $cached_violations função(ões) com CCN >$ccn_threshold"
+    else
+      log SUCCESS "Lizard (cache): complexidade ciclomática aceitável"
+    fi
+    end_timer "Lizard"
+    return 0
+  fi
 
-  if [[ -f "$output_file" ]]; then
+  # Diretórios específicos para análise (evita analisar todo o projeto desnecessariamente)
+  local targets=(
+    "$PROJECT_CORE"
+    "$PROJECT_LOGIC"
+    "$PROJECT_VIS"
+  )
+
+  # Verifica quais diretórios existem
+  local existing_targets=()
+  for target in "${targets[@]}"; do
+    if [[ -d "$target" ]]; then
+      existing_targets+=("$target")
+    fi
+  done
+
+  # Se nenhum diretório específico existe, analisa o diretório principal do projeto
+  if [[ ${#existing_targets[@]} -eq 0 ]]; then
+    existing_targets=("$PROJECT_DIR")
+  fi
+
+  log DEBUG "Lizard analisando: ${existing_targets[*]}"
+
+  # Argumentos comuns de exclusão
+  local exclude_args=(
+    --exclude "*/test_*"
+    --exclude "*/tests/*"
+    --exclude "*_test.py"
+    --exclude "*/venv/*"
+    --exclude "*/.venv/*"
+    --exclude "*/build/*"
+    --exclude "*/__pycache__/*"
+    --exclude "*/.pytest_cache/*"
+    --exclude "*/quality-pipeline/*"
+  )
+
+  # XML output (padrão)
+  run_with_timeout "$TOOL_TIMEOUT" "lizard-xml" \
+    "$PYTHON_BIN" -m lizard "${existing_targets[@]}" \
+      --CCN "$ccn_threshold" \
+      --length "$length_threshold" \
+      --arguments "$args_threshold" \
+      --xml \
+      "${exclude_args[@]}" \
+      > "$xml_file" 2>/dev/null || true
+
+  # HTML output (mais legível)
+  run_with_timeout "$TOOL_TIMEOUT" "lizard-html" \
+    "$PYTHON_BIN" -m lizard "${existing_targets[@]}" \
+      --CCN "$ccn_threshold" \
+      --length "$length_threshold" \
+      --arguments "$args_threshold" \
+      --html \
+      "${exclude_args[@]}" \
+      > "$html_file" 2>/dev/null || true
+
+  # CSV output (para análise em planilhas)
+  run_with_timeout "$TOOL_TIMEOUT" "lizard-csv" \
+    "$PYTHON_BIN" -m lizard "${existing_targets[@]}" \
+      --CCN "$ccn_threshold" \
+      --length "$length_threshold" \
+      --arguments "$args_threshold" \
+      --csv \
+      "${exclude_args[@]}" \
+      > "$csv_file" 2>/dev/null || true
+
+  # Análise de resultados
+  if [[ -f "$xml_file" ]]; then
     local violations
-    violations=$(grep -c "ccn=\"[0-9]\{2,\}\"" "$output_file" 2>/dev/null || echo 0)
+    violations=$(grep -c "ccn=\"[0-9]\{2,\}\"" "$xml_file" 2>/dev/null || true)
+    violations="${violations:-0}"
 
     if [[ "$violations" -gt 0 ]]; then
       log WARN "Lizard: $violations função(ões) com CCN >$ccn_threshold"
+      log INFO "Relatórios gerados: XML ($xml_file), HTML ($html_file), CSV ($csv_file)"
     else
       log SUCCESS "Lizard: complexidade ciclomática aceitável"
     fi
   fi
+  cache_mark "$cache_key"
+  end_timer "Lizard"
 }
 
 #############################################
@@ -1016,20 +1436,36 @@ run_lizard() {
 #############################################
 
 run_interrogate() {
+  start_timer "Interrogate"
   log INFO "Executando Interrogate (docstring coverage)..."
 
   if ! command -v interrogate &>/dev/null; then
     log WARN "Interrogate não disponível - instale com: pip install interrogate"
+    end_timer "Interrogate"
     return 0
   fi
 
   local output_file="$REPORT_DIR/interrogate.txt"
   local min_coverage="${INTERROGATE_MIN_COVERAGE:-50}"
+  local badge_file="$REPORT_DIR/interrogate_badge.svg"
+  local cache_key="interrogate"
 
-  interrogate py_rme_canary \
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_coverage
+    cached_coverage=$(grep -oP 'Result: \K[0-9.]+(?=%)' "$output_file" 2>/dev/null || echo "0")
+    if (( $(echo "$cached_coverage < $min_coverage" | bc -l 2>/dev/null || echo 1) )); then
+      log WARN "Interrogate (cache): ${cached_coverage}% cobertura de docstrings (mínimo: ${min_coverage}%)"
+    else
+      log SUCCESS "Interrogate (cache): ${cached_coverage}% cobertura de docstrings"
+    fi
+    end_timer "Interrogate"
+    return 0
+  fi
+
+  run_with_timeout "$TOOL_TIMEOUT" "interrogate" interrogate "${SCAN_TARGETS[@]}" \
     --verbose \
     --fail-under "$min_coverage" \
-    --generate-badge "$REPORT_DIR/interrogate_badge.svg" \
+    --generate-badge "$badge_file" \
     > "$output_file" 2>&1 || true
 
   if [[ -f "$output_file" ]]; then
@@ -1042,6 +1478,8 @@ run_interrogate() {
       log SUCCESS "Interrogate: ${coverage}% cobertura de docstrings"
     fi
   fi
+  cache_mark "$cache_key"
+  end_timer "Interrogate"
 }
 
 #############################################
@@ -1049,16 +1487,31 @@ run_interrogate() {
 #############################################
 
 run_pydocstyle() {
+  start_timer "Pydocstyle"
   log INFO "Executando pydocstyle (PEP 257 compliance)..."
 
   if ! command -v pydocstyle &>/dev/null; then
     log WARN "pydocstyle não disponível - instale com: pip install pydocstyle"
+    end_timer "Pydocstyle"
     return 0
   fi
 
   local output_file="$REPORT_DIR/pydocstyle.txt"
+  local cache_key="pydocstyle"
 
-  pydocstyle py_rme_canary > "$output_file" 2>&1 || true
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_violations
+    cached_violations=$(wc -l < "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_violations" -gt 0 ]]; then
+      log WARN "pydocstyle (cache): $cached_violations violação(ões) PEP 257"
+    else
+      log SUCCESS "pydocstyle (cache): docstrings conformes com PEP 257"
+    fi
+    end_timer "Pydocstyle"
+    return 0
+  fi
+
+  run_with_timeout "$TOOL_TIMEOUT" "pydocstyle" pydocstyle "${SCAN_TARGETS[@]}" > "$output_file" 2>&1 || true
 
   if [[ -f "$output_file" ]]; then
     local violations
@@ -1070,6 +1523,8 @@ run_pydocstyle() {
       log SUCCESS "pydocstyle: docstrings conformes com PEP 257"
     fi
   fi
+  cache_mark "$cache_key"
+  end_timer "Pydocstyle"
 }
 
 #############################################
@@ -1100,8 +1555,8 @@ run_mutmut() {
 
   # Executar mutmut de forma incremental
   mutmut run \
-    --paths-to-mutate=py_rme_canary \
-    --tests-dir=py_rme_canary/tests \
+    --paths-to-mutate="$PROJECT_DIR" \
+    --tests-dir="$PROJECT_TESTS" \
     --runner="pytest -x -q" \
     --use-cache \
     2>&1 | tee "$REPORT_DIR/mutmut.log" || true
@@ -1128,17 +1583,32 @@ run_mutmut() {
 #############################################
 
 run_prospector() {
+  start_timer "Prospector"
   log INFO "Executando Prospector (linter aggregator)..."
 
   if ! command -v prospector &>/dev/null; then
     log WARN "Prospector não disponível - instale com: pip install prospector"
+    end_timer "Prospector"
     return 0
   fi
 
   local output_file="$REPORT_DIR/prospector.json"
   local strictness="${PROSPECTOR_STRICTNESS:-medium}"
+  local cache_key="prospector"
 
-  prospector py_rme_canary \
+  if cache_hit "$cache_key" "$output_file"; then
+    local cached_messages
+    cached_messages=$(jq '.messages | length' "$output_file" 2>/dev/null || echo 0)
+    if [[ "$cached_messages" -gt 0 ]]; then
+      log INFO "Prospector (cache): $cached_messages mensagem(ns) (strictness: $strictness)"
+    else
+      log SUCCESS "Prospector (cache): nenhum issue detectado"
+    fi
+    end_timer "Prospector"
+    return 0
+  fi
+
+  run_with_timeout "$TOOL_TIMEOUT" "prospector" prospector "${SCAN_TARGETS[@]}" \
     --strictness "$strictness" \
     --output-format json \
     --output-file "$output_file" \
@@ -1154,6 +1624,8 @@ run_prospector() {
       log SUCCESS "Prospector: nenhum issue detectado"
     fi
   fi
+  cache_mark "$cache_key"
+  end_timer "Prospector"
 }
 
 #############################################
@@ -1173,7 +1645,7 @@ run_pyautogui_tests() {
     return 0
   fi
 
-  local test_script="$ROOT_DIR/py_rme_canary/tests/ui/test_pyautogui.py"
+  local test_script="$ROOT_DIR/$PROJECT_TESTS/ui/test_pyautogui.py"
   local output_file="$REPORT_DIR/pyautogui_tests.log"
 
   if [[ ! -f "$test_script" ]]; then
@@ -1181,7 +1653,7 @@ run_pyautogui_tests() {
     return 0
   fi
 
-  $PYTHON_BIN "$test_script" > "$output_file" 2>&1 || true
+  run_with_timeout "$TOOL_TIMEOUT" "pyautogui-tests" "$PYTHON_BIN" "$test_script" > "$output_file" 2>&1 || true
 
   if [[ -f "$output_file" ]]; then
     local passed failed
@@ -1215,7 +1687,7 @@ run_pywinauto_tests() {
     return 0
   fi
 
-  local test_script="$ROOT_DIR/py_rme_canary/tests/ui/test_pywinauto.py"
+  local test_script="$ROOT_DIR/$PROJECT_TESTS/ui/test_pywinauto.py"
   local output_file="$REPORT_DIR/pywinauto_tests.log"
 
   if [[ ! -f "$test_script" ]]; then
@@ -1223,7 +1695,7 @@ run_pywinauto_tests() {
     return 0
   fi
 
-  $PYTHON_BIN "$test_script" > "$output_file" 2>&1 || true
+  run_with_timeout "$TOOL_TIMEOUT" "pywinauto-tests" "$PYTHON_BIN" "$test_script" > "$output_file" 2>&1 || true
 
   if [[ -f "$output_file" ]]; then
     local passed failed
@@ -1315,7 +1787,7 @@ run_percy() {
   local output_file="$REPORT_DIR/percy.log"
 
   # Percy executa junto com testes (ex: pytest com percy-python)
-  percy exec -- pytest py_rme_canary/tests/visual/ -v \
+  run_with_timeout "$TOOL_TIMEOUT" "percy" percy exec -- pytest "$PROJECT_TESTS/visual/" -v \
     > "$output_file" 2>&1 || true
 
   if [[ -f "$output_file" ]]; then
@@ -1353,7 +1825,7 @@ run_applitools() {
     return 0
   fi
 
-  local test_script="$ROOT_DIR/py_rme_canary/tests/visual/test_applitools.py"
+  local test_script="$ROOT_DIR/$PROJECT_TESTS/visual/test_applitools.py"
   local output_file="$REPORT_DIR/applitools.log"
 
   if [[ ! -f "$test_script" ]]; then
@@ -1361,7 +1833,7 @@ run_applitools() {
     return 0
   fi
 
-  $PYTHON_BIN "$test_script" > "$output_file" 2>&1 || true
+  run_with_timeout "$TOOL_TIMEOUT" "applitools-tests" "$PYTHON_BIN" "$test_script" > "$output_file" 2>&1 || true
 
   if [[ -f "$output_file" ]]; then
     local passed failed
@@ -1392,11 +1864,11 @@ run_astgrep() {
     return 0
   fi
 
-  sg scan --rule "$rules_dir" --json "$ROOT_DIR" > "$output_file" 2>/dev/null || true
+  run_with_timeout "$TOOL_TIMEOUT" "ast-grep-scan" sg scan --rule "$rules_dir" --json "$PROJECT_DIR" > "$output_file" 2>/dev/null || true
 
   if [[ "$MODE" == "apply" ]]; then
     log INFO "Aplicando transformações ast-grep..."
-    sg scan --rule "$rules_dir" --rewrite "$ROOT_DIR" 2>/dev/null || true
+    run_with_timeout "$TOOL_TIMEOUT" "ast-grep-rewrite" sg scan --rule "$rules_dir" --rewrite "$PROJECT_DIR" 2>/dev/null || true
   fi
 
   local match_count
@@ -1429,7 +1901,8 @@ run_libcst() {
   log INFO "Aplicando transformações LibCST..."
 
   if [[ "$MODE" == "apply" ]]; then
-    "$PYTHON_BIN" -m libcst.tool codemod "$transforms_dir" "$ROOT_DIR" 2>/dev/null || log WARN "LibCST: algumas transformações falharam"
+    run_with_timeout "$TOOL_TIMEOUT" "libcst-codemod" \
+      "$PYTHON_BIN" -m libcst.tool codemod "$transforms_dir" "$PROJECT_DIR" 2>/dev/null || log WARN "LibCST: algumas transformações falharam"
   else
     log INFO "Modo dry-run: transformações LibCST não aplicadas"
   fi
@@ -1463,7 +1936,7 @@ run_tests() {
     return 0
   fi
 
-  if [[ ! -f pytest.ini ]] && [[ ! -d tests ]] && [[ ! -d py_rme_canary/tests ]]; then
+  if [[ ! -f pytest.ini ]] && [[ ! -d tests ]] && [[ ! -d "$PROJECT_TESTS" ]]; then
     log DEBUG "Nenhum teste encontrado"
     return 0
   fi
@@ -1471,16 +1944,17 @@ run_tests() {
   log INFO "Executando testes..."
 
   local test_root=""
-  [[ -d tests/unit ]] && test_root="tests/unit"
+  [[ -d "$PROJECT_TESTS/unit" ]] && test_root="$PROJECT_TESTS/unit"
+  [[ -z "$test_root" ]] && [[ -d "$PROJECT_TESTS" ]] && test_root="$PROJECT_TESTS"
+  [[ -z "$test_root" ]] && [[ -d tests/unit ]] && test_root="tests/unit"
   [[ -z "$test_root" ]] && [[ -d tests ]] && test_root="tests"
-  [[ -z "$test_root" ]] && [[ -d py_rme_canary/tests ]] && test_root="py_rme_canary/tests"
 
   if [[ -z "$test_root" ]]; then
     log WARN "Nenhum diretório de testes encontrado"
     return 0
   fi
 
-  if pytest "$test_root" -v --tb=short 2>&1 | tee "$REPORT_DIR/pytest.log"; then
+  if run_with_timeout "$TOOL_TIMEOUT" "pytest" pytest "$test_root" -v --tb=short 2>&1 | tee "$REPORT_DIR/pytest.log"; then
     log SUCCESS "Testes passaram"
   else
     log WARN "Alguns testes falharam"
@@ -1569,8 +2043,8 @@ import json
 import sys
 
 try:
-    before_data = json.load(open(sys.argv[1]))
-    after_data = json.load(open(sys.argv[2]))
+    before_data = json.load(open(sys.argv[1], encoding="utf-8"))
+    after_data = json.load(open(sys.argv[2], encoding="utf-8"))
 
     before = {(s["file"], s["name"]) for s in before_data.get("symbols", [])}
     after = {(s["file"], s["name"]) for s in after_data.get("symbols", [])}
@@ -1579,22 +2053,74 @@ try:
     added = after - before
 
     if removed:
-        print(f"⚠️  Símbolos removidos: {len(removed)}")
+        print(f"[WARN] Simbolos removidos: {len(removed)}")
         for item in list(removed)[:5]:
             print(f"  - {item[0]}:{item[1]}")
 
     if added:
-        print(f"✨ Símbolos adicionados: {len(added)}")
+        print(f"[INFO] Simbolos adicionados: {len(added)}")
         for item in list(added)[:5]:
             print(f"  + {item[0]}:{item[1]}")
 
     if not removed and not added:
-        print("✅ Símbolos consistentes")
+        print("[OK] Simbolos consistentes")
 except Exception as e:
     print(f"Erro na comparação: {e}")
 PYTHON
 
   log SUCCESS "Comparação de símbolos concluída"
+}
+
+#############################################
+# JULES INTEGRAÇÃO LOCAL
+#############################################
+
+run_jules_generate_suggestions() {
+  if [[ "$SKIP_JULES" == true ]]; then
+    log INFO "Integração Jules pulada (--skip-jules)"
+    return 0
+  fi
+
+  local runner="$PROJECT_DIR/scripts/jules_runner.py"
+  if [[ ! -f "$runner" ]]; then
+    log WARN "jules_runner.py não encontrado em $runner - pulando Jules"
+    return 0
+  fi
+
+  local schema_path="$ROOT_DIR/.github/jules/suggestions.schema.json"
+  local output_dir="$ROOT_DIR/reports/jules"
+  local connectivity_json="$REPORT_DIR/jules_connectivity.json"
+  mkdir -p "$output_dir"
+
+  local -a source_args=()
+  local -a branch_args=()
+  if [[ -n "${JULES_SOURCE:-}" ]]; then
+    source_args=(--source "$JULES_SOURCE")
+  fi
+  if [[ -n "${JULES_BRANCH:-}" ]]; then
+    branch_args=(--branch "$JULES_BRANCH")
+  fi
+
+  log INFO "Executando check de conectividade Jules..."
+  run_with_timeout "$TOOL_TIMEOUT" "jules-check" \
+    "$PYTHON_BIN" "$runner" --project-root "$ROOT_DIR" check \
+    --json-out "$connectivity_json" \
+    "${source_args[@]}" \
+    "${branch_args[@]}" || true
+
+  log INFO "Gerando sugestões Jules (quality -> suggestions contract)..."
+  if run_with_timeout "$TOOL_TIMEOUT" "jules-generate-suggestions" \
+    "$PYTHON_BIN" "$runner" --project-root "$ROOT_DIR" generate-suggestions \
+    --quality-report "$FINAL_REPORT" \
+    --output-dir "$output_dir" \
+    --report-dir "$REPORT_DIR" \
+    --schema "$schema_path" \
+    "${source_args[@]}" \
+    "${branch_args[@]}"; then
+    log SUCCESS "Jules: artefatos gerados em $output_dir"
+  else
+    log WARN "Jules: integração falhou (pipeline continuará)."
+  fi
 }
 
 #############################################
@@ -1617,14 +2143,14 @@ report_dir = Path(sys.argv[7])
 ruff_issues = []
 if Path(".ruff.json").exists():
     try:
-        ruff_issues = json.loads(Path(".ruff.json").read_text())
+        ruff_issues = json.loads(Path(".ruff.json").read_text(encoding="utf-8"))
     except:
         pass
 
 bandit_issues = 0
 if (report_dir / "bandit.json").exists():
     try:
-        bandit_data = json.loads((report_dir / "bandit.json").read_text())
+        bandit_data = json.loads((report_dir / "bandit.json").read_text(encoding="utf-8"))
         bandit_issues = len(bandit_data.get("results", []))
     except:
         pass
@@ -1632,7 +2158,7 @@ if (report_dir / "bandit.json").exists():
 safety_issues = 0
 if (report_dir / "safety.json").exists():
     try:
-        safety_data = json.loads((report_dir / "safety.json").read_text())
+        safety_data = json.loads((report_dir / "safety.json").read_text(encoding="utf-8"))
         safety_issues = len(safety_data) if isinstance(safety_data, list) else 0
     except:
         pass
@@ -1674,8 +2200,8 @@ report += f"""
 - Pre-commit configurado para automação
 """
 
-Path(sys.argv[6]).write_text(report)
-print(f"✅ Relatório: {sys.argv[6]}")
+Path(sys.argv[6]).write_text(report, encoding="utf-8")
+print(f"[OK] Relatorio: {sys.argv[6]}")
 PYTHON
 }
 
@@ -1723,19 +2249,19 @@ main() {
 
   # Fase 4: Segurança (Multi-layer)
   log INFO "=== FASE 4: SEGURANÇA ==="
-  
+
   # 4.1: Secret Scanning
   if [[ "$SKIP_SECRETS" == false ]]; then
     log INFO "--- Fase 4.1: Secret Scanning ---"
     run_detect_secrets || true
   fi
-  
+
   # 4.2: Code Security Analysis
   log INFO "--- Fase 4.2: Code Security ---"
   run_bandit || true
   run_semgrep || true
   run_sonarlint || true
-  
+
   # 4.3: Dependency Vulnerabilities
   log INFO "--- Fase 4.3: Dependency Vulnerabilities ---"
   run_safety || true
@@ -1764,6 +2290,7 @@ main() {
   index_symbols "$SYMBOL_INDEX_AFTER"
   compare_symbols
   generate_final_report
+  run_jules_generate_suggestions
 
   log SUCCESS "=== Pipeline v2.3 Concluído ==="
 

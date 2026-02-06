@@ -49,7 +49,7 @@ except Exception:  # pragma: no cover - fallback for headless envs without PyQt6
                 self._editor = editor
                 self.setMouseTracking(True)
 
-            def sizeHint(self) -> QSize:  # noqa: N802 (Qt style)
+            def sizeHint(self) -> QSize:
                 return QSize(800, 600)
 
             def request_render(self) -> None:

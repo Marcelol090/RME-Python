@@ -1,26 +1,52 @@
-# Codex Environment
+# Codex Environment: The Navigation Map
 
-This directory (`codex/`) contains the **intelligence configuration** for the "Beast Mode" agent working on `py_rme_canary`.
+> [!IMPORTANT]
+> This Codex acts as the "Navigation Map" for the Agent. It defines *Structure*, *Limits*, and *Flow*.
 
-## Structure
+## 🌟 Vision
+The goal is to transform from a reactive executor into a **proactive collaborator** that plans, implements, acts, and reflects.
 
-### 🧠 The Brain
-*   **`AGENTS.md`**: The Master System Prompt. Defines "Who am I?" and "What is the mission?".
+## 🗺️ Navigation Map (Linear Flow)
 
-### 📜 The Laws (`rules/`)
-*   **`execution.rules`**: Starlark policies defining *what commands* can be run (Security).
-*   **`development.md`**: Behavioral guidelines defining *how to behave* (Ethics/Standards).
+The Agent must follow this strict linear lifecycle for every complex task:
 
-### 🛠️ The Capabilities (`skills/`)
-*   **`port_feature.md`**: Guide for C++ -> Python logic porting.
-*   **`create_widget.md`**: Guide for creating clean PyQt6 UI components.
-*   **`verify_parity.md`**: QA protocol for Legacy Parity checks.
+1.  **🔍 Planning (Orient)**
+    *   **Goal**: Understand the detailed requirements.
+    *   **Action**: Research, OODA (Orient Phase), Create/Update `implementation_plan.md`.
+    *   **Reference**: [guide: Agent Workflow](guides/agent_workflow.md)
 
-### 🗺️ The Maps (`guides/`)
-*   **`knowledge_retrieval.md`**: How to find information (Manual RAG).
-*   **`tool_usage.md`**: How to use the environment as an MCP Server.
-*   **`workflows.md`**: Standard operating procedures.
-*   **`testing.md`**: Testing patterns.
+2.  **📋 Tasks (Decide)**
+    *   **Goal**: Break down work into atomic units.
+    *   **Action**: Create/Update `task.md`.
+    *   **Reference**: [guide: Task Management](guides/agent_workflow.md#task-management)
 
-## Usage
-When initializing an agent session, ensure `AGENTS.md` is loaded into the context. The agent will then reference the internal documentation in this directory to self-regulate and execute tasks with high precision.
+3.  **⚡ Implementation (Act)**
+    *   **Goal**: Execute the plan.
+    *   **Action**: Write code, OODA (Act Phase).
+    *   **Reference**: [skill: Port Feature](skills/port_feature.md)
+
+4.  **🛡️ Verification (Observe/Reflect)**
+    *   **Goal**: Ensure quality and completeness.
+    *   **Action**: Run Tests, Manual Review, Reflexion Loop (Self-Correction).
+    *   **Reference**: [guide: Testing](guides/testing.md)
+
+## 📂 Structure
+
+### 🧠 Intelligence (`codex/`)
+*   **[AGENTS.md](agents.md)**: The Master System Prompt & Identity.
+*   **[README.md](README.md)**: This map.
+
+### 📜 The Laws (`codex/rules/`)
+*   **[execution.rules](rules/execution.rules)**: Security policies (What can be run).
+*   **[development.md](rules/development.md)**: Behavioral standards (How to behave).
+
+### 🛠️ The Capabilities (`codex/skills/`)
+*   **[port_feature.md](skills/port_feature.md)**: C++ to Python porting.
+*   **[create_widget.md](skills/create_widget.md)**: UI Component creation.
+*   **[verify_parity.md](skills/verify_parity.md)**: Legacy parity checking.
+
+### 🗺️ The Guides (`codex/guides/`)
+*   **[agent_workflow.md](guides/agent_workflow.md)**: **[NEW]** The Operating Manual.
+*   **[knowledge_retrieval.md](guides/knowledge_retrieval.md)**: RAG & Search.
+*   **[tool_usage.md](guides/tool_usage.md)**: MCP Tool protocols.
+*   **[extending_codex.md](guides/extending_codex.md)**: **[NEW]** How to create Skills & Rules.

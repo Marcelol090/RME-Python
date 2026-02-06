@@ -6,8 +6,15 @@ from PyQt6.QtCore import QObject, QTimer
 from PyQt6.QtWidgets import QMessageBox
 
 from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteArchive
+from py_rme_canary.logic_layer.settings.light_settings import LightMode
 from py_rme_canary.logic_layer.sprite_system import LegacyDatError, LegacyItemSpriteInfo, load_legacy_item_sprites
-from py_rme_canary.vis_layer.preview.preview_renderer import PreviewItem, PreviewSnapshot, PreviewViewport, TileSnapshot
+from py_rme_canary.vis_layer.preview.preview_renderer import (
+    PreviewItem,
+    PreviewLighting,
+    PreviewSnapshot,
+    PreviewViewport,
+    TileSnapshot,
+)
 from py_rme_canary.vis_layer.preview.preview_thread import PreviewThread
 
 if TYPE_CHECKING:
@@ -24,6 +31,7 @@ class PreviewController(QObject):
         self._thread: PreviewThread | None = None
         self._legacy_items: dict[int, LegacyItemSpriteInfo] | None = None
         self._items_xml = None
+        self._light_drawer = None
 
     def start(self) -> None:
         if self._thread is not None:
@@ -87,6 +95,9 @@ class PreviewController(QObject):
         )
 
         tiles: list[TileSnapshot] = []
+        lighting = self._build_lighting()
+        show_light_strength = bool(getattr(lighting, "show_strength", False))
+        show_lights = bool(getattr(lighting, "enabled", False))
         for y in range(viewport.origin_y, viewport.origin_y + viewport.tiles_high):
             for x in range(viewport.origin_x, viewport.origin_x + viewport.tiles_wide):
                 tile = editor.map.get_tile(x, y, viewport.z)
@@ -94,6 +105,9 @@ class PreviewController(QObject):
                     continue
                 ground = self._snapshot_item(tile.ground)
                 items = tuple(self._snapshot_item(it) for it in tile.items if it is not None)
+                light_strength = 0
+                if show_lights or show_light_strength:
+                    light_strength = self._light_strength_for_tile(tile)
                 tiles.append(
                     TileSnapshot(
                         x=int(x),
@@ -101,11 +115,19 @@ class PreviewController(QObject):
                         z=int(viewport.z),
                         ground=ground,
                         items=items,
+                        light_strength=int(light_strength),
                     )
                 )
 
         time_ms = int(editor.animation_time_ms() if hasattr(editor, "animation_time_ms") else 0)
-        return PreviewSnapshot(viewport=viewport, tiles=tuple(tiles), time_ms=time_ms)
+        show_grid = bool(getattr(editor, "show_grid", False))
+        return PreviewSnapshot(
+            viewport=viewport,
+            tiles=tuple(tiles),
+            time_ms=time_ms,
+            show_grid=bool(show_grid),
+            lighting=lighting,
+        )
 
     def _snapshot_item(self, item) -> PreviewItem | None:
         if item is None:
@@ -149,3 +171,47 @@ class PreviewController(QObject):
         except LegacyDatError:
             return None
         return dict(parsed.items)
+
+    def _build_lighting(self) -> PreviewLighting:
+        opts = getattr(self._editor, "drawing_options", None)
+        if opts is None:
+            return PreviewLighting()
+        settings = getattr(opts, "light_settings", None)
+        if settings is None:
+            return PreviewLighting()
+
+        mode_obj = getattr(settings, "mode", LightMode.OFF)
+        mode = str(getattr(mode_obj, "value", mode_obj))
+        enabled = bool(getattr(opts, "show_lights", False)) and bool(getattr(settings, "enabled", False))
+        if mode in ("off", str(LightMode.OFF)):
+            enabled = False
+
+        ambient_level = int(getattr(settings, "ambient_level", 255))
+        ambient_color = (255, 255, 255)
+        try:
+            ambient_color = tuple(int(c) for c in settings.ambient_color.to_rgb_tuple())
+        except Exception:
+            ambient_color = (255, 255, 255)
+
+        return PreviewLighting(
+            enabled=bool(enabled),
+            mode=str(mode),
+            ambient_level=int(ambient_level),
+            ambient_color=ambient_color,
+            show_strength=bool(getattr(opts, "show_light_strength", False)),
+        )
+
+    def _light_strength_for_tile(self, tile) -> int:
+        if self._light_drawer is None:
+            try:
+                from py_rme_canary.vis_layer.renderer.drawers.light_drawer import LightDrawer
+
+                self._light_drawer = LightDrawer()
+            except Exception:
+                self._light_drawer = False
+        if self._light_drawer is False:
+            return 0
+        try:
+            return int(self._light_drawer._tile_light_strength(tile))
+        except Exception:
+            return 0

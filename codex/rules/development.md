@@ -30,3 +30,9 @@
     *   *Why:* Your training data is outdated. The web is source of truth.
 *   **Continuous Improvement**: If fetched documentation reveals new features or deprecations, you MUST update the relevant guide in `codex/guides/`.
 
+## 6. Agent Behavior & Discipline (Agentic Patterns)
+*   **Stop and Think**: You must pause to **Reflect** after every major step (Implementation -> Verification).
+*   **State Persistence**: You must maintain the `task.md` file. It is your long-term memory.
+*   **Self-Correction**: If a test fails, you must explicitly state the cause (Orientation) before fixing (Act). Random fixes are forbidden.
+*   **Git Workflow**: You must ALWAYS check `git status` and, if updated content exists, `git add .` (Stage All) before creating a commit.
+*   **Jules Integration**: You must ALWAYS trigger the Jules API (via `quality.sh` or script) to validate code integration and get suggestions. Ensure `JULES_API_KEY` is present in `.env`.

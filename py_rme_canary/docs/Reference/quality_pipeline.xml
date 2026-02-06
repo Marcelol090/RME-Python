@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QualityPipeline>
+    <Meta>
+        <Project>py_rme_canary</Project>
+        <Version>2.1</Version>
+        <LastUpdated>2026-02-05</LastUpdated>
+        <Description>Automated and manual quality control gates for the project.</Description>
+    </Meta>
+
+    <PipelineStages>
+        <Stage id="1" name="Pre-Commit Check">
+            <Description>Fast checks to run before every commit.</Description>
+            <Checks>
+                <Check name="Circular Imports" command="python -c 'import py_rme_canary.vis_layer.qt_app; print(&quot;OK&quot;)'" critical="true" />
+                <Check name="Test Suite" command="python -m pytest" critical="true" />
+                <Check name="Layer Violation (Core -> Logic)" command="grep -r 'from py_rme_canary.logic_layer' py_rme_canary/core/" critical="true" />
+                <Check name="Forbidden Imports (Qt in Core)" command="grep -r 'from PyQt6' py_rme_canary/core/" critical="true" />
+            </Checks>
+        </Stage>
+
+        <Stage id="2" name="Linting &amp; Types">
+            <Description>Static analysis integration (Optional but recommended).</Description>
+            <Checks>
+                <Check name="Ruff Lint" command="python -m ruff check py_rme_canary/core" critical="false" />
+                <Check name="Mypy Type Check" command="python -m mypy py_rme_canary/core" critical="false" />
+            </Checks>
+        </Stage>
+
+        <Stage id="3" name="Architecture Review">
+            <Description>Manual or automated architectural compliance.</Description>
+            <Rules>
+                <Rule>Dependencies flow: core &lt;- logic_layer &lt;- vis_layer</Rule>
+                <Rule>No circular dependencies</Rule>
+                <Rule>No magic numbers (use constants)</Rule>
+                <Rule>All public APIs must have type hints</Rule>
+            </Rules>
+        </Stage>
+
+        <Stage id="4" name="Smoke Test">
+            <Description>Verify application startup (Headless or GUI).</Description>
+            <Checks>
+                <Check name="Headless Startup" command="export QT_QPA_PLATFORM=offscreen &amp;&amp; python py_rme_canary/vis_layer/qt_app.py" critical="true" />
+            </Checks>
+        </Stage>
+    </PipelineStages>
+
+    <Metrics>
+        <Metric name="Test Coverage" target="80%" command="pytest --cov=py_rme_canary" />
+        <Metric name="Import Hierarchy" method="AST Analysis" description="Ensure strict layer layering" />
+    </Metrics>
+
+    <References>
+        <Ref>docs/tracking/QUALITY_CHECKLIST.md</Ref>
+        <Ref>quality.sh</Ref>
+    </References>
+</QualityPipeline>

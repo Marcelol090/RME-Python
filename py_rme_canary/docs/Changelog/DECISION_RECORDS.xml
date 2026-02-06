@@ -1,0 +1,51 @@
+<decision_records>
+    <decision id="DR-001" date="2026-02-04" status="accepted">
+        <title>Git Configuration Standardization</title>
+        <context>
+            The project was suffering from inconsistent line endings (LF vs CRLF warnings) and
+            accidental staging of virtual environment files (venv/).
+        </context>
+        <decision>
+            Use .gitattributes to enforce 'text=auto' and specific handling for shell scripts (LF).
+            Use .gitignore to explicitly exclude 'venv/', '.venv/', and '__pycache__'.
+        </decision>
+        <consequences>
+            Prevents future contamination of the repository.
+            Silences git warnings about line ending replacements.
+            Ensures identifying clean vs dirty state is reliable.
+        </consequences>
+    </decision>
+    <decision id="DR-002" date="2026-02-04" status="accepted">
+        <title>Quality Pipeline Optimization</title>
+        <context>
+            The quality pipeline (quality_lf.sh) was excessively slow due to recursive scanning of dependency directories.
+        </context>
+        <decision>
+            Modify quality_lf.sh to include explicit exclusion flags for tools like lizard, ruff, skylos.
+            Target specific source directories (py_rme_canary) instead of root (.) where appropriate.
+        </decision>
+        <consequences>
+            Evaluating code quality is now significantly faster.
+            Reduces noise from dependency files in quality reports.
+        </consequences>
+    </decision>
+    <decision id="DR-003" date="2026-02-04" status="accepted">
+        <title>Hybrid Rendering Architecture (ADR)</title>
+        <context>
+            High-performance UI elements (Palettes, Tooltips, Minimap) require sub-millisecond rendering
+            that standard Qt Widgets cannot provide. Pure OpenGL is too low-level for complex 2D UI.
+        </context>
+        <decision>
+            Adhere to a 3-tier Hybrid strategy:
+            1. Map Viewport: Modern OpenGL (Core Profile).
+            2. High-Perf UI: NanoVG (via Custom Wrapper) for immediate-mode vector graphics.
+            3. Standard UI: PyQt6 for menus, dialogs, and forms.
+            Reject existing Python NanoVG bindings as unmaintained.
+        </decision>
+        <consequences>
+            Requires implementing a custom ctypes wrapper for NanoVG.
+            Achieves performance parity with legacy C++ RME.
+            Maintains developer velocity for standard forms via Qt.
+        </consequences>
+    </decision>
+</decision_records>

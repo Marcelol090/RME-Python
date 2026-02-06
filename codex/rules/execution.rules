@@ -5,26 +5,51 @@
 prefix_rule(
     pattern=["ls", "dir", "cat", "grep", "find"],
     decision="allow",
-    justification="Standard file exploration safety."
+    justification="Standard file exploration safety.",
+    match=["ls -la", "grep 'foo' bar.txt"],
+    not_match=["rm -rf /"]
 )
 
 # 2. PROMPT for Critical Build/Test actions
 prefix_rule(
     pattern=["pytest", "python -m pytest"],
     decision="prompt",
-    justification="Tests can be resource intensive. User should be aware."
+    justification="Tests can be resource intensive. User should be aware.",
+    match=["pytest tests/"],
+    not_match=["git commit"]
 )
 
 # 3. FORBID Dangerous Git Operations
 prefix_rule(
     pattern=["git", "push", "--force"],
     decision="forbidden",
-    justification="Force push is forbidden to prevent history loss. Use safe push."
+    justification="Force push is forbidden to prevent history loss. Use safe push.",
+    match=["git push --force origin main"],
+    not_match=["git push origin main"]
+)
+# 5. Git Workflow: Check Status & Stage All
+# Policy: Always check changes and stage all before commit.
+prefix_rule(
+    pattern=["git", "status"],
+    decision="allow",
+    justification="Required to check for recent changes.",
+    match=["git status"],
+    not_match=["git status; rm -rf /"]
+)
+
+prefix_rule(
+    pattern=["git", "add", "."],
+    decision="allow",
+    justification="Policy: Stage all changes when updated content exists.",
+    match=["git add ."],
+    not_match=["git add /secret/file"]
 )
 
 # 4. Allow Project Specific Scripts
 prefix_rule(
     pattern=["./quality.sh", "bash quality.sh"],
     decision="allow",
-    justification="Approved project quality check script."
+    justification="Approved project quality check script.",
+    match=["./quality.sh"],
+    not_match=["./delete_all.sh"]
 )

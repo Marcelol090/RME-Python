@@ -27,6 +27,8 @@ setup(
         "Pillow>=10.0.0",
         "pygame>=2.1.3",
         "defusedxml>=0.7.1",
+        "matplotlib>=3.8.0",
+        "numpy>=1.26.0",
         "pytest>=9.0.0",
         "pytest-qt>=4.5.0",
         "ruff>=0.14.0",

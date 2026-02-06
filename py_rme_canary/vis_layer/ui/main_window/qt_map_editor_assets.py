@@ -10,13 +10,14 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
 from py_rme_canary.core.assets.appearances_dat import AppearancesDatError, load_appearances_dat
 from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
 from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteError
 from py_rme_canary.core.assets.loader import load_assets_from_profile
 from py_rme_canary.core.assets.sprite_appearances import SpriteAppearancesError
+from py_rme_canary.core.config.client_profiles import ClientProfile
 from py_rme_canary.core.config.configuration_manager import ConfigurationManager
 from py_rme_canary.core.config.project import MapMetadata, find_project_for_otbm
 from py_rme_canary.core.config.user_settings import get_user_settings
@@ -55,6 +56,65 @@ class QtMapEditorAssetsMixin:
         except (AssetProfileError, SpriteAppearancesError) as e:
             QMessageBox.critical(self, "Assets", str(e))
             logger.exception("Failed to detect assets for path %s", path)
+
+    def _manage_client_profiles(self: QtMapEditor) -> None:
+        from py_rme_canary.vis_layer.ui.dialogs.client_profiles_dialog import ClientProfilesDialog
+
+        user_settings = get_user_settings()
+        profiles = user_settings.get_client_profiles()
+        active_id = user_settings.get_active_client_profile_id()
+
+        dialog = ClientProfilesDialog(parent=self, profiles=profiles, active_profile_id=active_id)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        updated_profiles = dialog.result_profiles()
+        updated_active_id = dialog.result_active_profile_id()
+
+        user_settings.set_client_profiles(updated_profiles)
+        user_settings.set_active_client_profile_id(updated_active_id)
+
+        selected_profile = user_settings.get_active_client_profile(client_version=int(self.client_version or 0))
+        if selected_profile is not None:
+            try:
+                self._apply_client_profile(selected_profile, persist_active=False)
+            except Exception as exc:
+                QMessageBox.critical(self, "Client Profiles", str(exc))
+                logger.exception("Failed to load selected client profile")
+        else:
+            self.status.showMessage("Client profiles updated.")
+
+    def _apply_client_profile(self: QtMapEditor, profile: ClientProfile, *, persist_active: bool = True) -> None:
+        assets_dir = str(profile.assets_dir or "").strip()
+        if not assets_dir:
+            raise ValueError("Client profile assets directory cannot be empty.")
+        if not os.path.exists(assets_dir):
+            raise ValueError(f"Assets directory does not exist: {assets_dir}")
+
+        preferred_kind = str(profile.preferred_kind or "auto").strip().lower()
+        if preferred_kind not in {"auto", "modern", "legacy"}:
+            preferred_kind = "auto"
+
+        profile_version = int(profile.client_version or 0)
+        if profile_version > 0:
+            self.client_version = int(profile_version)
+            self.engine = ConfigurationManager.infer_engine_from_client_version(int(profile_version))
+
+        self.assets_selection_path = assets_dir
+        resolved_profile = detect_asset_profile(
+            assets_dir,
+            prefer_kind=None if preferred_kind == "auto" else preferred_kind,
+        )
+        self._apply_asset_profile(resolved_profile)
+
+        user_settings = get_user_settings()
+        user_settings.set_client_assets_folder(assets_dir)
+        if profile_version > 0:
+            user_settings.set_default_client_version(profile_version)
+        if persist_active:
+            user_settings.set_active_client_profile_id(profile.profile_id)
+
+        self._update_status_capabilities(prefix=f"Client profile loaded: {profile.name}")
 
     def _set_assets_dir(self: QtMapEditor, assets_dir: str) -> None:
         try:
@@ -125,7 +185,10 @@ class QtMapEditorAssetsMixin:
 
     def _apply_preferences_for_new_map(self: QtMapEditor) -> None:
         user_settings = get_user_settings()
-        preferred_cv = int(user_settings.get_default_client_version() or 0)
+        active_profile = user_settings.get_active_client_profile()
+        preferred_cv = int(getattr(active_profile, "client_version", 0) or 0)
+        if preferred_cv <= 0:
+            preferred_cv = int(user_settings.get_default_client_version() or 0)
         if preferred_cv > 0:
             self.client_version = int(preferred_cv)
             self.engine = ConfigurationManager.infer_engine_from_client_version(int(preferred_cv))
@@ -143,9 +206,20 @@ class QtMapEditorAssetsMixin:
         _items_db, id_mapper, warnings = self._load_items_definitions_for_config(cfg)
         self.id_mapper = id_mapper
 
-        assets_folder = str(user_settings.get_client_assets_folder() or "").strip()
-        if assets_folder and os.path.exists(assets_folder):
-            self._set_assets_dir(assets_folder)
+        loaded_from_profile = False
+        if active_profile is not None:
+            profile_assets = str(getattr(active_profile, "assets_dir", "") or "").strip()
+            if profile_assets and os.path.exists(profile_assets):
+                try:
+                    self._apply_client_profile(active_profile, persist_active=False)
+                    loaded_from_profile = True
+                except Exception:
+                    logger.exception("Failed to auto-load active client profile")
+
+        if not loaded_from_profile:
+            assets_folder = str(user_settings.get_client_assets_folder() or "").strip()
+            if assets_folder and os.path.exists(assets_folder):
+                self._set_assets_dir(assets_folder)
 
         if warnings:
             self.status.showMessage(warnings[0])

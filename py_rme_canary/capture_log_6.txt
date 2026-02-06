@@ -1,0 +1,51 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.4, pytest-9.0.2, pluggy-1.6.0
+PyQt6 6.10.2 -- Qt runtime 6.10.2 -- Qt compiled 6.10.0
+rootdir: C:\Users\Marcelo Henrique\Desktop\projec_rme
+configfile: pyproject.toml
+plugins: anyio-4.12.0, cov-7.0.0, qt-4.5.0
+collected 1 item
+
+tests\unit\logic_layer\operations\test_map_import.py F                   [100%]
+
+================================== FAILURES ===================================
+_________________________ test_import_map_with_offset _________________________
+
+tmp_path = WindowsPath('C:/Users/Marcelo Henrique/AppData/Local/Temp/pytest-of-Marcelo Henrique/pytest-11/test_import_map_with_offset0')
+
+    def test_import_map_with_offset(tmp_path: Path) -> None:
+        target_map = GameMap(header=MapHeader(otbm_version=2, width=10, height=10))
+        target_map.set_tile(Tile(x=1, y=1, z=7, ground=Item(id=100)))
+
+        source_map = GameMap(header=MapHeader(otbm_version=2, width=5, height=5, housefile="houses.xml"))
+        source_map.set_tile(Tile(x=0, y=0, z=7, ground=Item(id=200), items=[Item(id=201)], house_id=1))
+        source_map.houses[1] = House(id=1, name="ImportHouse", entry=Position(1, 1, 7), townid=1)
+
+        source_path = tmp_path / "source_map.otbm"
+        save_game_map_bundle_atomic(str(source_path), source_map, id_mapper=None)
+
+        report = import_map_with_offset(
+            target_map=target_map,
+            source_path=source_path,
+            offset=(2, 3, 0),
+            import_tiles=True,
+            import_houses=True,
+            import_spawns=False,
+            import_zones=False,
+            merge_mode=0,
+        )
+
+        imported_tile = target_map.get_tile(2, 3, 7)
+        assert imported_tile is not None
+        assert imported_tile.ground is not None
+>       assert imported_tile.ground.id == 200
+E       assert 7555 == 200
+E        +  where 7555 = Item(id=7555, client_id=200, raw_unknown_id=None, subtype=None, count=None, text=None, description=None, action_id=None, unique_id=None, destination=None, items=(), attribute_map=(), depot_id=None, house_door_id=None).id
+E        +    where Item(id=7555, client_id=200, raw_unknown_id=None, subtype=None, count=None, text=None, description=None, action_id=None, unique_id=None, destination=None, items=(), attribute_map=(), depot_id=None, house_door_id=None) = Tile(x=2, y=3, z=7, ground=Item(id=7555, client_id=200, raw_unknown_id=None, subtype=None, count=None, text=None, desc..., house_id=1, map_flags=0, modified=True, zones=frozenset(), monsters=[], npc=None, spawn_monster=None, spawn_npc=None).ground
+
+tests\unit\logic_layer\operations\test_map_import.py:38: AssertionError
+------------------------------ Captured log call ------------------------------
+WARNING  py_rme_canary.core.io.otbm.loader:loader.py:252 Dynamic ID conversions: server_id_in_client_map=0, client_id_in_server_map=2
+=========================== short test summary info ===========================
+FAILED tests\unit\logic_layer\operations\test_map_import.py::test_import_map_with_offset
+============================== 1 failed in 1.31s ==============================

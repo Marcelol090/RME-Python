@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from py_rme_canary.core.database.items_xml import ItemsXML
@@ -38,6 +38,16 @@ class TileSnapshot:
     z: int
     ground: PreviewItem | None
     items: tuple[PreviewItem, ...]
+    light_strength: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewLighting:
+    enabled: bool = False
+    mode: str = "off"
+    ambient_level: int = 255
+    ambient_color: tuple[int, int, int] = (255, 255, 255)
+    show_strength: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +55,8 @@ class PreviewSnapshot:
     viewport: PreviewViewport
     tiles: tuple[TileSnapshot, ...]
     time_ms: int
+    show_grid: bool = False
+    lighting: PreviewLighting = field(default_factory=PreviewLighting)
 
 
 class SpriteSurfaceCache:
@@ -114,6 +126,9 @@ class IngameRenderer:
         self._items_xml = items_xml
         self._surface_cache = SpriteSurfaceCache(sprite_provider, memory_guard=memory_guard)
         self._font = None
+        self._grid_cache_key: tuple[int, int, int] | None = None
+        self._grid_cache_surface = None
+        self._show_light_strength = False
 
     def render(self, screen: pygame.Surface, snapshot: PreviewSnapshot) -> None:
         import pygame
@@ -124,6 +139,7 @@ class IngameRenderer:
         tile_px = int(viewport.tile_px)
         if tile_px <= 0:
             return
+        self._show_light_strength = bool(getattr(snapshot.lighting, "show_strength", False))
 
         if self._font is None:
             self._font = pygame.font.SysFont("Arial", 12, bold=True)
@@ -142,6 +158,13 @@ class IngameRenderer:
                     continue
                 screen_x, screen_y = self._world_to_screen(tx, ty, viewport)
                 self._draw_tile(world_surface, tile, screen_x, screen_y, time_ms=int(snapshot.time_ms))
+
+        if bool(getattr(snapshot, "show_grid", False)):
+            grid_surface = self._get_grid_surface(world_w, world_h, tile_px)
+            if grid_surface is not None:
+                world_surface.blit(grid_surface, (0, 0))
+
+        self._apply_lighting(world_surface, snapshot, tile_px)
 
         if world_surface.get_size() != screen.get_size():
             scaled = pygame.transform.smoothscale(world_surface, screen.get_size())
@@ -170,6 +193,7 @@ class IngameRenderer:
 
         for item in ground + bottom + top:
             self._draw_item(surface, tile, item, screen_x, screen_y, time_ms=time_ms)
+        self._draw_light_strength(surface, tile, screen_x, screen_y)
 
     def _world_to_screen(self, x: int, y: int, viewport: PreviewViewport) -> tuple[int, int]:
         tile_px = int(viewport.tile_px)
@@ -292,3 +316,74 @@ class IngameRenderer:
         text = self._font.render(str(count), True, (255, 255, 255))
         surface.blit(shadow, (screen_x + 3, screen_y + 3))
         surface.blit(text, (screen_x + 2, screen_y + 2))
+
+    def _draw_light_strength(self, surface: pygame.Surface, tile: TileSnapshot, screen_x: int, screen_y: int) -> None:
+        if not self._show_light_strength:
+            return
+        if self._font is None:
+            return
+        strength = int(getattr(tile, "light_strength", 0))
+        if strength <= 0:
+            return
+        label = self._font.render(str(strength), True, (255, 255, 200))
+        shadow = self._font.render(str(strength), True, (0, 0, 0))
+        surface.blit(shadow, (screen_x + 3, screen_y + 15))
+        surface.blit(label, (screen_x + 2, screen_y + 14))
+
+    def _get_grid_surface(self, width: int, height: int, tile_px: int):
+        import pygame
+
+        key = (int(width), int(height), int(tile_px))
+        if self._grid_cache_key == key and self._grid_cache_surface is not None:
+            return self._grid_cache_surface
+        if int(tile_px) <= 0:
+            return None
+
+        grid = pygame.Surface((max(1, int(width)), max(1, int(height))), pygame.SRCALPHA)
+        color = (255, 255, 255, 28)
+
+        for x in range(0, int(width) + 1, int(tile_px)):
+            pygame.draw.line(grid, color, (x, 0), (x, int(height)))
+        for y in range(0, int(height) + 1, int(tile_px)):
+            pygame.draw.line(grid, color, (0, y), (int(width), y))
+
+        self._grid_cache_key = key
+        self._grid_cache_surface = grid
+        return grid
+
+    def _apply_lighting(self, surface: pygame.Surface, snapshot: PreviewSnapshot, tile_px: int) -> None:
+        import pygame
+
+        lighting = getattr(snapshot, "lighting", None)
+        if lighting is None or not bool(getattr(lighting, "enabled", False)):
+            return
+
+        ambient_level = max(0, min(255, int(getattr(lighting, "ambient_level", 255))))
+        ambient_color = tuple(int(c) for c in getattr(lighting, "ambient_color", (255, 255, 255)))
+        ambient_alpha = max(0, min(220, int((255 - ambient_level) * 0.8)))
+
+        if ambient_alpha > 0:
+            ambient = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+            ambient.fill((ambient_color[0], ambient_color[1], ambient_color[2], ambient_alpha))
+            surface.blit(ambient, (0, 0))
+
+        mode = str(getattr(lighting, "mode", "off"))
+        if mode in ("ambient_only", "off"):
+            return
+
+        light_overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        light_color = (255, 230, 180)
+
+        for tile in snapshot.tiles:
+            strength = int(getattr(tile, "light_strength", 0))
+            if strength <= 0:
+                continue
+            alpha = min(200, max(40, int(strength * 0.6)))
+            px, py = self._world_to_screen(int(tile.x), int(tile.y), snapshot.viewport)
+            pygame.draw.rect(
+                light_overlay,
+                (light_color[0], light_color[1], light_color[2], alpha),
+                (int(px), int(py), int(tile_px), int(tile_px)),
+            )
+
+        surface.blit(light_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)

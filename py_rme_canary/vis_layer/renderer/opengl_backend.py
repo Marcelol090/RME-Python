@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from .core import ModernSpriteBatcher, TextureArray
 from .map_drawer import RenderBackend
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,125 @@ def _placeholder_color(sprite_id: int) -> tuple[int, int, int, int]:
 class _SpriteRun:
     texture_id: int
     vertices: list[float]
+
+
+def _bgra_to_rgba(bgra: bytes | bytearray) -> bytes:
+    mv = memoryview(bgra)
+    out = bytearray(len(mv))
+    out[0::4] = mv[2::4]  # R
+    out[1::4] = mv[1::4]  # G
+    out[2::4] = mv[0::4]  # B
+    out[3::4] = mv[3::4]  # A
+    return bytes(out)
+
+
+class _TextureArrayAtlas:
+    """LRU-managed texture array atlas for sprites."""
+
+    def __init__(
+        self,
+        gl: Any,
+        *,
+        layer_width: int = 32,
+        layer_height: int = 32,
+        max_layers: int = 4096,
+    ) -> None:
+        self._gl = gl
+        self._layer_width = int(layer_width)
+        self._layer_height = int(layer_height)
+        self._max_layers = int(max_layers)
+
+        self._array = TextureArray(gl)
+        self._initialized = False
+        self._white_layer: int | None = None
+        self._sprite_to_layer: OrderedDict[int, int] = OrderedDict()
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._initialized and self._array.is_initialized
+
+    @property
+    def texture_array(self) -> TextureArray:
+        return self._array
+
+    @property
+    def white_layer(self) -> int:
+        return int(self._white_layer or 0)
+
+    def initialize(self) -> bool:
+        if self.is_initialized:
+            return True
+
+        if self._max_layers < 2:
+            logger.debug("TextureArrayAtlas disabled: max_layers < 2")
+            return False
+
+        if not self._array.initialize(self._layer_width, self._layer_height, self._max_layers):
+            return False
+
+        white_layer = self._array.allocate_layer()
+        if white_layer != 0:
+            logger.debug("Unexpected white layer index=%s, expected 0", white_layer)
+            return False
+
+        white = bytes([255, 255, 255, 255]) * (self._layer_width * self._layer_height)
+        if not self._array.upload_layer(white_layer, white):
+            return False
+
+        self._white_layer = 0
+        self._initialized = True
+        return True
+
+    def get_or_upload_layer(self, sprite_id: int, w: int, h: int, bgra: bytes) -> int | None:
+        if not self.is_initialized:
+            return None
+
+        sid = int(sprite_id)
+        layer = self._sprite_to_layer.get(sid)
+        if layer is not None:
+            with contextlib.suppress(Exception):
+                self._sprite_to_layer.move_to_end(sid)
+            return int(layer)
+
+        if int(w) != self._layer_width or int(h) != self._layer_height:
+            logger.debug(
+                "TextureArrayAtlas: sprite %s has %sx%s (expected %sx%s)",
+                sid,
+                w,
+                h,
+                self._layer_width,
+                self._layer_height,
+            )
+            return None
+
+        expected = self._layer_width * self._layer_height * 4
+        if len(bgra) != expected:
+            logger.debug("TextureArrayAtlas: sprite %s bytes=%s (expected %s)", sid, len(bgra), expected)
+            return None
+
+        layer = self._array.allocate_layer()
+        if layer == -1:
+            if not self._sprite_to_layer:
+                return None
+            old_sid, old_layer = self._sprite_to_layer.popitem(last=False)
+            logger.debug("TextureArrayAtlas: evict sprite_id=%s layer=%s", old_sid, old_layer)
+            layer = int(old_layer)
+
+        rgba = _bgra_to_rgba(bgra)
+        if not self._array.upload_layer(int(layer), rgba):
+            return None
+
+        self._sprite_to_layer[sid] = int(layer)
+        with contextlib.suppress(Exception):
+            self._sprite_to_layer.move_to_end(sid)
+        return int(layer)
+
+    def cleanup(self) -> None:
+        self._sprite_to_layer.clear()
+        with contextlib.suppress(Exception):
+            self._array.cleanup()
+        self._white_layer = None
+        self._initialized = False
 
 
 class _SpriteTextureCache:
@@ -92,6 +212,36 @@ class OpenGLResources:
 
         self.white_texture = self._create_white_texture()
         self.texture_cache = _SpriteTextureCache(gl)
+
+        # Optional: modern sprite batching via GL_TEXTURE_2D_ARRAY.
+        self.texture_array_atlas: _TextureArrayAtlas | None = None
+        self.sprite_batcher: ModernSpriteBatcher | None = None
+        self._init_texture_array_pipeline()
+
+    def _init_texture_array_pipeline(self) -> None:
+        gl = self.gl
+        try:
+            atlas = _TextureArrayAtlas(gl)
+            if not atlas.initialize():
+                return
+
+            batcher = ModernSpriteBatcher(gl)
+            if not batcher.initialize(atlas.texture_array):
+                atlas.cleanup()
+                return
+
+            self.texture_array_atlas = atlas
+            self.sprite_batcher = batcher
+            logger.info(
+                "OpenGLResources: TextureArray pipeline enabled (layer=%sx%s, max_layers=%s)",
+                atlas.texture_array.width,
+                atlas.texture_array.height,
+                atlas.texture_array.max_layers,
+            )
+        except Exception as exc:
+            logger.debug("OpenGLResources: TextureArray pipeline unavailable: %s", exc)
+            self.texture_array_atlas = None
+            self.sprite_batcher = None
 
     def _compile_shader(self, source: str, shader_type: int) -> int:
         gl = self.gl
@@ -288,6 +438,15 @@ class OpenGLRenderBackend(RenderBackend):
         self._viewport_height = int(max(1, viewport_height))
         self._sprite_lookup = sprite_lookup
         self._batcher = _OpenGLBatcher()
+        self._sprite_batcher = resources.sprite_batcher
+        self._texture_array_atlas = resources.texture_array_atlas
+        self._use_texture_array = bool(
+            self._sprite_batcher is not None
+            and self._texture_array_atlas is not None
+            and self._texture_array_atlas.is_initialized
+        )
+        if self._use_texture_array and self._sprite_batcher is not None:
+            self._sprite_batcher.begin()
         self.text_calls: list[tuple[int, int, str, int, int, int, int]] = []
 
     def clear(self, r: int, g: int, b: int, a: int = 255) -> None:
@@ -298,6 +457,23 @@ class OpenGLRenderBackend(RenderBackend):
         self._batcher.add_color_rect(int(x), int(y), int(size), int(size), (int(r), int(g), int(b), int(a)))
 
     def draw_tile_sprite(self, x: int, y: int, size: int, sprite_id: int) -> None:
+        if self._use_texture_array and self._sprite_batcher is not None and self._texture_array_atlas is not None:
+            sprite = self._sprite_lookup(int(sprite_id))
+            if sprite is None:
+                tint = _placeholder_color(int(sprite_id))
+                layer = self._texture_array_atlas.white_layer
+            else:
+                client_id, w, h, bgra = sprite
+                layer = self._texture_array_atlas.get_or_upload_layer(int(client_id), int(w), int(h), bgra)
+                if layer is None:
+                    tint = _placeholder_color(int(sprite_id))
+                    layer = self._texture_array_atlas.white_layer
+                else:
+                    tint = (255, 255, 255, 255)
+
+            self._sprite_batcher.add_sprite(float(x), float(y), float(size), float(size), int(layer), tint=tint)
+            return
+
         sprite = self._sprite_lookup(int(sprite_id))
         if sprite is None:
             self._batcher.add_color_rect(int(x), int(y), int(size), int(size), _placeholder_color(int(sprite_id)))
@@ -399,3 +575,6 @@ class OpenGLRenderBackend(RenderBackend):
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
+
+        if self._use_texture_array and self._sprite_batcher is not None:
+            self._sprite_batcher.end(self._viewport_width, self._viewport_height)

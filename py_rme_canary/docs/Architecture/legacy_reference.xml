@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LegacyReference>
+    <Meta>
+        <Project>py_rme_canary</Project>
+        <LegacySource>@[remeres-map-editor-redux]</LegacySource>
+        <Description>Mapping of C++ classes to Python equivalents for porting reference.</Description>
+    </Meta>
+
+    <ClassMapping>
+        <!-- Core Data Structures -->
+        <Class legacy="Map" file="map.h" modern="core.data.gamemap.GameMap" />
+        <Class legacy="Tile" file="tile.h" modern="core.data.tile.Tile" />
+        <Class legacy="Item" file="item.h" modern="core.data.item.Item" />
+
+        <!-- Logic & Editors -->
+        <Class legacy="Brush" file="brush.h" modern="logic_layer.brushes.base_brush.BaseBrush" />
+        <Class legacy="Editor" file="editor.h" modern="logic_layer.session.editor.EditorSession" />
+
+        <!-- Rendering & UI -->
+        <Class legacy="MapWindow" file="map_window.h" modern="vis_layer.ui.canvas.map_canvas.MapCanvasWidget" />
+        <Class legacy="MinimapWindow" file="minimap_window.h" modern="vis_layer.ui.docks.minimap.MinimapDock" />
+
+        <!-- Redux Specifics -->
+        <Class legacy="MapDrawer" file="map_drawer.h" modern="vis_layer.renderer.map_drawer.MapDrawer" note="Legacy composed of specialized Drawers. Python is monolithic (Now refactored to use Drawers!)." />
+        <Class legacy="GroundBrush" file="ground_brush.h" modern="logic_layer.brushes.ground_brush.GroundBrush" note="Matches logic in ground_brush.cpp." />
+        <Class legacy="LiveServer" file="live_server.h" modern="core.net.live_server.LiveServer" note="To be implemented using asyncio." />
+        <Class legacy="SpriteBatch" file="sprite_batch.h" modern="vis_layer.renderer.backend.opengl_backend.OpenGLBackend" note="Legacy uses RingBuffer/MDI. Python uses simple arrays." />
+    </ClassMapping>
+</LegacyReference>

@@ -17,7 +17,10 @@ class ActionType(str, Enum):
     BORDERIZE_SELECTION = "borderize_selection"
     REPLACE_ITEMS = "replace_items"
     REMOVE_ITEMS = "remove_items"
+    REMOVE_CORPSES = "remove_corpses"
+    REMOVE_UNREACHABLE_TILES = "remove_unreachable_tiles"
     CLEAR_INVALID_TILES = "clear_invalid_tiles"
+    CLEAR_INVALID_HOUSE_TILES = "clear_invalid_house_tiles"
     CLEAR_MODIFIED_STATE = "clear_modified_state"
     RANDOMIZE_SELECTION = "randomize_selection"
     RANDOMIZE_MAP = "randomize_map"
@@ -89,7 +92,10 @@ DEFAULT_LABELS: dict[ActionType, str] = {
     ActionType.BORDERIZE_SELECTION: "Borderize Selection",
     ActionType.REPLACE_ITEMS: "Replace Items",
     ActionType.REMOVE_ITEMS: "Remove Items",
+    ActionType.REMOVE_CORPSES: "Remove Corpses",
+    ActionType.REMOVE_UNREACHABLE_TILES: "Remove Unreachable Tiles",
     ActionType.CLEAR_INVALID_TILES: "Clear Invalid Tiles",
+    ActionType.CLEAR_INVALID_HOUSE_TILES: "Clear Invalid House Tiles",
     ActionType.CLEAR_MODIFIED_STATE: "Clear Modified State",
     ActionType.RANDOMIZE_SELECTION: "Randomize Selection",
     ActionType.RANDOMIZE_MAP: "Randomize Map",

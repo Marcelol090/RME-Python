@@ -1,0 +1,522 @@
+"""Export Tilesets Dialog - Export tilesets to file.
+
+Dialog for exporting map tilesets to XML/JSON files.
+Mirrors legacy C++ ExportTilesetsWindow from source/ui/map/export_tilesets_window.cpp.
+
+Reference:
+    - C++ ExportTilesetsWindow: source/ui/map/export_tilesets_window.h
+    - TilesetExporter: core/persistence/tileset_exporter.py
+"""
+
+from __future__ import annotations
+
+import logging
+from enum import IntEnum, auto
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+if TYPE_CHECKING:
+    pass
+
+logger = logging.getLogger(__name__)
+
+
+class ExportFormat(IntEnum):
+    """Export format types."""
+
+    XML = auto()
+    JSON = auto()
+
+
+class ExportTilesetsDialog(QDialog):
+    """Dialog for exporting tilesets to files.
+
+    Provides interface for:
+    - Selecting tilesets to export
+    - Choosing output directory and filename
+    - Selecting export format (XML/JSON)
+    - Configuring export options
+
+    Signals:
+        export_requested: Emitted when user confirms export.
+            Args: (tilesets: list[str], path: Path, format: ExportFormat)
+    """
+
+    export_requested = pyqtSignal(list, Path, ExportFormat)
+
+    def __init__(
+        self,
+        tilesets: list[str] | None = None,
+        default_path: Path | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        """Initialize export tilesets dialog.
+
+        Args:
+            tilesets: List of available tileset names.
+            default_path: Default export directory.
+            parent: Parent widget.
+        """
+        super().__init__(parent)
+        self._available_tilesets = tilesets or []
+        self._default_path = default_path or Path.home()
+
+        self.setWindowTitle("Export Tilesets")
+        self.setMinimumSize(500, 450)
+        self.setModal(True)
+
+        self._setup_ui()
+        self._apply_style()
+        self._load_tilesets()
+        self._validate()
+
+    def _setup_ui(self) -> None:
+        """Initialize UI components."""
+        layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Header
+        header = QLabel("Export Tilesets")
+        header.setObjectName("headerLabel")
+        layout.addWidget(header)
+
+        # Tileset selection group
+        selection_group = QGroupBox("Select Tilesets")
+        selection_layout = QVBoxLayout(selection_group)
+
+        # Select all / none buttons
+        btn_layout = QHBoxLayout()
+
+        self._btn_select_all = QPushButton("Select All")
+        self._btn_select_all.clicked.connect(self._select_all)
+        btn_layout.addWidget(self._btn_select_all)
+
+        self._btn_select_none = QPushButton("Select None")
+        self._btn_select_none.clicked.connect(self._select_none)
+        btn_layout.addWidget(self._btn_select_none)
+
+        btn_layout.addStretch()
+        selection_layout.addLayout(btn_layout)
+
+        # Tileset list
+        self._tileset_list = QListWidget()
+        self._tileset_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self._tileset_list.itemSelectionChanged.connect(self._validate)
+        selection_layout.addWidget(self._tileset_list)
+
+        # Selection count
+        self._selection_label = QLabel("0 tilesets selected")
+        self._selection_label.setObjectName("selectionLabel")
+        selection_layout.addWidget(self._selection_label)
+
+        layout.addWidget(selection_group, 1)
+
+        # Output configuration group
+        output_group = QGroupBox("Output Configuration")
+        output_layout = QFormLayout(output_group)
+        output_layout.setSpacing(12)
+
+        # Directory selection
+        dir_layout = QHBoxLayout()
+
+        self._directory_edit = QLineEdit()
+        self._directory_edit.setText(str(self._default_path))
+        self._directory_edit.textChanged.connect(self._validate)
+        dir_layout.addWidget(self._directory_edit, 1)
+
+        self._btn_browse = QPushButton("Browse...")
+        self._btn_browse.clicked.connect(self._browse_directory)
+        dir_layout.addWidget(self._btn_browse)
+
+        output_layout.addRow("Directory:", dir_layout)
+
+        # Filename
+        self._filename_edit = QLineEdit()
+        self._filename_edit.setText("tilesets")
+        self._filename_edit.setPlaceholderText("Export filename (without extension)")
+        self._filename_edit.textChanged.connect(self._validate)
+        output_layout.addRow("Filename:", self._filename_edit)
+
+        # Format selection
+        self._format_combo = QComboBox()
+        self._format_combo.addItem("XML (.xml)", ExportFormat.XML)
+        self._format_combo.addItem("JSON (.json)", ExportFormat.JSON)
+        self._format_combo.currentIndexChanged.connect(self._on_format_changed)
+        output_layout.addRow("Format:", self._format_combo)
+
+        layout.addWidget(output_group)
+
+        # Options group
+        options_group = QGroupBox("Export Options")
+        options_layout = QVBoxLayout(options_group)
+
+        self._include_items_check = QCheckBox("Include item details")
+        self._include_items_check.setChecked(True)
+        self._include_items_check.setToolTip("Include full item information in export")
+        options_layout.addWidget(self._include_items_check)
+
+        self._pretty_print_check = QCheckBox("Pretty print (formatted output)")
+        self._pretty_print_check.setChecked(True)
+        self._pretty_print_check.setToolTip("Format output for readability")
+        options_layout.addWidget(self._pretty_print_check)
+
+        self._overwrite_check = QCheckBox("Overwrite existing files")
+        self._overwrite_check.setChecked(False)
+        self._overwrite_check.setToolTip("Replace files if they already exist")
+        options_layout.addWidget(self._overwrite_check)
+
+        layout.addWidget(options_group)
+
+        # Error message area
+        self._error_label = QLabel()
+        self._error_label.setObjectName("errorLabel")
+        self._error_label.setWordWrap(True)
+        self._error_label.hide()
+        layout.addWidget(self._error_label)
+
+        # Preview of output path
+        self._preview_label = QLabel()
+        self._preview_label.setObjectName("previewLabel")
+        layout.addWidget(self._preview_label)
+
+        # Dialog buttons
+        self._button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self._ok_button = self._button_box.button(QDialogButtonBox.StandardButton.Ok)
+        self._ok_button.setText("Export")
+        self._button_box.accepted.connect(self._on_accept)
+        self._button_box.rejected.connect(self.reject)
+        layout.addWidget(self._button_box)
+
+    def _apply_style(self) -> None:
+        """Apply dark theme styling."""
+        self.setStyleSheet(
+            """
+            QDialog {
+                background-color: #1E1E2E;
+                color: #CDD6F4;
+            }
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #45475A;
+                border-radius: 6px;
+                margin-top: 12px;
+                padding-top: 12px;
+                background-color: #181825;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 12px;
+                padding: 0 6px;
+                color: #8B5CF6;
+            }
+            QLabel {
+                color: #CDD6F4;
+            }
+            QLabel#headerLabel {
+                font-size: 14px;
+                font-weight: bold;
+                color: #8B5CF6;
+            }
+            QLabel#selectionLabel {
+                font-size: 11px;
+                color: #6C7086;
+            }
+            QLabel#errorLabel {
+                font-size: 11px;
+                color: #F38BA8;
+                padding: 8px;
+                background-color: rgba(243, 139, 168, 0.1);
+                border-radius: 4px;
+            }
+            QLabel#previewLabel {
+                font-size: 11px;
+                color: #89B4FA;
+                padding: 8px;
+                background-color: #313244;
+                border-radius: 4px;
+            }
+            QListWidget {
+                background-color: #313244;
+                border: 1px solid #45475A;
+                border-radius: 4px;
+                color: #CDD6F4;
+            }
+            QListWidget::item {
+                padding: 6px;
+            }
+            QListWidget::item:selected {
+                background-color: #8B5CF6;
+            }
+            QListWidget::item:hover {
+                background-color: #45475A;
+            }
+            QLineEdit {
+                background-color: #313244;
+                border: 1px solid #45475A;
+                border-radius: 4px;
+                padding: 8px;
+                color: #CDD6F4;
+            }
+            QLineEdit:focus {
+                border-color: #8B5CF6;
+            }
+            QComboBox {
+                background-color: #313244;
+                border: 1px solid #45475A;
+                border-radius: 4px;
+                padding: 8px 12px;
+                color: #CDD6F4;
+            }
+            QComboBox:focus {
+                border-color: #8B5CF6;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #CDD6F4;
+                margin-right: 10px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #313244;
+                border: 1px solid #45475A;
+                selection-background-color: #8B5CF6;
+                color: #CDD6F4;
+            }
+            QCheckBox {
+                color: #CDD6F4;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                border: 1px solid #45475A;
+                background-color: #313244;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #8B5CF6;
+                border-color: #8B5CF6;
+            }
+            QPushButton {
+                background-color: #45475A;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                color: #CDD6F4;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: #585B70;
+            }
+            QPushButton:pressed {
+                background-color: #8B5CF6;
+            }
+            QPushButton:disabled {
+                background-color: #313244;
+                color: #6C7086;
+            }
+            QDialogButtonBox QPushButton {
+                min-width: 90px;
+            }
+        """
+        )
+
+    def _load_tilesets(self) -> None:
+        """Load available tilesets into list."""
+        self._tileset_list.clear()
+
+        for name in sorted(self._available_tilesets):
+            item = QListWidgetItem(name)
+            item.setData(Qt.ItemDataRole.UserRole, name)
+            self._tileset_list.addItem(item)
+
+    def _select_all(self) -> None:
+        """Select all tilesets."""
+        self._tileset_list.selectAll()
+
+    def _select_none(self) -> None:
+        """Deselect all tilesets."""
+        self._tileset_list.clearSelection()
+
+    def _browse_directory(self) -> None:
+        """Open directory browser."""
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Select Export Directory",
+            self._directory_edit.text(),
+            QFileDialog.Option.ShowDirsOnly,
+        )
+        if directory:
+            self._directory_edit.setText(directory)
+
+    def _on_format_changed(self, index: int) -> None:
+        """Handle format selection change."""
+        self._update_preview()
+
+    def _validate(self) -> None:
+        """Validate inputs and update UI state."""
+        errors = []
+        selected_count = len(self._tileset_list.selectedItems())
+
+        # Update selection label
+        self._selection_label.setText(f"{selected_count} tileset(s) selected")
+
+        # Check selection
+        if selected_count == 0:
+            errors.append("Select at least one tileset to export")
+
+        # Check directory
+        directory = Path(self._directory_edit.text())
+        if not directory.exists():
+            errors.append(f"Directory does not exist: {directory}")
+        elif not directory.is_dir():
+            errors.append("Path is not a directory")
+
+        # Check filename
+        filename = self._filename_edit.text().strip()
+        if not filename:
+            errors.append("Filename cannot be empty")
+        elif any(c in filename for c in r'<>:"/\|?*'):
+            errors.append("Filename contains invalid characters")
+
+        # Update error display
+        if errors:
+            self._error_label.setText("\n".join(errors))
+            self._error_label.show()
+            self._ok_button.setEnabled(False)
+        else:
+            self._error_label.hide()
+            self._ok_button.setEnabled(True)
+
+        self._update_preview()
+
+    def _update_preview(self) -> None:
+        """Update output path preview."""
+        directory = self._directory_edit.text()
+        filename = self._filename_edit.text().strip()
+        format_enum = self._format_combo.currentData()
+
+        if format_enum == ExportFormat.XML:
+            ext = ".xml"
+        else:
+            ext = ".json"
+
+        if filename and directory:
+            full_path = Path(directory) / f"{filename}{ext}"
+            self._preview_label.setText(f"Output: {full_path}")
+        else:
+            self._preview_label.setText("Output: (invalid)")
+
+    def _on_accept(self) -> None:
+        """Handle Export button click."""
+        # Get selected tilesets
+        selected = [item.data(Qt.ItemDataRole.UserRole) for item in self._tileset_list.selectedItems()]
+
+        # Build output path
+        directory = Path(self._directory_edit.text())
+        filename = self._filename_edit.text().strip()
+        format_enum = self._format_combo.currentData()
+
+        if format_enum == ExportFormat.XML:
+            ext = ".xml"
+        else:
+            ext = ".json"
+
+        output_path = directory / f"{filename}{ext}"
+
+        # Check for existing file
+        if output_path.exists() and not self._overwrite_check.isChecked():
+            from PyQt6.QtWidgets import QMessageBox
+
+            result = QMessageBox.question(
+                self,
+                "File Exists",
+                f"File already exists:\n{output_path}\n\nOverwrite?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if result != QMessageBox.StandardButton.Yes:
+                return
+
+        # Emit export signal
+        self.export_requested.emit(selected, output_path, format_enum)
+        self.accept()
+
+    def get_selected_tilesets(self) -> list[str]:
+        """Get names of selected tilesets.
+
+        Returns:
+            List of selected tileset names.
+        """
+        return [item.data(Qt.ItemDataRole.UserRole) for item in self._tileset_list.selectedItems()]
+
+    def get_export_path(self) -> Path:
+        """Get the export output path.
+
+        Returns:
+            The full output file path.
+        """
+        directory = Path(self._directory_edit.text())
+        filename = self._filename_edit.text().strip()
+        format_enum = self._format_combo.currentData()
+
+        if format_enum == ExportFormat.XML:
+            ext = ".xml"
+        else:
+            ext = ".json"
+
+        return directory / f"{filename}{ext}"
+
+    def get_export_format(self) -> ExportFormat:
+        """Get the selected export format.
+
+        Returns:
+            The export format enum value.
+        """
+        return self._format_combo.currentData()
+
+    def get_options(self) -> dict:
+        """Get export options.
+
+        Returns:
+            Dictionary with include_items, pretty_print, overwrite options.
+        """
+        return {
+            "include_items": self._include_items_check.isChecked(),
+            "pretty_print": self._pretty_print_check.isChecked(),
+            "overwrite": self._overwrite_check.isChecked(),
+        }
+
+    def set_available_tilesets(self, tilesets: list[str]) -> None:
+        """Set available tilesets.
+
+        Args:
+            tilesets: List of tileset names.
+        """
+        self._available_tilesets = tilesets
+        self._load_tilesets()

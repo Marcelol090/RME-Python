@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "project": "py_rme_canary",
+    "updated": "2026-02-05",
+    "source": "RELEASE_NOTES_AND_ROADMAP.md"
+  },
+  "versions": [
+    {
+      "version": "1.5",
+      "name": "RME Py_Extended Edition v1.5",
+      "status": "released",
+      "features": [
+        "Monster & NPC Names",
+        "Duplicate Unique ID Warning",
+        "Client Profiles",
+        "Dark Mode",
+        "Replace Items (Context Menu)"
+      ]
+    },
+    {
+      "version": "2.0",
+      "name": "RME Py_Extended Edition v2.0",
+      "status": "released",
+      "features": [
+        "Cross-Version Map Copy/Paste",
+        "Sprite Hash Matching (FNV-1a)",
+        "Instance Transfer (Creatures/Spawns)",
+        "Multiple Instances support"
+      ]
+    },
+    {
+      "version": "2.5",
+      "name": "RME Py_Extended Edition v2.5",
+      "status": "released",
+      "features": [
+        "Lasso/Freehand Selection",
+        "Lua Monster Import (Revscript)",
+        "Monster Folder Import",
+        "Quick Replace (Right-click on map)",
+        "Advanced Brushes (Table, Carpet)"
+      ]
+    },
+    {
+      "version": "3.0",
+      "name": "Version 3.0 (Planned)",
+      "status": "planned",
+      "features": [
+        "Full In-Game Preview Window Integration",
+        "Advanced Lighting System",
+        "Real-time Collaboration (Live)"
+      ]
+    },
+    {
+      "version": "4.0",
+      "name": "Future / In-Game Preview",
+      "status": "in_progress",
+      "phases": [
+        "Phase 1: Base Structure (Done)",
+        "Phase 2: Sprite Loader (Done)",
+        "Phase 3: Render Loop (Done)",
+        "Phase 4: Preview Window (Done)",
+        "Phase 5: Advanced Features (Pending)",
+        "Phase 6: Editor Integration (Done)",
+        "Phase 7: Testing (Done)",
+        "Phase 8: Debug & Polish (In Progress)",
+        "Phase 9: Release (Pending)"
+      ]
+    }
+  ]
+}

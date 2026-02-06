@@ -10,7 +10,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QImage
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -185,17 +186,8 @@ class PNGExportDialog(QDialog):
 
         config = self._get_config()
         exporter = get_default_exporter()
-
-        # Set bounds from session if available
-        if self._session:
-            try:
-                w = getattr(self._session, "map_width", 2048) or 2048
-                h = getattr(self._session, "map_height", 2048) or 2048
-                exporter.set_map_bounds(0, 0, w, h)
-            except Exception:
-                exporter.set_map_bounds(0, 0, 2048, 2048)
-        else:
-            exporter.set_map_bounds(0, 0, 2048, 2048)
+        x_min, y_min, x_max, y_max = self._map_bounds_for_export()
+        exporter.set_map_bounds(int(x_min), int(y_min), int(x_max), int(y_max))
 
         mem_mb = exporter.estimate_memory_mb(config)
 
@@ -228,6 +220,119 @@ class PNGExportDialog(QDialog):
 
         return f"{path}{extension}"
 
+    def _map_bounds_for_export(self) -> tuple[int, int, int, int]:
+        """Compute export bounds as (x_min, y_min, x_max_exclusive, y_max_exclusive)."""
+        session = self._session
+        game_map = getattr(session, "game_map", None) if session is not None else None
+
+        if game_map is None:
+            return (0, 0, 2048, 2048)
+
+        tiles = getattr(game_map, "tiles", None)
+        if isinstance(tiles, dict) and tiles:
+            xs: list[int] = []
+            ys: list[int] = []
+            for key in tiles:
+                if not isinstance(key, tuple) or len(key) < 2:
+                    continue
+                try:
+                    xs.append(int(key[0]))
+                    ys.append(int(key[1]))
+                except Exception:
+                    continue
+            if xs and ys:
+                return (min(xs), min(ys), max(xs) + 1, max(ys) + 1)
+
+        try:
+            header = getattr(game_map, "header", None)
+            width = max(1, int(getattr(header, "width", 2048)))
+            height = max(1, int(getattr(header, "height", 2048)))
+            return (0, 0, width, height)
+        except Exception:
+            return (0, 0, 2048, 2048)
+
+    @staticmethod
+    def _tile_server_id(tile: Any) -> int | None:
+        if tile is None:
+            return None
+
+        items = getattr(tile, "items", None) or []
+        if items:
+            top = items[-1]
+            sid = getattr(top, "server_id", None)
+            if sid is not None:
+                return int(sid)
+
+        ground = getattr(tile, "ground", None)
+        if ground is not None:
+            sid = getattr(ground, "server_id", None)
+            if sid is not None:
+                return int(sid)
+
+        return None
+
+    @staticmethod
+    def _solid_rgba_bytes(tile_size: int, color: tuple[int, int, int, int]) -> bytes:
+        r, g, b, a = color
+        pixel = bytes((int(r), int(g), int(b), int(a)))
+        return pixel * (int(tile_size) * int(tile_size))
+
+    @staticmethod
+    def _fallback_tile_rgba(tile: Any, tile_size: int) -> bytes:
+        from py_rme_canary.logic_layer.minimap_png_exporter import MINIMAP_PALETTE
+
+        color_idx = getattr(tile, "minimap_color", None)
+        if color_idx is not None:
+            try:
+                idx = int(color_idx) & 0xFF
+                r, g, b = MINIMAP_PALETTE[idx]
+                return PNGExportDialog._solid_rgba_bytes(tile_size, (r, g, b, 255))
+            except Exception:
+                pass
+
+        return PNGExportDialog._solid_rgba_bytes(tile_size, (40, 40, 52, 255))
+
+    @staticmethod
+    def _qimage_to_rgba_bytes(image: QImage, tile_size: int) -> bytes:
+        img = image.convertToFormat(QImage.Format.Format_RGBA8888)
+        if img.width() != int(tile_size) or img.height() != int(tile_size):
+            img = img.scaled(
+                int(tile_size),
+                int(tile_size),
+                Qt.AspectRatioMode.IgnoreAspectRatio,
+                Qt.TransformationMode.FastTransformation,
+            )
+        ptr = img.bits()
+        ptr.setsize(img.sizeInBytes())
+        return bytes(ptr)
+
+    def _build_render_tile_callback(self) -> Any:
+        session = self._session
+        game_map = getattr(session, "game_map", None) if session is not None else None
+        if game_map is None:
+            return lambda _x, _y, _z, _tile_size: None
+
+        parent_editor = self.parent()
+        sprite_lookup = getattr(parent_editor, "_sprite_pixmap_for_server_id", None)
+
+        def render_tile(x: int, y: int, z: int, tile_size: int) -> bytes | None:
+            tile = game_map.get_tile(int(x), int(y), int(z))
+            if tile is None:
+                return None
+
+            sid = self._tile_server_id(tile)
+            if sid is not None and callable(sprite_lookup):
+                try:
+                    pixmap = sprite_lookup(int(sid), tile_px=int(tile_size))
+                    if pixmap is not None and not pixmap.isNull():
+                        return self._qimage_to_rgba_bytes(pixmap.toImage(), int(tile_size))
+                except Exception:
+                    pass
+
+            return self._fallback_tile_rgba(tile, int(tile_size))
+
+        return render_tile
+
     def _on_export(self) -> None:
         """Handle export button click."""
         config = self._get_config()
@@ -254,22 +359,10 @@ class PNGExportDialog(QDialog):
 
         exporter = get_default_exporter()
 
-        # Set bounds from session
-        if self._session:
-            try:
-                w = getattr(self._session, "map_width", 2048) or 2048
-                h = getattr(self._session, "map_height", 2048) or 2048
-                exporter.set_map_bounds(0, 0, w, h)
-            except Exception:
-                exporter.set_map_bounds(0, 0, 2048, 2048)
-        else:
-            exporter.set_map_bounds(0, 0, 2048, 2048)
+        x_min, y_min, x_max, y_max = self._map_bounds_for_export()
+        exporter.set_map_bounds(int(x_min), int(y_min), int(x_max), int(y_max))
 
-        # Create tile render callback
-        def render_tile(x: int, y: int, z: int, tile_size: int) -> bytes | None:
-            # Placeholder - this should be connected to actual renderer
-            # Returns 32x32 black transparent tile
-            return None
+        render_tile = self._build_render_tile_callback()
 
         # Show progress UI
         self._progress_bar.setVisible(True)

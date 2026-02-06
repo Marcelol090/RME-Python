@@ -53,7 +53,7 @@ class MapCanvasWidget(QWidget):
         self._hover_tile: tuple[int, int, int] | None = None
         self._hover_stack: list[int] = []
 
-    def sizeHint(self):  # noqa: N802 (Qt style)
+    def sizeHint(self):
         return super().sizeHint()
 
     # ---------- helpers ----------
@@ -263,7 +263,7 @@ class MapCanvasWidget(QWidget):
 
     # ---------- Qt events ----------
 
-    def paintEvent(self, _event):  # noqa: N802
+    def paintEvent(self, _event):
         self._is_rendering = True
         self._apply_pending_inputs()
         editor = self._editor
@@ -490,7 +490,7 @@ class MapCanvasWidget(QWidget):
             self._render_pending = False
             QTimer.singleShot(0, self.request_render)
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event):
         editor = self._editor
 
         if event.button() == Qt.MouseButton.MiddleButton:
@@ -628,7 +628,7 @@ class MapCanvasWidget(QWidget):
             QMessageBox.critical(self, "Paint", str(e))
             self._mouse_down = False
 
-    def mouseMoveEvent(self, event):  # noqa: N802
+    def mouseMoveEvent(self, event):
         editor = self._editor
 
         if self._panning and self._pan_anchor is not None:
@@ -675,7 +675,7 @@ class MapCanvasWidget(QWidget):
         editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
         self._set_hover_from_pos(int(event.position().x()), int(event.position().y()))
 
-    def mouseReleaseEvent(self, event):  # noqa: N802
+    def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.MiddleButton:
             self._panning = False
             self._pan_anchor = None
@@ -781,7 +781,7 @@ class MapCanvasWidget(QWidget):
         hx, hy, hz = self._hover_tile
         drawer.set_hover_tile(hx, hy, hz, list(self._hover_stack))
 
-    def wheelEvent(self, event):  # noqa: N802
+    def wheelEvent(self, event):
         delta = event.angleDelta().y()
         if delta == 0:
             return

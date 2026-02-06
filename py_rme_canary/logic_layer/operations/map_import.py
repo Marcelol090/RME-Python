@@ -5,7 +5,7 @@ from pathlib import Path
 
 from py_rme_canary.core.data.gamemap import GameMap
 from py_rme_canary.core.data.houses import House
-from py_rme_canary.core.data.item import Position
+from py_rme_canary.core.data.item import Item, Position
 from py_rme_canary.core.data.spawns import MonsterSpawnArea, NpcSpawnArea
 from py_rme_canary.core.data.tile import Tile
 from py_rme_canary.core.data.zones import Zone
@@ -241,6 +241,9 @@ def _offset_tile(
     zone_id_mapping: dict[int, int],
     import_spawns: bool,
 ) -> Tile:
+    ground = _ensure_item_client_id(tile.ground) if tile.ground is not None else None
+    items = [_ensure_item_client_id(item) for item in tile.items]
+
     house_id = tile.house_id
     if house_id is not None and house_id_mapping:
         house_id = house_id_mapping.get(int(house_id), int(house_id))
@@ -257,7 +260,8 @@ def _offset_tile(
         x=int(x),
         y=int(y),
         z=int(z),
-        items=list(tile.items),
+        ground=ground,
+        items=items,
         monsters=list(tile.monsters),
         house_id=house_id,
         zones=zones,
@@ -265,6 +269,17 @@ def _offset_tile(
         spawn_npc=spawn_npc,
         modified=True,
     )
+
+
+def _ensure_item_client_id(item: Item) -> Item:
+    client_id = item.client_id if item.client_id is not None else int(item.id)
+    if item.items:
+        children = tuple(_ensure_item_client_id(child) for child in item.items)
+    else:
+        children = item.items
+    if client_id == item.client_id and children == item.items:
+        return item
+    return replace(item, client_id=client_id, items=children)
 
 
 def _merge_tiles(target: Tile, incoming: Tile, *, skip_items: bool) -> Tile:

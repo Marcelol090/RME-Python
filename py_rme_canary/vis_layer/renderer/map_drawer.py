@@ -13,19 +13,20 @@ Architecture Notes:
 
 from __future__ import annotations
 
-import logging
 import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol
 
 from py_rme_canary.logic_layer.drawing_options import DrawingOptions
-from py_rme_canary.logic_layer.settings.light_settings import LightMode
-
-logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
-    from py_rme_canary.core.data.tile import Tile
+
+from py_rme_canary.vis_layer.renderer.drawers.creature_drawer import CreatureDrawer
+from py_rme_canary.vis_layer.renderer.drawers.floor_drawer import FloorDrawer
+from py_rme_canary.vis_layer.renderer.drawers.grid_drawer import GridDrawer
+from py_rme_canary.vis_layer.renderer.drawers.item_drawer import ItemDrawer
+from py_rme_canary.vis_layer.renderer.drawers.light_drawer import LightDrawer
 
 
 class RenderBackend(Protocol):
@@ -128,6 +129,13 @@ class MapDrawer:
     _highlight_tile: tuple[int, int, int] | None = None
     _highlight_until: float = 0.0
     _live_cursors: list[dict[str, object]] = field(default_factory=list)
+
+    # Drawers (Composition Pattern)
+    grid_drawer: GridDrawer = field(default_factory=GridDrawer)
+    floor_drawer: FloorDrawer = field(default_factory=FloorDrawer)
+    item_drawer: ItemDrawer = field(default_factory=ItemDrawer)
+    creature_drawer: CreatureDrawer = field(default_factory=CreatureDrawer)
+    light_drawer: LightDrawer = field(default_factory=LightDrawer)
 
     def set_hover_tile(self, x: int, y: int, z: int, stack: list[int]) -> None:
         """Set hover tile and visible stack for tooltip rendering."""
@@ -326,22 +334,9 @@ class MapDrawer:
             return
 
         # Normal rendering - ground then items
-        if tile.ground is not None and self.options.show_items:
-            backend.draw_tile_sprite(screen_x, screen_y, size, tile.ground.id)
-
-        if self.should_draw_items() and tile.items:
-            for item in tile.items:
-                backend.draw_tile_sprite(screen_x, screen_y, size, item.id)
-
-        # Spawn/creature indicators (legacy parity: render markers when toggled).
-        if (self.options.show_spawns_monster or self.options.show_monsters) and tile.spawn_monster is not None:
-            self._draw_spawn_indicator(backend, screen_x, screen_y, size, kind="spawn_monster")
-        if (self.options.show_spawns_npc or self.options.show_npcs) and tile.spawn_npc is not None:
-            self._draw_spawn_indicator(backend, screen_x, screen_y, size, kind="spawn_npc")
-
-        # Creature name overlays (monsters/NPCs).
-        if not self.is_minimap_mode():
-            self._draw_creature_names(backend, tile, screen_x, screen_y, size)
+        self.floor_drawer.draw(self, backend, tile, screen_x, screen_y, size)
+        self.item_drawer.draw(self, backend, tile, screen_x, screen_y, size)
+        self.creature_drawer.draw(self, backend, tile, screen_x, screen_y, size)
 
     def _get_tile_color(self, tile) -> tuple[int, int, int, int]:
         """Get the display color for a tile (for minimap mode)."""
@@ -366,19 +361,8 @@ class MapDrawer:
         b = clamp(int(b))
         return (r, g, b, 255)
 
-    def _draw_grid(self, backend: RenderBackend) -> None:
-        """Draw the tile grid.
-
-        Mirrors C++ MapDrawer::DrawGrid().
-        """
-        tile_size = self.viewport.tile_px
-        grid_color = (58, 58, 58, 255)  # Dark gray
-
-        for y in range(self._start_y, self._end_y + 1):
-            py = (y - self._start_y) * tile_size
-            for x in range(self._start_x, self._end_x + 1):
-                px = (x - self._start_x) * tile_size
-                backend.draw_grid_rect(px, py, tile_size, tile_size, *grid_color)
+        """Draw the tile grid."""
+        self.grid_drawer.draw(self, backend)
 
     def _draw_highlight(self, backend: RenderBackend) -> None:
         """Draw a temporary highlight box for a tile."""
@@ -406,8 +390,7 @@ class MapDrawer:
                 x = int(cursor.get("x", 0))
                 y = int(cursor.get("y", 0))
                 z = int(cursor.get("z", 0))
-            except Exception as e:
-                logger.warning("Invalid live cursor data: %s", e)
+            except Exception:
                 continue
             if int(z) != int(self._floor):
                 continue
@@ -418,8 +401,7 @@ class MapDrawer:
             color = cursor.get("color", (255, 255, 255))
             try:
                 r, g, b = color
-            except Exception as e:
-                logger.debug("Invalid live cursor color: %s", e)
+            except Exception:
                 r, g, b = (255, 255, 255)
             backend.draw_selection_rect(px, py, tile_size, tile_size, int(r), int(g), int(b), 200)
             name = str(cursor.get("name", ""))
@@ -435,111 +417,13 @@ class MapDrawer:
         height = self.viewport.height_px
         backend.draw_shade_overlay(0, 0, width, height, 128)
 
+    def _draw_grid(self, backend: RenderBackend) -> None:
+        """Draw grid overlay."""
+        self.grid_drawer.draw(self, backend)
+
     def _draw_lights(self, backend: RenderBackend) -> None:
-        """Draw light effects.
-
-        Mirrors C++ MapDrawer::DrawLight().
-        """
-        if self.game_map is None or not self.options.show_lights:
-            return
-
-        settings = self.options.light_settings
-        if not settings.enabled or settings.mode == LightMode.OFF:
-            return
-
-        ambient_color = settings.ambient_color.to_rgb_tuple()
-        ambient_level = settings.ambient_level
-        ambient_alpha = max(0, min(200, int((255 - ambient_level) * 0.75)))
-        overlay_size = max(self.viewport.width_px, self.viewport.height_px)
-        if ambient_alpha > 0:
-            backend.draw_tile_color(
-                0,
-                0,
-                overlay_size,
-                ambient_color[0],
-                ambient_color[1],
-                ambient_color[2],
-                ambient_alpha,
-            )
-
-        if settings.mode != LightMode.FULL:
-            return
-
-        tile_size = max(1, self.viewport.tile_px)
-        glow_radius = tile_size * 2
-        glow_color = self._mix_color(ambient_color, (255, 255, 255), 0.55)
-
-        for z in range(self._start_z, self._end_z - 1, -1):
-            for y in range(self._start_y, self._end_y):
-                for x in range(self._start_x, self._end_x):
-                    strength = self._tile_light_strength(self.game_map.get_tile(x, y, z))
-                    if strength <= 0:
-                        continue
-
-                    glow_alpha = min(220, max(60, int(strength * 0.6)))
-                    px = int((x - self._start_x) * tile_size - glow_radius // 2)
-                    py = int((y - self._start_y) * tile_size - glow_radius // 2)
-                    backend.draw_tile_color(
-                        px,
-                        py,
-                        glow_radius,
-                        glow_color[0],
-                        glow_color[1],
-                        glow_color[2],
-                        glow_alpha,
-                    )
-
-                    if self.options.show_light_strength:
-                        text_x = int((x - self._start_x) * tile_size + 2)
-                        text_y = int((y - self._start_y) * tile_size + tile_size - 4)
-                        backend.draw_text(
-                            text_x,
-                            text_y,
-                            str(strength),
-                            glow_color[0],
-                            glow_color[1],
-                            glow_color[2],
-                            200,
-                        )
-
-    def _tile_light_strength(self, tile: Tile | None) -> int:
-        """Estimate a normalized light strength for a given tile."""
-
-        if tile is None:
-            return 0
-
-        strength = 0
-        if tile.ground is not None:
-            strength += 20
-
-        strength += min(5, len(tile.items)) * 12
-
-        if tile.spawn_monster is not None or tile.spawn_npc is not None:
-            strength += 35
-
-        strength += len(tile.monsters) * 8
-
-        if tile.npc is not None:
-            strength += 25
-
-        for item in tile.items:
-            for attr in item.attribute_map:
-                key = attr.key.lower()
-                if "light" in key or "brilho" in key or "luminosity" in key:
-                    strength += 40
-
-        return min(255, strength)
-
-    @staticmethod
-    def _mix_color(
-        base: tuple[int, int, int],
-        accent: tuple[int, int, int],
-        ratio: float,
-    ) -> tuple[int, int, int]:
-        """Blend two colors, useful for glows."""
-
-        ratio = max(0.0, min(1.0, ratio))
-        return tuple(int(max(0, min(255, base[i] * (1.0 - ratio) + accent[i] * ratio))) for i in range(3))
+        """Draw light effects."""
+        self.light_drawer.draw(self, backend)
 
     def _draw_ingame_box(self, backend: RenderBackend) -> None:
         """Draw the client viewport indicator box.
@@ -588,69 +472,6 @@ class MapDrawer:
             top = self._hover_stack[-1]
             text = f"{hx},{hy},{hz} top:{top} stack:{len(self._hover_stack)}"
         backend.draw_text(px + 2, py + tile_size - 4, text, 230, 230, 230, 220)
-
-    def _draw_spawn_indicator(self, backend: RenderBackend, x: int, y: int, size: int, *, kind: str) -> None:
-        """Draw a spawn/creature marker; falls back to a colored rect when icons are missing."""
-        indicator_key = str(kind)
-        icon_size = int(max(10, min(32, size)))
-        # Try indicator icon first.
-        backend.draw_indicator_icon(x, y, indicator_key, icon_size)
-        # Fallback overlay rectangle for visibility.
-        if indicator_key == "spawn_monster":
-            backend.draw_selection_rect(x, y, size, size, 200, 60, 60, 180)
-        else:
-            backend.draw_selection_rect(x, y, size, size, 60, 120, 220, 180)
-
-    @staticmethod
-    def _format_creature_names(names: list[str]) -> str:
-        cleaned = [str(n).strip() for n in names if str(n).strip()]
-        if not cleaned:
-            return ""
-        if len(cleaned) == 1:
-            return cleaned[0]
-        if len(cleaned) == 2:
-            return f"{cleaned[0]}, {cleaned[1]}"
-        return f"{cleaned[0]} +{len(cleaned) - 1}"
-
-    def _draw_creature_names(
-        self,
-        backend: RenderBackend,
-        tile,
-        screen_x: int,
-        screen_y: int,
-        size: int,
-    ) -> None:
-        """Draw monster/NPC names on top of the tile."""
-        if int(size) < 16:
-            return
-
-        labels: list[tuple[str, str]] = []
-
-        if self.options.show_monsters and getattr(tile, "monsters", None):
-            names = [getattr(m, "name", "") for m in tile.monsters]
-            label = self._format_creature_names(names)
-            if label:
-                labels.append(("monster", label))
-
-        npc = getattr(tile, "npc", None)
-        if self.options.show_npcs and npc is not None:
-            npc_name = str(getattr(npc, "name", "") or "").strip()
-            if npc_name:
-                labels.append(("npc", npc_name))
-
-        if not labels:
-            return
-
-        line_height = max(10, min(14, int(size) // 2))
-        base_y = int(screen_y) + line_height
-        base_x = int(screen_x) + 2
-
-        for idx, (kind, text) in enumerate(labels):
-            if kind == "monster":
-                r, g, b, a = 220, 80, 80, 230
-            else:
-                r, g, b, a = 100, 180, 255, 230
-            backend.draw_text(base_x, base_y + (idx * line_height), text, r, g, b, a)
 
 
 # Factory function for default drawer

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Architecture>
+    <Meta>
+        <Project>py_rme_canary</Project>
+        <Version>0.2.0</Version>
+    </Meta>
+
+    <Layers>
+        <Layer name="core" status="Stable">
+            <Description>Data models, I/O, and low-level logic. No GUI dependencies.</Description>
+            <Components>
+                <Component name="data.gamemap" class="GameMap" />
+                <Component name="data.tile" class="Tile" />
+                <Component name="io.otbm" level="Critical" />
+            </Components>
+        </Layer>
+
+        <Layer name="logic_layer" status="Stable">
+            <Description>Business logic, brushes, session handling.</Description>
+            <Components>
+                <Component name="session.editor" class="EditorSession" />
+                <Component name="brushes" type="Package" />
+                <Component name="drawing_options" class="DrawingOptions" />
+            </Components>
+        </Layer>
+
+        <Layer name="vis_layer" status="Refactoring">
+            <Description>User Interface and Rendering.</Description>
+            <Components>
+                <Component name="ui" type="PyQt6 Widgets">
+                    <SubComponent name="canvas" class="MapCanvasWidget">
+                        <Note>Handles Input, Tools, and Painting. Defaults to QPainterRenderBackend.</Note>
+                    </SubComponent>
+                </Component>
+                <Component name="renderer" type="Hybrid System">
+                    <Description>Abstracted rendering layer supporting CPU (QPainter) and GPU (OpenGL).</Description>
+                    <SubComponent name="backend" interface="RenderBackend">
+                        <Class name="QPainterRenderBackend" status="Active">Default CPU-based renderer.</Class>
+                        <Class name="OpenGLBackend" status="Planned">Future GPU-based renderer (P0).</Class>
+                    </SubComponent>
+                    <SubComponent name="map_drawer" class="MapDrawer">
+                        <Note>Coordinates rendering, delegates to Drawers. Agnostic of Backend.</Note>
+                    </SubComponent>
+                    <SubComponent name="drawers" type="Package">
+                        <Class name="FloorDrawer" />
+                        <Class name="ItemDrawer" />
+                        <Class name="CreatureDrawer" />
+                        <Class name="GridDrawer" />
+                        <Class name="LightDrawer" />
+                    </SubComponent>
+                </Component>
+            </Components>
+        </Layer>
+    </Layers>
+</Architecture>

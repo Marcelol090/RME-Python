@@ -195,15 +195,15 @@ class FindItemDialog(QDialog):
 
         self.id_radio = QRadioButton("ID")
         self.id_radio.setChecked(True)
-        self.mode_group.addButton(self.id_radio, SearchMode.ID.value)
+        self.mode_group.addButton(self.id_radio)
         mode_layout.addWidget(self.id_radio)
 
         self.name_radio = QRadioButton("Name")
-        self.mode_group.addButton(self.name_radio, SearchMode.NAME.value)
+        self.mode_group.addButton(self.name_radio)
         mode_layout.addWidget(self.name_radio)
 
         self.type_radio = QRadioButton("Type")
-        self.mode_group.addButton(self.type_radio, SearchMode.TYPE.value)
+        self.mode_group.addButton(self.type_radio)
         mode_layout.addWidget(self.type_radio)
 
         mode_layout.addStretch()
@@ -441,8 +441,8 @@ class FindItemDialog(QDialog):
                     return False
 
         elif filters.search_mode == SearchMode.TYPE:
-            # TODO: Implement type filtering using ItemTypeDetector
-            pass
+            if filters.search_value and not self._matches_type_filter(item, filters.search_value):
+                return False
 
         # Action ID filter
         if filters.has_action_id and item.action_id != filters.action_id_value:
@@ -454,6 +454,114 @@ class FindItemDialog(QDialog):
 
         # Text filter
         return not (filters.has_text and (not item.text or filters.text_value.lower() not in item.text.lower()))
+
+    @staticmethod
+    def _normalize_type_token(value: str) -> str:
+        """Normalize type token for robust comparisons."""
+        return "".join(ch for ch in str(value or "").casefold() if ch.isalnum())
+
+    def _item_type_tokens(self, item: Item) -> set[str]:
+        """Collect searchable type tokens from detector + items.xml metadata."""
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+        from py_rme_canary.logic_layer.item_type_detector import ItemTypeDetector
+
+        asset_mgr = AssetManager.instance()
+        metadata = asset_mgr.get_item_metadata(int(item.id))
+        category = ItemTypeDetector.get_category(item)
+
+        tokens: set[str] = {str(category.value)}
+
+        name = asset_mgr.get_item_name(int(item.id))
+        if name:
+            tokens.add(str(name))
+
+        if metadata is None:
+            return tokens
+
+        kind = str(metadata.kind or "").strip()
+        if kind:
+            tokens.add(kind)
+
+        for key, raw_value in metadata.attributes.items():
+            key_text = str(key or "").strip()
+            if not key_text:
+                continue
+
+            value_text = str(raw_value or "").strip()
+            lowered_value = value_text.casefold()
+
+            if lowered_value in {"1", "true", "yes", "on"}:
+                tokens.add(key_text)
+
+            if key_text.casefold() in {"type", "group", "category", "slot", "weapon"} and value_text:
+                tokens.add(value_text)
+
+        return tokens
+
+    def _matches_type_filter(self, item: Item, search_value: str) -> bool:
+        """Match user-entered type query against item category/metadata."""
+        from py_rme_canary.logic_layer.item_type_detector import ItemCategory, ItemTypeDetector
+
+        query = self._normalize_type_token(search_value)
+        if not query:
+            return True
+
+        aliases = {
+            "magic": "magicfield",
+            "magicfields": "magicfield",
+            "trash": "trashholder",
+            "trashcan": "trashholder",
+            "trashholder": "trashholder",
+            "trashhold": "trashholder",
+            "mailboxes": "mailbox",
+            "depots": "depot",
+            "containers": "container",
+            "doors": "door",
+            "teleports": "teleport",
+            "beds": "bed",
+            "keys": "key",
+            "podiums": "podium",
+            "walls": "wall",
+            "carpets": "carpet",
+            "tables": "table",
+            "chairs": "chair",
+            "rotate": "rotatable",
+            "rotation": "rotatable",
+        }
+        canonical = aliases.get(query, query)
+
+        tokens = self._item_type_tokens(item)
+        normalized_tokens = {self._normalize_type_token(t) for t in tokens if t}
+
+        if canonical in normalized_tokens:
+            return True
+        if any(canonical in token for token in normalized_tokens):
+            return True
+
+        category = ItemTypeDetector.get_category(item)
+        category_matches: dict[str, ItemCategory] = {
+            "wall": ItemCategory.WALL,
+            "carpet": ItemCategory.CARPET,
+            "door": ItemCategory.DOOR,
+            "table": ItemCategory.TABLE,
+            "chair": ItemCategory.CHAIR,
+            "container": ItemCategory.CONTAINER,
+            "teleport": ItemCategory.TELEPORT,
+        }
+        expected = category_matches.get(canonical)
+        if expected is not None:
+            return category == expected
+
+        if canonical == "rotatable":
+            return ItemTypeDetector.is_rotatable(item)
+
+        if canonical == "door":
+            return ItemTypeDetector.is_door(item)
+
+        if canonical == "teleport":
+            return ItemTypeDetector.is_teleport(item)
+
+        return False
 
     def _display_results(self) -> None:
         """Display search results in the list."""

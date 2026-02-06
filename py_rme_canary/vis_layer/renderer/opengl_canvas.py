@@ -542,7 +542,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
     # ---------- Qt events (ported from MapCanvasWidget) ----------
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event):
         editor = self._editor
 
         if event.button() == Qt.MouseButton.RightButton:
@@ -649,7 +649,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             QMessageBox.critical(self, "Paint", str(e))
             self._mouse_down = False
 
-    def mouseMoveEvent(self, event):  # noqa: N802
+    def mouseMoveEvent(self, event):
         editor = self._editor
 
         self._update_brush_preview(event.position().toPoint())
@@ -691,7 +691,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
         editor.update_status_from_mouse(int(event.position().x()), int(event.position().y()))
 
-    def mouseReleaseEvent(self, event):  # noqa: N802
+    def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
             was_moved = bool(self._right_click_moved)
             self._panning = False
@@ -758,7 +758,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self.request_render()
         self._hide_brush_preview()
 
-    def wheelEvent(self, event):  # noqa: N802
+    def wheelEvent(self, event):
         delta = event.angleDelta().y()
         if delta == 0:
             return

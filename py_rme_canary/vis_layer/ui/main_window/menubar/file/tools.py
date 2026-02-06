@@ -29,6 +29,26 @@ def export_otmm(editor) -> None:
     editor._export_otmm()
 
 
+def export_tilesets(editor) -> None:
+    editor._export_tilesets()
+
+
+def reload_data(editor) -> None:
+    editor._reload_data_files()
+
+
+def open_preferences(editor) -> None:
+    editor._open_preferences()
+
+
+def open_extensions(editor) -> None:
+    editor._open_extensions_dialog()
+
+
+def goto_website(editor) -> None:
+    editor._goto_website()
+
+
 def import_monsters_npcs(editor) -> None:
     editor._import_monsters_npcs()
 

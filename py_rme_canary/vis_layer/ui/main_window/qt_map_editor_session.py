@@ -117,14 +117,14 @@ class QtMapEditorSessionMixin:
         """Toggle dark mode theme."""
         from PyQt6.QtWidgets import QApplication
 
-        from py_rme_canary.logic_layer.theme_manager import ThemeMode, get_theme_manager
-
-        manager = get_theme_manager()
-        manager.set_theme(ThemeMode.DARK if enabled else ThemeMode.LIGHT)
-
         app = QApplication.instance()
         if app:
-            app.setStyleSheet(manager.get_stylesheet())
+            if enabled:
+                from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
+
+                apply_modern_theme(app)
+            else:
+                app.setStyleSheet("")
 
         self.status.showMessage(f"Dark Mode {'enabled' if enabled else 'disabled'}")
 
@@ -182,6 +182,104 @@ class QtMapEditorSessionMixin:
         else:
             scope = "selection" if bool(selection_only) else "map"
             self.status.showMessage(f"Clear invalid tiles ({scope}): removed {int(removed)} items")
+            self.canvas.update()
+        self._update_action_enabled_states()
+
+    def _map_remove_item_global(self) -> None:
+        from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog
+
+        dialog = FindItemDialog(self._as_editor(), title="Remove Item From Map")
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        server_id = int(dialog.result_value().server_id)
+        if server_id <= 0:
+            self.status.showMessage("Remove item: invalid serverId")
+            return
+
+        try:
+            removed, action = self.session.remove_items(server_id=int(server_id), selection_only=False)
+        except Exception as e:
+            QMessageBox.critical(self._as_editor(), "Remove Item", str(e))
+            return
+
+        if action is None:
+            self.status.showMessage("Remove item: no changes")
+        else:
+            self.status.showMessage(f"Remove item: {int(removed)} item(s) deleted")
+            self.canvas.update()
+        self._update_action_enabled_states()
+
+    def _map_remove_corpses(self) -> None:
+        ret = QMessageBox.question(
+            self._as_editor(),
+            "Remove Corpses",
+            "Do you want to remove all corpses from the map?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if ret != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            removed, action = self.session.remove_corpses()
+        except Exception as e:
+            QMessageBox.critical(self._as_editor(), "Remove Corpses", str(e))
+            return
+
+        if action is None:
+            self.status.showMessage("Remove corpses: no changes")
+        else:
+            self.status.showMessage(f"Remove corpses: {int(removed)} item(s) deleted")
+            self.canvas.update()
+        self._update_action_enabled_states()
+
+    def _map_remove_unreachable(self) -> None:
+        ret = QMessageBox.question(
+            self._as_editor(),
+            "Remove Unreachable Tiles",
+            "Do you want to remove all unreachable items from the map?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if ret != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            removed, action = self.session.remove_unreachable_tiles()
+        except Exception as e:
+            QMessageBox.critical(self._as_editor(), "Remove Unreachable Tiles", str(e))
+            return
+
+        if action is None:
+            self.status.showMessage("Remove unreachable: no changes")
+        else:
+            self.status.showMessage(f"Remove unreachable: {int(removed)} tile(s) deleted")
+            self.canvas.update()
+        self._update_action_enabled_states()
+
+    def _map_clear_invalid_house_tiles(self) -> None:
+        ret = QMessageBox.question(
+            self._as_editor(),
+            "Clear Invalid House Tiles",
+            "Are you sure you want to remove all house tiles that do not belong to a house?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if ret != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            result, action = self.session.clear_invalid_house_tiles()
+        except Exception as e:
+            QMessageBox.critical(self._as_editor(), "Clear Invalid House Tiles", str(e))
+            return
+
+        if action is None:
+            self.status.showMessage("Clear invalid house tiles: no changes")
+        else:
+            self.status.showMessage(
+                "Clear invalid house tiles: "
+                f"removed {int(result.houses_removed)} house definition(s), "
+                f"cleared {int(result.tile_refs_cleared)} tile ref(s)"
+            )
             self.canvas.update()
         self._update_action_enabled_states()
 

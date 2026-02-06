@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "project": "py_rme_canary",
+    "updated": "2026-02-05",
+    "source": "MASTER_TODO.md"
+  },
+  "priorities": {
+    "P0": "Critical / Core Architecture",
+    "P1": "Essential Features (v2.0 Goals)",
+    "P2": "Advanced UI & Tools",
+    "P3": "Cleanup & Refactoring",
+    "P4": "Future / v4.0 (In-Game Preview)"
+  },
+  "tasks": [
+    {
+      "id": "ARCH-001",
+      "priority": "P0",
+      "category": "Map Format",
+      "title": "Map Format Conversion & IDs",
+      "status": "completed",
+      "description": "Convert maps between ServerID (OTBM 1-4) and ClientID (OTBM 5/6)."
+    },
+    {
+      "id": "ARCH-002",
+      "priority": "P0",
+      "category": "Live Protocol",
+      "title": "State Synchronization",
+      "status": "completed",
+      "description": "Full map state sync upon join."
+    },
+    {
+      "id": "ARCH-003",
+      "priority": "P0",
+      "category": "Rendering",
+      "title": "Performance Optimization (OpenGL 4.5)",
+      "status": "completed",
+      "description": "Investigate OpenGL 4.5 techniques from legacy branch 'sentinel-opengl-modernization'.",
+      "legacy_ref": "sentinel-opengl-modernization"
+    },
+    {
+      "id": "ARCH-004",
+      "priority": "P0",
+      "category": "Rendering",
+      "title": "Memory Optimization",
+      "status": "completed",
+      "description": "Investigate 'keeper-live-memory' for live memory management.",
+      "legacy_ref": "keeper-live-memory"
+    },
+    {
+      "id": "REFACTOR-001",
+      "priority": "P0",
+      "category": "Refactoring",
+      "title": "Adopt Drawer Pattern",
+      "status": "completed",
+      "description": "Split MapDrawer into specialized drawers (Floor, Item, Creature, Grid, Light) matching Redux."
+    },
+    {
+      "id": "IMPL-001",
+      "priority": "P0",
+      "category": "Rendering",
+      "title": "Texture Array System",
+      "status": "completed",
+      "description": "Implement TextureArray class and GL_TEXTURE_2D_ARRAY support."
+    },
+    {
+      "id": "IMPL-002",
+      "priority": "P0",
+      "category": "Rendering",
+      "title": "Modern Sprite Batcher",
+      "status": "completed",
+      "description": "Update OpenGLBatcher to use layer indices and texture arrays."
+    },
+    {
+      "id": "FEAT-001",
+      "priority": "P1",
+      "category": "Selection",
+      "title": "Search on Selection",
+      "status": "completed",
+      "description": "Search items only within selected area."
+    },
+    {
+      "id": "FEAT-002",
+      "priority": "P1",
+      "category": "Clipboard",
+      "title": "Cross-Version Copy/Paste",
+      "status": "completed",
+      "description": "Logic to translate IDs during paste between instances/versions."
+    },
+    {
+      "id": "UX-001",
+      "priority": "P1",
+      "category": "Config",
+      "title": "Palette UX Improvements",
+      "status": "completed",
+      "description": "Investigate improvements from 'palette-ux-improvements' branch."
+    },
+    {
+      "id": "UX-002",
+      "priority": "P1",
+      "category": "Config",
+      "title": "Modern UI Design",
+      "status": "completed",
+      "description": "Investigate 'designer-modernize-ui' branch."
+    },
+    {
+      "id": "TOOL-001",
+      "priority": "P2",
+      "category": "Map Gen",
+      "title": "Templates System",
+      "status": "completed",
+      "description": "Generate new maps from presets."
+    },
+    {
+      "id": "TOOL-002",
+      "priority": "P2",
+      "category": "Statistics",
+      "title": "Graphs",
+      "status": "completed",
+      "description": "Visual representation of map stats."
+    },
+    {
+      "id": "FUTURE-001",
+      "priority": "P4",
+      "category": "Preview",
+      "title": "In-Game Preview Window",
+      "status": "completed",
+      "description": "Separate window to preview map with game perspective (Phase 1-8 mostly done/ongoing)."
+    },
+    {
+      "id": "FUTURE-002",
+      "priority": "P4",
+      "category": "Advanced",
+      "title": "Optional Grid (Preview)",
+      "status": "completed",
+      "description": "Toggleable grid overlay in preview window."
+    },
+    {
+      "id": "FUTURE-003",
+      "priority": "P4",
+      "category": "Advanced",
+      "title": "Lighting System (Preview)",
+      "status": "completed",
+      "description": "Implement light intensity per tile and ambient light."
+    },
+    {
+      "id": "UX-003",
+      "priority": "P0",
+      "category": "Config",
+      "title": "BorderBuilder Custom Rules",
+      "status": "pending",
+      "description": "Expose editable custom border mappings to match legacy borders.xml flexibility."
+    },
+    {
+      "id": "QA-001",
+      "priority": "P3",
+      "category": "Quality",
+      "title": "Strict Quality Hardening",
+      "status": "pending",
+      "description": "Consolidate residual debt: mypy strict scope on logic_layer and remaining quality backlog."
+    }
+  ]
+}

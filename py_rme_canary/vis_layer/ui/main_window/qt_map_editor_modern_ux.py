@@ -451,7 +451,48 @@ class QtMapEditorModernUXMixin:
             self.act_delete_selection.trigger()
 
     def _do_select_all(self: QtMapEditor) -> None:
-        pass  # Would select all visible tiles
+        if not hasattr(self, "session") or self.session is None:
+            return
+        if not hasattr(self, "viewport") or not hasattr(self, "canvas"):
+            return
+
+        from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
+
+        z = int(getattr(self.viewport, "z", self.z_spin.value() if hasattr(self, "z_spin") else 7))
+        tile_px = max(1, int(getattr(self.viewport, "tile_px", 32)))
+        origin_x = max(0, int(getattr(self.viewport, "origin_x", 0)))
+        origin_y = max(0, int(getattr(self.viewport, "origin_y", 0)))
+        cols = max(1, int(self.canvas.width()) // tile_px)
+        rows = max(1, int(self.canvas.height()) // tile_px)
+
+        end_x = origin_x + cols - 1
+        end_y = origin_y + rows - 1
+
+        try:
+            header = getattr(self.session.game_map, "header", None)
+            if header is not None:
+                end_x = min(end_x, max(0, int(getattr(header, "width", end_x + 1)) - 1))
+                end_y = min(end_y, max(0, int(getattr(header, "height", end_y + 1)) - 1))
+        except Exception:
+            pass
+
+        if end_x < origin_x or end_y < origin_y:
+            self.status.showMessage("Select all visible: viewport outside map bounds")
+            return
+
+        self.session.begin_box_selection(x=int(origin_x), y=int(origin_y), z=int(z))
+        self.session.update_box_selection(x=int(end_x), y=int(end_y), z=int(z))
+        self.session.finish_box_selection(
+            mode=SelectionApplyMode.REPLACE,
+            visible_floors=[int(z)],
+        )
+        if hasattr(self, "_update_action_enabled_states"):
+            self._update_action_enabled_states()
+        if hasattr(self, "canvas"):
+            self.canvas.update()
+        self.status.showMessage(
+            f"Selected visible area ({int(origin_x)},{int(origin_y)})-({int(end_x)},{int(end_y)}) on floor {int(z)}"
+        )
 
     def _do_deselect(self: QtMapEditor) -> None:
         if hasattr(self, "act_clear_selection"):
@@ -477,29 +518,144 @@ class QtMapEditorModernUXMixin:
         if hasattr(self, "act_copy_position"):
             self.act_copy_position.trigger()
 
+    def _waypoint_name_at_cursor(self: QtMapEditor) -> str | None:
+        x, y, z = self._get_cursor_position()
+        game_map = None
+        if hasattr(self, "session") and self.session is not None:
+            game_map = getattr(self.session, "game_map", None)
+        if game_map is None and hasattr(self, "map"):
+            game_map = getattr(self, "map", None)
+        if game_map is None:
+            return None
+
+        waypoints = getattr(game_map, "waypoints", None) or {}
+        for name, pos in waypoints.items():
+            try:
+                px = int(pos.x)
+                py = int(pos.y)
+                pz = int(pos.z)
+            except Exception:
+                try:
+                    px = int(pos[0])
+                    py = int(pos[1])
+                    pz = int(pos[2])
+                except Exception:
+                    continue
+            if px == int(x) and py == int(y) and pz == int(z):
+                return str(name)
+        return None
+
     def _delete_waypoint_here(self: QtMapEditor) -> None:
-        pass
+        if not hasattr(self, "session") or self.session is None:
+            return
+        name = self._waypoint_name_at_cursor()
+        if not name:
+            self.status.showMessage("Delete waypoint: none at cursor")
+            return
+        try:
+            action = self.session.delete_waypoint(name=str(name))
+        except Exception as exc:
+            QMessageBox.warning(self, "Delete Waypoint", str(exc))
+            return
+        if action is None:
+            self.status.showMessage("Delete waypoint: no changes")
+            return
+        if hasattr(self, "canvas"):
+            self.canvas.update()
+        self.status.showMessage(f"Deleted waypoint: {name}")
 
     def _has_waypoint_at_cursor(self: QtMapEditor) -> bool:
-        return False
+        return self._waypoint_name_at_cursor() is not None
 
     def _place_monster_spawn(self: QtMapEditor) -> None:
-        pass
+        if hasattr(self, "_monster_spawn_set_here"):
+            self._monster_spawn_set_here()
+            return
+        self._show_not_implemented("Monster spawn placement")
 
     def _place_npc_spawn(self: QtMapEditor) -> None:
-        pass
+        if hasattr(self, "_npc_spawn_set_here"):
+            self._npc_spawn_set_here()
+            return
+        self._show_not_implemented("NPC spawn placement")
 
     def _delete_spawn_here(self: QtMapEditor) -> None:
-        pass
+        if not hasattr(self, "session") or self.session is None:
+            return
+
+        x, y, z = self._get_cursor_position()
+        removed_monster = False
+        removed_npc = False
+
+        try:
+            monster_action = self.session.delete_monster_spawn_area(x=int(x), y=int(y), z=int(z))
+            removed_monster = monster_action is not None
+        except Exception:
+            removed_monster = False
+
+        try:
+            npc_action = self.session.delete_npc_spawn_area(x=int(x), y=int(y), z=int(z))
+            removed_npc = npc_action is not None
+        except Exception:
+            removed_npc = False
+
+        if not removed_monster and not removed_npc:
+            self.status.showMessage("Delete spawn: none at cursor")
+            return
+
+        if hasattr(self, "canvas"):
+            self.canvas.update()
+        if hasattr(self, "_update_action_enabled_states"):
+            self._update_action_enabled_states()
+
+        removed_parts: list[str] = []
+        if removed_monster:
+            removed_parts.append("monster")
+        if removed_npc:
+            removed_parts.append("npc")
+        label = " + ".join(removed_parts)
+        self.status.showMessage(f"Deleted {label} spawn area @ {int(x)},{int(y)},{int(z)}")
 
     def _clear_house_id(self: QtMapEditor) -> None:
-        pass
+        if not hasattr(self, "session") or self.session is None:
+            return
+        if hasattr(self, "session") and self.session.has_selection():
+            self._house_clear_id_on_selection()
+            return
+
+        x, y, z = self._get_cursor_position()
+        original_selection = set(self.session.get_selection_tiles())
+        action = None
+        try:
+            self.session.clear_selection()
+            self.session.toggle_select_tile(x=int(x), y=int(y), z=int(z))
+            action = self.session.set_house_id_on_selection(house_id=None)
+        finally:
+            self.session.clear_selection()
+            for sx, sy, sz in original_selection:
+                self.session.toggle_select_tile(x=int(sx), y=int(sy), z=int(sz))
+
+        if action is None:
+            self.status.showMessage("Clear house id: no changes")
+            return
+
+        if hasattr(self, "canvas"):
+            self.canvas.update()
+        if hasattr(self, "_update_action_enabled_states"):
+            self._update_action_enabled_states()
+        self.status.showMessage(f"Cleared house id @ {int(x)},{int(y)},{int(z)}")
 
     def _assign_house_dialog(self: QtMapEditor) -> None:
+        if hasattr(self, "_house_set_id_on_selection"):
+            self._house_set_id_on_selection()
+            return
         self.show_house_manager()
 
     def _set_house_entry_here(self: QtMapEditor) -> None:
-        pass
+        if hasattr(self, "_house_set_entry_here"):
+            self._house_set_entry_here()
+            return
+        self._show_not_implemented("House entry placement")
 
 
 def integrate_modern_ux(editor: QtMapEditor) -> None:

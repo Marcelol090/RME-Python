@@ -1,0 +1,67 @@
+name: Jules - On Issue Labeled "jules"
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+
+concurrency:
+  group: jules-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    # Security: restrict who can trigger Jules from issue content.
+    if: ${{ github.event.label.name == 'jules' && contains(fromJSON('["Marcelol090"]'), github.event.issue.user.login) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-labs-code/jules-invoke@v1
+        with:
+          prompt: |
+            You are a coding agent. Work on this GitHub issue:
+
+            Title: ${{ github.event.issue.title }}
+            Body:
+            ${{ github.event.issue.body }}
+
+            OUTPUT CONTRACT (MANDATORY):
+            1) In the PR description, include a fenced YAML block exactly like:
+
+            ```yaml
+            jules_suggestions:
+              version: 1
+              task: "<short task id or title>"
+              implemented:
+                - id: "IMP-001"
+                  summary: "<what you changed>"
+                  files: ["path/a.py", "path/b.py"]
+                - id: "IMP-002"
+                  summary: "<...>"
+                  files: ["..."]
+              suggested_next:
+                - id: "SUG-001"
+                  severity: "HIGH|MED|LOW"
+                  summary: "<what should be improved next>"
+                  rationale: "<why>"
+                  files: ["path/x.py"]
+              quality_bundle:
+                path: "reports/quality/summary.md"
+                generated_at: "<ISO8601>"
+            ```
+
+            2) Create these files in the repo and commit them in the PR:
+               - reports/jules/suggestions.md  (human-readable)
+               - reports/jules/suggestions.json (machine-readable; must match .github/jules/suggestions.schema.json)
+
+            3) If you cannot implement a suggestion, put it in suggested_next (do not silently ignore).
+
+            Constraints:
+            - Keep changes minimal and focused on the issue
+            - Add or update tests when applicable
+            - Run project tests/linters before creating a PR
+            - Do NOT include secrets in commits or PR text
+          jules_api_key: ${{ secrets.JULES_API_KEY }}

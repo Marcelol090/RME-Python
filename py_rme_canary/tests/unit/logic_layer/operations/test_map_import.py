@@ -35,9 +35,10 @@ def test_import_map_with_offset(tmp_path: Path) -> None:
     imported_tile = target_map.get_tile(2, 3, 7)
     assert imported_tile is not None
     assert imported_tile.ground is not None
-    assert imported_tile.ground.id == 200
+    # Expect conversion to Server ID, but check client_id is preserved
+    assert imported_tile.ground.client_id == 200
     assert len(imported_tile.items) == 1
-    assert imported_tile.items[0].id == 201
+    assert imported_tile.items[0].client_id == 201
 
     assert 1 in target_map.houses
     assert target_map.houses[1].entry == Position(3, 4, 7)

@@ -6,6 +6,7 @@ session components: selection, clipboard, gestures, and movement.
 
 from __future__ import annotations
 
+import logging
 import os
 import random
 import time
@@ -25,6 +26,7 @@ from py_rme_canary.core.data.zones import Zone
 from py_rme_canary.core.database.door_catalog import load_default_closed_doors
 from py_rme_canary.core.database.door_pairs import load_door_pairs
 from py_rme_canary.core.database.items_xml import ItemsXML
+from py_rme_canary.core.memory_guard import MemoryGuard, MemoryGuardError, default_memory_guard
 from py_rme_canary.core.protocols.live_client import LiveClient
 from py_rme_canary.core.protocols.live_packets import (
     ConnectionState,
@@ -75,7 +77,13 @@ from ..map_metadata_actions import (
     ZoneAction,
 )
 from ..networked_action_queue import NetworkedActionQueue, decode_tile_positions
-from ..remove_items import remove_items_in_map
+from ..remove_items import (
+    ClearInvalidHousesResult,
+    compute_clear_invalid_house_tiles,
+    remove_corpses_in_map,
+    remove_items_in_map,
+    remove_unreachable_tiles_in_map,
+)
 from ..replace_items import replace_items_in_map
 from ..transactional_brush import (
     EditorAction,
@@ -91,6 +99,8 @@ from .selection import SelectionApplyMode, SelectionManager, TileKey, tile_is_no
 from .selection_modes import SelectionDepthMode, apply_compensation_offset
 
 TilesChangedCallback = Callable[[set[TileKey]], None]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -110,6 +120,31 @@ class BatchedPositionsGesture:
 
     def finish(self) -> EditorAction | None:
         return self.commit(set(self.positions), bool(self.alt))
+
+
+@dataclass(slots=True)
+class HouseCleanupAction(EditorAction):
+    """Undoable action that updates both houses metadata and tile house refs."""
+
+    before_houses: dict[int, House]
+    after_houses: dict[int, House]
+    tile_action: PaintAction
+
+    def has_changes(self) -> bool:
+        if self.before_houses != self.after_houses:
+            return True
+        return self.tile_action.has_changes()
+
+    def undo(self, game_map: GameMap) -> None:
+        game_map.houses = dict(self.before_houses)
+        self.tile_action.undo(game_map)
+
+    def redo(self, game_map: GameMap) -> None:
+        game_map.houses = dict(self.after_houses)
+        self.tile_action.redo(game_map)
+
+    def describe(self) -> str:
+        return "Clear Invalid House Tiles"
 
 
 def _is_invalid_item_id(item_id: int) -> bool:
@@ -229,6 +264,13 @@ class EditorSession:
     # Lazy-loaded items.xml for best-effort item kind classification.
     _items_xml: ItemsXML | None = field(default=None, init=False, repr=False)
 
+    _memory_guard: MemoryGuard = field(default_factory=default_memory_guard, init=False, repr=False)
+    _tile_item_counts: dict[TileKey, int] | None = field(default=None, init=False, repr=False)
+    _map_item_count: int = field(default=0, init=False, repr=False)
+    _memory_guard_ticks: int = field(default=0, init=False, repr=False)
+    _last_memory_warning: str | None = field(default=None, init=False, repr=False)
+    _memory_guard_tripped: bool = field(default=False, init=False, repr=False)
+
     # Pending one-shot House Exit brush operation (legacy: cannot drag/smear).
     # Tuple: (house_id, x, y, z, alt)
     _pending_house_exit: tuple[int, int, int, int, bool] | None = field(default=None, init=False, repr=False)
@@ -329,6 +371,74 @@ class EditorSession:
         )
         self._live_action_queue = NetworkedActionQueue(session=self)
         self._live_action_queue.set_broadcast_callback(self._broadcast_live_tiles)
+
+    def _count_items_in_item(self, item: Item) -> int:
+        total = 1
+        stack = list(item.items)
+        while stack:
+            child = stack.pop()
+            total += 1
+            if child.items:
+                stack.extend(list(child.items))
+        return total
+
+    def _count_items_in_tile(self, tile: Tile) -> int:
+        total = 0
+        if tile.ground is not None:
+            total += self._count_items_in_item(tile.ground)
+        for item in tile.items:
+            total += self._count_items_in_item(item)
+        return total
+
+    def _ensure_memory_tracking(self) -> None:
+        if self._tile_item_counts is not None:
+            return
+        counts: dict[TileKey, int] = {}
+        total = 0
+        for key, tile in self.game_map.tiles.items():
+            count = self._count_items_in_tile(tile)
+            counts[key] = count
+            total += count
+        self._tile_item_counts = counts
+        self._map_item_count = total
+
+    def _update_memory_guard(self, changed: set[TileKey]) -> None:
+        guard = self._memory_guard
+        if not guard.enabled() or self._memory_guard_tripped:
+            return
+        self._ensure_memory_tracking()
+        counts = self._tile_item_counts
+        if counts is None:
+            return
+
+        for key in changed:
+            before = int(counts.get(key, 0))
+            tile = self.game_map.get_tile(int(key[0]), int(key[1]), int(key[2]))
+            if tile is None:
+                after = 0
+                counts.pop(key, None)
+            else:
+                after = int(self._count_items_in_tile(tile))
+                counts[key] = after
+            self._map_item_count += int(after - before)
+
+        self._memory_guard_ticks += max(1, int(len(changed)))
+        if self._memory_guard_ticks < int(self._memory_guard.config.check_every_tiles):
+            return
+        self._memory_guard_ticks = 0
+        try:
+            msg = guard.check_map_counts(
+                tiles=len(self.game_map.tiles),
+                items=int(self._map_item_count),
+                stage="editor_session",
+            )
+            if msg is not None:
+                self._last_memory_warning = str(msg)
+                logger.warning(str(msg))
+        except MemoryGuardError as exc:
+            self._memory_guard_tripped = True
+            self._last_memory_warning = str(exc)
+            logger.error(str(exc))
 
     def set_brush_variation(self, variation: int) -> None:
         self.brush_variation = int(variation)
@@ -2978,6 +3088,110 @@ class EditorSession:
         self._emit_tiles_changed(affected)
         return int(summary.removed), action
 
+    def remove_corpses(self) -> tuple[int, PaintAction | None]:
+        """Remove corpse items from the whole map."""
+
+        if self._gestures.is_active:
+            self.cancel_gesture()
+
+        items_xml = self._ensure_items_xml_loaded()
+        item_types = items_xml.items_by_server_id if items_xml is not None else None
+        changed_tiles, summary = remove_corpses_in_map(self.game_map, item_types=item_types)
+        if not changed_tiles:
+            return int(summary.removed), None
+
+        action = PaintAction(brush_id=0)
+        affected: set[TileKey] = set()
+        for key, after in changed_tiles.items():
+            before = self.game_map.get_tile(*key)
+            if before == after:
+                continue
+            action.record_tile_change(key, before, after)
+            affected.add(key)
+
+        if not action.has_changes():
+            return int(summary.removed), None
+
+        action.redo(self.game_map)
+        self.history.commit_action(action)
+        self.action_queue.push(SessionAction(type=ActionType.REMOVE_CORPSES, action=action, label="Remove Corpses"))
+        self._emit_tiles_changed(affected)
+        return int(summary.removed), action
+
+    def remove_unreachable_tiles(self) -> tuple[int, PaintAction | None]:
+        """Remove unreachable tiles from map, mirroring legacy proximity rules."""
+
+        if self._gestures.is_active:
+            self.cancel_gesture()
+
+        items_xml = self._ensure_items_xml_loaded()
+        item_types = items_xml.items_by_server_id if items_xml is not None else None
+        changed_tiles, summary = remove_unreachable_tiles_in_map(self.game_map, item_types=item_types)
+        if not changed_tiles:
+            return int(summary.removed), None
+
+        action = PaintAction(brush_id=0)
+        affected: set[TileKey] = set()
+        for key, after in changed_tiles.items():
+            before = self.game_map.get_tile(*key)
+            if before is None:
+                continue
+            action.record_tile_change(key, before, after)
+            affected.add(key)
+
+        if not action.has_changes():
+            return int(summary.removed), None
+
+        action.redo(self.game_map)
+        self.history.commit_action(action)
+        self.action_queue.push(
+            SessionAction(type=ActionType.REMOVE_UNREACHABLE_TILES, action=action, label="Remove Unreachable Tiles")
+        )
+        self._emit_tiles_changed(affected)
+        return int(summary.removed), action
+
+    def clear_invalid_house_tiles(self) -> tuple[ClearInvalidHousesResult, EditorAction | None]:
+        """Remove invalid house definitions and clear dangling tile house refs."""
+
+        if self._gestures.is_active:
+            self.cancel_gesture()
+
+        before_houses = dict(getattr(self.game_map, "houses", None) or {})
+        valid_houses, changed_tiles, result = compute_clear_invalid_house_tiles(self.game_map)
+
+        tile_action = PaintAction(brush_id=0)
+        affected: set[TileKey] = set()
+        for key, after in changed_tiles.items():
+            before = self.game_map.get_tile(*key)
+            if before == after:
+                continue
+            tile_action.record_tile_change(key, before, after)
+            affected.add(key)
+
+        action = HouseCleanupAction(
+            before_houses=before_houses,
+            after_houses=dict(valid_houses),
+            tile_action=tile_action,
+        )
+        if not action.has_changes():
+            return result, None
+
+        action.redo(self.game_map)
+        self.history.commit_action(action)
+        self.action_queue.push(
+            SessionAction(
+                type=ActionType.CLEAR_INVALID_HOUSE_TILES,
+                action=action,
+                label="Clear Invalid House Tiles",
+                details={
+                    "houses_removed": int(result.houses_removed),
+                    "tile_refs_cleared": int(result.tile_refs_cleared),
+                },
+            )
+        )
+        self._emit_tiles_changed(affected)
+        return result, action
+
     # === Undo/Redo ===
 
     def undo(self) -> EditorAction | None:
@@ -3008,6 +3222,8 @@ class EditorSession:
         cb = self.on_tiles_changed
         if cb is not None:
             cb(set(changed))
+
+        self._update_memory_guard(set(changed))
 
         # Live Editing Broadcast
         if broadcast and (self._live_client or self._live_server):
@@ -3207,88 +3423,6 @@ class EditorSession:
                 continue
         return positions
 
-    def _handle_live_client_packet(self, pkt_type: int, payload: bytes) -> None:
-        """Handle a single packet from the live client connection."""
-        if int(pkt_type) == int(PacketType.LOGIN_SUCCESS):
-            if self._live_client:
-                if len(payload) >= 4:
-                    self._live_client.client_id = int.from_bytes(payload[0:4], "little", signed=False)
-                self._live_client.state = ConnectionState.AUTHENTICATED
-                if not self._live_sync_started:
-                    self._live_sync_started = True
-                    self.game_map.tiles.clear()
-                    width = max(1, int(self.game_map.header.width))
-                    height = max(1, int(self.game_map.header.height))
-                    for z in range(0, 16):
-                        self._live_client.request_map(
-                            x_min=0,
-                            y_min=0,
-                            x_max=width - 1,
-                            y_max=height - 1,
-                            z=int(z),
-                        )
-        elif int(pkt_type) == int(PacketType.LOGIN_ERROR) or int(pkt_type) == int(PacketType.KICK):
-            if self._live_client:
-                self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
-            self.disconnect_live()
-        elif int(pkt_type) == int(PacketType.CLIENT_LIST):
-            clients = decode_client_list(payload)
-            self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
-            if self._on_live_client_list:
-                self._on_live_client_list(list(clients))
-        elif int(pkt_type) == int(PacketType.MESSAGE):
-            client_id, name, message = decode_chat(payload)
-            if self._on_live_chat:
-                self._on_live_chat(int(client_id), str(name), str(message))
-        elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
-            client_id, x, y, z = decode_cursor(payload)
-            self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
-            if self._on_live_cursor:
-                self._on_live_cursor(int(client_id), int(x), int(y), int(z))
-        elif int(pkt_type) == int(PacketType.TILE_UPDATE):
-            tiles, ok = decode_tile_update(payload)
-            if ok and tiles:
-                changed = self._apply_live_tiles(tiles)
-                if changed:
-                    self._emit_tiles_changed(changed, broadcast=False)
-            else:
-                positions = self._decode_live_positions(payload)
-                if positions:
-                    self._emit_tiles_changed(set(positions), broadcast=False)
-        elif int(pkt_type) == int(PacketType.MAP_CHUNK):
-            chunk = decode_map_chunk(payload)
-            tiles = chunk.get("tiles", [])
-            changed = self._apply_live_tiles(list(tiles))
-            if changed:
-                self._emit_tiles_changed(changed, broadcast=False)
-
-    def _handle_live_server_packet(self, pkt_type: int, payload: bytes) -> None:
-        """Handle a single packet from the live server connection."""
-        if int(pkt_type) == int(PacketType.MESSAGE):
-            client_id, name, message = decode_chat(payload)
-            if self._on_live_chat:
-                self._on_live_chat(int(client_id), str(name), str(message))
-        elif int(pkt_type) == int(PacketType.CLIENT_LIST):
-            clients = decode_client_list(payload)
-            self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
-            if self._on_live_client_list:
-                self._on_live_client_list(list(clients))
-        elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
-            client_id, x, y, z = decode_cursor(payload)
-            self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
-            if self._on_live_cursor:
-                self._on_live_cursor(int(client_id), int(x), int(y), int(z))
-        elif int(pkt_type) == int(PacketType.TILE_UPDATE):
-            tiles, ok = decode_tile_update(payload)
-            if ok and tiles:
-                changed = self._apply_live_tiles(tiles)
-                if changed:
-                    self._emit_tiles_changed(changed, broadcast=False)
-            else:
-                positions = self._decode_live_positions(payload)
-                if positions:
-                    self._emit_tiles_changed(set(positions), broadcast=False)
-
     def process_live_events(self) -> int:
         """Poll incoming packets from Live Client and apply them.
 
@@ -3301,27 +3435,97 @@ class EditorSession:
         count = 0
         if self._live_client is not None:
             while True:
-                if self._live_client is None:
-                    break
                 pkt = self._live_client.pop_packet()
                 if not pkt:
                     break
+
                 pkt_type, payload = pkt
-                self._handle_live_client_packet(int(pkt_type), payload)
+                if int(pkt_type) == int(PacketType.LOGIN_SUCCESS):
+                    if len(payload) >= 4:
+                        self._live_client.client_id = int.from_bytes(payload[0:4], "little", signed=False)
+                    self._live_client.state = ConnectionState.AUTHENTICATED
+                    if not self._live_sync_started:
+                        self._live_sync_started = True
+                        self.game_map.tiles.clear()
+                        width = max(1, int(self.game_map.header.width))
+                        height = max(1, int(self.game_map.header.height))
+                        for z in range(0, 16):
+                            self._live_client.request_map(
+                                x_min=0,
+                                y_min=0,
+                                x_max=width - 1,
+                                y_max=height - 1,
+                                z=int(z),
+                            )
+                elif int(pkt_type) == int(PacketType.LOGIN_ERROR) or int(pkt_type) == int(PacketType.KICK):
+                    self._live_client.set_last_error(payload.decode("utf-8", errors="ignore"))
+                    self.disconnect_live()
+                elif int(pkt_type) == int(PacketType.CLIENT_LIST):
+                    clients = decode_client_list(payload)
+                    self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
+                    if self._on_live_client_list:
+                        self._on_live_client_list(list(clients))
+                elif int(pkt_type) == int(PacketType.MESSAGE):
+                    client_id, name, message = decode_chat(payload)
+                    if self._on_live_chat:
+                        self._on_live_chat(int(client_id), str(name), str(message))
+                elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
+                    client_id, x, y, z = decode_cursor(payload)
+                    self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
+                    if self._on_live_cursor:
+                        self._on_live_cursor(int(client_id), int(x), int(y), int(z))
+                elif int(pkt_type) == int(PacketType.TILE_UPDATE):
+                    tiles, ok = decode_tile_update(payload)
+                    if ok and tiles:
+                        changed = self._apply_live_tiles(tiles)
+                        if changed:
+                            self._emit_tiles_changed(changed, broadcast=False)
+                    else:
+                        positions = self._decode_live_positions(payload)
+                        if positions:
+                            self._emit_tiles_changed(set(positions), broadcast=False)
+                elif int(pkt_type) == int(PacketType.MAP_CHUNK):
+                    chunk = decode_map_chunk(payload)
+                    tiles = chunk.get("tiles", [])
+                    changed = self._apply_live_tiles(list(tiles))
+                    if changed:
+                        self._emit_tiles_changed(changed, broadcast=False)
                 count += 1
 
         if self._live_server is not None:
             while True:
-                if self._live_server is None:
-                    break
                 pkt = self._live_server.pop_packet()
                 if not pkt:
                     break
                 pkt_type, payload = pkt
-                self._handle_live_server_packet(int(pkt_type), payload)
+                if int(pkt_type) == int(PacketType.MESSAGE):
+                    client_id, name, message = decode_chat(payload)
+                    if self._on_live_chat:
+                        self._on_live_chat(int(client_id), str(name), str(message))
+                elif int(pkt_type) == int(PacketType.CLIENT_LIST):
+                    clients = decode_client_list(payload)
+                    self._live_clients = {int(c["client_id"]): dict(c) for c in clients}
+                    if self._on_live_client_list:
+                        self._on_live_client_list(list(clients))
+                elif int(pkt_type) == int(PacketType.CURSOR_UPDATE):
+                    client_id, x, y, z = decode_cursor(payload)
+                    self._live_cursors[int(client_id)] = (int(x), int(y), int(z))
+                    if self._on_live_cursor:
+                        self._on_live_cursor(int(client_id), int(x), int(y), int(z))
+                elif int(pkt_type) == int(PacketType.TILE_UPDATE):
+                    tiles, ok = decode_tile_update(payload)
+                    if ok and tiles:
+                        changed = self._apply_live_tiles(tiles)
+                        if changed:
+                            self._emit_tiles_changed(changed, broadcast=False)
+                    else:
+                        positions = self._decode_live_positions(payload)
+                        if positions:
+                            self._emit_tiles_changed(set(positions), broadcast=False)
                 count += 1
 
         return count
+
     @staticmethod
     def _changed_keys_for_action(action: EditorAction) -> set[TileKey]:
         try:

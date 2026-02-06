@@ -6,6 +6,7 @@ Reference: palette_legacy_analysis.md / modern_ux_plan.md
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -30,7 +31,7 @@ from PyQt6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from PyQt6.QtGui import QPixmap
 
 
 @dataclass(slots=True)
@@ -62,6 +63,7 @@ class AnimatedBrushCard(QFrame):
         self._selected = False
         self._hovered = False
         self._shadow_offset = 0.0
+        self._placeholder_text = ""
 
         self._setup_ui()
         self._setup_animations()
@@ -81,25 +83,31 @@ class AnimatedBrushCard(QFrame):
         self.sprite_label = QLabel()
         self.sprite_label.setFixedSize(48, 48)
         self.sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.sprite_label.setStyleSheet("""
+        self.sprite_label.setScaledContents(True)
+        self.sprite_label.setStyleSheet(
+            """
             background: #1E1E2E;
             border-radius: 6px;
             color: #8B5CF6;
             font-size: 20px;
-        """)
+        """
+        )
         # Show first letter of name as placeholder
         first_char = self.data.name[0].upper() if self.data.name else "?"
-        self.sprite_label.setText(first_char)
+        self._placeholder_text = first_char
+        self.sprite_label.setText(self._placeholder_text)
         layout.addWidget(self.sprite_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Name label
         self.name_label = QLabel(self._truncate_name(self.data.name))
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.name_label.setStyleSheet("""
+        self.name_label.setStyleSheet(
+            """
             color: #E5E5E7;
             font-size: 10px;
             font-weight: 500;
-        """)
+        """
+        )
         self.name_label.setWordWrap(True)
         layout.addWidget(self.name_label)
 
@@ -109,6 +117,8 @@ class AnimatedBrushCard(QFrame):
         self.shadow.setOffset(0, 0)
         self.shadow.setColor(QColor(139, 92, 246, 0))  # Purple, transparent
         self.setGraphicsEffect(self.shadow)
+        if self.data.name:
+            self.setToolTip(f"{self.data.name} (ID {int(self.data.brush_id)})")
 
     def _truncate_name(self, name: str, max_len: int = 12) -> str:
         """Truncate name for display."""
@@ -138,13 +148,15 @@ class AnimatedBrushCard(QFrame):
             bg_color = "#2A2A3E"
             border_width = 1
 
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             AnimatedBrushCard {{
                 background: {bg_color};
                 border: {border_width}px solid {border_color};
                 border-radius: 10px;
             }}
-        """)
+        """
+        )
 
     @pyqtProperty(float)
     def shadowOffset(self) -> float:
@@ -162,6 +174,10 @@ class AnimatedBrushCard(QFrame):
         """Set selection state."""
         self._selected = selected
         self._apply_style()
+        if self._selected:
+            self.setProperty("selected", True)
+        else:
+            self.setProperty("selected", False)
 
     def enterEvent(self, event: object) -> None:
         """Handle mouse enter."""
@@ -195,6 +211,14 @@ class AnimatedBrushCard(QFrame):
             self.clicked.emit(self.data.brush_id)
         super().mousePressEvent(event)
 
+    def set_sprite_pixmap(self, pixmap: QPixmap | None) -> None:
+        if pixmap is None or pixmap.isNull():
+            self.sprite_label.clear()
+            self.sprite_label.setText(self._placeholder_text or "?")
+            return
+        self.sprite_label.setPixmap(pixmap)
+        self.sprite_label.setText("")
+
 
 class ModernPaletteWidget(QWidget):
     """Modern card-based palette widget.
@@ -209,12 +233,18 @@ class ModernPaletteWidget(QWidget):
 
     brush_selected = pyqtSignal(int)  # Emits brush_id
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        *,
+        sprite_lookup: Callable[[int, int], QPixmap | None] | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self._cards: list[AnimatedBrushCard] = []
         self._selected_brush_id: int | None = None
         self._all_brushes: list[BrushCardData] = []
+        self._sprite_lookup = sprite_lookup
 
         self._setup_ui()
 
@@ -227,7 +257,8 @@ class ModernPaletteWidget(QWidget):
         # Search bar
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("🔍 Search brushes...")
-        self.search_bar.setStyleSheet("""
+        self.search_bar.setStyleSheet(
+            """
             QLineEdit {
                 background: #1E1E2E;
                 border: 1px solid #363650;
@@ -242,7 +273,8 @@ class ModernPaletteWidget(QWidget):
             QLineEdit::placeholder {
                 color: #52525B;
             }
-        """)
+        """
+        )
         self.search_bar.textChanged.connect(self._on_search_changed)
         layout.addWidget(self.search_bar)
 
@@ -250,7 +282,8 @@ class ModernPaletteWidget(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
+        scroll.setStyleSheet(
+            """
             QScrollArea {
                 background: transparent;
                 border: none;
@@ -258,7 +291,8 @@ class ModernPaletteWidget(QWidget):
             QScrollArea > QWidget > QWidget {
                 background: transparent;
             }
-        """)
+        """
+        )
 
         # Cards container
         self.cards_container = QWidget()
@@ -277,6 +311,10 @@ class ModernPaletteWidget(QWidget):
         """
         self._all_brushes = brushes
         self._rebuild_cards()
+
+    def set_sprite_lookup(self, lookup: Callable[[int, int], QPixmap | None] | None) -> None:
+        self._sprite_lookup = lookup
+        self._rebuild_cards(self.search_bar.text())
 
     def _rebuild_cards(self, filter_text: str = "") -> None:
         """Rebuild the card grid with optional filtering."""
@@ -304,6 +342,13 @@ class ModernPaletteWidget(QWidget):
         for i, brush_data in enumerate(filtered):
             card = AnimatedBrushCard(brush_data)
             card.clicked.connect(self._on_card_clicked)
+            if self._sprite_lookup is not None and brush_data.sprite_id is not None:
+                try:
+                    size = int(card.sprite_label.width())
+                    pm = self._sprite_lookup(int(brush_data.sprite_id), size)
+                except Exception:
+                    pm = None
+                card.set_sprite_pixmap(pm)
 
             row = i // cols
             col = i % cols
@@ -360,11 +405,13 @@ class SectionHeader(QWidget):
 
         # Title
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("""
+        self.title_label.setStyleSheet(
+            """
             color: #E5E5E7;
             font-size: 13px;
             font-weight: 600;
-        """)
+        """
+        )
         layout.addWidget(self.title_label)
 
         layout.addStretch()
@@ -372,17 +419,20 @@ class SectionHeader(QWidget):
         # Count badge
         if count > 0:
             self.count_label = QLabel(str(count))
-            self.count_label.setStyleSheet("""
+            self.count_label.setStyleSheet(
+                """
                 background: #363650;
                 color: #A1A1AA;
                 font-size: 10px;
                 padding: 2px 6px;
                 border-radius: 8px;
-            """)
+            """
+            )
             layout.addWidget(self.count_label)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             SectionHeader {
                 background: #2A2A3E;
                 border-radius: 6px;
@@ -390,7 +440,8 @@ class SectionHeader(QWidget):
             SectionHeader:hover {
                 background: #363650;
             }
-        """)
+        """
+        )
 
     def mousePressEvent(self, event: object) -> None:
         """Toggle on click."""

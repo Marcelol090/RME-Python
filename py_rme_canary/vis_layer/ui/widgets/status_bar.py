@@ -135,6 +135,50 @@ class BrushIndicator(StatusBarSection):
             self.set_text("No brush")
 
 
+class SelectionModeIndicator(StatusBarSection):
+    """Shows current selection mode.
+
+    Modes:
+        - "normal": Standard selection
+        - "additive": Add to selection (Shift)
+        - "subtractive": Remove from selection (Ctrl)
+        - "intersection": Intersect with selection (Shift+Ctrl)
+    """
+
+    # Mode configurations
+    MODES = {
+        "normal": ("⬜", "Normal", "#A1A1AA"),
+        "additive": ("➕", "Add", "#22C55E"),
+        "subtractive": ("➖", "Subtract", "#EF4444"),
+        "intersection": ("🔀", "Intersect", "#8B5CF6"),
+    }
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(icon="⬜", text="Normal", tooltip="Selection mode", parent=parent)
+        self._mode = "normal"
+
+    def set_mode(self, mode: str) -> None:
+        """Update selection mode display.
+
+        Args:
+            mode: One of "normal", "additive", "subtractive", "intersection"
+        """
+        if mode not in self.MODES:
+            mode = "normal"
+
+        self._mode = mode
+        icon, text, color = self.MODES[mode]
+
+        self.set_icon(icon)
+        self.set_text(text)
+        self.text_label.setStyleSheet(f"color: {color}; font-size: 11px;")
+
+    @property
+    def mode(self) -> str:
+        """Get current mode."""
+        return self._mode
+
+
 class MapInfoIndicator(StatusBarSection):
     """Shows map dimensions and tile count."""
 
@@ -211,6 +255,9 @@ class ModernStatusBar(QStatusBar):
 
         self.selection = SelectionIndicator()
         left_layout.addWidget(self.selection)
+
+        self.selection_mode = SelectionModeIndicator()
+        left_layout.addWidget(self.selection_mode)
 
         self.addWidget(left_container)
 

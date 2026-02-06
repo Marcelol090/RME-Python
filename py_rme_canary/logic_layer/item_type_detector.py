@@ -79,7 +79,13 @@ class ItemTypeDetector:
         """
         item_id = int(item.id)
 
-        # Check specific categories
+        # Check specific exact IDs first to avoid overlap with broad ranges.
+        if item_id in TELEPORT_IDS:
+            return ItemCategory.TELEPORT
+        elif item_id in CONTAINER_IDS:
+            return ItemCategory.CONTAINER
+
+        # Check range-based categories.
         if item_id in WALL_IDS:
             return ItemCategory.WALL
         elif item_id in CARPET_IDS:
@@ -90,10 +96,6 @@ class ItemTypeDetector:
             return ItemCategory.TABLE
         elif item_id in CHAIR_IDS:
             return ItemCategory.CHAIR
-        elif item_id in CONTAINER_IDS:
-            return ItemCategory.CONTAINER
-        elif item_id in TELEPORT_IDS:
-            return ItemCategory.TELEPORT
         elif item_id in ROTATABLE_SEQUENCES:
             return ItemCategory.ROTATABLE
 

@@ -12,6 +12,7 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     mb = editor.menuBar()
 
     m_file = mb.addMenu("File")
+    editor.menu_file = m_file
     m_file.addAction(editor.act_new)
     m_file.addAction(editor.act_open)
     m_file.addAction(editor.act_save)
@@ -33,14 +34,28 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_file.addSeparator()
 
     # Export submenu
-    if hasattr(editor, "act_export_png"):
+    if any(hasattr(editor, act) for act in ("act_export_png", "act_export_otmm", "act_export_tilesets")):
         m_export = m_file.addMenu("Export")
-        m_export.addAction(editor.act_export_png)
+        if hasattr(editor, "act_export_png"):
+            m_export.addAction(editor.act_export_png)
+        if hasattr(editor, "act_export_otmm"):
+            m_export.addAction(editor.act_export_otmm)
+        if hasattr(editor, "act_export_tilesets"):
+            m_export.addAction(editor.act_export_tilesets)
         m_file.addSeparator()
+
+    if hasattr(editor, "act_reload_data"):
+        m_reload = m_file.addMenu("Reload")
+        m_reload.addAction(editor.act_reload_data)
+        m_file.addSeparator()
+
+    if hasattr(editor, "act_preferences"):
+        m_file.addAction(editor.act_preferences)
 
     m_file.addAction(editor.act_exit)
 
     m_edit = mb.addMenu("Edit")
+    editor.menu_edit = m_edit
     m_edit.addAction(editor.act_undo)
     m_edit.addAction(editor.act_redo)
     m_edit.addAction(editor.act_cancel)
@@ -60,6 +75,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
 
     if hasattr(editor, "act_map_statistics"):
         m_edit.addAction(editor.act_map_statistics)
+    if hasattr(editor, "act_map_statistics_graphs"):
+        m_edit.addAction(editor.act_map_statistics_graphs)
     if hasattr(editor, "act_replace_items"):
         m_edit.addAction(editor.act_replace_items)
     if hasattr(editor, "act_replace_items_on_selection"):
@@ -141,10 +158,66 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_selection_depth.addAction(editor.act_selection_depth_lower)
     m_selection_depth.addAction(editor.act_selection_depth_visible)
 
+    m_search = mb.addMenu("Search")
+    editor.menu_search = m_search
+    if hasattr(editor, "act_find_item"):
+        m_search.addAction(editor.act_find_item)
+    if hasattr(editor, "act_find_creature"):
+        m_search.addAction(editor.act_find_creature)
+    if hasattr(editor, "act_find_monster"):
+        m_search.addAction(editor.act_find_monster)
+    if hasattr(editor, "act_find_npc"):
+        m_search.addAction(editor.act_find_npc)
+    if hasattr(editor, "act_find_house"):
+        m_search.addAction(editor.act_find_house)
+    if hasattr(editor, "menu_find_on_map"):
+        m_search.addSeparator()
+        m_search.addMenu(editor.menu_find_on_map)
+
+    m_selection = mb.addMenu("Selection")
+    editor.menu_selection = m_selection
+    if hasattr(editor, "act_replace_items_on_selection"):
+        m_selection.addAction(editor.act_replace_items_on_selection)
+    if hasattr(editor, "act_remove_item_on_selection"):
+        m_selection.addAction(editor.act_remove_item_on_selection)
+    if hasattr(editor, "act_clear_selection"):
+        m_selection.addAction(editor.act_clear_selection)
+    if hasattr(editor, "act_delete_selection"):
+        m_selection.addAction(editor.act_delete_selection)
+    m_selection.addSeparator()
+    if hasattr(editor, "act_borderize_selection"):
+        m_selection.addAction(editor.act_borderize_selection)
+    if hasattr(editor, "act_randomize_selection"):
+        m_selection.addAction(editor.act_randomize_selection)
+    m_sel_depth = m_selection.addMenu("Selection Depth")
+    m_sel_depth.addAction(editor.act_selection_depth_compensate)
+    m_sel_depth.addAction(editor.act_selection_depth_current)
+    m_sel_depth.addAction(editor.act_selection_depth_lower)
+    m_sel_depth.addAction(editor.act_selection_depth_visible)
+
     # Map Menu (Legacy Parity)
     m_map = mb.addMenu("Map")
     if hasattr(editor, "act_map_properties"):
         m_map.addAction(editor.act_map_properties)
+        m_map.addSeparator()
+
+    if hasattr(editor, "act_remove_item_map"):
+        m_map.addAction(editor.act_remove_item_map)
+    if hasattr(editor, "act_remove_corpses_map"):
+        m_map.addAction(editor.act_remove_corpses_map)
+    if hasattr(editor, "act_remove_unreachable_map"):
+        m_map.addAction(editor.act_remove_unreachable_map)
+    if hasattr(editor, "act_clear_invalid_house_tiles_map"):
+        m_map.addAction(editor.act_clear_invalid_house_tiles_map)
+    if any(
+        hasattr(editor, a)
+        for a in (
+            "act_remove_item_map",
+            "act_remove_corpses_map",
+            "act_remove_unreachable_map",
+            "act_clear_invalid_house_tiles_map",
+        )
+    ):
         m_map.addSeparator()
 
     if hasattr(editor, "act_remove_monsters_selection"):
@@ -172,6 +245,9 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_mirror.addAction(editor.act_mirror_axis_set_from_cursor)
 
     m_assets = mb.addMenu("Assets")
+    if hasattr(editor, "act_manage_client_profiles"):
+        m_assets.addAction(editor.act_manage_client_profiles)
+        m_assets.addSeparator()
     m_assets.addAction(editor.act_set_assets_dir)
     if hasattr(editor, "act_load_appearances"):
         m_assets.addAction(editor.act_load_appearances)
@@ -286,5 +362,12 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
 
     # Help Menu
     m_help = mb.addMenu("Help")
+    editor.menu_help = m_help
+    if hasattr(editor, "act_extensions"):
+        m_help.addAction(editor.act_extensions)
+    if hasattr(editor, "act_goto_website"):
+        m_help.addAction(editor.act_goto_website)
+    if hasattr(editor, "act_extensions") or hasattr(editor, "act_goto_website"):
+        m_help.addSeparator()
     if hasattr(editor, "act_about"):
         m_help.addAction(editor.act_about)

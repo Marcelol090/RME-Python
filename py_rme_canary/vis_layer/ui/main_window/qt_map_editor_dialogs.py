@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from PyQt6.QtWidgets import QMessageBox
 
 from py_rme_canary.logic_layer.map_search import find_item_positions
+from py_rme_canary.vis_layer.ui.dialogs.statistics_graphs_dialog import StatisticsGraphsDialog
 from py_rme_canary.vis_layer.ui.main_window.dialogs import (
     FindItemDialog,
     FindPositionsDialog,
@@ -91,6 +92,11 @@ class QtMapEditorDialogsMixin:
     def _show_map_statistics(self) -> None:
         editor = cast("QtMapEditor", self)
         dlg = MapStatisticsDialog(editor, game_map=editor.map)
+        dlg.exec()
+
+    def _show_map_statistics_graphs(self) -> None:
+        editor = cast("QtMapEditor", self)
+        dlg = StatisticsGraphsDialog(editor, game_map=editor.map)
         dlg.exec()
 
     def _set_quick_replace_source(self, item_id: int) -> None:

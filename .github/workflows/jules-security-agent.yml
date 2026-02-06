@@ -1,0 +1,50 @@
+name: Jules - Daily Security Scan
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: jules-security-scan
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-labs-code/jules-invoke@v1
+        with:
+          prompt: |
+            You are a security agent. Scan this repository for vulnerabilities and fix them.
+
+            OUTPUT CONTRACT (MANDATORY):
+            - Create and commit:
+              - reports/jules/security_suggestions.md
+              - reports/jules/security_suggestions.json  (must match .github/jules/suggestions.schema.json; set category="security")
+
+            - In the PR description, include a fenced YAML block named jules_suggestions with:
+              - version
+              - category: "security"
+              - implemented (list)
+              - suggested_next (list)
+
+            CRITICAL (fix immediately):
+            - Hardcoded secrets, API keys, passwords
+            - SQL injection, command injection
+            - Missing auth on sensitive endpoints
+
+            HIGH:
+            - XSS, CSRF
+            - Insecure direct object references
+            - Missing input validation
+
+            Rules:
+            - Fix highest severity first
+            - Keep changes small and reviewable (<100 lines if possible)
+            - Run existing tests/linters before creating a PR
+          jules_api_key: ${{ secrets.JULES_API_KEY }}

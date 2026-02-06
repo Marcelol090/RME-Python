@@ -1,15 +1,29 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from py_rme_canary.core.data.gamemap import GameMap
+from py_rme_canary.core.data.houses import House
 from py_rme_canary.core.data.item import Item
 from py_rme_canary.core.data.tile import Tile
+
+if TYPE_CHECKING:
+    from py_rme_canary.core.database.items_xml import ItemType
+else:
+    ItemType = Any
 
 
 @dataclass(frozen=True, slots=True)
 class RemoveItemsResult:
     removed: int
+
+
+@dataclass(frozen=True, slots=True)
+class ClearInvalidHousesResult:
+    houses_removed: int
+    tile_refs_cleared: int
 
 
 def _is_complex_item(item: Item) -> bool:
@@ -46,6 +60,116 @@ def _is_complex_item(item: Item) -> bool:
     return bool(item.text or item.description)
 
 
+def _clone_tile_with_items(*, tile: Tile, ground: Item | None, items: list[Item]) -> Tile:
+    return Tile(
+        x=int(tile.x),
+        y=int(tile.y),
+        z=int(tile.z),
+        ground=ground,
+        items=items,
+        house_id=tile.house_id,
+        map_flags=int(tile.map_flags),
+        zones=tile.zones,
+        modified=True,
+        monsters=tile.monsters,
+        npc=tile.npc,
+        spawn_monster=tile.spawn_monster,
+        spawn_npc=tile.spawn_npc,
+    )
+
+
+def _remove_matching_items_in_tile(*, tile: Tile, predicate: Callable[[Item], bool]) -> tuple[Tile, int]:
+    removed = 0
+    ground = tile.ground
+    if ground is not None and predicate(ground):
+        ground = None
+        removed += 1
+
+    new_items: list[Item] = []
+    for it in tile.items:
+        if predicate(it):
+            removed += 1
+            continue
+        new_items.append(it)
+
+    if removed <= 0:
+        return tile, 0
+
+    return _clone_tile_with_items(tile=tile, ground=ground, items=new_items), int(removed)
+
+
+def _item_attr(item_type: ItemType | None, *keys: str) -> str:
+    if item_type is None:
+        return ""
+    attrs = item_type.attributes or {}
+    if not attrs:
+        return ""
+    lowered = {str(k).strip().lower(): str(v).strip() for k, v in attrs.items()}
+    for key in keys:
+        val = lowered.get(str(key).strip().lower(), "")
+        if val:
+            return val
+    return ""
+
+
+def _is_truthy_attr(raw: str) -> bool:
+    return str(raw).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _is_corpse_item(item: Item, *, item_types: Mapping[int, ItemType] | None) -> bool:
+    if _is_complex_item(item):
+        return False
+    if item_types is None:
+        return False
+    item_type = item_types.get(int(item.id))
+    return bool(_item_attr(item_type, "corpseType", "corpse_type", "corpse"))
+
+
+def _is_blocking_item(item: Item, *, item_types: Mapping[int, ItemType] | None) -> bool:
+    if item_types is None:
+        return False
+    item_type = item_types.get(int(item.id))
+    if item_type is None:
+        return False
+    return _is_truthy_attr(
+        _item_attr(
+            item_type,
+            "blockSolid",
+            "blocksolid",
+            "blocking",
+            "blockPathFind",
+            "blockpathfind",
+        )
+    )
+
+
+def _is_non_blocking_tile(tile: Tile, *, item_types: Mapping[int, ItemType] | None) -> bool:
+    if tile.ground is not None and _is_blocking_item(tile.ground, item_types=item_types):
+        return False
+    for item in tile.items:
+        if _is_blocking_item(item, item_types=item_types):
+            return False
+    return True
+
+
+def _has_any_non_blocking_tile_in_area(
+    *,
+    non_blocking_tiles: set[tuple[int, int, int]],
+    sx: int,
+    ex: int,
+    sy: int,
+    ey: int,
+    sz: int,
+    ez: int,
+) -> bool:
+    for z in range(int(sz), int(ez) + 1):
+        for y in range(int(sy), int(ey) + 1):
+            for x in range(int(sx), int(ex) + 1):
+                if (int(x), int(y), int(z)) in non_blocking_tiles:
+                    return True
+    return False
+
+
 def remove_items_in_tile(*, tile: Tile, server_id: int) -> tuple[Tile, int]:
     """Remove non-complex items with `server_id` from a tile.
 
@@ -56,62 +180,9 @@ def remove_items_in_tile(*, tile: Tile, server_id: int) -> tuple[Tile, int]:
     """
 
     sid = int(server_id)
-    removed = 0
-
-    ground = tile.ground
-    if ground is not None and int(ground.id) == sid and not _is_complex_item(ground):
-        ground = None
-        removed += 1
-
-    if not tile.items:
-        if removed <= 0:
-            return tile, 0
-        return (
-            Tile(
-                x=int(tile.x),
-                y=int(tile.y),
-                z=int(tile.z),
-                ground=ground,
-                items=list(tile.items),
-                house_id=tile.house_id,
-                map_flags=int(tile.map_flags),
-                zones=tile.zones,
-                modified=True,
-                monsters=tile.monsters,
-                npc=tile.npc,
-                spawn_monster=tile.spawn_monster,
-                spawn_npc=tile.spawn_npc,
-            ),
-            removed,
-        )
-
-    new_items: list[Item] = []
-    for it in tile.items:
-        if int(it.id) == sid and not _is_complex_item(it):
-            removed += 1
-            continue
-        new_items.append(it)
-
-    if removed <= 0:
-        return tile, 0
-
-    return (
-        Tile(
-            x=int(tile.x),
-            y=int(tile.y),
-            z=int(tile.z),
-            ground=ground,
-            items=new_items,
-            house_id=tile.house_id,
-            map_flags=int(tile.map_flags),
-            zones=tile.zones,
-            modified=True,
-            monsters=tile.monsters,
-            npc=tile.npc,
-            spawn_monster=tile.spawn_monster,
-            spawn_npc=tile.spawn_npc,
-        ),
-        removed,
+    return _remove_matching_items_in_tile(
+        tile=tile,
+        predicate=lambda it: int(it.id) == sid and not _is_complex_item(it),
     )
 
 
@@ -204,6 +275,137 @@ def remove_monsters_in_map(
         changed[key] = new_tile
 
     return changed, RemoveItemsResult(removed=removed_total)
+
+
+def remove_corpses_in_map(
+    game_map: GameMap,
+    *,
+    item_types: Mapping[int, ItemType] | None = None,
+    selection_only: bool = False,
+    selection_tiles: set[tuple[int, int, int]] | None = None,
+) -> tuple[dict[tuple[int, int, int], Tile], RemoveItemsResult]:
+    """Remove corpse items from map (or selection), skipping complex items."""
+    if selection_only and not selection_tiles:
+        return {}, RemoveItemsResult(removed=0)
+
+    selection_set = set(selection_tiles) if selection_tiles is not None else set()
+    changed: dict[tuple[int, int, int], Tile] = {}
+    removed_total = 0
+
+    for key, tile in game_map.tiles.items():
+        if selection_only and key not in selection_set:
+            continue
+        new_tile, removed = _remove_matching_items_in_tile(
+            tile=tile,
+            predicate=lambda it: _is_corpse_item(it, item_types=item_types),
+        )
+        if removed <= 0:
+            continue
+        changed[key] = new_tile
+        removed_total += int(removed)
+
+    return changed, RemoveItemsResult(removed=int(removed_total))
+
+
+def remove_unreachable_tiles_in_map(
+    game_map: GameMap,
+    *,
+    item_types: Mapping[int, ItemType] | None = None,
+    ground_layer: int = 7,
+    max_layer: int = 15,
+    radius_x: int = 10,
+    radius_y: int = 8,
+    radius_z: int = 2,
+) -> tuple[dict[tuple[int, int, int], None], RemoveItemsResult]:
+    """Remove tiles that are unreachable by legacy non-blocking proximity rules."""
+
+    non_blocking: set[tuple[int, int, int]] = set()
+    for key, tile in game_map.tiles.items():
+        if _is_non_blocking_tile(tile, item_types=item_types):
+            non_blocking.add((int(key[0]), int(key[1]), int(key[2])))
+
+    changed: dict[tuple[int, int, int], None] = {}
+    removed = 0
+
+    for key, tile in game_map.tiles.items():
+        pos = (int(key[0]), int(key[1]), int(key[2]))
+        if pos in non_blocking:
+            continue
+
+        x, y, z = int(tile.x), int(tile.y), int(tile.z)
+        sx = max(int(x) - int(radius_x), 0)
+        ex = min(int(x) + int(radius_x), 0xFFFF)
+        sy = max(int(y) - int(radius_y), 0)
+        ey = min(int(y) + int(radius_y), 0xFFFF)
+        if int(z) <= int(ground_layer):
+            sz, ez = 0, 9
+        else:
+            sz = max(int(z) - int(radius_z), int(ground_layer))
+            ez = min(int(z) + int(radius_z), int(max_layer))
+
+        if _has_any_non_blocking_tile_in_area(
+            non_blocking_tiles=non_blocking,
+            sx=sx,
+            ex=ex,
+            sy=sy,
+            ey=ey,
+            sz=sz,
+            ez=ez,
+        ):
+            continue
+
+        changed[pos] = None
+        removed += 1
+
+    return changed, RemoveItemsResult(removed=int(removed))
+
+
+def compute_clear_invalid_house_tiles(
+    game_map: GameMap,
+) -> tuple[dict[int, House], dict[tuple[int, int, int], Tile], ClearInvalidHousesResult]:
+    """Compute valid houses and tile updates for house refs with invalid town/house ids."""
+
+    towns = getattr(game_map, "towns", None) or {}
+    houses = getattr(game_map, "houses", None) or {}
+
+    valid_houses: dict[int, House] = {}
+    for hid, house in houses.items():
+        town_id = int(getattr(house, "townid", 0) or 0)
+        if town_id > 0 and int(town_id) not in towns:
+            continue
+        valid_houses[int(hid)] = house
+
+    changed_tiles: dict[tuple[int, int, int], Tile] = {}
+    for key, tile in game_map.tiles.items():
+        house_id = getattr(tile, "house_id", None)
+        if house_id is None:
+            continue
+        if int(house_id) in valid_houses:
+            continue
+        changed_tiles[(int(key[0]), int(key[1]), int(key[2]))] = Tile(
+            x=int(tile.x),
+            y=int(tile.y),
+            z=int(tile.z),
+            ground=tile.ground,
+            items=list(tile.items),
+            house_id=None,
+            map_flags=int(tile.map_flags),
+            zones=tile.zones,
+            modified=True,
+            monsters=tile.monsters,
+            npc=tile.npc,
+            spawn_monster=tile.spawn_monster,
+            spawn_npc=tile.spawn_npc,
+        )
+
+    return (
+        valid_houses,
+        changed_tiles,
+        ClearInvalidHousesResult(
+            houses_removed=max(0, int(len(houses) - len(valid_houses))),
+            tile_refs_cleared=int(len(changed_tiles)),
+        ),
+    )
 
 
 @dataclass(frozen=True, slots=True)
