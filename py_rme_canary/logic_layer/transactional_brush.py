@@ -600,7 +600,9 @@ class TransactionalBrushStroke:
         brush_def: BrushDefinition | None,
         brush_type_norm: str,
     ) -> int:
+        """Calculate the effective server ID considering variations and brush logic."""
         effective_server_id = int(selected_server_id)
+
         if brush_def is not None and brush_type_norm == "ground":
             variants = (int(getattr(brush_def, "server_id", selected_server_id)),) + tuple(
                 int(v) for v in getattr(brush_def, "randomize_ids", ())
@@ -610,7 +612,7 @@ class TransactionalBrushStroke:
                 idx = int(self.brush_variation) % len(variants)
                 effective_server_id = int(variants[idx])
 
-        if brush_def is not None and brush_type_norm == "table" and brush_def.table_spec is not None:
+        elif brush_def is not None and brush_type_norm == "table" and brush_def.table_spec is not None:
             table_spec = brush_def.table_spec
             seed = (
                 f"table-base:{int(x)},{int(y)},{int(z)}:{int(brush_def.server_id)}:{int(self.brush_variation)}".encode()

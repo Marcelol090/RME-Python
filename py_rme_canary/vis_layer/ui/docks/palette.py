@@ -200,6 +200,246 @@ class PaletteManager:
         if self._primary is not None:
             self.refresh_list(self._primary)
 
+    def _refresh_doodad_list(self, palette: PaletteDock, q: str) -> None:
+        editor = self._editor
+        # Prefer real doodad brushes parsed from materials XML.
+        doodads = []
+        try:
+            if hasattr(editor.brush_mgr, "ensure_doodads_loaded"):
+                materials_path = _resolve_materials_brushs_path()
+                if materials_path:
+                    editor.brush_mgr.ensure_doodads_loaded(materials_path)
+            doodads = list(editor.brush_mgr.iter_doodad_brushes())
+        except Exception:
+            doodads = []
+
+        if doodads:
+            for sid, name in sorted(doodads, key=lambda t: str(t[1]).lower()):
+                sid = int(sid)
+                if sid <= 0:
+                    continue
+                text = f"{int(sid)}: {str(name).strip()}"
+                if q and (q not in text.lower()):
+                    continue
+                item = QListWidgetItem(text)
+                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_DOODAD_BASE + int(sid)))
+                self._maybe_set_item_icon(item, int(sid))
+                palette.list_widget.addItem(item)
+
+    def _refresh_terrain_list(self, palette: PaletteDock, q: str) -> None:
+        # Legacy-style tool: Optional Border (gravel). Implemented as a virtual brush.
+        label = "Optional Border Tool"
+        if (not q) or (q in label.lower()):
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_OPTIONAL_BORDER_ID))
+            palette.list_widget.addItem(item)
+
+        # Legacy-style door brushes (MVP): place/toggle doors via virtual tools.
+        door_tools: list[tuple[str, int]] = [
+            ("Door Tool: Normal", int(VIRTUAL_DOOR_TOOL_NORMAL)),
+            ("Door Tool: Locked", int(VIRTUAL_DOOR_TOOL_LOCKED)),
+            ("Door Tool: Magic", int(VIRTUAL_DOOR_TOOL_MAGIC)),
+            ("Door Tool: Quest", int(VIRTUAL_DOOR_TOOL_QUEST)),
+            ("Door Tool: Window", int(VIRTUAL_DOOR_TOOL_WINDOW)),
+            ("Door Tool: Hatch", int(VIRTUAL_DOOR_TOOL_HATCH)),
+        ]
+        for text, sid in door_tools:
+            if q and (q not in text.lower()):
+                continue
+            it = QListWidgetItem(text)
+            it.setData(Qt.ItemDataRole.UserRole, int(sid))
+            palette.list_widget.addItem(it)
+
+    def _refresh_zones_list(self, palette: PaletteDock, q: str) -> None:
+        editor = self._editor
+        zones = getattr(getattr(editor, "session", None), "game_map", None)
+        zones = getattr(zones, "zones", None) or {}
+        for z in sorted(zones.values(), key=lambda zz: int(getattr(zz, "id", 0))):
+            zid = int(getattr(z, "id", 0))
+            if zid <= 0:
+                continue
+            name = str(getattr(z, "name", "") or "").strip()
+            text = f"{int(zid)}: {name}" if name else str(int(zid))
+            if q:
+                hay = f"{int(zid)} {name}".lower()
+                if q not in hay:
+                    continue
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_ZONE_BASE + zid))
+            palette.list_widget.addItem(item)
+
+    def _refresh_waypoint_list(self, palette: PaletteDock, q: str) -> None:
+        editor = self._editor
+        gm = getattr(getattr(editor, "session", None), "game_map", None)
+        waypoints = getattr(gm, "waypoints", None) or {}
+
+        # Build stable ids for all waypoints independent of filtering.
+        used: set[int] = set()
+        names = sorted((str(k) for k in waypoints), key=lambda s: s.lower())
+        name_to_vid: dict[str, int] = {}
+        for nm in names:
+            try:
+                vid = int(waypoint_virtual_id(nm, used=used))
+            except Exception:
+                continue
+            name_to_vid[str(nm)] = int(vid)
+
+        for nm in names:
+            pos = waypoints.get(nm)
+            if pos is None:
+                continue
+            text = f"{nm} @ ({int(getattr(pos, 'x', 0))},{int(getattr(pos, 'y', 0))},{int(getattr(pos, 'z', 0))})"
+            if q and (q not in text.lower()):
+                continue
+
+            vid = name_to_vid.get(nm)
+            if vid is None or not (
+                VIRTUAL_WAYPOINT_BASE <= int(vid) < VIRTUAL_WAYPOINT_BASE + int(VIRTUAL_WAYPOINT_MAX)
+            ):
+                continue
+
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, int(vid))
+            palette.list_widget.addItem(item)
+
+    def _refresh_creature_list(self, palette: PaletteDock, q: str) -> None:
+        # Legacy parity (MVP): monster placement is implemented as spawn XML entries
+        # (map-level), so we expose monsters via virtual ids.
+        label = "Spawn Area Tool"
+        text = f"Monster {label}"
+        if (not q) or (q in text.lower()):
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_SPAWN_MONSTER_TOOL_ID))
+            palette.list_widget.addItem(item)
+
+        # Build stable ids for all monsters independent of filtering.
+        used: set[int] = set()
+        names = tuple(load_monster_names())
+        name_to_vid: dict[str, int] = {}
+        for nm in names:
+            try:
+                vid = int(monster_virtual_id(str(nm), used=used))
+            except Exception:
+                continue
+            name_to_vid[str(nm)] = int(vid)
+
+        for nm in names:
+            if q and (q not in str(nm).lower()):
+                continue
+            vid = name_to_vid.get(str(nm))
+            if vid is None or not (
+                VIRTUAL_MONSTER_BASE <= int(vid) < VIRTUAL_MONSTER_BASE + int(VIRTUAL_MONSTER_MAX)
+            ):
+                continue
+            item = QListWidgetItem(str(nm))
+            item.setData(Qt.ItemDataRole.UserRole, int(vid))
+            palette.list_widget.addItem(item)
+
+    def _refresh_npc_list(self, palette: PaletteDock, q: str) -> None:
+        label = "Spawn Area Tool"
+        text = f"NPC {label}"
+        if (not q) or (q in text.lower()):
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_SPAWN_NPC_TOOL_ID))
+            palette.list_widget.addItem(item)
+
+        # Build stable ids for all NPCs independent of filtering.
+        used = set()
+        names = tuple(load_npc_names())
+        name_to_vid: dict[str, int] = {}
+        for nm in names:
+            try:
+                vid = int(npc_virtual_id(str(nm), used=used))
+            except Exception:
+                continue
+            name_to_vid[str(nm)] = int(vid)
+
+        for nm in names:
+            if q and (q not in str(nm).lower()):
+                continue
+            vid = name_to_vid.get(str(nm))
+            if vid is None or not (VIRTUAL_NPC_BASE <= int(vid) < VIRTUAL_NPC_BASE + int(VIRTUAL_NPC_MAX)):
+                continue
+            item = QListWidgetItem(str(nm))
+            item.setData(Qt.ItemDataRole.UserRole, int(vid))
+            palette.list_widget.addItem(item)
+
+    def _refresh_house_list(self, palette: PaletteDock, q: str) -> None:
+        editor = self._editor
+        houses = getattr(getattr(editor, "session", None), "game_map", None)
+        houses = getattr(houses, "houses", None) or {}
+        for h in sorted(houses.values(), key=lambda hh: int(getattr(hh, "id", 0))):
+            hid = int(getattr(h, "id", 0))
+            if hid <= 0:
+                continue
+            name = str(getattr(h, "name", "") or "").strip()
+            text = f"{int(hid)}: {name}" if name else str(int(hid))
+            if q:
+                hay = f"{int(hid)} {name}".lower()
+                if q not in hay:
+                    continue
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_HOUSE_BASE + hid))
+            palette.list_widget.addItem(item)
+
+            # Legacy parity (MVP): House Exit brush.
+            # Exposed as a second entry per house to avoid adding extra toggle UI.
+            exit_text = f"Exit: {int(hid)}: {name}" if name else f"Exit: {int(hid)}"
+            exit_item = QListWidgetItem(exit_text)
+            exit_item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_HOUSE_EXIT_BASE + hid))
+            palette.list_widget.addItem(exit_item)
+
+    def _refresh_recent_list(self, palette: PaletteDock, q: str) -> None:
+        editor = self._editor
+        session = getattr(editor, "session", None)
+        recent = list(getattr(session, "recent_brushes", []) or [])
+        for sid in recent:
+            try:
+                bd = editor.brush_mgr.get_brush(int(sid))
+            except Exception:
+                bd = None
+            btype = str(getattr(bd, "brush_type", "") or "").strip().lower() if bd is not None else ""
+            name = str(getattr(bd, "name", "") or "").strip() if bd is not None else ""
+            text = f"{int(sid)}: {name}" if name else str(int(sid))
+            if btype:
+                text = f"{text} ({btype})"
+
+            if q and (q not in text.lower()):
+                continue
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, int(sid))
+            with contextlib.suppress(Exception):
+                self._maybe_set_item_icon(item, int(getattr(bd, "server_id", 0)))
+            palette.list_widget.addItem(item)
+
+    def _refresh_default_list(
+        self, palette: PaletteDock, q: str, key_norm: str, all_ids: list[int], allowed: set[str] | None
+    ) -> None:
+        editor = self._editor
+        for sid in all_ids:
+            bd = editor.brush_mgr.get_brush(int(sid))
+            if bd is None:
+                continue
+            btype = str(getattr(bd, "brush_type", "") or "").strip().lower()
+            if allowed is not None and btype and btype not in allowed:
+                continue
+
+            name = str(getattr(bd, "name", "") or "").strip()
+            text = f"{int(sid)}: {name}" if name else str(int(sid))
+
+            if q:
+                hay = f"{int(sid)} {name} {btype}".lower()
+                if q not in hay:
+                    continue
+
+            item = QListWidgetItem(text)
+            if key_norm == "doodad":
+                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_DOODAD_BASE + int(sid)))
+            else:
+                item.setData(Qt.ItemDataRole.UserRole, int(sid))
+            self._maybe_set_item_icon(item, int(sid))
+            palette.list_widget.addItem(item)
+
     def refresh_list(self, palette: PaletteDock) -> None:
         editor = self._editor
         q = (palette.filter_edit.text() or "").strip().lower()
@@ -211,239 +451,32 @@ class PaletteManager:
         palette.list_widget.clear()
 
         key_norm = str(palette_key or "").strip().lower()
+
         if key_norm == "doodad":
-            # Prefer real doodad brushes parsed from materials XML.
-            doodads = []
-            try:
-                if hasattr(editor.brush_mgr, "ensure_doodads_loaded"):
-                    materials_path = _resolve_materials_brushs_path()
-                    if materials_path:
-                        editor.brush_mgr.ensure_doodads_loaded(materials_path)
-                doodads = list(editor.brush_mgr.iter_doodad_brushes())
-            except Exception:
-                doodads = []
-
-            if doodads:
-                for sid, name in sorted(doodads, key=lambda t: str(t[1]).lower()):
-                    sid = int(sid)
-                    if sid <= 0:
-                        continue
-                    text = f"{int(sid)}: {str(name).strip()}"
-                    if q and (q not in text.lower()):
-                        continue
-                    item = QListWidgetItem(text)
-                    item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_DOODAD_BASE + int(sid)))
-                    self._maybe_set_item_icon(item, int(sid))
-                    palette.list_widget.addItem(item)
-
+            self._refresh_doodad_list(palette, q)
+            # If doodads were loaded successfully, stop here.
+            if palette.list_widget.count() > 0:
                 palette.list_widget.blockSignals(False)
                 return
 
         if key_norm == "terrain":
-            # Legacy-style tool: Optional Border (gravel). Implemented as a virtual brush.
-            label = "Optional Border Tool"
-            if (not q) or (q in label.lower()):
-                item = QListWidgetItem(label)
-                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_OPTIONAL_BORDER_ID))
-                palette.list_widget.addItem(item)
-
-            # Legacy-style door brushes (MVP): place/toggle doors via virtual tools.
-            door_tools: list[tuple[str, int]] = [
-                ("Door Tool: Normal", int(VIRTUAL_DOOR_TOOL_NORMAL)),
-                ("Door Tool: Locked", int(VIRTUAL_DOOR_TOOL_LOCKED)),
-                ("Door Tool: Magic", int(VIRTUAL_DOOR_TOOL_MAGIC)),
-                ("Door Tool: Quest", int(VIRTUAL_DOOR_TOOL_QUEST)),
-                ("Door Tool: Window", int(VIRTUAL_DOOR_TOOL_WINDOW)),
-                ("Door Tool: Hatch", int(VIRTUAL_DOOR_TOOL_HATCH)),
-            ]
-            for text, sid in door_tools:
-                if q and (q not in text.lower()):
-                    continue
-                it = QListWidgetItem(text)
-                it.setData(Qt.ItemDataRole.UserRole, int(sid))
-                palette.list_widget.addItem(it)
+            self._refresh_terrain_list(palette, q)
+            # Fall through to default logic
 
         if key_norm == "zones":
-            zones = getattr(getattr(editor, "session", None), "game_map", None)
-            zones = getattr(zones, "zones", None) or {}
-            for z in sorted(zones.values(), key=lambda zz: int(getattr(zz, "id", 0))):
-                zid = int(getattr(z, "id", 0))
-                if zid <= 0:
-                    continue
-                name = str(getattr(z, "name", "") or "").strip()
-                text = f"{int(zid)}: {name}" if name else str(int(zid))
-                if q:
-                    hay = f"{int(zid)} {name}".lower()
-                    if q not in hay:
-                        continue
-                item = QListWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_ZONE_BASE + zid))
-                palette.list_widget.addItem(item)
-
+            self._refresh_zones_list(palette, q)
         elif key_norm == "waypoint":
-            gm = getattr(getattr(editor, "session", None), "game_map", None)
-            waypoints = getattr(gm, "waypoints", None) or {}
-
-            # Build stable ids for all waypoints independent of filtering.
-            used: set[int] = set()
-            names = sorted((str(k) for k in waypoints), key=lambda s: s.lower())
-            name_to_vid: dict[str, int] = {}
-            for nm in names:
-                try:
-                    vid = int(waypoint_virtual_id(nm, used=used))
-                except Exception:
-                    continue
-                name_to_vid[str(nm)] = int(vid)
-
-            for nm in names:
-                pos = waypoints.get(nm)
-                if pos is None:
-                    continue
-                text = f"{nm} @ ({int(getattr(pos, 'x', 0))},{int(getattr(pos, 'y', 0))},{int(getattr(pos, 'z', 0))})"
-                if q and (q not in text.lower()):
-                    continue
-
-                vid = name_to_vid.get(nm)
-                if vid is None or not (
-                    VIRTUAL_WAYPOINT_BASE <= int(vid) < VIRTUAL_WAYPOINT_BASE + int(VIRTUAL_WAYPOINT_MAX)
-                ):
-                    continue
-
-                item = QListWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, int(vid))
-                palette.list_widget.addItem(item)
-
+            self._refresh_waypoint_list(palette, q)
         elif key_norm == "creature":
-            # Legacy parity (MVP): monster placement is implemented as spawn XML entries
-            # (map-level), so we expose monsters via virtual ids.
-            label = "Spawn Area Tool"
-            text = f"Monster {label}"
-            if (not q) or (q in text.lower()):
-                item = QListWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_SPAWN_MONSTER_TOOL_ID))
-                palette.list_widget.addItem(item)
-
-            # Build stable ids for all monsters independent of filtering.
-            used: set[int] = set()
-            names = tuple(load_monster_names())
-            name_to_vid: dict[str, int] = {}
-            for nm in names:
-                try:
-                    vid = int(monster_virtual_id(str(nm), used=used))
-                except Exception:
-                    continue
-                name_to_vid[str(nm)] = int(vid)
-
-            for nm in names:
-                if q and (q not in str(nm).lower()):
-                    continue
-                vid = name_to_vid.get(str(nm))
-                if vid is None or not (
-                    VIRTUAL_MONSTER_BASE <= int(vid) < VIRTUAL_MONSTER_BASE + int(VIRTUAL_MONSTER_MAX)
-                ):
-                    continue
-                item = QListWidgetItem(str(nm))
-                item.setData(Qt.ItemDataRole.UserRole, int(vid))
-                palette.list_widget.addItem(item)
-
+            self._refresh_creature_list(palette, q)
         elif key_norm == "npc":
-            label = "Spawn Area Tool"
-            text = f"NPC {label}"
-            if (not q) or (q in text.lower()):
-                item = QListWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_SPAWN_NPC_TOOL_ID))
-                palette.list_widget.addItem(item)
-
-            # Build stable ids for all NPCs independent of filtering.
-            used = set()
-            names = tuple(load_npc_names())
-            name_to_vid: dict[str, int] = {}
-            for nm in names:
-                try:
-                    vid = int(npc_virtual_id(str(nm), used=used))
-                except Exception:
-                    continue
-                name_to_vid[str(nm)] = int(vid)
-
-            for nm in names:
-                if q and (q not in str(nm).lower()):
-                    continue
-                vid = name_to_vid.get(str(nm))
-                if vid is None or not (VIRTUAL_NPC_BASE <= int(vid) < VIRTUAL_NPC_BASE + int(VIRTUAL_NPC_MAX)):
-                    continue
-                item = QListWidgetItem(str(nm))
-                item.setData(Qt.ItemDataRole.UserRole, int(vid))
-                palette.list_widget.addItem(item)
-
+            self._refresh_npc_list(palette, q)
         elif key_norm == "house":
-            houses = getattr(getattr(editor, "session", None), "game_map", None)
-            houses = getattr(houses, "houses", None) or {}
-            for h in sorted(houses.values(), key=lambda hh: int(getattr(hh, "id", 0))):
-                hid = int(getattr(h, "id", 0))
-                if hid <= 0:
-                    continue
-                name = str(getattr(h, "name", "") or "").strip()
-                text = f"{int(hid)}: {name}" if name else str(int(hid))
-                if q:
-                    hay = f"{int(hid)} {name}".lower()
-                    if q not in hay:
-                        continue
-                item = QListWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_HOUSE_BASE + hid))
-                palette.list_widget.addItem(item)
-
-                # Legacy parity (MVP): House Exit brush.
-                # Exposed as a second entry per house to avoid adding extra toggle UI.
-                exit_text = f"Exit: {int(hid)}: {name}" if name else f"Exit: {int(hid)}"
-                exit_item = QListWidgetItem(exit_text)
-                exit_item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_HOUSE_EXIT_BASE + hid))
-                palette.list_widget.addItem(exit_item)
-
+            self._refresh_house_list(palette, q)
         elif key_norm == "recent":
-            session = getattr(editor, "session", None)
-            recent = list(getattr(session, "recent_brushes", []) or [])
-            for sid in recent:
-                try:
-                    bd = editor.brush_mgr.get_brush(int(sid))
-                except Exception:
-                    bd = None
-                btype = str(getattr(bd, "brush_type", "") or "").strip().lower() if bd is not None else ""
-                name = str(getattr(bd, "name", "") or "").strip() if bd is not None else ""
-                text = f"{int(sid)}: {name}" if name else str(int(sid))
-                if btype:
-                    text = f"{text} ({btype})"
-
-                if q and (q not in text.lower()):
-                    continue
-                item = QListWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, int(sid))
-                with contextlib.suppress(Exception):
-                    self._maybe_set_item_icon(item, int(getattr(bd, "server_id", 0)))
-                palette.list_widget.addItem(item)
+            self._refresh_recent_list(palette, q)
         else:
-            for sid in all_ids:
-                bd = editor.brush_mgr.get_brush(int(sid))
-                if bd is None:
-                    continue
-                btype = str(getattr(bd, "brush_type", "") or "").strip().lower()
-                if allowed is not None and btype and btype not in allowed:
-                    continue
-
-                name = str(getattr(bd, "name", "") or "").strip()
-                text = f"{int(sid)}: {name}" if name else str(int(sid))
-
-                if q:
-                    hay = f"{int(sid)} {name} {btype}".lower()
-                    if q not in hay:
-                        continue
-
-                item = QListWidgetItem(text)
-                if key_norm == "doodad":
-                    item.setData(Qt.ItemDataRole.UserRole, int(VIRTUAL_DOODAD_BASE + int(sid)))
-                else:
-                    item.setData(Qt.ItemDataRole.UserRole, int(sid))
-                self._maybe_set_item_icon(item, int(sid))
-                palette.list_widget.addItem(item)
+            self._refresh_default_list(palette, q, key_norm, all_ids, allowed)
 
         palette.list_widget.blockSignals(False)
 
