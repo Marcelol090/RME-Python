@@ -7,6 +7,7 @@ import contextlib
 import json
 import os
 from dataclasses import asdict, dataclass, field
+from py_rme_canary.core.io.xml.safe import Element, ParseError, safe_etree as ET
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -179,7 +180,7 @@ class BrushXMLParser:
             # Try to parse with error handling for malformed XML
             tree = ET.parse(xml_path)
             root = tree.getroot()
-        except ET.ParseError:
+        except ParseError:
             # Handle malformed XML by reading and trying to fix
             return brushes
 
@@ -193,7 +194,7 @@ class BrushXMLParser:
 
         return brushes
 
-    def _parse_brush_element(self, elem: ET.Element, brush_type: BrushType) -> BrushDefinition | None:
+    def _parse_brush_element(self, elem: Element, brush_type: BrushType) -> BrushDefinition | None:
         """Parse a single brush XML element"""
         name = elem.get("name")
         if not name:
