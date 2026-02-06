@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from py_rme_canary.core.io.xml import safe as ET
+from py_rme_canary.core.io.xml.safe import safe_etree as ET
 from py_rme_canary.logic_layer.map_statistics import MapStatistics
 from py_rme_canary.logic_layer.operations.export_statistics import (
     export_statistics,
