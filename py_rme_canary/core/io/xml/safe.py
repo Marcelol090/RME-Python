@@ -9,6 +9,8 @@ Element = stdlib_etree.Element
 ElementTree = stdlib_etree.ElementTree
 ParseError = stdlib_etree.ParseError
 SubElement = stdlib_etree.SubElement
+# Expose indent for formatting (Python 3.9+)
+indent = getattr(stdlib_etree, "indent", lambda *args, **kwargs: None)
 
 
 def _load_safe_etree() -> ModuleType:
@@ -31,4 +33,4 @@ if not hasattr(safe_etree, "SubElement"):
 if not hasattr(safe_etree, "tostring"):
     safe_etree.tostring = stdlib_etree.tostring  # type: ignore[attr-defined]
 
-__all__ = ["Element", "ElementTree", "ParseError", "SubElement", "safe_etree"]
+__all__ = ["Element", "ElementTree", "ParseError", "SubElement", "safe_etree", "indent"]

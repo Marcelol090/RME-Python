@@ -11,6 +11,7 @@ import argparse
 import json
 import logging
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -194,7 +195,11 @@ class StateMachine:
 
         # Create rollback point
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"], check=False, cwd=self.ctx.project_root, capture_output=True, text=True
+            [shutil.which("git") or "git", "rev-parse", "HEAD"],
+            check=False,
+            cwd=self.ctx.project_root,
+            capture_output=True,
+            text=True,
         )
 
         if result.returncode == 0:
@@ -210,7 +215,7 @@ class StateMachine:
 
         # Run Ruff
         ruff_result = subprocess.run(
-            ["ruff", "check", ".", "--output-format=json"],
+            [shutil.which("ruff") or "ruff", "check", ".", "--output-format=json"],
             check=False,
             cwd=self.ctx.project_root,
             capture_output=True,
@@ -238,7 +243,11 @@ class StateMachine:
 
         # Run Mypy
         mypy_result = subprocess.run(
-            ["mypy", ".", "--no-error-summary"], check=False, cwd=self.ctx.project_root, capture_output=True, text=True
+            [shutil.which("mypy") or "mypy", ".", "--no-error-summary"],
+            check=False,
+            cwd=self.ctx.project_root,
+            capture_output=True,
+            text=True,
         )
 
         # Parse Mypy errors (simplified)
@@ -328,6 +337,8 @@ class StateMachine:
 
             # Execute fix command
             cmd = shlex.split(plan.fix_command)
+            if cmd:
+                cmd[0] = shutil.which(cmd[0]) or cmd[0]
             result = subprocess.run(cmd, check=False, cwd=self.ctx.project_root, capture_output=True, text=True)
 
             if result.returncode == 0:
@@ -351,6 +362,8 @@ class StateMachine:
 
         if self.ctx.config.get("run_tests", True):
             test_cmd_list = shlex.split(test_cmd) if isinstance(test_cmd, str) else list(test_cmd)
+            if test_cmd_list:
+                test_cmd_list[0] = shutil.which(test_cmd_list[0]) or test_cmd_list[0]
             result = subprocess.run(test_cmd_list, check=False, cwd=self.ctx.project_root, capture_output=True)
 
             if result.returncode != 0:
@@ -359,7 +372,9 @@ class StateMachine:
                 return
 
         # Validate with Mypy
-        mypy_result = subprocess.run(["mypy", "."], check=False, cwd=self.ctx.project_root, capture_output=True)
+        mypy_result = subprocess.run(
+            [shutil.which("mypy") or "mypy", "."], check=False, cwd=self.ctx.project_root, capture_output=True
+        )
 
         if mypy_result.returncode != 0:
             log.warning("Mypy found issues (non-fatal)")
@@ -372,7 +387,11 @@ class StateMachine:
         log.info("Rolling back changes...")
 
         if self.ctx.rollback_commit:
-            subprocess.run(["git", "reset", "--hard", self.ctx.rollback_commit], check=False, cwd=self.ctx.project_root)
+            subprocess.run(
+                [shutil.which("git") or "git", "reset", "--hard", self.ctx.rollback_commit],
+                check=False,
+                cwd=self.ctx.project_root,
+            )
             log.info("Rollback complete")
 
         self.ctx.emit_event(AgentState.FAILED, {"rollback": "completed"})
@@ -383,10 +402,10 @@ class StateMachine:
         log.info("Committing fixes...")
 
         if self.ctx.config.get("auto_commit", False):
-            subprocess.run(["git", "add", "-A"], check=False, cwd=self.ctx.project_root)
+            subprocess.run([shutil.which("git") or "git", "add", "-A"], check=False, cwd=self.ctx.project_root)
 
             subprocess.run(
-                ["git", "commit", "-m", "refactor: automated quality improvements"],
+                [shutil.which("git") or "git", "commit", "-m", "refactor: automated quality improvements"],
                 check=False,
                 cwd=self.ctx.project_root,
             )
