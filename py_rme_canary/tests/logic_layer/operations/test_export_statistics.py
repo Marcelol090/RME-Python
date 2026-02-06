@@ -5,10 +5,10 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from xml.etree import ElementTree as ET
 
 import pytest
 
+from py_rme_canary.core.io.xml import safe as ET
 from py_rme_canary.logic_layer.map_statistics import MapStatistics
 from py_rme_canary.logic_layer.operations.export_statistics import (
     export_statistics,

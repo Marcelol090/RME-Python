@@ -31,4 +31,8 @@ if not hasattr(safe_etree, "SubElement"):
 if not hasattr(safe_etree, "tostring"):
     safe_etree.tostring = stdlib_etree.tostring  # type: ignore[attr-defined]
 
-__all__ = ["Element", "ElementTree", "ParseError", "SubElement", "safe_etree"]
+# Export parse and fromstring from safe_etree
+parse = safe_etree.parse
+fromstring = safe_etree.fromstring
+
+__all__ = ["Element", "ElementTree", "ParseError", "SubElement", "safe_etree", "parse", "fromstring"]
