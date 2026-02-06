@@ -108,3 +108,36 @@ def test_user_settings_persists_client_profiles() -> None:
     fallback = settings.get_active_client_profile(client_version=1100)
     assert fallback is not None
     assert fallback.client_version == 1100
+
+
+def test_user_settings_persists_preferences_fields() -> None:
+    org = "py_rme_canary_tests"
+    app = f"preferences_{uuid4().hex}"
+
+    settings = UserSettings(org=org, app=app)
+    settings.set_show_welcome_dialog(False)
+    settings.set_always_make_backup(False)
+    settings.set_check_updates_on_startup(True)
+    settings.set_only_one_instance(False)
+    settings.set_enable_tileset_editing(True)
+    settings.set_use_old_item_properties_window(True)
+    settings.set_undo_queue_size(2048)
+    settings.set_undo_max_memory_mb(512)
+    settings.set_worker_threads(8)
+    settings.set_replace_count_limit(25000)
+    settings.set_delete_backup_days(21)
+    settings.set_copy_position_format(3)
+
+    loaded = UserSettings(org=org, app=app)
+    assert loaded.get_show_welcome_dialog() is False
+    assert loaded.get_always_make_backup() is False
+    assert loaded.get_check_updates_on_startup() is True
+    assert loaded.get_only_one_instance() is False
+    assert loaded.get_enable_tileset_editing() is True
+    assert loaded.get_use_old_item_properties_window() is True
+    assert loaded.get_undo_queue_size() == 2048
+    assert loaded.get_undo_max_memory_mb() == 512
+    assert loaded.get_worker_threads() == 8
+    assert loaded.get_replace_count_limit() == 25000
+    assert loaded.get_delete_backup_days() == 21
+    assert loaded.get_copy_position_format() == 3

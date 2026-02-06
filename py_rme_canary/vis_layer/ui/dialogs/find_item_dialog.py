@@ -278,7 +278,7 @@ class FindItemDialog(QDialog):
         layout.addWidget(filters_group)
 
         # Search Button
-        search_btn = QPushButton("🔍 Find")
+        search_btn = QPushButton("Find")
         search_btn.clicked.connect(self._on_search)
         search_btn.setFixedHeight(40)
         layout.addWidget(search_btn)

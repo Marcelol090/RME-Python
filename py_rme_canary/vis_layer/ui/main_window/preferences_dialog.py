@@ -7,6 +7,7 @@ Provides configuration UI with tabs: General, Editor, Graphics, Interface, Clien
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -57,7 +58,7 @@ class PreferencesDialog(QDialog):
         self.setMinimumSize(500, 400)
 
         self._config_manager = config_manager
-        self._settings: dict[str, any] = {}
+        self._settings: dict[str, Any] = {}
         self._load_current_settings()
 
         # Create tabs
@@ -85,21 +86,20 @@ class PreferencesDialog(QDialog):
 
     def _load_current_settings(self) -> None:
         """Load current settings from config manager or defaults."""
-        # TODO: Load from actual config.toml or ConfigurationManager
         user_settings = get_user_settings()
         self._settings = {
-            "show_welcome_dialog": True,
-            "always_make_backup": True,
-            "check_updates_on_startup": False,
-            "only_one_instance": True,
-            "enable_tileset_editing": False,
-            "use_old_item_properties_window": False,
-            "undo_queue_size": 1000,
-            "undo_max_memory_mb": 256,
-            "worker_threads": 4,
-            "replace_count_limit": 10000,
-            "delete_backup_days": 7,
-            "copy_position_format": 0,  # 0-4 for different formats
+            "show_welcome_dialog": user_settings.get_show_welcome_dialog(),
+            "always_make_backup": user_settings.get_always_make_backup(),
+            "check_updates_on_startup": user_settings.get_check_updates_on_startup(),
+            "only_one_instance": user_settings.get_only_one_instance(),
+            "enable_tileset_editing": user_settings.get_enable_tileset_editing(),
+            "use_old_item_properties_window": user_settings.get_use_old_item_properties_window(),
+            "undo_queue_size": user_settings.get_undo_queue_size(),
+            "undo_max_memory_mb": user_settings.get_undo_max_memory_mb(),
+            "worker_threads": user_settings.get_worker_threads(),
+            "replace_count_limit": user_settings.get_replace_count_limit(),
+            "delete_backup_days": user_settings.get_delete_backup_days(),
+            "copy_position_format": user_settings.get_copy_position_format(),  # 0-4 for different formats
             "client_assets_folder": user_settings.get_client_assets_folder(),
             "default_client_version": user_settings.get_default_client_version(),
             "auto_load_appearances": user_settings.get_auto_load_appearances(),
@@ -348,9 +348,18 @@ class PreferencesDialog(QDialog):
         user_settings.set_client_assets_folder(str(self._settings["client_assets_folder"]))
         user_settings.set_auto_load_appearances(bool(self._settings["auto_load_appearances"]))
         user_settings.set_sprite_match_on_paste(bool(self._settings["sprite_match_on_paste"]))
-
-        # TODO: Write to config.toml or ConfigurationManager
-        print(f"[PreferencesDialog] Settings saved: {self._settings}")
+        user_settings.set_show_welcome_dialog(bool(self._settings["show_welcome_dialog"]))
+        user_settings.set_always_make_backup(bool(self._settings["always_make_backup"]))
+        user_settings.set_check_updates_on_startup(bool(self._settings["check_updates_on_startup"]))
+        user_settings.set_only_one_instance(bool(self._settings["only_one_instance"]))
+        user_settings.set_enable_tileset_editing(bool(self._settings["enable_tileset_editing"]))
+        user_settings.set_use_old_item_properties_window(bool(self._settings["use_old_item_properties_window"]))
+        user_settings.set_undo_queue_size(int(self._settings["undo_queue_size"]))
+        user_settings.set_undo_max_memory_mb(int(self._settings["undo_max_memory_mb"]))
+        user_settings.set_worker_threads(int(self._settings["worker_threads"]))
+        user_settings.set_replace_count_limit(int(self._settings["replace_count_limit"]))
+        user_settings.set_delete_backup_days(int(self._settings["delete_backup_days"]))
+        user_settings.set_copy_position_format(int(self._settings["copy_position_format"]))
 
     def _on_apply(self) -> None:
         """Handle Apply button click."""
@@ -363,7 +372,7 @@ class PreferencesDialog(QDialog):
         self.settings_changed.emit()
         self.accept()
 
-    def get_settings(self) -> dict[str, any]:
+    def get_settings(self) -> dict[str, Any]:
         """Get current settings dictionary.
 
         Returns:

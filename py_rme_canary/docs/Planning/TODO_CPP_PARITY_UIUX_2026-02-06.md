@@ -55,25 +55,28 @@
   - Critério de aceite: cada ação executa, atualiza mapa/status e possui cobertura de teste unitário.
   - Status (2026-02-06): implementado no `EditorSession` + `Map` menu com ações undoable e cobertura em `tests/unit/logic_layer/test_map_cleanup_operations.py`.
 
-- [ ] `P0-SEARCH-003` Fechar paridade de busca avançada por mapa/seleção.
+- [x] `P0-SEARCH-003` Fechar paridade de busca avançada por mapa/seleção.
   - Expor ações de `Find Unique/Action/Container/Writeable` e equivalentes em seleção.
   - Corrigir `selection_only` em `FindItemDialog` para respeitar seleção ativa.
   - Critério de aceite: resultados mudam conforme escopo (mapa vs seleção) e filtros.
+  - Status (2026-02-06): implementado no `map_search.py`, `find_item.py`, menus/ações da main window e testes unitários.
 
-- [ ] `P0-CONTEXT-004` Completar integração backend↔context menus (item/tile).
+- [x] `P0-CONTEXT-004` Completar integração backend↔context menus (item/tile).
   - Substituir callbacks parciais dos canvases por callback set completo.
   - Implementar ações padrão pendentes em `context_menu_handlers.py` com ações transacionais.
   - Critério de aceite: ações de contexto editam mapa de fato e atualizam undo/redo.
+  - Status (2026-02-06): callbacks completos conectados no canvas/software renderer com cobertura de testes.
 
 - [ ] `P0-BORDER-005` Evoluir Border Builder para autor de regras persistentes.
   - Permitir criar/editar/remover regras e salvar no armazenamento de brush definitions.
   - Aplicar reload seguro no `AutoBorderProcessor` sem reiniciar editor.
   - Critério de aceite: regra criada no UI impacta resultado de borderize.
 
-- [ ] `P1-PREFS-006` Persistência real de preferências.
+- [x] `P1-PREFS-006` Persistência real de preferências.
   - Ligar `PreferencesDialog` ao `ConfigurationManager`/config de projeto.
   - Remover TODOs de load/save e sincronizar defaults com runtime.
   - Critério de aceite: reiniciar app preserva ajustes de preferência.
+  - Status (2026-02-06): persistência completa via `QSettings` (`UserSettings`) para todos campos do diálogo.
 
 - [ ] `P1-EXPORT-007` Concluir exportação OTMM no fluxo de UI.
   - Implementar `_export_otmm` no editor e dialog/opções mínimas de export.

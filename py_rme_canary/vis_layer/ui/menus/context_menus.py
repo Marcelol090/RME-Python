@@ -161,15 +161,15 @@ class TileContextMenu:
         builder = ContextMenuBuilder(self._parent)
 
         # Edit actions
-        builder.add_action("📋 Copy", cb("copy"), "Ctrl+C")
-        builder.add_action("✂️ Cut", cb("cut"), "Ctrl+X")
-        builder.add_action("📎 Paste", cb("paste"), "Ctrl+V", enabled=bool(cb("can_paste") and cb("can_paste")()))
-        builder.add_action("🗑️ Delete", cb("delete"), "Del", enabled=has_selection or tile is not None)
+        builder.add_action("Copy", cb("copy"), "Ctrl+C")
+        builder.add_action("Cut", cb("cut"), "Ctrl+X")
+        builder.add_action("Paste", cb("paste"), "Ctrl+V", enabled=bool(cb("can_paste") and cb("can_paste")()))
+        builder.add_action("Delete", cb("delete"), "Del", enabled=has_selection or tile is not None)
 
         builder.add_separator()
 
         # Selection
-        builder.add_submenu("Selection", "🔲")
+        builder.add_submenu("Selection")
         builder.add_action("Select All", cb("select_all"), "Ctrl+A")
         builder.add_action("Deselect", cb("deselect"), "Escape")
         builder.end_submenu()
@@ -179,16 +179,16 @@ class TileContextMenu:
         # Tile-specific
         if tile:
             # Properties
-            builder.add_action("📝 Properties...", cb("properties"))
+            builder.add_action("Properties...", cb("properties"))
 
             # Browse Tile (inspect item stack)
             has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)
-            builder.add_action("🔍 Browse Tile...", cb("browse_tile"), enabled=has_items)
+            builder.add_action("Browse Tile...", cb("browse_tile"), enabled=has_items)
 
             builder.add_separator()
 
             # Waypoint
-            builder.add_submenu("Waypoint", "📍")
+            builder.add_submenu("Waypoint")
             builder.add_action("Set Waypoint Here...", cb("set_waypoint"))
             builder.add_action(
                 "Delete Waypoint", cb("delete_waypoint"), enabled=bool(cb("has_waypoint") and cb("has_waypoint")())
@@ -196,7 +196,7 @@ class TileContextMenu:
             builder.end_submenu()
 
             # Spawn
-            builder.add_submenu("Spawn", "👹")
+            builder.add_submenu("Spawn")
             builder.add_action("Place Monster Spawn...", cb("set_monster_spawn"))
             builder.add_action("Place NPC Spawn...", cb("set_npc_spawn"))
             builder.add_action("Delete Spawn", cb("delete_spawn"))
@@ -204,22 +204,22 @@ class TileContextMenu:
 
             # House
             if tile.house_id:
-                builder.add_submenu("House", "🏠")
+                builder.add_submenu("House")
                 builder.add_action(f"Edit House #{tile.house_id}...", cb("edit_house"))
                 builder.add_action("Clear House ID", cb("clear_house"))
                 builder.add_action("Set Entry Here", cb("set_house_entry"))
                 builder.end_submenu()
             else:
-                builder.add_action("🏠 Assign to House...", cb("assign_house"))
+                builder.add_action("Assign to House...", cb("assign_house"))
 
         builder.add_separator()
 
         # Navigation
         if tile:
             pos = f"({tile.x}, {tile.y}, {tile.z})"
-            builder.add_action(f"📍 Copy Position {pos}", cb("copy_position"))
+            builder.add_action(f"Copy Position {pos}", cb("copy_position"))
 
-        builder.add_action("🔍 Go To Position...", cb("goto"))
+        builder.add_action("Go To Position...", cb("goto"))
 
         builder.exec_at_cursor()
 
@@ -273,14 +273,14 @@ class ItemContextMenu:
             client_id = int(item.id)
 
         # Item info header with name
-        header_text = f"📦 {item_name} (#{item.id})" if item_name != f"Item #{item.id}" else f"📦 Item #{item.id}"
+        header_text = f"{item_name} (#{item.id})" if item_name != f"Item #{item.id}" else f"Item #{item.id}"
         builder.add_action(header_text, enabled=False)
         builder.add_separator()
 
         # Smart Brush Selection
         if ItemTypeDetector.can_select_brush(category):
             brush_name = ItemTypeDetector.get_brush_name(category)
-            builder.add_action(f"✨ Select {brush_name}", cb("select_brush"), enabled=_enabled("select_brush"))
+            builder.add_action(f"Select {brush_name}", cb("select_brush"), enabled=_enabled("select_brush"))
             builder.add_separator()
 
         # Item-Specific Actions
@@ -289,13 +289,13 @@ class ItemContextMenu:
         # Door: Toggle Open/Close
         if ItemTypeDetector.is_door(item):
             is_open = ItemTypeDetector.is_door_open(item)
-            action_text = "🚪 Close Door" if is_open else "🚪 Open Door"
+            action_text = "Close Door" if is_open else "Open Door"
             builder.add_action(action_text, cb("toggle_door"), enabled=_enabled("toggle_door"))
             has_specific_actions = True
 
         # Rotatable: Rotate Item
         if ItemTypeDetector.is_rotatable(item):
-            builder.add_action("🔄 Rotate Item", cb("rotate_item"), enabled=_enabled("rotate_item"))
+            builder.add_action("Rotate Item", cb("rotate_item"), enabled=_enabled("rotate_item"))
             has_specific_actions = True
 
         # Teleport: Go To Destination
@@ -303,24 +303,24 @@ class ItemContextMenu:
             dest = ItemTypeDetector.get_teleport_destination(item)
             if dest:
                 builder.add_action(
-                    f"🚀 Go To Destination ({dest[0]}, {dest[1]}, {dest[2]})",
+                    f"Go To Destination ({dest[0]}, {dest[1]}, {dest[2]})",
                     cb("goto_teleport"),
                     enabled=_enabled("goto_teleport"),
                 )
             else:
-                builder.add_action("🚀 Set Teleport Destination...", cb("set_teleport_dest"))
+                builder.add_action("Set Teleport Destination...", cb("set_teleport_dest"))
             has_specific_actions = True
 
         if has_specific_actions:
             builder.add_separator()
 
         # Standard Actions
-        builder.add_action("📝 Properties...", cb("properties"), enabled=_enabled("properties"))
-        builder.add_action("🔍 Browse Tile...", cb("browse_tile"), enabled=_enabled("browse_tile"))
+        builder.add_action("Properties...", cb("properties"), enabled=_enabled("properties"))
+        builder.add_action("Browse Tile...", cb("browse_tile"), enabled=_enabled("browse_tile"))
         builder.add_separator()
 
         # Copy Data Actions
-        builder.add_submenu("📋 Copy Data", "")
+        builder.add_submenu("Copy Data")
         builder.add_action(f"Server ID ({item.id})", cb("copy_server_id"))
         builder.add_action(f"Client ID ({int(client_id)})", cb("copy_client_id"), enabled=_enabled("copy_client_id"))
         builder.add_action("Item Name", cb("copy_item_name"))
@@ -331,26 +331,26 @@ class ItemContextMenu:
         builder.add_separator()
 
         # Edit Actions
-        builder.add_action("📋 Copy", cb("copy"), enabled=_enabled("copy"))
-        builder.add_action("🗑️ Delete", cb("delete"), enabled=_enabled("delete"))
+        builder.add_action("Copy", cb("copy"), enabled=_enabled("copy"))
+        builder.add_action("Delete", cb("delete"), enabled=_enabled("delete"))
 
         # Text editing
         if hasattr(item, "text") and item.text:
             builder.add_separator()
-            builder.add_action("📝 Edit Text...", cb("edit_text"), enabled=_enabled("edit_text"))
+            builder.add_action("Edit Text...", cb("edit_text"), enabled=_enabled("edit_text"))
 
         builder.add_separator()
 
         # Find/Replace helpers
         if _enabled("set_find"):
-            builder.add_action("🎯 Set as Find Item", cb("set_find"), enabled=True)
+            builder.add_action("Set as Find Item", cb("set_find"), enabled=True)
         if _enabled("set_replace"):
-            builder.add_action("🎯 Set as Replace Item", cb("set_replace"), enabled=True)
+            builder.add_action("Set as Replace Item", cb("set_replace"), enabled=True)
         if _enabled("set_find") or _enabled("set_replace"):
             builder.add_separator()
 
-        builder.add_action("🎯 Find All of This Item", cb("find_all"), enabled=_enabled("find_all"))
-        builder.add_action("🔁 Replace All...", cb("replace_all"), enabled=_enabled("replace_all"))
+        builder.add_action("Find All of This Item", cb("find_all"), enabled=_enabled("find_all"))
+        builder.add_action("Replace All...", cb("replace_all"), enabled=_enabled("replace_all"))
 
         builder.exec_at_cursor()
 
@@ -370,16 +370,16 @@ class BrushContextMenu:
 
         builder = ContextMenuBuilder(self._parent)
 
-        builder.add_action(f"🖌️ {brush_name}", enabled=False)
+        builder.add_action(brush_name, enabled=False)
         builder.add_separator()
 
-        builder.add_action("⭐ Add to Favorites", cb("add_favorite"))
-        builder.add_action("📌 Pin to Top", cb("pin"))
+        builder.add_action("Add to Favorites", cb("add_favorite"))
+        builder.add_action("Pin to Top", cb("pin"))
 
         builder.add_separator()
 
-        builder.add_action("🔍 Find on Map", cb("find_on_map"))
-        builder.add_action("📝 Brush Info...", cb("brush_info"))
+        builder.add_action("Find on Map", cb("find_on_map"))
+        builder.add_action("Brush Info...", cb("brush_info"))
 
         builder.exec_at_cursor()
 
