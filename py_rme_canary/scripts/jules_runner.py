@@ -8,6 +8,7 @@ import json
 import os
 import re
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +26,7 @@ from jules_api import (
 try:
     from datetime import UTC
 except ImportError:
-    UTC = UTC
+    UTC = timezone.utc
 
 
 def utc_now_iso() -> str:
@@ -46,30 +47,102 @@ def _compact_json(value: object) -> str:
     return json.dumps(value, indent=2, ensure_ascii=False)
 
 
-def read_quality_context(path: Path, *, max_chars: int = 6000) -> str:
+def _compress_quality_report(raw: str) -> str:
+    """Reduce noisy report sections to keep Jules prompts focused and small."""
+    lines = raw.splitlines()
+    output: list[str] = []
+    in_artifacts = False
+    artifact_kept = 0
+    artifact_total = 0
+
+    for line in lines:
+        stripped = line.strip()
+        is_header = stripped.startswith("##")
+        if is_header:
+            if in_artifacts and artifact_total > artifact_kept:
+                output.append(
+                    f"- ... {artifact_total - artifact_kept} additional artifacts omitted for prompt compactness"
+                )
+            in_artifacts = "artefatos gerados" in stripped.lower()
+            artifact_kept = 0
+            artifact_total = 0
+            output.append(line)
+            continue
+
+        if in_artifacts and stripped.startswith("-"):
+            artifact_total += 1
+            if artifact_kept < 12:
+                output.append(line)
+                artifact_kept += 1
+            continue
+
+        if stripped.startswith("- `quality_") and stripped.endswith(".log`"):
+            continue
+        output.append(line)
+
+    if in_artifacts and artifact_total > artifact_kept:
+        output.append(f"- ... {artifact_total - artifact_kept} additional artifacts omitted for prompt compactness")
+
+    compact = "\n".join(output).strip()
+    compact = re.sub(r"\n{3,}", "\n\n", compact)
+    return compact
+
+
+def _balanced_truncate(text: str, limit: int) -> str:
+    """Keep both beginning and end when truncating long report text."""
+    if len(text) <= limit:
+        return text
+    head_size = int(limit * 0.7)
+    tail_size = max(0, limit - head_size - 40)
+    marker = "\n...[quality context truncated]...\n"
+    return f"{text[:head_size]}{marker}{text[-tail_size:]}"
+
+
+def read_quality_context(path: Path, *, max_chars: int = 4200) -> str:
     """Read quality report context used to prompt Jules."""
     if not path.exists() or not path.is_file():
         return ""
     raw = path.read_text(encoding="utf-8", errors="ignore")
-    clean = raw.strip()
-    if len(clean) <= max_chars:
-        return clean
-    return clean[:max_chars]
+    clean = _compress_quality_report(raw.strip())
+    return _balanced_truncate(clean, max_chars)
 
 
 def build_quality_prompt(*, report_text: str, task: str) -> str:
-    """Build a deterministic prompt for Jules quality suggestions."""
-    base = (
-        "You are assisting a Python map editor project with quality hardening.\n"
-        "Review the quality report and propose concise, high-value suggestions.\n"
-        "Output should focus on testability, maintainability, and reliability.\n"
+    """Build an explicit, structured prompt optimized for Jules suggestions."""
+    context_block = report_text if report_text else "Quality report context is not available."
+    return (
+        "You are Jules, a senior Python quality engineer for a PyQt6 map editor project.\n"
+        "Your objective is to convert the provided quality report into precise, actionable next steps.\n"
+        "Work in linear steps internally: observe report evidence, identify risks, then propose prioritized actions.\n"
+        "\n"
+        "Hard constraints:\n"
+        "1) Use only evidence present in the report context.\n"
+        "2) Prefer high-impact actions that reduce defects, security risk, and CI instability.\n"
+        "3) Keep suggestions small enough to become isolated PRs.\n"
+        "4) Do not include markdown commentary outside the requested JSON block.\n"
+        "5) If data is missing, explain uncertainty in the `rationale` field.\n"
+        "\n"
+        "Output format (required): return a single ```json fenced block with this top-level shape:\n"
+        "{\n"
+        '  "jules_suggestions": {\n'
+        '    "implemented": [\n'
+        '      {"id":"IMP-001","summary":"...", "files":["path.py"], "evidence":"..."}\n'
+        "    ],\n"
+        '    "suggested_next": [\n'
+        '      {"id":"SUG-001","severity":"HIGH|MED|LOW|CRITICAL","summary":"...",'
+        ' "rationale":"...", "files":["path.py"], "links":["https://..."]}\n'
+        "    ]\n"
+        "  }\n"
+        "}\n"
+        "\n"
+        "Volume limits:\n"
+        "- implemented: maximum 4 entries.\n"
+        "- suggested_next: maximum 8 entries.\n"
+        "\n"
+        f"Task: {task}\n"
+        "Quality report context:\n"
+        f"{context_block}\n"
     )
-    scope = f"Task: {task}\n"
-    if report_text:
-        scope += f"Quality report context:\n{report_text}\n"
-    else:
-        scope += "Quality report context is not available.\n"
-    return f"{base}\n{scope}"
 
 
 def _find_contract_candidates(payload: object) -> list[dict[str, Any]]:

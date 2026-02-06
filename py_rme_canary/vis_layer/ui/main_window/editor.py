@@ -224,6 +224,18 @@ class QtMapEditor(
 
     # Editor-owned actions (created in editor.py)
     act_find_item: QAction
+    act_find_creature: QAction
+    act_find_monster: QAction
+    act_find_npc: QAction
+    act_find_house: QAction
+    act_find_unique_map: QAction
+    act_find_action_map: QAction
+    act_find_container_map: QAction
+    act_find_writeable_map: QAction
+    act_find_unique_selection: QAction
+    act_find_action_selection: QAction
+    act_find_container_selection: QAction
+    act_find_writeable_selection: QAction
     act_map_statistics: QAction
     act_map_statistics_graphs: QAction
     act_replace_items: QAction

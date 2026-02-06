@@ -143,3 +143,32 @@ def test_session_status_command_normalizes_latest_activity(tmp_path, monkeypatch
     payload = json.loads(out_path.read_text(encoding="utf-8"))
     assert payload["session"]["name"] == "sessions/abc123"
     assert payload["latest_activity"]["type"] == "PLAN"
+
+
+def test_read_quality_context_compacts_artifacts_section(tmp_path) -> None:
+    report_path = tmp_path / "refactor_summary.md"
+    artifacts = "\n".join(f"- `quality_2026020{i:02d}.log`" for i in range(1, 40))
+    report_path.write_text(
+        (
+            "# Relatório\n"
+            "## 📊 Sumário Executivo\n"
+            "- Issues Ruff: 0\n"
+            "## 📁 Artefatos Gerados\n"
+            f"{artifacts}\n"
+            "## 🎯 Próximos Passos\n"
+            "- Revisar segurança\n"
+        ),
+        encoding="utf-8",
+    )
+
+    context = jules_runner.read_quality_context(report_path, max_chars=900)
+    assert "additional artifacts omitted for prompt compactness" in context
+    assert context.count("quality_2026020") < 20
+    assert "Próximos Passos" in context
+
+
+def test_build_quality_prompt_contains_structured_contract() -> None:
+    prompt = jules_runner.build_quality_prompt(report_text="ctx", task="quality-pipeline-jules")
+    assert "single ```json fenced block" in prompt
+    assert '"jules_suggestions"' in prompt
+    assert "Task: quality-pipeline-jules" in prompt

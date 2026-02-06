@@ -615,6 +615,42 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_find_house = QAction("Find House...", editor)
     editor.act_find_house.triggered.connect(lambda _c=False: find_item.open_find_dialog(editor, "house"))
 
+    editor.act_find_unique_map = QAction("Find Unique (Map)", editor)
+    editor.act_find_unique_map.triggered.connect(lambda _c=False: find_item.open_find_unique(editor, selection_only=False))
+
+    editor.act_find_action_map = QAction("Find Action (Map)", editor)
+    editor.act_find_action_map.triggered.connect(lambda _c=False: find_item.open_find_action(editor, selection_only=False))
+
+    editor.act_find_container_map = QAction("Find Container (Map)", editor)
+    editor.act_find_container_map.triggered.connect(
+        lambda _c=False: find_item.open_find_container(editor, selection_only=False)
+    )
+
+    editor.act_find_writeable_map = QAction("Find Writeable (Map)", editor)
+    editor.act_find_writeable_map.triggered.connect(
+        lambda _c=False: find_item.open_find_writeable(editor, selection_only=False)
+    )
+
+    editor.act_find_unique_selection = QAction("Find Unique (Selection)", editor)
+    editor.act_find_unique_selection.triggered.connect(
+        lambda _c=False: find_item.open_find_unique(editor, selection_only=True)
+    )
+
+    editor.act_find_action_selection = QAction("Find Action (Selection)", editor)
+    editor.act_find_action_selection.triggered.connect(
+        lambda _c=False: find_item.open_find_action(editor, selection_only=True)
+    )
+
+    editor.act_find_container_selection = QAction("Find Container (Selection)", editor)
+    editor.act_find_container_selection.triggered.connect(
+        lambda _c=False: find_item.open_find_container(editor, selection_only=True)
+    )
+
+    editor.act_find_writeable_selection = QAction("Find Writeable (Selection)", editor)
+    editor.act_find_writeable_selection.triggered.connect(
+        lambda _c=False: find_item.open_find_writeable(editor, selection_only=True)
+    )
+
     # Live Editing
     editor.act_src_connect = QAction("Connect to Server...", editor)
     editor.act_src_connect.triggered.connect(lambda _c=False: live_connect.open_connect_dialog(editor))

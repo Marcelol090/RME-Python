@@ -389,8 +389,17 @@ class FindItemDialog(QDialog):
         if not self.game_map:
             return results
 
+        selection_scope: set[tuple[int, int, int]] = set()
+        if filters.selection_only:
+            selection_scope = self._resolve_selection_tiles()
+            if not selection_scope:
+                return results
+
         # Iterate all tiles
         for tile in self.game_map.iter_tiles():
+            if selection_scope and (int(tile.x), int(tile.y), int(tile.z)) not in selection_scope:
+                continue
+
             # Z-layer filter
             if filters.specific_z and tile.z != filters.z_value:
                 continue
@@ -405,6 +414,48 @@ class FindItemDialog(QDialog):
                     results.append(SearchResult(item=item, position=(tile.x, tile.y, tile.z), tile_item_index=i))
 
         return results
+
+    def _resolve_selection_tiles(self) -> set[tuple[int, int, int]]:
+        """Resolve currently active selection tiles from parent/editor/session."""
+        candidates = [self.parent()]
+
+        parent = self.parent()
+        if parent is not None:
+            candidates.extend(
+                candidate
+                for candidate in (
+                    getattr(parent, "session", None),
+                    getattr(parent, "_editor", None),
+                )
+                if candidate is not None
+            )
+
+        resolved: set[tuple[int, int, int]] = set()
+        for candidate in candidates:
+            getter = getattr(candidate, "get_selection_tiles", None)
+            if not callable(getter):
+                continue
+
+            try:
+                tiles = getter()
+            except Exception:
+                continue
+
+            if not isinstance(tiles, set):
+                try:
+                    tiles = set(tiles)
+                except Exception:
+                    continue
+
+            for key in tiles:
+                if not isinstance(key, tuple) or len(key) != 3:
+                    continue
+                resolved.add((int(key[0]), int(key[1]), int(key[2])))
+
+            if resolved:
+                break
+
+        return resolved
 
     def _item_matches(self, item: Item, filters: SearchFilters) -> bool:
         """Check if an item matches search filters.

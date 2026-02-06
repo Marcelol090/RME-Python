@@ -6,9 +6,14 @@ pytest.importorskip("PyQt6")
 
 from PyQt6.QtWidgets import QApplication
 
+from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.data.item import Item
+from py_rme_canary.core.data.tile import Tile
 from py_rme_canary.logic_layer.asset_manager import AssetManager
+from py_rme_canary.logic_layer.brush_definitions import BrushManager
 from py_rme_canary.logic_layer.context_menu_handlers import ContextMenuActionHandlers
+from py_rme_canary.logic_layer.session.action_queue import ActionType
+from py_rme_canary.logic_layer.session.editor import EditorSession
 
 
 class _DummyStatus:
@@ -97,3 +102,73 @@ def test_find_and_replace_actions_use_editor_callbacks(app) -> None:
     assert editor.find_item_id == 321
     assert editor.quick_replace_source_id == 321
     assert editor.replace_dialog_opened is True
+
+
+def _make_session_with_single_item(item_id: int = 2050) -> tuple[EditorSession, Tile]:
+    game_map = GameMap(header=MapHeader(otbm_version=2, width=64, height=64))
+    tile = Tile(x=10, y=10, z=7, items=[Item(id=int(item_id))])
+    game_map.set_tile(tile)
+    session = EditorSession(game_map=game_map, brush_manager=BrushManager())
+    return session, tile
+
+
+def test_rotate_item_is_transactional(app) -> None:
+    session, tile = _make_session_with_single_item(item_id=2050)
+    handlers = ContextMenuActionHandlers(editor_session=session)
+
+    handlers.rotate_item(tile.items[0], tile, (10, 10, 7))
+
+    updated = session.game_map.get_tile(10, 10, 7)
+    assert updated is not None
+    assert updated.items and int(updated.items[0].id) == 2051
+    latest = session.action_queue.latest()
+    assert latest is not None
+    assert latest.type == ActionType.PAINT
+
+    session.undo()
+    reverted = session.game_map.get_tile(10, 10, 7)
+    assert reverted is not None
+    assert reverted.items and int(reverted.items[0].id) == 2050
+
+
+def test_delete_item_is_transactional(app) -> None:
+    session, tile = _make_session_with_single_item(item_id=321)
+    handlers = ContextMenuActionHandlers(editor_session=session)
+
+    handlers.delete_item(tile.items[0], tile, (10, 10, 7))
+
+    updated = session.game_map.get_tile(10, 10, 7)
+    assert updated is not None
+    assert updated.items == []
+    latest = session.action_queue.latest()
+    assert latest is not None
+    assert latest.type == ActionType.PAINT
+
+    session.undo()
+    reverted = session.game_map.get_tile(10, 10, 7)
+    assert reverted is not None
+    assert reverted.items and int(reverted.items[0].id) == 321
+
+
+def test_edit_item_text_is_transactional(app, monkeypatch) -> None:
+    session, tile = _make_session_with_single_item(item_id=777)
+    session.game_map.set_tile(Tile(x=10, y=10, z=7, items=[Item(id=777, text="old")]))
+    tile = session.game_map.get_tile(10, 10, 7)
+    assert tile is not None
+
+    handlers = ContextMenuActionHandlers(editor_session=session)
+    monkeypatch.setattr(
+        "py_rme_canary.logic_layer.context_menu_handlers.QInputDialog.getMultiLineText",
+        lambda *args, **kwargs: ("new text", True),
+    )
+
+    handlers.edit_item_text(tile.items[0], tile, (10, 10, 7))
+
+    updated = session.game_map.get_tile(10, 10, 7)
+    assert updated is not None
+    assert updated.items and updated.items[0].text == "new text"
+
+    session.undo()
+    reverted = session.game_map.get_tile(10, 10, 7)
+    assert reverted is not None
+    assert reverted.items and reverted.items[0].text == "old"

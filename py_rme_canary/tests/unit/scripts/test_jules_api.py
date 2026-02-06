@@ -47,7 +47,7 @@ def test_jules_client_action_methods_paths(monkeypatch) -> None:
     assert captured[0][0] == "POST"
     assert captured[0][1] == "sessions/abc123:approvePlan"
     assert captured[1][1] == "sessions/abc123:sendMessage"
-    assert captured[1][2] == {"message": "continue"}
+    assert captured[1][2] == {"prompt": "continue"}
 
 
 def test_get_latest_activity_falls_back_to_activities_list(monkeypatch) -> None:

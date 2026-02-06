@@ -271,7 +271,7 @@ class JulesClient:
         text = str(message).strip()
         if not text:
             raise ValueError("Message is empty.")
-        return self._request("POST", f"{normalized}:sendMessage", payload={"message": text})
+        return self._request("POST", f"{normalized}:sendMessage", payload={"prompt": text})
 
     def source_exists(self, source_name: str) -> bool:
         normalized = normalize_source(source_name)

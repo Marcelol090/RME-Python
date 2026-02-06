@@ -173,6 +173,47 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "menu_find_on_map"):
         m_search.addSeparator()
         m_search.addMenu(editor.menu_find_on_map)
+    if any(
+        hasattr(editor, action_name)
+        for action_name in (
+            "act_find_unique_map",
+            "act_find_action_map",
+            "act_find_container_map",
+            "act_find_writeable_map",
+            "act_find_unique_selection",
+            "act_find_action_selection",
+            "act_find_container_selection",
+            "act_find_writeable_selection",
+        )
+    ):
+        m_search.addSeparator()
+        m_advanced_item_find = m_search.addMenu("Advanced Item Find")
+        if hasattr(editor, "act_find_unique_map"):
+            m_advanced_item_find.addAction(editor.act_find_unique_map)
+        if hasattr(editor, "act_find_action_map"):
+            m_advanced_item_find.addAction(editor.act_find_action_map)
+        if hasattr(editor, "act_find_container_map"):
+            m_advanced_item_find.addAction(editor.act_find_container_map)
+        if hasattr(editor, "act_find_writeable_map"):
+            m_advanced_item_find.addAction(editor.act_find_writeable_map)
+        if any(
+            hasattr(editor, action_name)
+            for action_name in (
+                "act_find_unique_selection",
+                "act_find_action_selection",
+                "act_find_container_selection",
+                "act_find_writeable_selection",
+            )
+        ):
+            m_advanced_item_find.addSeparator()
+            if hasattr(editor, "act_find_unique_selection"):
+                m_advanced_item_find.addAction(editor.act_find_unique_selection)
+            if hasattr(editor, "act_find_action_selection"):
+                m_advanced_item_find.addAction(editor.act_find_action_selection)
+            if hasattr(editor, "act_find_container_selection"):
+                m_advanced_item_find.addAction(editor.act_find_container_selection)
+            if hasattr(editor, "act_find_writeable_selection"):
+                m_advanced_item_find.addAction(editor.act_find_writeable_selection)
 
     m_selection = mb.addMenu("Selection")
     editor.menu_selection = m_selection
@@ -180,6 +221,14 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_selection.addAction(editor.act_replace_items_on_selection)
     if hasattr(editor, "act_remove_item_on_selection"):
         m_selection.addAction(editor.act_remove_item_on_selection)
+    if hasattr(editor, "act_find_unique_selection"):
+        m_selection.addAction(editor.act_find_unique_selection)
+    if hasattr(editor, "act_find_action_selection"):
+        m_selection.addAction(editor.act_find_action_selection)
+    if hasattr(editor, "act_find_container_selection"):
+        m_selection.addAction(editor.act_find_container_selection)
+    if hasattr(editor, "act_find_writeable_selection"):
+        m_selection.addAction(editor.act_find_writeable_selection)
     if hasattr(editor, "act_clear_selection"):
         m_selection.addAction(editor.act_clear_selection)
     if hasattr(editor, "act_delete_selection"):

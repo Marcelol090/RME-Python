@@ -187,31 +187,18 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             return
 
         try:
+            from py_rme_canary.logic_layer.context_menu_handlers import ContextMenuActionHandlers
             from py_rme_canary.vis_layer.ui.menus.context_menus import ItemContextMenu
 
-            menu = ItemContextMenu(self)
-
-            def _set_find() -> None:
-                editor._set_quick_replace_source(int(item.id))
-
-            def _set_replace() -> None:
-                editor._set_quick_replace_target(int(item.id))
-
-            def _find_all() -> None:
-                editor._find_item_by_id(int(item.id))
-
-            def _replace_all() -> None:
-                editor._set_quick_replace_source(int(item.id))
-                editor._open_replace_items_dialog()
-
-            menu.set_callbacks(
-                {
-                    "set_find": _set_find,
-                    "set_replace": _set_replace,
-                    "find_all": _find_all,
-                    "replace_all": _replace_all,
-                }
+            handlers = ContextMenuActionHandlers(
+                editor_session=getattr(editor, "session", None),
+                canvas=self,
+                palette=getattr(editor, "palettes", None),
             )
+            callbacks = handlers.get_item_context_callbacks(item=item, tile=tile, position=(int(x), int(y), int(z)))
+
+            menu = ItemContextMenu(self)
+            menu.set_callbacks(callbacks)
             menu.show_for_item(item, tile)
         except Exception:
             return
