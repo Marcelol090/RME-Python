@@ -544,9 +544,13 @@ class ContextMenuActionHandlers:
             ):
                 self._show_status(f"[Browse Tile] Tile updated at {position[0]}, {position[1]}, {position[2]}")
             else:
-                self._show_status(f"[Browse Tile] Unable to commit changes at {position[0]}, {position[1]}, {position[2]}")
+                self._show_status(
+                    f"[Browse Tile] Unable to commit changes at {position[0]}, {position[1]}, {position[2]}"
+                )
 
-    def open_item_properties(self, item: Item, tile: Tile | None = None, position: tuple[int, int, int] | None = None) -> None:
+    def open_item_properties(
+        self, item: Item, tile: Tile | None = None, position: tuple[int, int, int] | None = None
+    ) -> None:
         """Open item properties with the best available UI."""
         if tile is not None and position is not None:
             self.browse_tile(tile, position)
@@ -609,7 +613,9 @@ class ContextMenuActionHandlers:
 
         self._show_status(f"[Delete] Unable to commit removal for item {int(item.id)}")
 
-    def edit_item_text(self, item: Item, tile: Tile | None = None, position: tuple[int, int, int] | None = None) -> None:
+    def edit_item_text(
+        self, item: Item, tile: Tile | None = None, position: tuple[int, int, int] | None = None
+    ) -> None:
         """Edit text attribute transactionally."""
         if tile is None or position is None:
             self._show_status("[Edit Text] Missing tile context.")

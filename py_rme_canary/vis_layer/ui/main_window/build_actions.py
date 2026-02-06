@@ -616,10 +616,14 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_find_house.triggered.connect(lambda _c=False: find_item.open_find_dialog(editor, "house"))
 
     editor.act_find_unique_map = QAction("Find Unique (Map)", editor)
-    editor.act_find_unique_map.triggered.connect(lambda _c=False: find_item.open_find_unique(editor, selection_only=False))
+    editor.act_find_unique_map.triggered.connect(
+        lambda _c=False: find_item.open_find_unique(editor, selection_only=False)
+    )
 
     editor.act_find_action_map = QAction("Find Action (Map)", editor)
-    editor.act_find_action_map.triggered.connect(lambda _c=False: find_item.open_find_action(editor, selection_only=False))
+    editor.act_find_action_map.triggered.connect(
+        lambda _c=False: find_item.open_find_action(editor, selection_only=False)
+    )
 
     editor.act_find_container_map = QAction("Find Container (Map)", editor)
     editor.act_find_container_map.triggered.connect(
