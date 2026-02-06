@@ -19,7 +19,7 @@ jobs:
     if: ${{ github.event.label.name == 'jules' && contains(fromJSON('["Marcelol090"]'), github.event.issue.user.login) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: google-labs-code/jules-invoke@v1
+      - uses: google-labs-code/jules-action@v1.0.0
         with:
           prompt: |
             You are a coding agent. Work on this GitHub issue:
