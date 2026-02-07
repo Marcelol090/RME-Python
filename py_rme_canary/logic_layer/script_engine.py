@@ -556,14 +556,35 @@ class ScriptSecurityChecker(ast.NodeVisitor):
         # Check for dangerous built-in calls
         if isinstance(node.func, ast.Name):
             name = node.func.id
-            dangerous = {"eval", "exec", "compile", "open", "__import__", "getattr", "setattr", "delattr"}
+            dangerous = {
+                "eval",
+                "exec",
+                "compile",
+                "open",
+                "__import__",
+                "getattr",
+                "setattr",
+                "delattr",
+                "format",
+            }
             if name in dangerous:
                 self.errors.append(f"Forbidden function: {name}")
+        # Also catch method calls like "{}".format()
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
+            self.errors.append("Forbidden method call: format")
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         # Check for dangerous attribute access
-        dangerous_attrs = {"__class__", "__bases__", "__subclasses__", "__code__", "__globals__"}
+        dangerous_attrs = {
+            "__class__",
+            "__bases__",
+            "__subclasses__",
+            "__code__",
+            "__globals__",
+            "__dict__",
+            "__builtins__",
+        }
         if node.attr in dangerous_attrs:
             self.errors.append(f"Forbidden attribute access: {node.attr}")
         self.generic_visit(node)
