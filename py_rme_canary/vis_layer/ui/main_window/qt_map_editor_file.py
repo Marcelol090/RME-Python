@@ -7,9 +7,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtGui import QDesktopServices
-from PyQt6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox, QProgressDialog
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.io.creatures_xml import clear_creature_name_cache
@@ -77,70 +77,95 @@ class QtMapEditorFileMixin:
         if not path:
             return
         logger.info("Opening map: %s", path)
+        progress = QProgressDialog("Opening map...", "Cancel", 0, 6, self)
+        progress.setWindowTitle("Open Map")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setAutoClose(True)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
 
-        det = detect_map_file(path)
-        if det.kind == "canary_json":
-            QMessageBox.information(
-                self,
-                "Detected Canary",
-                f"Detected Canary JSON map (reason: {det.reason}).\n\n"
-                "This editor currently loads OTBM maps. Use a project wrapper JSON to point to an .otbm, "
-                "or export/convert the map to OTBM.",
-            )
-            return
-        if det.kind == "otml_xml":
-            QMessageBox.information(
-                self,
-                "Detected OTML/XML",
-                f"Detected OTML/XML map (engine={det.engine}, reason: {det.reason}).\n\n"
-                "This editor currently loads OTBM maps only.",
-            )
-            return
-        if det.kind not in ("otbm", "project_json"):
-            QMessageBox.warning(
-                self, "Unknown map", f"Could not detect a supported map format.\n\nReason: {det.reason}"
-            )
-            return
+        def advance(step: int, message: str) -> None:
+            progress.setLabelText(message)
+            progress.setValue(int(step))
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                raise RuntimeError("Map loading canceled by user.")
 
         try:
+            advance(1, "Detecting map format...")
+            det = detect_map_file(path)
+            if det.kind == "canary_json":
+                QMessageBox.information(
+                    self,
+                    "Detected Canary",
+                    f"Detected Canary JSON map (reason: {det.reason}).\n\n"
+                    "This editor currently loads OTBM maps. Use a project wrapper JSON to point to an .otbm, "
+                    "or export/convert the map to OTBM.",
+                )
+                return
+            if det.kind == "otml_xml":
+                QMessageBox.information(
+                    self,
+                    "Detected OTML/XML",
+                    f"Detected OTML/XML map (engine={det.engine}, reason: {det.reason}).\n\n"
+                    "This editor currently loads OTBM maps only.",
+                )
+                return
+            if det.kind not in ("otbm", "project_json"):
+                QMessageBox.warning(
+                    self, "Unknown map", f"Could not detect a supported map format.\n\nReason: {det.reason}"
+                )
+                return
+
+            advance(2, "Reading map file and translating IDs...")
             loader = OTBMLoader()
             gm = loader.load_with_detection(path)
+
+            advance(3, "Creating editor session...")
+            self.current_path = loader.last_otbm_path or path
+            self.map = gm
+            self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+            self.apply_ui_state_to_session()
+            self.viewport.origin_x = 0
+            self.viewport.origin_y = 0
+            self._set_id_mapper(loader.last_id_mapper)
+
+            advance(4, "Applying map context and assets...")
+            md = (gm.load_report or {}).get("metadata") or {}
+            self._apply_detected_context(md)
+            src = md.get("source") or "unknown"
+
+            advance(5, "Finalizing project metadata...")
+            if det.kind == "otbm" and loader.last_config is not None and loader.last_otbm_path is not None:
+                self._maybe_write_default_project_json(
+                    opened_otbm_path=str(loader.last_otbm_path),
+                    cfg=loader.last_config,
+                )
+
+            advance(6, "Refreshing viewport and palettes...")
+            self._update_status_capabilities(prefix=f"Loaded: {self.current_path} | source={src}")
+            with contextlib.suppress(Exception):
+                self.palettes.refresh_primary_list()
+            self.canvas.update()
+
+            try:
+                report = gm.load_report or {}
+                warnings = report.get("warnings") or []
+                dyn = report.get("dynamic_id_conversions") or {}
+                logger.warning(
+                    "Load report: warnings=%s unknown_ids=%s dynamic_conversions=%s",
+                    len(warnings),
+                    report.get("unknown_ids_count"),
+                    dyn,
+                )
+            except Exception:
+                logger.exception("Failed to log load report")
+
         except Exception as e:
             QMessageBox.critical(self, "Open failed", str(e))
             logger.exception("Open map failed")
-            return
-
-        self.current_path = loader.last_otbm_path or path
-        self.map = gm
-        self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
-        self.apply_ui_state_to_session()
-        self.viewport.origin_x = 0
-        self.viewport.origin_y = 0
-        self.id_mapper = loader.last_id_mapper
-
-        md = (gm.load_report or {}).get("metadata") or {}
-        self._apply_detected_context(md)
-        src = md.get("source") or "unknown"
-
-        # C) Auto-generate wrapper when opening a bare .otbm
-        if det.kind == "otbm" and loader.last_config is not None and loader.last_otbm_path is not None:
-            self._maybe_write_default_project_json(opened_otbm_path=str(loader.last_otbm_path), cfg=loader.last_config)
-
-        self._update_status_capabilities(prefix=f"Loaded: {self.current_path} | source={src}")
-        self.canvas.update()
-
-        try:
-            report = gm.load_report or {}
-            warnings = report.get("warnings") or []
-            dyn = report.get("dynamic_id_conversions") or {}
-            logger.warning(
-                "Load report: warnings=%s unknown_ids=%s dynamic_conversions=%s",
-                len(warnings),
-                report.get("unknown_ids_count"),
-                dyn,
-            )
-        except Exception:
-            logger.exception("Failed to log load report")
+        finally:
+            progress.close()
 
     def _save_as(self: QtMapEditor) -> None:
         path, _ = QFileDialog.getSaveFileName(self, "Save OTBM As", "", "OTBM (*.otbm);;All Files (*)")

@@ -235,6 +235,7 @@ class MapCanvasWidget(QWidget):
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
+        drawer.client_id_resolver = lambda sid: editor._client_id_for_server_id(int(sid))
         self._sync_hover_to_drawer(drawer)
         with contextlib.suppress(Exception):
             drawer.set_live_cursors(editor.session.get_live_cursor_overlays())

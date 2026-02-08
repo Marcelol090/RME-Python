@@ -160,6 +160,7 @@ class DrawingOptions:
     show_as_minimap: bool = False
     show_only_colors: bool = False
     show_only_modified: bool = False
+    show_client_ids: bool = False
 
     # Lights
     show_lights: bool = False
@@ -209,6 +210,7 @@ class DrawingOptions:
         self.show_as_minimap = False
         self.show_only_colors = False
         self.show_only_modified = False
+        self.show_client_ids = False
         self.show_preview = False
         self.show_hooks = False
         self.show_pickupables = False
@@ -249,6 +251,7 @@ class DrawingOptions:
         self.show_as_minimap = False
         self.show_only_colors = False
         self.show_only_modified = False
+        self.show_client_ids = False
         self.show_preview = False
         self.show_hooks = False
         self.show_pickupables = False

@@ -148,6 +148,7 @@ class QtMapEditor(
     act_show_loose_items: QAction
     act_ghost_higher_floors: QAction
     act_show_client_box: QAction
+    act_show_client_ids: QAction
     act_show_grid: QAction
     act_highlight_items: QAction
     act_show_monsters: QAction
@@ -171,6 +172,7 @@ class QtMapEditor(
     act_show_lights: QAction
     act_show_indicators_simple: QAction
     act_manage_client_profiles: QAction
+    act_load_client_data_stack: QAction
     act_set_assets_dir: QAction
     act_goto_position: QAction
     act_goto_previous_position: QAction
@@ -330,23 +332,6 @@ class QtMapEditor(
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
 
-        # Initialize AssetManager with IdMapper (e.g. from items.otb)
-        try:
-            from py_rme_canary.core.database.id_mapper import IdMapper
-            from py_rme_canary.core.database.items_otb import ItemsOTB
-            from py_rme_canary.logic_layer.asset_manager import AssetManager
-
-            otb_path = os.path.join("data", "items", "items.otb")
-            if os.path.exists(otb_path):
-                items_otb = ItemsOTB.load(otb_path)
-                self.id_mapper = IdMapper.from_items_otb(items_otb)
-                AssetManager.instance().set_id_mapper(self.id_mapper)
-                logger.info("Loaded ID Mapper from %s", otb_path)
-            else:
-                logger.warning("items.otb not found at %s, sprites may not match correct IDs", otb_path)
-        except Exception as e:
-            logger.error("Failed to load ID Mapper: %s", e)
-
         self.viewport = Viewport()
         self.current_path: str | None = None
 
@@ -402,6 +387,7 @@ class QtMapEditor(
         self.show_loose_items: bool = False
         self.ghost_higher_floors: bool = False
         self.show_client_box: bool = False
+        self.show_client_ids: bool = False
         self.show_lights: bool = False
         self.highlight_items: bool = False
 
@@ -574,6 +560,7 @@ class QtMapEditor(
         self.apply_ui_state_to_session()
         self.act_ghost_higher_floors.setChecked(bool(self.ghost_higher_floors))
         self.act_show_client_box.setChecked(bool(self.show_client_box))
+        self.act_show_client_ids.setChecked(bool(self.show_client_ids))
         self.act_highlight_items.setChecked(bool(self.highlight_items))
 
         self.act_show_monsters.setChecked(bool(self.show_monsters))
@@ -601,6 +588,13 @@ class QtMapEditor(
             self.act_toggle_dark_mode.blockSignals(True)
             self.act_toggle_dark_mode.setChecked(True)
             self.act_toggle_dark_mode.blockSignals(False)
+
+        try:
+            warnings = self._reload_item_definitions_for_current_context(source="startup")
+            if warnings:
+                logger.warning(" | ".join(warnings))
+        except Exception:
+            logger.exception("Failed to initialize item definitions at startup")
 
         self._enable_action_logging()
 

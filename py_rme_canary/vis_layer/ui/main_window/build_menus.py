@@ -280,6 +280,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_view.addAction(editor.act_zoom_normal)
     m_view.addSeparator()
     m_view.addAction(editor.act_show_grid)
+    if hasattr(editor, "act_show_client_ids"):
+        m_view.addAction(editor.act_show_client_ids)
     if hasattr(editor, "act_ingame_preview"):
         m_view.addAction(editor.act_ingame_preview)
 
@@ -297,6 +299,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "act_manage_client_profiles"):
         m_assets.addAction(editor.act_manage_client_profiles)
         m_assets.addSeparator()
+    if hasattr(editor, "act_load_client_data_stack"):
+        m_assets.addAction(editor.act_load_client_data_stack)
     m_assets.addAction(editor.act_set_assets_dir)
     if hasattr(editor, "act_load_appearances"):
         m_assets.addAction(editor.act_load_appearances)
@@ -342,6 +346,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_window.addAction(editor.act_show_loose_items)
     m_window.addAction(editor.act_ghost_higher_floors)
     m_window.addAction(editor.act_show_client_box)
+    if hasattr(editor, "act_show_client_ids"):
+        m_window.addAction(editor.act_show_client_ids)
 
     # Lights submenu (placeholder action can be swapped for a richer group later)
     m_lights = m_window.addMenu("Lights")

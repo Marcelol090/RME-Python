@@ -7,8 +7,7 @@ Provides configuration UI with tabs: General, Editor, Graphics, Interface, Clien
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -64,7 +63,7 @@ class PreferencesDialog(QDialog):
         # Create tabs
         self._tabs = QTabWidget(self)
         self._tabs.addTab(self._create_general_page(), "General")
-        self._tabs.addTab(self._create_editor_page(), "Editor")
+        self._tabs.addTab(self._create_editor_page(), "Editing")
         self._tabs.addTab(self._create_graphics_page(), "Graphics")
         self._tabs.addTab(self._create_ui_page(), "Interface")
         self._tabs.addTab(self._create_client_page(), "Client Folder")

@@ -128,6 +128,47 @@ def test_creature_names_drawn_when_enabled() -> None:
     assert any("Tom" in t for t in texts)
 
 
+def test_client_id_overlay_uses_item_client_id_when_enabled() -> None:
+    opts = DrawingOptions()
+    opts.show_grid = 0
+    opts.show_shade = False
+    opts.show_client_ids = True
+    tile = Tile(
+        x=0,
+        y=0,
+        z=7,
+        ground=Item(id=101, client_id=301),
+        items=[Item(id=202, client_id=4040)],
+    )
+    drawer = MapDrawer(options=opts, game_map=_DummyMap(tile=tile))
+    _setup_viewport(drawer, width=32, height=32, z=7, tile_px=32)
+    backend = _OverlayBackend()
+    drawer.draw(backend)
+    texts = [t[2] for t in backend.text_calls]
+    assert "4040" in texts
+
+
+def test_client_id_overlay_uses_resolver_when_item_lacks_client_id() -> None:
+    opts = DrawingOptions()
+    opts.show_grid = 0
+    opts.show_shade = False
+    opts.show_client_ids = True
+    tile = Tile(
+        x=0,
+        y=0,
+        z=7,
+        ground=Item(id=101),
+        items=[Item(id=5000)],
+    )
+    drawer = MapDrawer(options=opts, game_map=_DummyMap(tile=tile))
+    drawer.client_id_resolver = lambda server_id: {5000: 35023}.get(int(server_id))
+    _setup_viewport(drawer, width=32, height=32, z=7, tile_px=32)
+    backend = _OverlayBackend()
+    drawer.draw(backend)
+    texts = [t[2] for t in backend.text_calls]
+    assert "35023" in texts
+
+
 def test_highlight_tile_draws_selection_rect() -> None:
     opts = DrawingOptions()
     opts.show_grid = 0

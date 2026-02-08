@@ -13,6 +13,11 @@ set -Eeuo pipefail
 
 export PYTHONUTF8=1
 export TERM="${TERM:-xterm-256color}"
+if [[ -n "${PYTHON_BIN+x}" ]]; then
+  PYTHON_BIN_USER_SET=true
+else
+  PYTHON_BIN_USER_SET=false
+fi
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
 # Windows PATH setup for Python scripts
@@ -83,12 +88,10 @@ SKIP_DEADCODE=false
 SKIP_UI_TESTS=false
 SKIP_JULES=false
 VERBOSE=false
-FULL_MODE=false
 NO_CACHE=false
 PARALLEL_JOBS="$(nproc 2>/dev/null || echo 4)"
 TOOL_TIMEOUT=3600
 ENABLE_TELEMETRY=false
-PARALLEL_AVAILABLE=false
 
 #############################################
 # CORES PARA OUTPUT
@@ -165,7 +168,7 @@ while [[ $# -gt 0 ]]; do
     --skip-ui-tests) SKIP_UI_TESTS=true ;;
     --skip-jules) SKIP_JULES=true ;;
     --verbose) VERBOSE=true ;;
-    --full) FULL_MODE=true ;;
+    --full) : ;;
     --no-cache) NO_CACHE=true ;;
     --jobs) shift; PARALLEL_JOBS="$1" ;;
     --timeout) shift; TOOL_TIMEOUT="$1" ;;
@@ -216,7 +219,8 @@ end_timer() {
   local start_time="${TOOL_TIMES[${tool_name}_start]}"
 
   if [[ -n "$start_time" ]]; then
-    local end_time=$(date +%s)
+    local end_time
+    end_time=$(date +%s)
     local duration=$((end_time - start_time))
     TOOL_TIMES["${tool_name}_duration"]=$duration
 
@@ -259,10 +263,8 @@ run_with_timeout() {
 
 # Prefer uv when available for faster installs
 if command -v uv &>/dev/null; then
-  PYTHON_INSTALL_CMD="uv pip install"
   log INFO "Usando uv (fast mode)"
 else
-  PYTHON_INSTALL_CMD="pip install"
   log INFO "Usando pip (standard mode)"
 fi
 
@@ -274,11 +276,27 @@ require() {
   local cmd="$1"
   local install_hint="${2:-}"
 
-  # Prefer python3 in Unix-like shells when `python` alias is absent.
-  if [[ "$cmd" == "python" ]] && command -v python3 &>/dev/null; then
-    PYTHON_BIN="python3"
-    log DEBUG "python resolvido para: $(command -v python3)"
-    return 0
+  if [[ "$cmd" == "python" ]]; then
+    # In Git Bash/MSYS on Windows, prefer python.exe to avoid older /usr/bin/python3.
+    if [[ "$PYTHON_BIN_USER_SET" != true ]] && [[ "${OS:-}" == "Windows_NT" || "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then
+      if command -v python.exe &>/dev/null; then
+        PYTHON_BIN="python.exe"
+        log DEBUG "python resolvido para: $(command -v python.exe)"
+        return 0
+      fi
+    fi
+
+    if command -v "$PYTHON_BIN" &>/dev/null; then
+      log DEBUG "python resolvido para: $(command -v "$PYTHON_BIN")"
+      return 0
+    fi
+
+    # Prefer python3 in Unix-like shells only when user did not explicitly choose PYTHON_BIN.
+    if [[ "$PYTHON_BIN_USER_SET" != true ]] && command -v python3 &>/dev/null; then
+      PYTHON_BIN="python3"
+      log DEBUG "python resolvido para: $(command -v python3)"
+      return 0
+    fi
   fi
 
   if command -v "$cmd" &>/dev/null; then
@@ -311,14 +329,26 @@ check_dependencies() {
   require python "https://python.org" || ((missing++))
   require git "apt install git / brew install git" || ((missing++))
 
-  # Ferramentas de qualidade (instaláveis via pip)
-  require ruff "pip install ruff" || true
-  require mypy "pip install mypy" || true
-  require radon "pip install radon" || true
+  # Ferramentas de qualidade (preferir python -m para respeitar PYTHON_BIN)
+  if ! "$PYTHON_BIN" -m ruff --version &>/dev/null 2>&1; then
+    log WARN "Dependência opcional ausente: ruff"
+    log INFO "  Instalação: pip install ruff"
+  fi
+  if ! "$PYTHON_BIN" -m mypy --version &>/dev/null 2>&1; then
+    log WARN "Dependência opcional ausente: mypy"
+    log INFO "  Instalação: pip install mypy"
+  fi
+  if ! "$PYTHON_BIN" -m radon --version &>/dev/null 2>&1; then
+    log WARN "Dependência opcional ausente: radon"
+    log INFO "  Instalação: pip install radon"
+  fi
 
   # Ferramentas de segurança
   if [[ "$SKIP_SECURITY" == false ]]; then
-    require bandit "pip install bandit" || log WARN "Bandit não encontrado - análise de segurança parcial"
+    if ! "$PYTHON_BIN" -m bandit --version &>/dev/null 2>&1; then
+      log WARN "Bandit não encontrado - análise de segurança parcial"
+      log INFO "  Instalação: pip install bandit"
+    fi
 
     # Safety para vulnerabilidades em dependências
     if ! "$PYTHON_BIN" -m safety --version &>/dev/null 2>&1; then
@@ -359,7 +389,6 @@ check_dependencies() {
 
   # GNU Parallel para execução paralela
   if command -v parallel &>/dev/null; then
-    PARALLEL_AVAILABLE=true
     log INFO "GNU Parallel disponível"
   else
     log DEBUG "GNU Parallel não encontrado - execução sequencial"
@@ -484,7 +513,7 @@ _compute_source_hash() {
       for target in "${hash_targets[@]}"; do
         [[ -n "$target" ]] || continue
         if [[ "$target" == "$ROOT_DIR"* ]]; then
-          target="${target#$ROOT_DIR/}"
+          target="${target#"$ROOT_DIR"/}"
         fi
         git_targets+=("$target")
       done
@@ -623,15 +652,15 @@ run_ruff() {
 
   if [[ "$MODE" == "dry-run" ]]; then
     run_with_timeout "$TOOL_TIMEOUT" "ruff-check" \
-      ruff check "${SCAN_TARGETS[@]}" --select "$ruff_select" --config "$RUFF_CONFIG" --exit-zero --output-format=json \
+      "$PYTHON_BIN" -m ruff check "${SCAN_TARGETS[@]}" --select "$ruff_select" --config "$RUFF_CONFIG" --exit-zero --output-format=json \
       > "$output_file" 2>/dev/null || true
   else
     log INFO "Aplicando correções automáticas..."
     run_with_timeout "$TOOL_TIMEOUT" "ruff-check-fix" \
-      ruff check "${SCAN_TARGETS[@]}" --select "$ruff_select" --config "$RUFF_CONFIG" --fix --exit-zero --output-format=json \
+      "$PYTHON_BIN" -m ruff check "${SCAN_TARGETS[@]}" --select "$ruff_select" --config "$RUFF_CONFIG" --fix --exit-zero --output-format=json \
       > "$output_file" 2>/dev/null || true
     log INFO "Formatando código..."
-    run_with_timeout "$TOOL_TIMEOUT" "ruff-format" ruff format "${SCAN_TARGETS[@]}" --config "$RUFF_CONFIG" 2>/dev/null || true
+    run_with_timeout "$TOOL_TIMEOUT" "ruff-format" "$PYTHON_BIN" -m ruff format "${SCAN_TARGETS[@]}" --config "$RUFF_CONFIG" 2>/dev/null || true
   fi
 
   local issue_count
@@ -655,6 +684,22 @@ run_mypy() {
   start_timer "Mypy"
   log INFO "Executando Mypy (type checking)..."
   local cache_key="mypy_${MODE}"
+  local py_version
+  py_version="$("$PYTHON_BIN" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "0.0")"
+  local py_major="${py_version%%.*}"
+  local py_minor="${py_version#*.}"
+
+  if [[ "$py_major" -lt 3 ]] || [[ "$py_major" -eq 3 && "$py_minor" -lt 12 ]]; then
+    cat > "$output_file" <<EOF
+Mypy skipped: Python >= 3.12 required by project syntax.
+Resolved interpreter: $PYTHON_BIN ($py_version)
+Tip: run with PYTHON_BIN=<python-3.12-bin> for full type checking.
+EOF
+    log WARN "Mypy pulado: Python >= 3.12 requerido (atual: $py_version)"
+    cache_mark "$cache_key"
+    end_timer "Mypy"
+    return 0
+  fi
 
   if cache_hit "$cache_key" "$output_file"; then
     local cached_errors
@@ -685,7 +730,7 @@ run_mypy() {
 
   # shellcheck disable=SC2086
   if run_with_timeout "$TOOL_TIMEOUT" "mypy" \
-    mypy $mypy_targets \
+    "$PYTHON_BIN" -m mypy $mypy_targets \
     --config-file "$MYPY_CONFIG" \
     --cache-dir "$mypy_cache" \
     --no-error-summary \
@@ -782,9 +827,9 @@ run_radon() {
   IFS=',' read -r -a radon_targets <<< "$RADON_TARGETS"
 
   run_with_timeout "$TOOL_TIMEOUT" "radon-cc" \
-    radon cc "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$output_file" 2>/dev/null || true
+    "$PYTHON_BIN" -m radon cc "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$output_file" 2>/dev/null || true
   run_with_timeout "$TOOL_TIMEOUT" "radon-mi" \
-    radon mi "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$mi_output" 2>/dev/null || true
+    "$PYTHON_BIN" -m radon mi "${radon_targets[@]}" --min B --json --exclude "$radon_excludes" > "$mi_output" 2>/dev/null || true
 
   local high_complexity
   high_complexity=$(jq --arg thresh "$RADON_CC_THRESHOLD" '[.. | objects | select(.complexity > ($thresh | tonumber))] | length' "$output_file" 2>/dev/null || echo 0)
@@ -1002,15 +1047,15 @@ run_semgrep() {
   local rules_dir="$ROOT_DIR/tools/semgrep_rules"
 
   # Usa regras customizadas se existirem, senão usa auto
-  local rule_config="--config auto"
+  local -a rule_config=("--config" "auto")
   if [[ -d "$rules_dir" ]]; then
-    rule_config="--config $rules_dir"
+    rule_config=("--config" "$rules_dir")
     log DEBUG "Usando regras customizadas de $rules_dir"
   fi
 
   # Regras para Python/Django/Flask/FastAPI
   run_with_timeout "$TOOL_TIMEOUT" "semgrep" semgrep scan \
-    $rule_config \
+    "${rule_config[@]}" \
     --json \
     --output "$output_file" \
     --exclude '.venv' \

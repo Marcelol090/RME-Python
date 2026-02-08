@@ -41,6 +41,7 @@ class UpdateChecker(QThread):
     def run(self) -> None:
         """Check for updates."""
         import json
+        import urllib.parse
         import urllib.request
 
         self.progress.emit("Connecting to update server...")
@@ -48,6 +49,9 @@ class UpdateChecker(QThread):
         try:
             # GitHub releases API (placeholder URL)
             url = "https://api.github.com/repos/Marcelol090/RME-Python/releases/latest"
+            parsed = urllib.parse.urlparse(url)
+            if parsed.scheme.lower() != "https" or parsed.netloc.lower() != "api.github.com":
+                raise ValueError(f"Unexpected update endpoint: {url}")
 
             req = urllib.request.Request(url)
             req.add_header("Accept", "application/vnd.github.v3+json")
@@ -55,7 +59,7 @@ class UpdateChecker(QThread):
 
             self.progress.emit("Checking latest version...")
 
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with urllib.request.urlopen(req, timeout=10) as response:  # nosec B310 - endpoint is fixed + validated
                 data = json.loads(response.read().decode())
 
             latest_version = data.get("tag_name", "").lstrip("v")
