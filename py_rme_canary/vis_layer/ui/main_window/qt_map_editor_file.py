@@ -22,7 +22,7 @@ from py_rme_canary.core.io.map_detection import detect_map_file
 from py_rme_canary.core.io.otbm_loader import OTBMLoader
 from py_rme_canary.core.io.otbm_saver import save_game_map_bundle_atomic
 from py_rme_canary.core.io.otmm_saver import save_otmm_atomic
-from py_rme_canary.core.io.xml.safe import safe_etree as ElementTree
+from py_rme_canary.core.io.xml.safe import safe_etree as ElementTree  # noqa: N812
 from py_rme_canary.logic_layer.editor_session import EditorSession
 from py_rme_canary.logic_layer.map_format_conversion import (
     analyze_map_format_conversion,
