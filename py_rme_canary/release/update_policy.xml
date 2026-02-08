@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updatePolicy version="1.0">
+  <channels default="stable">
+    <channel name="stable" branch="main" autoPublish="true" signatureRequired="true" rollbackDepth="1" />
+    <channel name="beta" branch="development" autoPublish="false" signatureRequired="false" rollbackDepth="2" />
+    <channel name="nightly" branch="development" autoPublish="true" signatureRequired="false" rollbackDepth="3" />
+  </channels>
+
+  <security>
+    <checksum algorithm="sha256" required="true" />
+    <signature provider="cosign" requiredFor="stable" />
+    <artifactIntegrity failClosed="true" />
+  </security>
+
+  <rollback>
+    <strategy>keep-last-known-good</strategy>
+    <preservePreviousVersion>true</preservePreviousVersion>
+    <onFailure>automatic</onFailure>
+  </rollback>
+</updatePolicy>

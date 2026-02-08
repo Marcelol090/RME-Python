@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
@@ -17,6 +18,69 @@ class QtMapEditorSessionMixin:
         raise AttributeError(name)
 
     # ---------- editor/model actions ----------
+
+    def _confirm(self, title: str, text: str) -> bool:
+        return (
+            QMessageBox.question(
+                self._as_editor(),
+                str(title),
+                str(text),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            == QMessageBox.StandardButton.Yes
+        )
+
+    def _run_guarded(self, title: str, operation: Callable[[], Any]) -> tuple[bool, Any]:
+        try:
+            return True, operation()
+        except Exception as exc:
+            QMessageBox.critical(self._as_editor(), str(title), str(exc))
+            return False, None
+
+    def _apply_action_result(
+        self,
+        *,
+        action: object | None,
+        no_changes_message: str,
+        changed_message: str,
+        refresh_actions: bool = True,
+        refresh_palettes: bool = False,
+    ) -> None:
+        if action is None:
+            self.status.showMessage(str(no_changes_message))
+        else:
+            self.status.showMessage(str(changed_message))
+            self.canvas.update()
+            if bool(refresh_palettes):
+                with contextlib.suppress(Exception):
+                    self.palettes.refresh_primary_list()
+        if bool(refresh_actions):
+            self._update_action_enabled_states()
+
+    @staticmethod
+    def _parse_prefixed_int(choice: str) -> int | None:
+        with contextlib.suppress(ValueError, TypeError, AttributeError):
+            return int(str(choice).split(":", 1)[0].strip())
+        return None
+
+    @staticmethod
+    def _collect_spawn_entry_names_at_cursor(
+        spawn_areas: list[object],
+        *,
+        entries_attr: str,
+        x: int,
+        y: int,
+        z: int,
+    ) -> list[str]:
+        from py_rme_canary.logic_layer.rust_accel import spawn_entry_names_at_cursor
+
+        return spawn_entry_names_at_cursor(
+            spawn_areas,
+            entries_attr=entries_attr,
+            x=int(x),
+            y=int(y),
+            z=int(z),
+        )
 
     def apply_ui_state_to_session(self) -> None:
         self.session.set_automagic(bool(self.automagic_cb.isChecked()))
@@ -83,18 +147,15 @@ class QtMapEditorSessionMixin:
             self.status.showMessage("Borderize selection: nothing selected")
             return
 
-        try:
-            action = self.session.borderize_selection()
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Borderize Selection", str(e))
+        ok, action = self._run_guarded("Borderize Selection", self.session.borderize_selection)
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Borderize selection: no changes")
-        else:
-            self.canvas.update()
-            self.status.showMessage("Borderize selection: done")
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Borderize selection: no changes",
+            changed_message="Borderize selection: done",
+        )
 
     def _open_border_builder(self) -> None:
         from py_rme_canary.vis_layer.ui.dialogs.border_builder_dialog import BorderBuilderDialog
@@ -145,13 +206,10 @@ class QtMapEditorSessionMixin:
         dialog.show()  # Non-modal for navigation while dialog is open
 
     def _clear_modified_state(self) -> None:
-        ret = QMessageBox.question(
-            self._as_editor(),
+        if not self._confirm(
             "Clear Modified State",
             "This will have the same effect as closing the map and opening it again. Do you want to proceed?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if ret != QMessageBox.StandardButton.Yes:
+        ):
             return
 
         cleared = int(self.session.clear_modified_state())
@@ -163,29 +221,26 @@ class QtMapEditorSessionMixin:
             self.status.showMessage("Clear invalid tiles: nothing selected")
             return
 
-        if not bool(selection_only):
-            ret = QMessageBox.question(
-                self._as_editor(),
-                "Clear Invalid Tiles (Map)",
-                "This will remove placeholder/unknown items (id=0 / unknown replacements) from the entire map. Do you want to proceed?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if ret != QMessageBox.StandardButton.Yes:
-                return
-
-        try:
-            removed, action = self.session.clear_invalid_tiles(selection_only=bool(selection_only))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Clear Invalid Tiles", str(e))
+        if not bool(selection_only) and not self._confirm(
+            "Clear Invalid Tiles (Map)",
+            "This will remove placeholder/unknown items (id=0 / unknown replacements) from the entire map. Do you want to proceed?",
+        ):
             return
 
-        if action is None:
-            self.status.showMessage("Clear invalid tiles: no changes")
-        else:
-            scope = "selection" if bool(selection_only) else "map"
-            self.status.showMessage(f"Clear invalid tiles ({scope}): removed {int(removed)} items")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        ok, result = self._run_guarded(
+            "Clear Invalid Tiles",
+            lambda: self.session.clear_invalid_tiles(selection_only=bool(selection_only)),
+        )
+        if not ok or result is None:
+            return
+        removed, action = result
+
+        scope = "selection" if bool(selection_only) else "map"
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Clear invalid tiles: no changes",
+            changed_message=f"Clear invalid tiles ({scope}): removed {int(removed)} items",
+        )
 
     def _map_remove_item_global(self) -> None:
         from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog
@@ -199,123 +254,97 @@ class QtMapEditorSessionMixin:
             self.status.showMessage("Remove item: invalid serverId")
             return
 
-        try:
-            removed, action = self.session.remove_items(server_id=int(server_id), selection_only=False)
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Remove Item", str(e))
+        ok, result = self._run_guarded(
+            "Remove Item",
+            lambda: self.session.remove_items(server_id=int(server_id), selection_only=False),
+        )
+        if not ok or result is None:
             return
+        removed, action = result
 
-        if action is None:
-            self.status.showMessage("Remove item: no changes")
-        else:
-            self.status.showMessage(f"Remove item: {int(removed)} item(s) deleted")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Remove item: no changes",
+            changed_message=f"Remove item: {int(removed)} item(s) deleted",
+        )
 
     def _map_remove_corpses(self) -> None:
-        ret = QMessageBox.question(
-            self._as_editor(),
-            "Remove Corpses",
-            "Do you want to remove all corpses from the map?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        if not self._confirm("Remove Corpses", "Do you want to remove all corpses from the map?"):
+            return
+
+        ok, result = self._run_guarded("Remove Corpses", self.session.remove_corpses)
+        if not ok or result is None:
+            return
+        removed, action = result
+
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Remove corpses: no changes",
+            changed_message=f"Remove corpses: {int(removed)} item(s) deleted",
         )
-        if ret != QMessageBox.StandardButton.Yes:
-            return
-
-        try:
-            removed, action = self.session.remove_corpses()
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Remove Corpses", str(e))
-            return
-
-        if action is None:
-            self.status.showMessage("Remove corpses: no changes")
-        else:
-            self.status.showMessage(f"Remove corpses: {int(removed)} item(s) deleted")
-            self.canvas.update()
-        self._update_action_enabled_states()
 
     def _map_remove_unreachable(self) -> None:
-        ret = QMessageBox.question(
-            self._as_editor(),
-            "Remove Unreachable Tiles",
-            "Do you want to remove all unreachable items from the map?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        if not self._confirm("Remove Unreachable Tiles", "Do you want to remove all unreachable items from the map?"):
+            return
+
+        ok, result = self._run_guarded("Remove Unreachable Tiles", self.session.remove_unreachable_tiles)
+        if not ok or result is None:
+            return
+        removed, action = result
+
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Remove unreachable: no changes",
+            changed_message=f"Remove unreachable: {int(removed)} tile(s) deleted",
         )
-        if ret != QMessageBox.StandardButton.Yes:
-            return
-
-        try:
-            removed, action = self.session.remove_unreachable_tiles()
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Remove Unreachable Tiles", str(e))
-            return
-
-        if action is None:
-            self.status.showMessage("Remove unreachable: no changes")
-        else:
-            self.status.showMessage(f"Remove unreachable: {int(removed)} tile(s) deleted")
-            self.canvas.update()
-        self._update_action_enabled_states()
 
     def _map_clear_invalid_house_tiles(self) -> None:
-        ret = QMessageBox.question(
-            self._as_editor(),
+        if not self._confirm(
             "Clear Invalid House Tiles",
             "Are you sure you want to remove all house tiles that do not belong to a house?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if ret != QMessageBox.StandardButton.Yes:
+        ):
             return
 
-        try:
-            result, action = self.session.clear_invalid_house_tiles()
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Clear Invalid House Tiles", str(e))
+        ok, payload = self._run_guarded("Clear Invalid House Tiles", self.session.clear_invalid_house_tiles)
+        if not ok or payload is None:
             return
+        result, action = payload
 
-        if action is None:
-            self.status.showMessage("Clear invalid house tiles: no changes")
-        else:
-            self.status.showMessage(
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Clear invalid house tiles: no changes",
+            changed_message=(
                 "Clear invalid house tiles: "
                 f"removed {int(result.houses_removed)} house definition(s), "
                 f"cleared {int(result.tile_refs_cleared)} tile ref(s)"
-            )
-            self.canvas.update()
-        self._update_action_enabled_states()
+            ),
+        )
 
     def _randomize(self, *, selection_only: bool) -> None:
         if bool(selection_only) and not self.session.has_selection():
             self.status.showMessage("Randomize: nothing selected")
             return
 
-        if not bool(selection_only):
-            ret = QMessageBox.question(
-                self._as_editor(),
-                "Randomize (Map)",
-                "This will randomize ground tiles across the entire map for brushes that define randomize_ids. Do you want to proceed?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if ret != QMessageBox.StandardButton.Yes:
-                return
-
-        try:
-            if bool(selection_only):
-                changed, action = self.session.randomize_selection()
-            else:
-                changed, action = self.session.randomize_map()
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Randomize", str(e))
+        if not bool(selection_only) and not self._confirm(
+            "Randomize (Map)",
+            "This will randomize ground tiles across the entire map for brushes that define randomize_ids. Do you want to proceed?",
+        ):
             return
 
-        if action is None:
-            self.status.showMessage("Randomize: no changes")
-        else:
-            scope = "selection" if bool(selection_only) else "map"
-            self.status.showMessage(f"Randomize ({scope}): changed {int(changed)} tiles")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        ok, payload = self._run_guarded(
+            "Randomize",
+            self.session.randomize_selection if bool(selection_only) else self.session.randomize_map,
+        )
+        if not ok or payload is None:
+            return
+        changed, action = payload
+
+        scope = "selection" if bool(selection_only) else "map"
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Randomize: no changes",
+            changed_message=f"Randomize ({scope}): changed {int(changed)} tiles",
+        )
 
     # ---------- tools: waypoints / houses ----------
 
@@ -347,24 +376,24 @@ class QtMapEditorSessionMixin:
             else:
                 tx, ty, tz = int(pos.x), int(pos.y), int(pos.z)
 
-        try:
-            action = self.session.upsert_town(
+        ok, action = self._run_guarded(
+            "Add/Edit Town",
+            lambda: self.session.upsert_town(
                 town_id=int(tid),
                 name=name,
                 temple_x=int(tx),
                 temple_y=int(ty),
                 temple_z=int(tz),
-            )
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Add/Edit Town", str(e))
+            ),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Add/edit town: no changes")
-        else:
-            self.status.showMessage(f"Town saved: {int(tid)} ({name})")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Add/edit town: no changes",
+            changed_message=f"Town saved: {int(tid)} ({name})",
+        )
 
     def _town_set_temple_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
@@ -379,24 +408,22 @@ class QtMapEditorSessionMixin:
         item, ok = QInputDialog.getItem(self._as_editor(), "Set Town Temple", "Town:", items, 0, False)
         if not ok:
             return
-        item = str(item)
-        try:
-            tid = int(item.split(":", 1)[0].strip())
-        except Exception:
+        tid = self._parse_prefixed_int(str(item))
+        if tid is None:
             return
 
-        try:
-            action = self.session.set_town_temple_position(town_id=int(tid), x=int(x), y=int(y), z=int(z))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Set Town Temple", str(e))
+        ok, action = self._run_guarded(
+            "Set Town Temple",
+            lambda: self.session.set_town_temple_position(town_id=int(tid), x=int(x), y=int(y), z=int(z)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Set town temple: no changes")
-        else:
-            self.status.showMessage(f"Town temple set: {int(tid)} @ {int(x)},{int(y)},{int(z)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Set town temple: no changes",
+            changed_message=f"Town temple set: {int(tid)} @ {int(x)},{int(y)},{int(z)}",
+        )
 
     def _town_delete(self) -> None:
         towns = getattr(self.session.game_map, "towns", None) or {}
@@ -408,34 +435,22 @@ class QtMapEditorSessionMixin:
         item, ok = QInputDialog.getItem(self._as_editor(), "Delete Town", "Town:", items, 0, False)
         if not ok:
             return
-        item = str(item)
-        try:
-            tid = int(item.split(":", 1)[0].strip())
-        except Exception:
+        tid = self._parse_prefixed_int(str(item))
+        if tid is None:
             return
 
-        if (
-            QMessageBox.question(
-                self._as_editor(),
-                "Delete Town",
-                f"Delete town {int(tid)}?",
-            )
-            != QMessageBox.StandardButton.Yes
-        ):
+        if not self._confirm("Delete Town", f"Delete town {int(tid)}?"):
             return
 
-        try:
-            action = self.session.delete_town(town_id=int(tid))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete Town", str(e))
+        ok, action = self._run_guarded("Delete Town", lambda: self.session.delete_town(town_id=int(tid)))
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Delete town: no changes")
-        else:
-            self.status.showMessage(f"Deleted town: {int(tid)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Delete town: no changes",
+            changed_message=f"Deleted town: {int(tid)}",
+        )
 
     def _zone_add_edit(self) -> None:
         zid, ok = QInputDialog.getInt(self._as_editor(), "Add/Edit Zone", "Zone ID:", 1, 1, 2**31 - 1, 1)
@@ -454,20 +469,16 @@ class QtMapEditorSessionMixin:
             self.status.showMessage("Add/edit zone: canceled")
             return
 
-        try:
-            action = self.session.upsert_zone(zone_id=int(zid), name=name)
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Add/Edit Zone", str(e))
+        ok, action = self._run_guarded("Add/Edit Zone", lambda: self.session.upsert_zone(zone_id=int(zid), name=name))
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Add/edit zone: no changes")
-        else:
-            self.status.showMessage(f"Zone saved: {int(zid)} ({name})")
-            self.canvas.update()
-            with contextlib.suppress(Exception):
-                self.palettes.refresh_primary_list()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Add/edit zone: no changes",
+            changed_message=f"Zone saved: {int(zid)} ({name})",
+            refresh_palettes=True,
+        )
 
     def _zone_delete_definition(self) -> None:
         zones = getattr(self.session.game_map, "zones", None) or {}
@@ -479,36 +490,23 @@ class QtMapEditorSessionMixin:
         item, ok = QInputDialog.getItem(self._as_editor(), "Delete Zone", "Zone:", items, 0, False)
         if not ok:
             return
-        item = str(item)
-        try:
-            zid = int(item.split(":", 1)[0].strip())
-        except Exception:
+        zid = self._parse_prefixed_int(str(item))
+        if zid is None:
             return
 
-        if (
-            QMessageBox.question(
-                self._as_editor(),
-                "Delete Zone",
-                f"Delete zone {int(zid)}?",
-            )
-            != QMessageBox.StandardButton.Yes
-        ):
+        if not self._confirm("Delete Zone", f"Delete zone {int(zid)}?"):
             return
 
-        try:
-            action = self.session.delete_zone(zone_id=int(zid))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete Zone", str(e))
+        ok, action = self._run_guarded("Delete Zone", lambda: self.session.delete_zone(zone_id=int(zid)))
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Delete zone: no changes")
-        else:
-            self.status.showMessage(f"Deleted zone: {int(zid)}")
-            self.canvas.update()
-            with contextlib.suppress(Exception):
-                self.palettes.refresh_primary_list()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Delete zone: no changes",
+            changed_message=f"Deleted zone: {int(zid)}",
+            refresh_palettes=True,
+        )
 
     def _waypoint_set_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
@@ -522,18 +520,18 @@ class QtMapEditorSessionMixin:
             self.status.showMessage("Set waypoint: canceled")
             return
 
-        try:
-            action = self.session.set_waypoint(name=name, x=int(x), y=int(y), z=int(z))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Set Waypoint", str(e))
+        ok, action = self._run_guarded(
+            "Set Waypoint",
+            lambda: self.session.set_waypoint(name=name, x=int(x), y=int(y), z=int(z)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Set waypoint: no changes")
-        else:
-            self.status.showMessage(f"Set waypoint: {name} @ {int(x)},{int(y)},{int(z)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Set waypoint: no changes",
+            changed_message=f"Set waypoint: {name} @ {int(x)},{int(y)},{int(z)}",
+        )
 
     def _waypoint_delete(self) -> None:
         names = sorted((self.session.game_map.waypoints or {}).keys(), key=lambda s: str(s).casefold())
@@ -548,35 +546,32 @@ class QtMapEditorSessionMixin:
         if not name:
             return
 
-        try:
-            action = self.session.delete_waypoint(name=name)
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete Waypoint", str(e))
+        ok, action = self._run_guarded("Delete Waypoint", lambda: self.session.delete_waypoint(name=name))
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Delete waypoint: no changes")
-        else:
-            self.status.showMessage(f"Deleted waypoint: {name}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Delete waypoint: no changes",
+            changed_message=f"Deleted waypoint: {name}",
+        )
 
     def _switch_door_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
         z = int(getattr(self.viewport, "z", 7))
 
-        try:
-            action = self.session.switch_door_at(x=int(x), y=int(y), z=int(z))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Switch Door", str(e))
+        ok, action = self._run_guarded(
+            "Switch Door",
+            lambda: self.session.switch_door_at(x=int(x), y=int(y), z=int(z)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Switch door: none at cursor")
-        else:
-            self.status.showMessage(f"Switched door @ {int(x)},{int(y)},{int(z)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Switch door: none at cursor",
+            changed_message=f"Switched door @ {int(x)},{int(y)},{int(z)}",
+        )
 
     def _house_set_id_on_selection(self) -> None:
         if not self.session.has_selection():
@@ -587,36 +582,33 @@ class QtMapEditorSessionMixin:
         if not ok:
             return
 
-        try:
-            action = self.session.set_house_id_on_selection(house_id=int(hid))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Set House ID", str(e))
+        ok, action = self._run_guarded(
+            "Set House ID",
+            lambda: self.session.set_house_id_on_selection(house_id=int(hid)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Set house id: no changes")
-        else:
-            self.status.showMessage(f"Set house id on selection: {int(hid)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Set house id: no changes",
+            changed_message=f"Set house id on selection: {int(hid)}",
+        )
 
     def _house_clear_id_on_selection(self) -> None:
         if not self.session.has_selection():
             self.status.showMessage("Clear house id: nothing selected")
             return
 
-        try:
-            action = self.session.set_house_id_on_selection(house_id=None)
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Clear House ID", str(e))
+        ok, action = self._run_guarded("Clear House ID", lambda: self.session.set_house_id_on_selection(house_id=None))
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Clear house id: no changes")
-        else:
-            self.status.showMessage("Cleared house id on selection")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Clear house id: no changes",
+            changed_message="Cleared house id on selection",
+        )
 
     # ---------- tools: houses metadata ----------
 
@@ -645,11 +637,10 @@ class QtMapEditorSessionMixin:
             item, ok = QInputDialog.getItem(self._as_editor(), "Add/Edit House", "Town:", items, 0, False)
             if not ok:
                 return
-            item = str(item)
-            try:
-                townid = int(item.split(":", 1)[0].strip())
-            except Exception:
+            parsed_townid = self._parse_prefixed_int(str(item))
+            if parsed_townid is None:
                 return
+            townid = int(parsed_townid)
         else:
             townid, ok = QInputDialog.getInt(self._as_editor(), "Add/Edit House", "Town ID:", 1, 1, 2**31 - 1, 1)
             if not ok:
@@ -676,16 +667,17 @@ class QtMapEditorSessionMixin:
             e = before.entry
             entryx, entryy, entryz = int(e.x), int(e.y), int(e.z)
 
-        try:
-            action = self.session.upsert_house(
+        ok, action = self._run_guarded(
+            "Add/Edit House",
+            lambda: self.session.upsert_house(
                 house_id=int(hid),
                 name=name,
                 townid=int(townid),
                 rent=int(rent),
                 guildhall=bool(guildhall),
-            )
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Add/Edit House", str(e))
+            ),
+        )
+        if not ok:
             return
 
         # If newly created and we chose cursor defaults, ensure entry is set.
@@ -693,12 +685,11 @@ class QtMapEditorSessionMixin:
             with contextlib.suppress(Exception):
                 self.session.set_house_entry(house_id=int(hid), x=int(entryx), y=int(entryy), z=int(entryz))
 
-        if action is None:
-            self.status.showMessage("Add/edit house: no changes")
-        else:
-            self.status.showMessage(f"House saved: {int(hid)} ({name})")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Add/edit house: no changes",
+            changed_message=f"House saved: {int(hid)} ({name})",
+        )
 
     def _house_set_entry_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
@@ -713,24 +704,22 @@ class QtMapEditorSessionMixin:
         item, ok = QInputDialog.getItem(self._as_editor(), "Set House Entry", "House:", items, 0, False)
         if not ok:
             return
-        item = str(item)
-        try:
-            hid = int(item.split(":", 1)[0].strip())
-        except Exception:
+        hid = self._parse_prefixed_int(str(item))
+        if hid is None:
             return
 
-        try:
-            action = self.session.set_house_entry(house_id=int(hid), x=int(x), y=int(y), z=int(z))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Set House Entry", str(e))
+        ok, action = self._run_guarded(
+            "Set House Entry",
+            lambda: self.session.set_house_entry(house_id=int(hid), x=int(x), y=int(y), z=int(z)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Set house entry: no changes")
-        else:
-            self.status.showMessage(f"House entry set: {int(hid)} @ {int(x)},{int(y)},{int(z)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Set house entry: no changes",
+            changed_message=f"House entry set: {int(hid)} @ {int(x)},{int(y)},{int(z)}",
+        )
 
     def _house_delete_definition(self) -> None:
         houses = getattr(self.session.game_map, "houses", None) or {}
@@ -742,34 +731,22 @@ class QtMapEditorSessionMixin:
         item, ok = QInputDialog.getItem(self._as_editor(), "Delete House", "House:", items, 0, False)
         if not ok:
             return
-        item = str(item)
-        try:
-            hid = int(item.split(":", 1)[0].strip())
-        except Exception:
+        hid = self._parse_prefixed_int(str(item))
+        if hid is None:
             return
 
-        if (
-            QMessageBox.question(
-                self._as_editor(),
-                "Delete House",
-                f"Delete house {int(hid)} definition?",
-            )
-            != QMessageBox.StandardButton.Yes
-        ):
+        if not self._confirm("Delete House", f"Delete house {int(hid)} definition?"):
             return
 
-        try:
-            action = self.session.delete_house(house_id=int(hid))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete House", str(e))
+        ok, action = self._run_guarded("Delete House", lambda: self.session.delete_house(house_id=int(hid)))
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Delete house: no changes")
-        else:
-            self.status.showMessage(f"Deleted house: {int(hid)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Delete house: no changes",
+            changed_message=f"Deleted house: {int(hid)}",
+        )
 
     def _monster_spawn_set_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
@@ -779,45 +756,38 @@ class QtMapEditorSessionMixin:
         if not ok:
             return
 
-        try:
-            action = self.session.set_monster_spawn_area(x=int(x), y=int(y), z=int(z), radius=int(radius))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Set Monster Spawn", str(e))
+        ok, action = self._run_guarded(
+            "Set Monster Spawn",
+            lambda: self.session.set_monster_spawn_area(x=int(x), y=int(y), z=int(z), radius=int(radius)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Set monster spawn: no changes")
-        else:
-            self.status.showMessage(f"Set monster spawn: {int(x)},{int(y)},{int(z)} r={int(radius)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Set monster spawn: no changes",
+            changed_message=f"Set monster spawn: {int(x)},{int(y)},{int(z)} r={int(radius)}",
+        )
 
     def _monster_spawn_delete_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
         z = int(getattr(self.viewport, "z", 7))
 
-        if (
-            QMessageBox.question(
-                self._as_editor(),
-                "Delete Monster Spawn",
-                f"Delete monster spawn at {int(x)},{int(y)},{int(z)}?",
-            )
-            != QMessageBox.StandardButton.Yes
-        ):
+        if not self._confirm("Delete Monster Spawn", f"Delete monster spawn at {int(x)},{int(y)},{int(z)}?"):
             return
 
-        try:
-            action = self.session.delete_monster_spawn_area(x=int(x), y=int(y), z=int(z))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete Monster Spawn", str(e))
+        ok, action = self._run_guarded(
+            "Delete Monster Spawn",
+            lambda: self.session.delete_monster_spawn_area(x=int(x), y=int(y), z=int(z)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Delete monster spawn: none at cursor")
-        else:
-            self.status.showMessage(f"Deleted monster spawn: {int(x)},{int(y)},{int(z)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Delete monster spawn: none at cursor",
+            changed_message=f"Deleted monster spawn: {int(x)},{int(y)},{int(z)}",
+        )
 
     def _npc_spawn_set_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
@@ -827,45 +797,38 @@ class QtMapEditorSessionMixin:
         if not ok:
             return
 
-        try:
-            action = self.session.set_npc_spawn_area(x=int(x), y=int(y), z=int(z), radius=int(radius))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Set NPC Spawn", str(e))
+        ok, action = self._run_guarded(
+            "Set NPC Spawn",
+            lambda: self.session.set_npc_spawn_area(x=int(x), y=int(y), z=int(z), radius=int(radius)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Set NPC spawn: no changes")
-        else:
-            self.status.showMessage(f"Set NPC spawn: {int(x)},{int(y)},{int(z)} r={int(radius)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Set NPC spawn: no changes",
+            changed_message=f"Set NPC spawn: {int(x)},{int(y)},{int(z)} r={int(radius)}",
+        )
 
     def _npc_spawn_delete_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
         z = int(getattr(self.viewport, "z", 7))
 
-        if (
-            QMessageBox.question(
-                self._as_editor(),
-                "Delete NPC Spawn",
-                f"Delete NPC spawn at {int(x)},{int(y)},{int(z)}?",
-            )
-            != QMessageBox.StandardButton.Yes
-        ):
+        if not self._confirm("Delete NPC Spawn", f"Delete NPC spawn at {int(x)},{int(y)},{int(z)}?"):
             return
 
-        try:
-            action = self.session.delete_npc_spawn_area(x=int(x), y=int(y), z=int(z))
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete NPC Spawn", str(e))
+        ok, action = self._run_guarded(
+            "Delete NPC Spawn",
+            lambda: self.session.delete_npc_spawn_area(x=int(x), y=int(y), z=int(z)),
+        )
+        if not ok:
             return
 
-        if action is None:
-            self.status.showMessage("Delete NPC spawn: none at cursor")
-        else:
-            self.status.showMessage(f"Deleted NPC spawn: {int(x)},{int(y)},{int(z)}")
-            self.canvas.update()
-        self._update_action_enabled_states()
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Delete NPC spawn: none at cursor",
+            changed_message=f"Deleted NPC spawn: {int(x)},{int(y)},{int(z)}",
+        )
 
     def _monster_spawn_add_entry_here(self) -> None:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
@@ -888,17 +851,18 @@ class QtMapEditorSessionMixin:
         if not ok:
             return
 
-        try:
-            action = self.session.add_monster_spawn_entry(
+        ok, action = self._run_guarded(
+            "Add Monster",
+            lambda: self.session.add_monster_spawn_entry(
                 x=int(x),
                 y=int(y),
                 z=int(z),
                 name=name,
                 spawntime=int(spawntime),
                 weight=None if int(weight) == 0 else int(weight),
-            )
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Add Monster", str(e))
+            ),
+        )
+        if not ok:
             return
 
         if action is None:
@@ -911,23 +875,13 @@ class QtMapEditorSessionMixin:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
         z = int(getattr(self.viewport, "z", 7))
 
-        # Build choices from entries exactly at this tile.
-        names: list[str] = []
-        try:
-            for area in self.session.game_map.monster_spawns:
-                if int(area.center.z) != int(z):
-                    continue
-                dx = int(int(x) - int(area.center.x))
-                dy = int(int(y) - int(area.center.y))
-                if max(abs(dx), abs(dy)) > int(area.radius):
-                    continue
-                for e in area.monsters:
-                    if int(e.dx) == dx and int(e.dy) == dy:
-                        names.append(str(e.name))
-                if names:
-                    break
-        except Exception:
-            names = []
+        names = self._collect_spawn_entry_names_at_cursor(
+            self.session.game_map.monster_spawns,
+            entries_attr="monsters",
+            x=int(x),
+            y=int(y),
+            z=int(z),
+        )
 
         if not names:
             self.status.showMessage("Delete monster: none at cursor")
@@ -940,10 +894,11 @@ class QtMapEditorSessionMixin:
         if not choice:
             return
 
-        try:
-            action = self.session.delete_monster_spawn_entry_at_cursor(x=int(x), y=int(y), z=int(z), name=choice)
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete Monster", str(e))
+        ok, action = self._run_guarded(
+            "Delete Monster",
+            lambda: self.session.delete_monster_spawn_entry_at_cursor(x=int(x), y=int(y), z=int(z), name=choice),
+        )
+        if not ok:
             return
 
         if action is None:
@@ -969,16 +924,17 @@ class QtMapEditorSessionMixin:
         if not ok:
             return
 
-        try:
-            action = self.session.add_npc_spawn_entry(
+        ok, action = self._run_guarded(
+            "Add NPC",
+            lambda: self.session.add_npc_spawn_entry(
                 x=int(x),
                 y=int(y),
                 z=int(z),
                 name=name,
                 spawntime=int(spawntime),
-            )
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Add NPC", str(e))
+            ),
+        )
+        if not ok:
             return
 
         if action is None:
@@ -991,22 +947,13 @@ class QtMapEditorSessionMixin:
         x, y = getattr(self, "_last_hover_tile", (0, 0))
         z = int(getattr(self.viewport, "z", 7))
 
-        names: list[str] = []
-        try:
-            for area in self.session.game_map.npc_spawns:
-                if int(area.center.z) != int(z):
-                    continue
-                dx = int(int(x) - int(area.center.x))
-                dy = int(int(y) - int(area.center.y))
-                if max(abs(dx), abs(dy)) > int(area.radius):
-                    continue
-                for e in area.npcs:
-                    if int(e.dx) == dx and int(e.dy) == dy:
-                        names.append(str(e.name))
-                if names:
-                    break
-        except Exception:
-            names = []
+        names = self._collect_spawn_entry_names_at_cursor(
+            self.session.game_map.npc_spawns,
+            entries_attr="npcs",
+            x=int(x),
+            y=int(y),
+            z=int(z),
+        )
 
         if not names:
             self.status.showMessage("Delete NPC: none at cursor")
@@ -1019,10 +966,11 @@ class QtMapEditorSessionMixin:
         if not choice:
             return
 
-        try:
-            action = self.session.delete_npc_spawn_entry_at_cursor(x=int(x), y=int(y), z=int(z), name=choice)
-        except Exception as e:
-            QMessageBox.critical(self._as_editor(), "Delete NPC", str(e))
+        ok, action = self._run_guarded(
+            "Delete NPC",
+            lambda: self.session.delete_npc_spawn_entry_at_cursor(x=int(x), y=int(y), z=int(z), name=choice),
+        )
+        if not ok:
             return
 
         if action is None:

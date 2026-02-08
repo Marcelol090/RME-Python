@@ -50,3 +50,16 @@ The Agent must follow this strict linear lifecycle for every complex task:
 *   **[knowledge_retrieval.md](guides/knowledge_retrieval.md)**: RAG & Search.
 *   **[tool_usage.md](guides/tool_usage.md)**: MCP Tool protocols.
 *   **[extending_codex.md](guides/extending_codex.md)**: **[NEW]** How to create Skills & Rules.
+
+## ⚙️ Python + Rust Acceleration
+
+Project strategy is PyQt6-first with selective Rust acceleration:
+
+- Keep UI/session orchestration in Python.
+- Migrate only profiled CPU hot paths to Rust.
+- Preserve Python fallback behavior when Rust module is unavailable.
+- Add parity tests for fallback and accelerated paths.
+
+Current acceleration boundary:
+- Python adapter: `py_rme_canary/logic_layer/rust_accel.py`
+- Rust module: `py_rme_canary/rust/py_rme_canary_rust/`

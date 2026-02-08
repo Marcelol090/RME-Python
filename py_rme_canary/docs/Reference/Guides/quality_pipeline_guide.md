@@ -183,10 +183,30 @@ python py_rme_canary/scripts/jules_runner.py --project-root . approve-plan sessi
 python py_rme_canary/scripts/jules_runner.py --project-root . send-message sessions/<id> "continue with small safe steps"
 ```
 
-Observações:
-- Se `JULES_API_KEY`/`JULES_SOURCE` não estiverem definidos, o runner gera artefatos com sugestões de configuração sem expor segredos.
-- O pipeline pode pular Jules com `--skip-jules`.
-- O runner usa `JULES_SOURCE`/`JULES_BRANCH` do `.env` por padrão e aceita override via CLI.
+Operational notes:
+- If `JULES_API_KEY`/`JULES_SOURCE` are not configured, the runner still emits schema-compatible artifacts with setup guidance and no secret leakage.
+- The pipeline can skip Jules with `--skip-jules`.
+- The runner reads `JULES_SOURCE`/`JULES_BRANCH` from `.env` by default and supports CLI overrides.
+- Jules prompts are built with untrusted-context sanitization (control-char filtering and prompt-injection neutralization), while keeping a stable JSON contract for `reports/jules/suggestions.*`.
+
+### Selective Rust Acceleration (optional)
+
+The editor remains **PyQt6-first**, with selective Rust/PyO3 acceleration for measured hot paths while preserving Python fallback behavior.
+
+Current boundary:
+- Python adapter: `py_rme_canary/logic_layer/rust_accel.py`
+- Optional Rust module: `py_rme_canary/rust/py_rme_canary_rust`
+
+Local build:
+```bash
+cd py_rme_canary/rust/py_rme_canary_rust
+python -m pip install maturin
+maturin develop --release
+```
+
+Acceptance criteria:
+- Equivalent behavior with and without the Rust module.
+- Test coverage for both fallback and backend execution paths.
 
 ---
 
