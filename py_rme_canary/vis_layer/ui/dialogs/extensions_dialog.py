@@ -4,9 +4,6 @@ Manage material extensions - matches C++ ExtensionsDialog from Redux.
 """
 from __future__ import annotations
 
-import os
-import platform
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -269,13 +266,7 @@ class ExtensionsDialog(QDialog):
         ext_dir.mkdir(parents=True, exist_ok=True)
 
         # Open in file explorer
-        system = platform.system()
-        if system == "Windows":
-            os.startfile(str(ext_dir))
-        elif system == "Darwin":  # macOS
-            subprocess.run(["open", str(ext_dir)])
-        else:  # Linux
-            subprocess.run(["xdg-open", str(ext_dir)])
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(ext_dir)))
 
     def _get_extensions_directory(self) -> Path:
         """Get the extensions directory path."""

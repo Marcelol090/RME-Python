@@ -559,11 +559,25 @@ class ScriptSecurityChecker(ast.NodeVisitor):
             dangerous = {"eval", "exec", "compile", "open", "__import__", "getattr", "setattr", "delattr"}
             if name in dangerous:
                 self.errors.append(f"Forbidden function: {name}")
+
+        # Check for dangerous method calls (e.g. "".format())
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("format", "format_map"):
+            self.errors.append(f"Forbidden method: {node.func.attr}")
+
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         # Check for dangerous attribute access
-        dangerous_attrs = {"__class__", "__bases__", "__subclasses__", "__code__", "__globals__"}
+        dangerous_attrs = {
+            "__class__",
+            "__bases__",
+            "__subclasses__",
+            "__code__",
+            "__globals__",
+            "__dict__",
+            "__module__",
+            "__mro__",
+        }
         if node.attr in dangerous_attrs:
             self.errors.append(f"Forbidden attribute access: {node.attr}")
         self.generic_visit(node)
@@ -647,8 +661,9 @@ class ScriptEngine:
         # Validate script
         is_valid, error = self.validate_script(script)
         if not is_valid:
+            is_security = "not allowed" in error or "Forbidden" in error
             return ScriptResult(
-                status=ScriptStatus.SECURITY_ERROR if "not allowed" in error else ScriptStatus.SYNTAX_ERROR,
+                status=ScriptStatus.SECURITY_ERROR if is_security else ScriptStatus.SYNTAX_ERROR,
                 error=error,
             )
 
@@ -656,8 +671,21 @@ class ScriptEngine:
         output = StringIO()
         map_api = MapAPI(self._map, self._config)
 
+        def safe_import(
+            name: str,
+            globals: dict[str, Any] | None = None,
+            locals: dict[str, Any] | None = None,
+            fromlist: tuple = (),
+            level: int = 0,
+        ) -> Any:
+            base_name = name.split(".")[0]
+            if base_name in self._config.allow_imports:
+                return __import__(name, globals, locals, fromlist, level)
+            raise ImportError(f"Import not allowed: {name}")
+
         # Build safe globals
         safe_builtins = {
+            "__import__": safe_import,
             "abs": abs,
             "all": all,
             "any": any,
@@ -824,7 +852,7 @@ Map.log(f"Found {{len(positions)}} instances of item {{ITEM_ID}}")
 }
 
 
-def get_script_template(name: str, **kwargs) -> str:
+def get_script_template(name: str, **kwargs: Any) -> str:
     """Get a script template with variables filled in.
 
     Args:
