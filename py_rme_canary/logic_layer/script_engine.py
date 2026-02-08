@@ -556,7 +556,17 @@ class ScriptSecurityChecker(ast.NodeVisitor):
         # Check for dangerous built-in calls
         if isinstance(node.func, ast.Name):
             name = node.func.id
-            dangerous = {"eval", "exec", "compile", "open", "__import__", "getattr", "setattr", "delattr"}
+            dangerous = {
+                "eval",
+                "exec",
+                "compile",
+                "open",
+                "__import__",
+                "getattr",
+                "setattr",
+                "delattr",
+                "format",
+            }
             if name in dangerous:
                 self.errors.append(f"Forbidden function: {name}")
 
