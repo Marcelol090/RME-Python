@@ -6,6 +6,8 @@ Modern settings dialog with categories:
 - Appearance/Theme
 - Keyboard shortcuts
 - Performance
+
+Refactored to use ModernDialog.
 """
 
 from __future__ import annotations
@@ -16,7 +18,6 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -29,7 +30,11 @@ from PyQt6.QtWidgets import (
     QStackedWidget,
     QVBoxLayout,
     QWidget,
+    QMessageBox
 )
+
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 
 class SettingsCategory(QFrame):
@@ -40,6 +45,8 @@ class SettingsCategory(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._changed = False
+        # Remove frame styling as it will be inside ModernDialog
+        self.setFrameShape(QFrame.Shape.NoFrame)
 
     def has_changes(self) -> bool:
         """Check if there are unsaved changes."""
@@ -71,9 +78,12 @@ class GeneralSettings(SettingsCategory):
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         # Title
         title = QLabel("General Settings")
-        title.setStyleSheet("font-size: 16px; font-weight: 700; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 16px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(title)
 
         # Form
@@ -158,8 +168,11 @@ class EditorSettings(SettingsCategory):
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         title = QLabel("Editor Settings")
-        title.setStyleSheet("font-size: 16px; font-weight: 700; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 16px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(title)
 
         form = QFormLayout()
@@ -237,8 +250,11 @@ class AppearanceSettings(SettingsCategory):
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         title = QLabel("Appearance")
-        title.setStyleSheet("font-size: 16px; font-weight: 700; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 16px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(title)
 
         form = QFormLayout()
@@ -306,8 +322,11 @@ class PerformanceSettings(SettingsCategory):
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         title = QLabel("Performance")
-        title.setStyleSheet("font-size: 16px; font-weight: 700; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 16px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(title)
 
         form = QFormLayout()
@@ -361,7 +380,7 @@ class PerformanceSettings(SettingsCategory):
         layout.addStretch()
 
 
-class SettingsDialog(QDialog):
+class SettingsDialog(ModernDialog):
     """Main settings dialog with category navigation.
 
     Signals:
@@ -371,68 +390,57 @@ class SettingsDialog(QDialog):
     settings_applied = pyqtSignal(dict)
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Settings")
 
         self._categories: list[tuple[str, str, SettingsCategory]] = []
 
-        self.setWindowTitle("Settings")
         self.setMinimumSize(700, 500)
-        self.setModal(True)
 
-        self._setup_ui()
-        self._apply_style()
+        self._setup_content()
+        self._setup_footer()
 
-    def _setup_ui(self) -> None:
+    def _setup_content(self) -> None:
         """Initialize UI components."""
-        layout = QHBoxLayout(self)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        layout = QHBoxLayout()
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Left sidebar - category list
         sidebar = QWidget()
         sidebar.setFixedWidth(180)
-        sidebar.setStyleSheet("background: #1A1A2E;")
+        # Use theme token if possible, or slight variant
+        sidebar.setStyleSheet(f"background: {c['surface']['secondary']}; border-right: 1px solid {c['border']['default']};")
+
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(12, 16, 12, 16)
         sidebar_layout.setSpacing(4)
 
-        # Title
-        title = QLabel("Settings")
-        title.setStyleSheet(
-            """
-            font-size: 16px;
-            font-weight: 700;
-            color: #E5E5E7;
-            padding: 8px 0;
-        """
-        )
-        sidebar_layout.addWidget(title)
-
         # Category list
         self.category_list = QListWidget()
-        self.category_list.setStyleSheet(
-            """
-            QListWidget {
+        self.category_list.setStyleSheet(f"""
+            QListWidget {{
                 background: transparent;
                 border: none;
                 outline: none;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 12px 16px;
                 border-radius: 8px;
-                color: #A1A1AA;
+                color: {c['text']['secondary']};
                 margin: 2px 0;
-            }
-            QListWidget::item:hover {
-                background: #2A2A3E;
-                color: #E5E5E7;
-            }
-            QListWidget::item:selected {
-                background: #8B5CF6;
+            }}
+            QListWidget::item:hover {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
+            }}
+            QListWidget::item:selected {{
+                background: {c['brand']['primary']};
                 color: white;
-            }
-        """
-        )
+            }}
+        """)
         self.category_list.currentRowChanged.connect(self._on_category_changed)
         sidebar_layout.addWidget(self.category_list)
 
@@ -442,7 +450,7 @@ class SettingsDialog(QDialog):
 
         # Right side - settings content
         right_panel = QWidget()
-        right_panel.setStyleSheet("background: #1E1E2E;")
+        right_panel.setStyleSheet("background: transparent;")
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
@@ -450,29 +458,6 @@ class SettingsDialog(QDialog):
         # Stacked widget for category content
         self.stack = QStackedWidget()
         right_layout.addWidget(self.stack)
-
-        # Bottom buttons
-        button_container = QWidget()
-        button_container.setStyleSheet("background: #1A1A2E;")
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(20, 12, 20, 12)
-
-        self.btn_reset = QPushButton("Reset to Defaults")
-        self.btn_reset.clicked.connect(self._on_reset)
-        button_layout.addWidget(self.btn_reset)
-
-        button_layout.addStretch()
-
-        self.btn_cancel = QPushButton("Cancel")
-        self.btn_cancel.clicked.connect(self.reject)
-        button_layout.addWidget(self.btn_cancel)
-
-        self.btn_apply = QPushButton("Apply")
-        self.btn_apply.setObjectName("primaryButton")
-        self.btn_apply.clicked.connect(self._on_apply)
-        button_layout.addWidget(self.btn_apply)
-
-        right_layout.addWidget(button_container)
 
         layout.addWidget(right_panel)
 
@@ -484,6 +469,14 @@ class SettingsDialog(QDialog):
 
         # Select first
         self.category_list.setCurrentRow(0)
+
+        self.set_content_layout(layout)
+
+    def _setup_footer(self) -> None:
+        self.add_button("Reset to Defaults", callback=self._on_reset)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject)
+        self.add_button("Apply", callback=self._on_apply, role="primary")
 
     def _add_category(self, display_name: str, category_id: str, widget: SettingsCategory) -> None:
         """Add a settings category."""
@@ -499,92 +492,6 @@ class SettingsDialog(QDialog):
         """Handle category selection change."""
         self.stack.setCurrentIndex(index)
 
-    def _apply_style(self) -> None:
-        """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
-
-            QSpinBox, QComboBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                padding: 6px 10px;
-                color: #E5E5E7;
-                min-width: 100px;
-            }
-
-            QSpinBox:focus, QComboBox:focus {
-                border-color: #8B5CF6;
-            }
-
-            QCheckBox {
-                color: #E5E5E7;
-            }
-
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border-radius: 4px;
-                background: #2A2A3E;
-                border: 1px solid #363650;
-            }
-
-            QCheckBox::indicator:checked {
-                background: #8B5CF6;
-                border-color: #8B5CF6;
-            }
-
-            QSlider::groove:horizontal {
-                background: #363650;
-                height: 6px;
-                border-radius: 3px;
-            }
-
-            QSlider::handle:horizontal {
-                background: #8B5CF6;
-                width: 16px;
-                height: 16px;
-                margin: -5px 0;
-                border-radius: 8px;
-            }
-
-            QSlider::sub-page:horizontal {
-                background: #8B5CF6;
-                border-radius: 3px;
-            }
-
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
-                padding: 8px 20px;
-            }
-
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
-
-            #primaryButton {
-                background: #8B5CF6;
-                color: white;
-                border: none;
-            }
-
-            #primaryButton:hover {
-                background: #A78BFA;
-            }
-
-            QLabel {
-                color: #A1A1AA;
-            }
-        """
-        )
-
     def _on_apply(self) -> None:
         """Apply settings and close."""
         settings = self._gather_settings()
@@ -598,8 +505,6 @@ class SettingsDialog(QDialog):
 
     def _on_reset(self) -> None:
         """Reset all settings to defaults."""
-        from PyQt6.QtWidgets import QMessageBox
-
         reply = QMessageBox.question(
             self,
             "Reset Settings",

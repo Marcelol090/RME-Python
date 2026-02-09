@@ -25,7 +25,7 @@ from py_rme_canary.core.database.id_mapper import IdMapper
 from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.memory_guard import MemoryGuardError
-from py_rme_canary.vis_layer.ui.dialogs.client_data_loader_dialog import ClientDataLoadConfig, ClientDataLoaderDialog
+from py_rme_canary.vis_layer.ui.dialogs.client_data_loader_dialog import ClientDataLoadConfig
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -109,14 +109,21 @@ class QtMapEditorAssetsMixin:
             self._update_sprite_preview()
 
     def _open_client_data_loader(self: QtMapEditor) -> None:
-        dialog = ClientDataLoaderDialog(
-            self,
-            default_assets_path=str(getattr(self, "assets_selection_path", "") or ""),
-            default_client_version=int(getattr(self, "client_version", 0) or 0),
+        from py_rme_canary.vis_layer.ui.dialogs.asset_loader_wizard import AssetLoaderWizard
+
+        defaults = ClientDataLoadConfig(
+            assets_path=str(getattr(self, "assets_selection_path", "") or ""),
+            prefer_kind="auto",
+            client_version_hint=int(getattr(self, "client_version", 0) or 0),
+            items_otb_path="",
+            items_xml_path="",
+            show_summary=True,
         )
-        if dialog.exec() != QDialog.DialogCode.Accepted:
+
+        wizard = AssetLoaderWizard(self, defaults=defaults)
+        if wizard.exec() != QDialog.DialogCode.Accepted:
             return
-        config = dialog.config()
+        config = wizard.get_config()
         self._load_client_data_stack(config, source="interactive_loader")
 
     def _load_client_data_stack(self: QtMapEditor, config: ClientDataLoadConfig, *, source: str) -> None:

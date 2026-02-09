@@ -281,8 +281,8 @@ class MapDiffEngine:
             min_x, min_y, max_x, max_y = region
         else:
             min_x = min_y = 0
-            max_x = max(old_map.width, new_map.width)
-            max_y = max(old_map.height, new_map.height)
+            max_x = max(old_map.header.width, new_map.header.width)
+            max_y = max(old_map.header.height, new_map.header.height)
 
         if floors is None:
             floors = range(16)
@@ -334,7 +334,8 @@ class MapDiffEngine:
                         continue
 
                     # Both tiles exist - compare them
-                    diff = self._compare_tiles(old_tile, new_tile, (x, y, z))
+                    # old_tile and new_tile are not None here because of previous checks
+                    diff = self._compare_tiles(old_tile, new_tile, (x, y, z))  # type: ignore[arg-type]
 
                     if diff.has_changes:
                         report.tile_diffs.append(diff)
@@ -359,9 +360,9 @@ class MapDiffEngine:
         """Extract basic info from a map."""
         return {
             "label": label,
-            "width": game_map.width,
-            "height": game_map.height,
-            "description": getattr(game_map, "description", ""),
+            "width": game_map.header.width,
+            "height": game_map.header.height,
+            "description": getattr(game_map.header, "description", ""),
         }
 
     def _items_to_changes(
@@ -475,7 +476,7 @@ class MapDiffEngine:
             )
 
         # Same ID - check attributes if deep comparison
-        if self._level in (DiffLevel.ITEMS_DEEP, DiffLevel.FULL):
+        if self._level in (DiffLevel.ITEMS_DEEP, DiffLevel.FULL) and old_ground and new_ground:
             attr_changes = self._compare_item_attributes(old_ground, new_ground)
             if attr_changes:
                 return ItemChange(
@@ -639,14 +640,14 @@ class MapDiffEngine:
             True if maps appear identical, False otherwise.
         """
         # Quick size check
-        if old_map.width != new_map.width or old_map.height != new_map.height:
+        if old_map.header.width != new_map.header.width or old_map.header.height != new_map.header.height:
             return False
 
         # Sample some tiles
         sample_positions = [
             (0, 0, 7),
-            (old_map.width // 2, old_map.height // 2, 7),
-            (old_map.width - 1, old_map.height - 1, 7),
+            (old_map.header.width // 2, old_map.header.height // 2, 7),
+            (old_map.header.width - 1, old_map.header.height - 1, 7),
         ]
 
         for x, y, z in sample_positions:
