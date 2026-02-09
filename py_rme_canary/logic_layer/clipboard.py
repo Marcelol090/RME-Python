@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -78,7 +79,7 @@ class ClipboardEntry:
         """Get number of tiles in this entry."""
         if self.tiles is not None:
             return len(self.tiles)
-        if isinstance(self.data, (dict, list)):
+        if isinstance(self.data, dict | list):
             return len(self.data)
         return 0
 
@@ -92,6 +93,7 @@ class TileData:
     rel_z: int
     ground_id: int | None = None
     ground_name: str | None = None
+    ground_sprite_hash: int | None = None
     items: list[dict] = field(default_factory=list)
     monsters: list[dict] = field(default_factory=list)
     npc: dict | None = None
@@ -344,6 +346,7 @@ class ClipboardManager:
         tiles: list[Tile],
         origin: tuple[int, int, int] | None = None,
         name_lookup: Any | None = None,
+        sprite_hash_lookup: Callable[[int], int | None] | None = None,
     ) -> bool:
         """Copy tiles to clipboard.
 
@@ -387,11 +390,22 @@ class ClipboardManager:
                 }
                 if name_lookup:
                     item_dict["name"] = name_lookup(int(item.id))
+                if sprite_hash_lookup:
+                    try:
+                        item_dict["sprite_hash"] = sprite_hash_lookup(int(item.id))
+                    except Exception:
+                        item_dict["sprite_hash"] = None
                 items.append(item_dict)
 
             ground_name = None
             if tile.ground and name_lookup:
                 ground_name = name_lookup(int(tile.ground.id))
+            ground_sprite_hash = None
+            if tile.ground and sprite_hash_lookup:
+                try:
+                    ground_sprite_hash = sprite_hash_lookup(int(tile.ground.id))
+                except Exception:
+                    ground_sprite_hash = None
 
             monsters = []
             for creature in getattr(tile, "monsters", []) or []:
@@ -410,6 +424,7 @@ class ClipboardManager:
                 rel_z=rel_z,
                 ground_id=tile.ground.id if tile.ground else None,
                 ground_name=str(ground_name) if ground_name else None,
+                ground_sprite_hash=ground_sprite_hash,
                 items=items,
                 monsters=monsters,
                 npc=npc,
@@ -670,6 +685,7 @@ class ClipboardManager:
                         "rel_z": td.rel_z,
                         "ground_id": td.ground_id,
                         "ground_name": td.ground_name,
+                        "ground_sprite_hash": td.ground_sprite_hash,
                         "items": td.items,
                         "monsters": td.monsters,
                         "npc": td.npc,
@@ -729,6 +745,7 @@ class ClipboardManager:
         self,
         target_version: str | None = None,
         name_resolver: Any | None = None,
+        hash_resolver: Any | None = None,
     ) -> bool:
         """Import from system clipboard if compatible.
 
@@ -762,7 +779,7 @@ class ClipboardManager:
                 # Check for version mismatch
                 if source_version and target_version and source_version != target_version:
                     logger.warning(f"Clipboard version mismatch: Source {source_version} -> Target {target_version}")
-                    self._convert_data(data, source_version, target_version, name_resolver)
+                    self._convert_data(data, source_version, target_version, name_resolver, hash_resolver)
 
                 # Reconstruct entry
                 import time
@@ -775,6 +792,7 @@ class ClipboardManager:
                             rel_z=td["rel_z"],
                             ground_id=td.get("ground_id"),
                             ground_name=td.get("ground_name"),
+                            ground_sprite_hash=td.get("ground_sprite_hash"),
                             items=td.get("items", []),
                             monsters=td.get("monsters", []) or [],
                             npc=td.get("npc"),
@@ -827,16 +845,41 @@ class ClipboardManager:
         source_v: str,
         target_v: str,
         name_resolver: Any | None = None,
+        hash_resolver: Any | None = None,
     ) -> None:
         """Convert clipboard data between versions."""
-        if not name_resolver:
+        if not name_resolver and not hash_resolver:
             logger.warning("No name resolver provided for version conversion.")
             return
 
         logger.info(f"Converting clipboard data from {source_v} to {target_v}...")
 
+        def resolve_by_hash(item_dict: dict) -> int | None:
+            if not hash_resolver:
+                return None
+            raw = item_dict.get("sprite_hash")
+            if raw is None:
+                return None
+            try:
+                sprite_hash = int(raw)
+            except Exception:
+                return None
+            try:
+                resolved = hash_resolver(sprite_hash, item_dict.get("id"), item_dict.get("name"))
+            except Exception:
+                return None
+            if resolved is None:
+                return None
+            return int(resolved)
+
         # Helper to convert a single item dict
         def convert_item(item_dict: dict) -> None:
+            resolved_by_hash = resolve_by_hash(item_dict)
+            if resolved_by_hash is not None:
+                item_dict["id"] = int(resolved_by_hash)
+                return
+            if not name_resolver:
+                return
             nm = item_dict.get("name")
             if nm:
                 new_id = name_resolver(str(nm))
@@ -847,11 +890,21 @@ class ClipboardManager:
         tiles = data.get("tiles", [])
         for tile in tiles:
             # Ground
-            ground_name = tile.get("ground_name")
-            if ground_name:
-                resolved = name_resolver(str(ground_name))
-                if resolved is not None:
-                    tile["ground_id"] = int(resolved)
+            resolved_ground = resolve_by_hash(
+                {
+                    "id": tile.get("ground_id"),
+                    "name": tile.get("ground_name"),
+                    "sprite_hash": tile.get("ground_sprite_hash"),
+                }
+            )
+            if resolved_ground is not None:
+                tile["ground_id"] = int(resolved_ground)
+            elif name_resolver:
+                ground_name = tile.get("ground_name")
+                if ground_name:
+                    resolved = name_resolver(str(ground_name))
+                    if resolved is not None:
+                        tile["ground_id"] = int(resolved)
 
             # Stack items
             for item in tile.get("items", []):

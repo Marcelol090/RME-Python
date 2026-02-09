@@ -16,13 +16,15 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QImage, QPixmap
 
-from py_rme_canary.core.assets.sprite_appearances import SpriteAppearances, resolve_assets_dir
+from py_rme_canary.core.assets.loader import load_assets_from_path
+from py_rme_canary.core.assets.sprite_appearances import SpriteAppearances
 from py_rme_canary.core.database.id_mapper import IdMapper
 from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
 from py_rme_canary.core.database.items_xml import ItemsXML, ItemsXMLError, ItemType
 from py_rme_canary.logic_layer.sprite_cache import SpriteCache
 
 if TYPE_CHECKING:
+    from py_rme_canary.core.assets.loader import SpriteProvider
     from py_rme_canary.core.memory_guard import MemoryGuard
 
 logger = logging.getLogger(__name__)
@@ -35,6 +37,7 @@ class AssetManager:
 
     def __init__(self) -> None:
         self._sprite_appearances: SpriteAppearances | None = None
+        self._sprite_provider: SpriteProvider | None = None
         self._id_mapper: IdMapper | None = None
         self._sprite_cache = SpriteCache.instance()
         self._assets_path: str | None = None
@@ -73,37 +76,34 @@ class AssetManager:
             True if loaded successfully
         """
         try:
-            resolved_path = resolve_assets_dir(path)
-            logger.info(f"Loading assets from: {resolved_path}")
-
-            # 1. Initialize SpriteAppearances (loads catalog-content.json)
-            self._sprite_appearances = SpriteAppearances(assets_dir=resolved_path, memory_guard=memory_guard)
-            self._sprite_appearances.load_catalog_content(load_data=False)  # Lazy load sheets
-
-            # 2. Initialize IdMapper (loads .json mappings if present in assets?)
-            # Ideally IdMapper should be loaded from project data, but for now we assume
-            # we might need to load it.
-            # TODO: IdMapper usually loaded separately via ItemsXML/OTB.
-            # For now, we assume global IdMapper or we initialize a local one?
-            # Let's try to load standard mappings if available in data/
-            # For now, we rely on the editor to set the IdMapper, or we load a default one.
-
-            self._assets_path = resolved_path
+            loaded = load_assets_from_path(path, memory_guard=memory_guard)
+            self._sprite_provider = loaded.sprite_assets
+            self._sprite_appearances = (
+                loaded.sprite_assets if isinstance(loaded.sprite_assets, SpriteAppearances) else None
+            )
+            self._assets_path = str(loaded.profile.assets_dir or loaded.profile.root)
             self._is_loaded = True
 
             # Clear cache on new asset load
             self._sprite_cache.clear()
+
+            if loaded.appearance_error:
+                logger.warning("Appearances metadata unavailable: %s", loaded.appearance_error)
+            if loaded.fallback_notice:
+                logger.warning("%s", loaded.fallback_notice)
 
             logger.info("Assets loaded successfully")
             return True
 
         except Exception as e:
             logger.error(f"Failed to load assets: {e}")
+            self._sprite_provider = None
+            self._sprite_appearances = None
             self._is_loaded = False
             return False
 
-    def set_id_mapper(self, mapper: IdMapper) -> None:
-        """Set the ID mapper for Server<->Client conversion."""
+    def set_id_mapper(self, mapper: IdMapper | None) -> None:
+        """Set or clear the ID mapper for Server<->Client conversion."""
         self._id_mapper = mapper
 
     def get_sprite(self, item_id: int, client_id_override: int | None = None) -> QPixmap | None:
@@ -116,7 +116,7 @@ class AssetManager:
         Returns:
             QPixmap or None
         """
-        if not self._is_loaded or not self._sprite_appearances:
+        if not self._is_loaded or not self._sprite_provider:
             return None
 
         # Check cache first (using server ID key)
@@ -135,7 +135,7 @@ class AssetManager:
 
         # Load from SpriteAppearances
         try:
-            width, height, bgra_data = self._sprite_appearances.get_sprite_rgba(client_id)
+            width, height, bgra_data = self._sprite_provider.get_sprite_rgba(client_id)
 
             # Convert to QImage then QPixmap
             # Format_ARGB32 is actually BGRA in Qt's memory model usually,

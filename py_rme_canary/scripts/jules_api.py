@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 DEFAULT_BASE_URL = "https://jules.googleapis.com/v1alpha"
@@ -156,6 +156,10 @@ class JulesClient:
         query: dict[str, Any] | None = None,
     ) -> object:
         body: bytes | None = None
+        target_url = self._url(path, query=query)
+        parsed = urlparse(target_url)
+        if str(parsed.scheme or "").lower() != "https":
+            raise JulesAPIError(f"Refusing non-HTTPS URL: {target_url}")
         headers = {
             "x-goog-api-key": self._config.api_key,
             "Accept": "application/json",
@@ -164,9 +168,9 @@ class JulesClient:
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             headers["Content-Type"] = "application/json"
 
-        request = Request(self._url(path, query=query), data=body, headers=headers, method=method.upper())
+        request = Request(target_url, data=body, headers=headers, method=method.upper())
         try:
-            with urlopen(request, timeout=self._config.timeout_seconds) as response:
+            with urlopen(request, timeout=self._config.timeout_seconds) as response:  # nosec B310 - URL validated
                 raw_data = response.read()
                 return _decode_json_payload(raw_data)
         except HTTPError as exc:

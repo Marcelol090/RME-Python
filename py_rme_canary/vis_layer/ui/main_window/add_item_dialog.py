@@ -38,6 +38,7 @@ class AddItemDialog(QDialog):
         *,
         items_db: ItemsDatabase | None = None,
         tileset_name: str = "",
+        initial_item_id: int = 100,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Add Item")
@@ -66,8 +67,9 @@ class AddItemDialog(QDialog):
         form = QFormLayout()
 
         self._item_id_spin = QSpinBox()
-        self._item_id_spin.setRange(100, 100000)
-        self._item_id_spin.setValue(100)
+        self._item_id_spin.setRange(1, 100000)
+        initial = max(1, min(100000, int(initial_item_id)))
+        self._item_id_spin.setValue(initial)
         self._item_id_spin.valueChanged.connect(self._on_item_id_changed)
         form.addRow("Item ID (Server):", self._item_id_spin)
 

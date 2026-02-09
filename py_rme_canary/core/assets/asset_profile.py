@@ -96,7 +96,7 @@ def _resolve_modern_assets_dir(path: Path) -> Path | None:
     try:
         resolved = resolve_assets_dir(path)
     except SpriteAppearancesError:
-        return None
+        return _resolve_nested_modern_assets_dir(path)
     return Path(resolved)
 
 
@@ -118,14 +118,76 @@ def _resolve_legacy_paths(path: Path) -> tuple[Path, Path] | None:
             return None
         return None
 
+    direct = _resolve_legacy_paths_in_directory(p)
+    if direct is not None:
+        return direct
+    return _resolve_nested_legacy_paths(p)
+
+
+def _resolve_nested_modern_assets_dir(path: Path) -> Path | None:
+    if not path.is_dir():
+        return None
+
+    discovered: list[Path] = []
+    for child in sorted(path.iterdir(), key=lambda entry: entry.name.lower()):
+        if not child.is_dir():
+            continue
+        try:
+            resolved = Path(resolve_assets_dir(child))
+        except SpriteAppearancesError:
+            continue
+        discovered.append(resolved)
+
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for candidate in discovered:
+        key = str(candidate.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate)
+
+    if len(unique) == 1:
+        return unique[0]
+    return None
+
+
+def _resolve_nested_legacy_paths(path: Path) -> tuple[Path, Path] | None:
+    if not path.is_dir():
+        return None
+
+    discovered: list[tuple[Path, Path]] = []
+    for child in sorted(path.iterdir(), key=lambda entry: entry.name.lower()):
+        if not child.is_dir():
+            continue
+        legacy = _resolve_legacy_paths_in_directory(child)
+        if legacy is None:
+            continue
+        discovered.append(legacy)
+
+    unique: list[tuple[Path, Path]] = []
+    seen: set[tuple[str, str]] = set()
+    for dat_path, spr_path in discovered:
+        key = (str(dat_path.resolve()), str(spr_path.resolve()))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append((dat_path, spr_path))
+
+    if len(unique) == 1:
+        return unique[0]
+    return None
+
+
+def _resolve_legacy_paths_in_directory(path: Path) -> tuple[Path, Path] | None:
     candidates = [
         ("Tibia.dat", "Tibia.spr"),
         ("items.dat", "items.spr"),
         ("client.dat", "client.spr"),
     ]
     for dat_name, spr_name in candidates:
-        dat = p / dat_name
-        spr = p / spr_name
+        dat = path / dat_name
+        spr = path / spr_name
         if dat.exists() and spr.exists():
             return dat, spr
     return None

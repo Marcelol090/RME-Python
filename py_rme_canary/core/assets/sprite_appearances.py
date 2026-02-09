@@ -145,9 +145,9 @@ class SpriteAppearances:
         if pos >= len(blob):
             raise SpriteAppearancesError("Invalid sprite sheet header (all zeros)")
 
-        # Skip remaining bytes of constant marker [0x70 0x0A 0xFA 0x80 0x24]
-        # We are currently at 0x70; legacy does pos += 4 after consuming the first non-zero.
-        pos += 4
+        # Skip full constant marker [0x70 0x0A 0xFA 0x80 0x24].
+        # We are currently positioned at 0x70.
+        pos += 5
 
         # Skip 7-bit int encoded LZMA file size.
         while pos < len(blob) and (blob[pos] & 0x80) == 0x80:

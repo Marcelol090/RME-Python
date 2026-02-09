@@ -2520,7 +2520,12 @@ class EditorSession:
     def can_paste(self) -> bool:
         return self._clipboard.can_paste()
 
-    def copy_selection(self, client_version: str | None = None) -> bool:
+    def copy_selection(
+        self,
+        client_version: str | None = None,
+        *,
+        sprite_hash_lookup: Callable[[int], int | None] | None = None,
+    ) -> bool:
         """Copy selected tiles into the internal buffer and system clipboard."""
 
         # Prepare name lookup
@@ -2552,7 +2557,12 @@ class EditorSession:
         origin_z = min(int(t.z) for t in tiles)
 
         system_clipboard = SystemClipboardManager.instance()
-        system_clipboard.copy_tiles(tiles, (origin_x, origin_y, origin_z), name_lookup=name_lookup)
+        system_clipboard.copy_tiles(
+            tiles,
+            (origin_x, origin_y, origin_z),
+            name_lookup=name_lookup,
+            sprite_hash_lookup=sprite_hash_lookup,
+        )
         if client_version:
             system_clipboard.to_system_clipboard(client_version)
         else:
@@ -2560,19 +2570,29 @@ class EditorSession:
 
         return True
 
-    def import_from_system_clipboard(self, target_version: str | None = None) -> bool:
+    def import_from_system_clipboard(
+        self,
+        target_version: str | None = None,
+        *,
+        name_resolver: Callable[[str], int | None] | None = None,
+        hash_resolver: Callable[[int, int | None, str | None], int | None] | None = None,
+        enable_sprite_match: bool = True,
+    ) -> bool:
         """Try to import content from the system clipboard."""
 
-        def name_resolver(name: str) -> int | None:
-            xml = self._ensure_items_xml_loaded()
-            if xml:
-                return xml.get_server_id_by_name(name)
-            return None
+        if name_resolver is None:
+
+            def name_resolver(name: str) -> int | None:
+                xml = self._ensure_items_xml_loaded()
+                if xml:
+                    return xml.get_server_id_by_name(name)
+                return None
 
         system_clipboard = SystemClipboardManager.instance()
         if not system_clipboard.from_system_clipboard(
             target_version=target_version,
             name_resolver=name_resolver if target_version else None,
+            hash_resolver=hash_resolver if (target_version and enable_sprite_match) else None,
         ):
             return False
 
@@ -2587,9 +2607,14 @@ class EditorSession:
         tiles, origin = result
         return self._clipboard.load_tiles(tiles, origin)
 
-    def cut_selection(self, client_version: str | None = None) -> PaintAction | None:
+    def cut_selection(
+        self,
+        client_version: str | None = None,
+        *,
+        sprite_hash_lookup: Callable[[int], int | None] | None = None,
+    ) -> PaintAction | None:
         """Cut selection into buffer and remove from map (atomic)."""
-        if not self.copy_selection(client_version):
+        if not self.copy_selection(client_version, sprite_hash_lookup=sprite_hash_lookup):
             return None
         return self.delete_selection(borderize=bool(self.auto_border_enabled))
 

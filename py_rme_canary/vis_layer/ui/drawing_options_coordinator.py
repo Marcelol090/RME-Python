@@ -96,6 +96,7 @@ class DrawingOptionsCoordinator:
         opts.show_as_minimap = bool(getattr(editor, "show_as_minimap", False))
         opts.show_only_colors = bool(getattr(editor, "only_show_colors", False))
         opts.show_only_modified = bool(getattr(editor, "only_show_modified", False))
+        opts.show_client_ids = bool(getattr(editor, "show_client_ids", False))
 
         # View
         opts.show_shade = bool(getattr(editor, "show_shade", False))
@@ -138,6 +139,7 @@ class DrawingOptionsCoordinator:
         editor.show_as_minimap = opts.show_as_minimap
         editor.only_show_colors = opts.show_only_colors
         editor.only_show_modified = opts.show_only_modified
+        editor.show_client_ids = opts.show_client_ids
 
         # View
         editor.show_shade = opts.show_shade
@@ -186,6 +188,8 @@ class DrawingOptionsCoordinator:
             self._options.show_as_minimap = editor.act_show_as_minimap.isChecked()
         if hasattr(editor, "act_only_show_modified"):
             self._options.show_only_modified = editor.act_only_show_modified.isChecked()
+        if hasattr(editor, "act_show_client_ids"):
+            self._options.show_client_ids = editor.act_show_client_ids.isChecked()
         if hasattr(editor, "act_show_lights"):
             self._options.show_lights = editor.act_show_lights.isChecked()
         if hasattr(editor, "act_show_tooltips"):
@@ -225,6 +229,7 @@ class DrawingOptionsCoordinator:
         _set_checked("act_show_npcs_spawns", opts.show_spawns_npc)
         _set_checked("act_show_as_minimap", opts.show_as_minimap)
         _set_checked("act_only_show_modified", opts.show_only_modified)
+        _set_checked("act_show_client_ids", opts.show_client_ids)
         _set_checked("act_show_lights", opts.show_lights)
         _set_checked("act_show_tooltips", opts.show_tooltips)
         _set_checked("act_highlight_items", opts.highlight_items)

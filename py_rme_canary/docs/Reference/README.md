@@ -9,6 +9,7 @@
 - Quality policy (XML): `py_rme_canary/docs/Reference/quality_pipeline.xml`
 - Quality operations guide: `py_rme_canary/docs/Reference/Guides/quality_pipeline_guide.md`
 - Jules API integration: `py_rme_canary/docs/Reference/Guides/jules_api_integration.md`
+- Jules Stitch prompt workflow: `py_rme_canary/docs/Reference/Guides/jules_stitch_prompt_workflow.md`
 - Rust acceleration bridge: `py_rme_canary/docs/Reference/Guides/rust_acceleration_bridge.md`
 - Release channel updates: `py_rme_canary/docs/Reference/Guides/release_update_channels_guide.md`
 

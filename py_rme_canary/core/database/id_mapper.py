@@ -9,9 +9,17 @@ This is the central “dictionary” used by the editor to translate between:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Protocol
 
 from .items_otb import ItemsOTB
-from .items_xml import ItemsXML
+
+if TYPE_CHECKING:
+    from .items_xml import ItemsXML
+
+
+class _HasItemMappings(Protocol):
+    client_to_server: dict[int, int]
+    server_to_client: dict[int, int]
 
 
 class IdMappingError(KeyError):
@@ -38,7 +46,7 @@ class IdMapper:
         return cls(client_to_server={}, server_to_client={})
 
     @classmethod
-    def from_items_xml(cls, items: ItemsXML) -> IdMapper:
+    def from_items_xml(cls, items: ItemsXML | _HasItemMappings) -> IdMapper:
         return cls(
             client_to_server=dict(items.client_to_server),
             server_to_client=dict(items.server_to_client),

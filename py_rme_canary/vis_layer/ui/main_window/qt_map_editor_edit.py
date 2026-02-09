@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import QApplication
 
+from py_rme_canary.core.config.user_settings import get_user_settings
+
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
@@ -33,7 +35,10 @@ class QtMapEditorEditMixin:
         self.status.showMessage("Canceled")
 
     def _copy_selection(self: QtMapEditor) -> None:
-        if not self.session.copy_selection(client_version=str(self.client_version)):
+        if not self.session.copy_selection(
+            client_version=str(self.client_version),
+            sprite_hash_lookup=self._sprite_hash_for_server_id,
+        ):
             self.status.showMessage("Copy: nothing selected")
             self._update_action_enabled_states()
             return
@@ -41,7 +46,10 @@ class QtMapEditorEditMixin:
         self._update_action_enabled_states()
 
     def _cut_selection(self: QtMapEditor) -> None:
-        action = self.session.cut_selection(client_version=str(self.client_version))
+        action = self.session.cut_selection(
+            client_version=str(self.client_version),
+            sprite_hash_lookup=self._sprite_hash_for_server_id,
+        )
         if action is None:
             self.status.showMessage("Cut: nothing selected")
             self._update_action_enabled_states()
@@ -62,7 +70,12 @@ class QtMapEditorEditMixin:
 
     def _arm_paste(self: QtMapEditor) -> None:
         # Try importing from system clipboard first (handling any version conversion)
-        self.session.import_from_system_clipboard(target_version=str(self.client_version))
+        sprite_match_enabled = bool(get_user_settings().get_sprite_match_on_paste())
+        self.session.import_from_system_clipboard(
+            target_version=str(self.client_version),
+            hash_resolver=self._resolve_server_id_from_sprite_hash,
+            enable_sprite_match=sprite_match_enabled,
+        )
 
         if not self.session.can_paste():
             self.status.showMessage("Paste: buffer empty")

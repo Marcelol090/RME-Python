@@ -14,6 +14,7 @@ Architecture Notes:
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol
 
@@ -105,6 +106,7 @@ class MapDrawer:
 
     options: DrawingOptions
     game_map: GameMap | None = None
+    client_id_resolver: Callable[[int], int | None] | None = None
     viewport: Viewport = field(default_factory=Viewport)
 
     # Internal state (mirrors C++ MapDrawer members)
@@ -129,6 +131,7 @@ class MapDrawer:
     _highlight_tile: tuple[int, int, int] | None = None
     _highlight_until: float = 0.0
     _live_cursors: list[dict[str, object]] = field(default_factory=list)
+    _client_id_cache: dict[int, int | None] = field(default_factory=dict)
 
     # Drawers (Composition Pattern)
     grid_drawer: GridDrawer = field(default_factory=GridDrawer)
@@ -258,6 +261,7 @@ class MapDrawer:
         backend : RenderBackend
             The rendering backend to use for output.
         """
+        self._client_id_cache.clear()
         self.setup_vars()
 
         # Background
@@ -356,6 +360,62 @@ class MapDrawer:
         self.floor_drawer.draw(self, backend, tile, screen_x, screen_y, size)
         self.item_drawer.draw(self, backend, tile, screen_x, screen_y, size)
         self.creature_drawer.draw(self, backend, tile, screen_x, screen_y, size)
+        self._draw_client_id_overlay(backend, tile, map_z, screen_x, screen_y, size)
+
+    def _draw_client_id_overlay(
+        self,
+        backend: RenderBackend,
+        tile,
+        map_z: int,
+        screen_x: int,
+        screen_y: int,
+        size: int,
+    ) -> None:
+        if not bool(self.options.show_client_ids):
+            return
+        if self.is_minimap_mode() or int(size) < 18:
+            return
+        if int(map_z) != int(self._floor):
+            return
+
+        top_item = tile.items[-1] if tile.items else tile.ground
+        if top_item is None:
+            return
+
+        server_id = int(getattr(top_item, "id", 0))
+        if server_id <= 0:
+            return
+
+        client_id = getattr(top_item, "client_id", None)
+        try:
+            client_id = int(client_id) if client_id is not None else None
+        except Exception:
+            client_id = None
+        if client_id is None or client_id <= 0:
+            client_id = self._resolve_client_id(server_id)
+        if client_id is None or client_id <= 0:
+            client_id = server_id
+
+        baseline_y = int(screen_y) + int(size) - 4
+        backend.draw_text(int(screen_x) + 2, baseline_y, str(int(client_id)), 140, 220, 255, 230)
+
+    def _resolve_client_id(self, server_id: int) -> int | None:
+        key = int(server_id)
+        if key in self._client_id_cache:
+            return self._client_id_cache[key]
+
+        resolver = self.client_id_resolver
+        resolved: int | None = None
+        if resolver is not None:
+            try:
+                mapped = resolver(int(server_id))
+                if mapped is not None:
+                    resolved = int(mapped)
+            except Exception:
+                resolved = None
+
+        self._client_id_cache[key] = resolved
+        return resolved
 
     def _get_tile_color(self, tile) -> tuple[int, int, int, int]:
         """Get the display color for a tile (for minimap mode)."""
@@ -379,9 +439,6 @@ class MapDrawer:
         g = clamp(int(g))
         b = clamp(int(b))
         return (r, g, b, 255)
-
-        """Draw the tile grid."""
-        self.grid_drawer.draw(self, backend)
 
     def _draw_highlight(self, backend: RenderBackend) -> None:
         """Draw a temporary highlight box for a tile."""

@@ -63,24 +63,28 @@ class ConfigurationManager:
 
         This matches RME's approach where each Tibia version gets its own folder.
         """
-        root = Path(workspace_root)
+        root = Path(workspace_root).resolve()
         engine = normalize_engine(metadata.engine)
         client_version = int(metadata.client_version) if metadata.client_version else 0
+        data_roots = cls._candidate_data_roots(root)
 
         # Build candidate paths for items.otb (ServerID ↔ ClientID mapping)
         otb_candidates: list[Path] = []
 
         # Priority 1: Version-specific folder (e.g., data/1310/items.otb)
         if client_version > 0:
-            otb_candidates.append(root / "data" / str(client_version) / "items.otb")
+            for data_root in data_roots:
+                otb_candidates.append(data_root / str(client_version) / "items.otb")
 
         # Priority 2: Engine-specific folder (e.g., data/canary/items.otb)
         if engine and engine != "unknown":
-            otb_candidates.append(root / "data" / engine / "items.otb")
-            otb_candidates.append(root / "data" / engine / "items" / "items.otb")
+            for data_root in data_roots:
+                otb_candidates.append(data_root / engine / "items.otb")
+                otb_candidates.append(data_root / engine / "items" / "items.otb")
 
         # Priority 3: Generic folder
-        otb_candidates.append(root / "data" / "items" / "items.otb")
+        for data_root in data_roots:
+            otb_candidates.append(data_root / "items" / "items.otb")
 
         items_otb: Path | None = None
         detected_version: int | None = None
@@ -106,15 +110,18 @@ class ConfigurationManager:
 
         # Priority 1: Version-specific folder (e.g., data/1310/items.xml)
         if effective_version > 0:
-            xml_candidates.append(root / "data" / str(effective_version) / "items.xml")
+            for data_root in data_roots:
+                xml_candidates.append(data_root / str(effective_version) / "items.xml")
 
         # Priority 2: Engine-specific folder
         if engine and engine != "unknown":
-            xml_candidates.append(root / "data" / engine / "items.xml")
-            xml_candidates.append(root / "data" / engine / "items" / "items.xml")
+            for data_root in data_roots:
+                xml_candidates.append(data_root / engine / "items.xml")
+                xml_candidates.append(data_root / engine / "items" / "items.xml")
 
         # Priority 3: Generic folder
-        xml_candidates.append(root / "data" / "items" / "items.xml")
+        for data_root in data_roots:
+            xml_candidates.append(data_root / "items" / "items.xml")
 
         items_xml: Path | None = None
         for c in xml_candidates:
@@ -122,14 +129,41 @@ class ConfigurationManager:
                 items_xml = c
                 break
 
+        brushes_json: Path | None = None
+        for data_root in data_roots:
+            candidate = data_root / "brushes.json"
+            if candidate.exists():
+                brushes_json = candidate
+                break
+
         defs = DefinitionsConfig(
             items_otb=items_otb,
             items_xml=items_xml,
-            brushes_json=root / "data" / "brushes.json" if (root / "data" / "brushes.json").exists() else None,
+            brushes_json=brushes_json,
             detected_client_version=detected_version,
             detected_otbm_version=metadata.otbm_version,
         )
         return cls(metadata=metadata, definitions=defs)
+
+    @staticmethod
+    def _candidate_data_roots(workspace_root: Path) -> list[Path]:
+        """Return definition roots in priority order without duplicates."""
+        package_data = Path(__file__).resolve().parents[2] / "data"
+        candidates = [
+            workspace_root / "data",
+            workspace_root / "py_rme_canary" / "data",
+            package_data,
+        ]
+
+        result: list[Path] = []
+        seen: set[str] = set()
+        for candidate in candidates:
+            normalized = str(candidate.resolve())
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            result.append(candidate)
+        return result
 
     @staticmethod
     def infer_engine_from_client_version(client_version: int) -> str:

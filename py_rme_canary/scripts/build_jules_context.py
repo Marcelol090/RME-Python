@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 DEFAULT_API_URL = "https://api.github.com"
@@ -86,8 +86,16 @@ def _extract_next_link(link_header: str) -> str | None:
     return None
 
 
+def _validate_https_api_url(url: str) -> None:
+    parsed = urlparse(str(url))
+    scheme = str(parsed.scheme or "").lower()
+    if scheme != "https":
+        raise GithubAPIError(f"Refusing non-HTTPS URL: {url}")
+
+
 def github_get(url: str, *, token: str, timeout_seconds: float = 30.0) -> tuple[object, str | None]:
     """Execute a GitHub API GET request and return JSON payload plus next link."""
+    _validate_https_api_url(url)
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -95,7 +103,7 @@ def github_get(url: str, *, token: str, timeout_seconds: float = 30.0) -> tuple[
     }
     request = Request(url, headers=headers, method="GET")
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
+        with urlopen(request, timeout=timeout_seconds) as response:  # nosec B310 - URL is validated as HTTPS
             body = response.read()
             payload = _decode_json(body)
             next_url = _extract_next_link(response.headers.get("Link", ""))

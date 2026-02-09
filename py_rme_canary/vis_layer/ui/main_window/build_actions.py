@@ -95,6 +95,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_cancel.setShortcut(QKeySequence("Esc"))
     editor.act_cancel.triggered.connect(lambda _c=False: edit_tools.cancel(editor))
 
+    editor.act_command_palette = QAction("Command Palette...", editor)
+    editor.act_command_palette.setShortcut(QKeySequence("Ctrl+K"))
+    editor.act_command_palette.triggered.connect(lambda _c=False: editor._show_command_palette())
+
     editor.act_copy = QAction(load_icon("action_copy"), "Copy", editor)
     editor.act_cut = QAction(load_icon("action_cut"), "Cut", editor)
     editor.act_paste = QAction(load_icon("action_paste"), "Paste", editor)
@@ -291,6 +295,11 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_client_box.setCheckable(True)
     editor.act_show_client_box.setShortcut(QKeySequence("Shift+I"))
     editor.act_show_client_box.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_client_box", v))
+
+    editor.act_show_client_ids = QAction("Show Client IDs", editor)
+    editor.act_show_client_ids.setCheckable(True)
+    editor.act_show_client_ids.setShortcut(QKeySequence("Ctrl+Shift+I"))
+    editor.act_show_client_ids.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_client_ids", v))
 
     editor.act_show_grid = QAction("Show Grid", editor)
     editor.act_show_grid.setCheckable(True)
@@ -582,6 +591,9 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_manage_client_profiles = QAction("Manage Client Profiles...", editor)
     editor.act_manage_client_profiles.triggered.connect(lambda _c=False: assets_tools.manage_client_profiles(editor))
 
+    editor.act_load_client_data_stack = QAction("Load Client Data...", editor)
+    editor.act_load_client_data_stack.triggered.connect(lambda _c=False: assets_tools.load_client_data_stack(editor))
+
     editor.act_set_assets_dir = QAction("Set Assets Directory…", editor)
     editor.act_set_assets_dir.triggered.connect(lambda _c=False: assets_tools.choose_assets_dir(editor))
 
@@ -680,6 +692,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_loose_items.setChecked(bool(getattr(editor, "show_loose_items", False)))
     editor.act_ghost_higher_floors.setChecked(bool(getattr(editor, "ghost_higher_floors", False)))
     editor.act_show_client_box.setChecked(bool(getattr(editor, "show_client_box", False)))
+    editor.act_show_client_ids.setChecked(bool(getattr(editor, "show_client_ids", False)))
 
     editor.act_highlight_items.setChecked(bool(getattr(editor, "highlight_items", False)))
 

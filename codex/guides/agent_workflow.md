@@ -78,6 +78,24 @@ Prompt safety rules:
 - Do not interpolate raw user text without sanitization.
 - Prefer deterministic output contracts for automation (`implemented`, `suggested_next`).
 
+### Review Trigger Diagnostics
+
+Use this checklist when `codex_review_for_jules_prs.yml` appears skipped:
+
+1. Confirm the PR number is resolvable by the workflow event (`pull_request`, `issue_comment`, `workflow_dispatch`, `workflow_call`).
+2. Check gate output (`should_review`, `reason`) in workflow logs.
+3. Verify repository secrets:
+   - `OPENAI_API_KEY` for Codex execution.
+   - `CODEX_DEPLOY_KEY` optional; workflow falls back to `GITHUB_TOKEN`.
+4. Confirm the PR is not from a fork if secret-backed steps are required.
+5. For manual runs, ensure `pr_number` input is provided and valid.
+
+Expected gate reasons:
+- `eligible`: review proceeds.
+- `manual_override`: manual/reusable trigger bypassed Jules-author restriction.
+- `not_jules_author`: PR author does not match Jules-compatible actors.
+- `fork_pr_no_secrets`: fork PR restricted by secret availability policy.
+
 ---
 
 ## 🧠 Reflexion (Self-Correction)

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QDialog, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QProgressDialog
 
 from py_rme_canary.core.assets.appearances_dat import AppearancesDatError, load_appearances_dat
 from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
@@ -25,6 +25,7 @@ from py_rme_canary.core.database.id_mapper import IdMapper
 from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.memory_guard import MemoryGuardError
+from py_rme_canary.vis_layer.ui.dialogs.client_data_loader_dialog import ClientDataLoadConfig, ClientDataLoaderDialog
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -44,18 +45,226 @@ class QtMapEditorAssetsMixin:
             return "legacy"
         return None
 
+    @staticmethod
+    def _workspace_root_for_definitions() -> Path:
+        cwd = Path.cwd().resolve()
+        package_root = Path(__file__).resolve().parents[3]
+        repo_root = Path(__file__).resolve().parents[4]
+        candidates = [cwd, repo_root, package_root]
+        for candidate in candidates:
+            if (candidate / "py_rme_canary" / "data").exists() or (candidate / "data").exists():
+                return candidate
+        return cwd
+
+    def _set_id_mapper(self: QtMapEditor, mapper: IdMapper | None) -> None:
+        self.id_mapper = mapper
+        with contextlib.suppress(Exception):
+            from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+            AssetManager.instance().set_id_mapper(mapper)
+        with contextlib.suppress(Exception):
+            self._build_item_hash_index()
+
+    def _client_id_for_server_id(self: QtMapEditor, server_id: int) -> int | None:
+        mapper = getattr(self, "id_mapper", None)
+        if mapper is None:
+            return None
+        with contextlib.suppress(Exception):
+            mapped = mapper.get_client_id(int(server_id))
+            if mapped is None:
+                return None
+            return int(mapped)
+        return None
+
+    def _reload_item_definitions_for_current_context(self: QtMapEditor, *, source: str) -> list[str]:
+        md = MapMetadata(
+            engine=str(self.engine or "unknown"),
+            client_version=int(self.client_version or 0),
+            otbm_version=int(getattr(self.map.header, "otbm_version", 0)) if getattr(self, "map", None) else 0,
+            source=str(source),
+        )
+        cfg = ConfigurationManager.from_sniff(md, workspace_root=self._workspace_root_for_definitions())
+        _items_db, id_mapper, warnings = self._load_items_definitions_for_config(cfg)
+        self._set_id_mapper(id_mapper)
+        if cfg.definitions.items_otb is None and cfg.definitions.items_xml is None:
+            warnings.append(
+                "items_definitions_missing: could not locate items.otb/items.xml for "
+                f"engine={md.engine} client_version={int(md.client_version)}"
+            )
+        return warnings
+
+    @staticmethod
+    def _normalize_optional_path(raw_path: str) -> Path | None:
+        normalized = str(raw_path or "").strip()
+        if not normalized:
+            return None
+        return Path(normalized).expanduser().resolve()
+
+    def _refresh_after_asset_data_load(self: QtMapEditor) -> None:
+        with contextlib.suppress(Exception):
+            self.palettes.refresh_primary_list()
+        with contextlib.suppress(Exception):
+            self.canvas.update()
+        with contextlib.suppress(Exception):
+            self._update_sprite_preview()
+
+    def _open_client_data_loader(self: QtMapEditor) -> None:
+        dialog = ClientDataLoaderDialog(
+            self,
+            default_assets_path=str(getattr(self, "assets_selection_path", "") or ""),
+            default_client_version=int(getattr(self, "client_version", 0) or 0),
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        config = dialog.config()
+        self._load_client_data_stack(config, source="interactive_loader")
+
+    def _load_client_data_stack(self: QtMapEditor, config: ClientDataLoadConfig, *, source: str) -> None:
+        progress = QProgressDialog("Preparing client data load...", "Cancel", 0, 5, self)
+        progress.setWindowTitle("Load Client Data")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setAutoClose(True)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
+
+        def advance(step: int, message: str) -> None:
+            progress.setLabelText(message)
+            progress.setValue(int(step))
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                raise RuntimeError("Client data load canceled by user.")
+
+        try:
+            if int(config.client_version_hint) > 0:
+                self.client_version = int(config.client_version_hint)
+                self.engine = ConfigurationManager.infer_engine_from_client_version(int(config.client_version_hint))
+
+            self.assets_selection_path = str(config.assets_path)
+            user_settings = get_user_settings()
+            user_settings.set_client_assets_folder(str(config.assets_path))
+            if int(config.client_version_hint) > 0:
+                user_settings.set_default_client_version(int(config.client_version_hint))
+
+            prefer_kind = str(config.prefer_kind or "auto").strip().lower()
+            prefer = None if prefer_kind == "auto" else prefer_kind
+
+            advance(1, "Detecting client asset profile...")
+            profile = detect_asset_profile(str(config.assets_path), prefer_kind=prefer)
+
+            advance(2, "Loading sprites and appearance metadata...")
+            loaded_assets = self._apply_asset_profile(profile)
+            if loaded_assets is None or self.sprite_assets is None:
+                raise RuntimeError("Asset profile loading did not initialize sprite assets.")
+
+            advance(3, "Loading item definitions (items.otb / items.xml)...")
+            explicit_otb = self._normalize_optional_path(config.items_otb_path)
+            explicit_xml = self._normalize_optional_path(config.items_xml_path)
+            if explicit_otb is not None or explicit_xml is not None:
+                id_mapper, warnings, explicit_counts = self._load_item_definitions_from_explicit_paths(
+                    items_otb_path=explicit_otb,
+                    items_xml_path=explicit_xml,
+                )
+                self._set_id_mapper(id_mapper)
+            else:
+                warnings = self._reload_item_definitions_for_current_context(source=source)
+                explicit_counts = {}
+
+            advance(4, "Refreshing editor UI and grid previews...")
+            self._refresh_after_asset_data_load()
+
+            advance(5, "Finalizing load summary...")
+            mapping_count = len(getattr(getattr(self, "id_mapper", None), "server_to_client", {}) or {})
+            summary = self._build_client_data_load_summary(
+                profile=profile,
+                warnings=warnings,
+                mapping_count=mapping_count,
+                explicit_counts=explicit_counts,
+                source=source,
+            )
+            self._update_status_capabilities(prefix="Client data stack loaded")
+            if bool(config.show_summary):
+                QMessageBox.information(self, "Load Client Data", summary)
+
+        except Exception as exc:
+            logger.exception("Client data stack load failed")
+            QMessageBox.critical(self, "Load Client Data", str(exc))
+        finally:
+            progress.close()
+
+    def _build_client_data_load_summary(
+        self: QtMapEditor,
+        *,
+        profile,
+        warnings: list[str],
+        mapping_count: int,
+        explicit_counts: dict[str, int],
+        source: str,
+    ) -> str:
+        profile_kind = str(getattr(profile, "kind", "unknown"))
+        profile_root = str(getattr(profile, "assets_dir", None) or getattr(profile, "root", ""))
+        sprites_info = ""
+        if hasattr(self, "sprite_assets") and self.sprite_assets is not None:
+            sprite_count = int(getattr(self.sprite_assets, "sprite_count", 0) or 0)
+            if sprite_count > 0:
+                sprites_info = f"\nSprite count: {sprite_count}"
+        appearance_state = "loaded" if self.appearance_assets is not None else "not loaded"
+        item_count = int(explicit_counts.get("items_xml_count", 0))
+        details = [
+            f"Source: {source}",
+            f"Profile: {profile_kind}",
+            f"Assets root: {profile_root}",
+            f"Appearances: {appearance_state}",
+            f"ID mappings: {int(mapping_count)}",
+        ]
+        if item_count > 0:
+            details.append(f"items.xml entries: {item_count}")
+        if sprites_info:
+            details.append(sprites_info.strip())
+        if warnings:
+            details.append(f"Warnings: {len(warnings)}")
+            details.extend([f"- {msg}" for msg in warnings[:6]])
+        else:
+            details.append("Warnings: 0")
+        return "\n".join(details)
+
+    def _load_item_definitions_from_explicit_paths(
+        self: QtMapEditor,
+        *,
+        items_otb_path: Path | None,
+        items_xml_path: Path | None,
+    ) -> tuple[IdMapper | None, list[str], dict[str, int]]:
+        warnings: list[str] = []
+        counts: dict[str, int] = {}
+
+        items_db: ItemsXML | None = None
+        if items_xml_path is not None:
+            try:
+                items_db = ItemsXML.load(items_xml_path, strict_mapping=False)
+                counts["items_xml_count"] = len(getattr(items_db, "items_by_server_id", {}) or {})
+            except Exception as exc:
+                warnings.append(f"items_xml_error: {exc}")
+
+        id_mapper: IdMapper | None = None
+        if items_otb_path is not None:
+            try:
+                items_otb = ItemsOTB.load(items_otb_path)
+                id_mapper = IdMapper.from_items_otb(items_otb)
+                counts["items_otb_count"] = len(getattr(id_mapper, "server_to_client", {}) or {})
+            except Exception as exc:
+                warnings.append(f"items_otb_error: {exc}")
+
+        if id_mapper is None and items_db is not None:
+            id_mapper = IdMapper.from_items_xml(items_db)
+            counts["items_otb_count"] = len(getattr(id_mapper, "server_to_client", {}) or {})
+            warnings.append("items_otb_fallback: using explicit items.xml mapping fallback")
+
+        return id_mapper, warnings, counts
+
     def _choose_assets_dir(self: QtMapEditor) -> None:
         path = QFileDialog.getExistingDirectory(self, "Select Tibia client folder or assets folder")
         if not path:
             return
-        try:
-            self.assets_selection_path = str(path)
-            logger.info("Assets directory selected: %s", path)
-            profile = detect_asset_profile(path, prefer_kind=self._preferred_asset_kind())
-            self._apply_asset_profile(profile)
-        except (AssetProfileError, SpriteAppearancesError) as e:
-            QMessageBox.critical(self, "Assets", str(e))
-            logger.exception("Failed to detect assets for path %s", path)
+        self._set_assets_dir(path)
 
     def _manage_client_profiles(self: QtMapEditor) -> None:
         from py_rme_canary.vis_layer.ui.dialogs.client_profiles_dialog import ClientProfilesDialog
@@ -106,6 +315,12 @@ class QtMapEditorAssetsMixin:
             prefer_kind=None if preferred_kind == "auto" else preferred_kind,
         )
         self._apply_asset_profile(resolved_profile)
+        warnings = self._reload_item_definitions_for_current_context(source=f"profile:{profile.profile_id}")
+        if warnings:
+            self.status.showMessage(warnings[0])
+            logger.warning(" | ".join(warnings))
+        self._build_sprite_hash_database()
+        self._refresh_after_asset_data_load()
 
         user_settings = get_user_settings()
         user_settings.set_client_assets_folder(assets_dir)
@@ -126,6 +341,12 @@ class QtMapEditorAssetsMixin:
             logger.exception("Failed to detect assets for path %s", assets_dir)
             return
         self._apply_asset_profile(profile)
+        warnings = self._reload_item_definitions_for_current_context(source="manual_assets_dir")
+        if warnings:
+            self.status.showMessage(warnings[0])
+            logger.warning(" | ".join(warnings))
+        self._build_sprite_hash_database()
+        self._refresh_after_asset_data_load()
 
     def _apply_asset_profile(self: QtMapEditor, profile) -> None:
         user_settings = get_user_settings()
@@ -170,7 +391,8 @@ class QtMapEditorAssetsMixin:
             self.status.showMessage(str(loaded.fallback_notice))
             logger.warning(str(loaded.fallback_notice))
 
-        self._update_sprite_preview()
+        self._refresh_after_asset_data_load()
+        return loaded
 
     def _apply_detected_context(self: QtMapEditor, metadata: dict) -> None:
         prev_engine = str(self.engine)
@@ -182,6 +404,11 @@ class QtMapEditorAssetsMixin:
             self._sprite_render_temporarily_disabled = False
             self._sprite_render_disabled_reason = None
         self._maybe_reselect_assets_for_metadata()
+        if self.id_mapper is None:
+            warnings = self._reload_item_definitions_for_current_context(source="detected_context")
+            if warnings:
+                self.status.showMessage(warnings[0])
+                logger.warning(" | ".join(warnings))
 
     def _apply_preferences_for_new_map(self: QtMapEditor) -> None:
         user_settings = get_user_settings()
@@ -195,16 +422,6 @@ class QtMapEditorAssetsMixin:
         else:
             self.client_version = 0
             self.engine = "unknown"
-
-        md = MapMetadata(
-            engine=str(self.engine or "unknown"),
-            client_version=int(self.client_version or 0),
-            otbm_version=int(getattr(self.map.header, "otbm_version", 0)) if self.map else 0,
-            source="preferences",
-        )
-        cfg = ConfigurationManager.from_sniff(md, workspace_root=Path.cwd())
-        _items_db, id_mapper, warnings = self._load_items_definitions_for_config(cfg)
-        self.id_mapper = id_mapper
 
         loaded_from_profile = False
         if active_profile is not None:
@@ -221,6 +438,7 @@ class QtMapEditorAssetsMixin:
             if assets_folder and os.path.exists(assets_folder):
                 self._set_assets_dir(assets_folder)
 
+        warnings = self._reload_item_definitions_for_current_context(source="preferences")
         if warnings:
             self.status.showMessage(warnings[0])
             logger.warning(" | ".join(warnings))
@@ -252,6 +470,7 @@ class QtMapEditorAssetsMixin:
 
         if id_mapper is None and items_db is not None:
             id_mapper = IdMapper.from_items_xml(items_db)
+            warnings.append("items_otb_fallback: using items.xml mapping fallback")
 
         return items_db, id_mapper, warnings
 
@@ -295,7 +514,7 @@ class QtMapEditorAssetsMixin:
     def _sprite_render_enabled(self: QtMapEditor) -> bool:
         if bool(getattr(self, "_sprite_render_temporarily_disabled", False)):
             return False
-        return self.sprite_assets is not None and self.id_mapper is not None
+        return self.sprite_assets is not None
 
     def _update_status_capabilities(self: QtMapEditor, *, prefix: str = "") -> None:
         assets = "ON" if self.sprite_assets is not None else "OFF"
@@ -378,6 +597,36 @@ class QtMapEditorAssetsMixin:
             return int(client_id)
         return int(sprite_id)
 
+    def _candidate_sprite_ids_for_server_id(self: QtMapEditor, server_id: int) -> list[int]:
+        candidates: list[int] = []
+        sid = int(server_id)
+
+        if self.id_mapper is not None:
+            with contextlib.suppress(Exception):
+                cid = self.id_mapper.get_client_id(sid)
+                if cid is not None and int(cid) > 0:
+                    resolved = self._resolve_sprite_id_from_client_id(int(cid))
+                    if resolved is not None and int(resolved) > 0:
+                        candidates.append(int(resolved))
+                    candidates.append(int(cid))
+
+        with contextlib.suppress(Exception):
+            resolved_sid = self._resolve_sprite_id_from_client_id(sid)
+            if resolved_sid is not None and int(resolved_sid) > 0:
+                candidates.append(int(resolved_sid))
+
+        candidates.append(sid)
+
+        unique: list[int] = []
+        seen: set[int] = set()
+        for value in candidates:
+            iv = int(value)
+            if iv <= 0 or iv in seen:
+                continue
+            seen.add(iv)
+            unique.append(iv)
+        return unique
+
     def _maybe_write_default_project_json(self: QtMapEditor, *, opened_otbm_path: str, cfg) -> None:
         # Legacy-friendly behavior: if user opens a bare .otbm without any wrapper,
         # write a minimal map_project.json so subsequent opens are deterministic.
@@ -430,98 +679,180 @@ class QtMapEditorAssetsMixin:
     def _sprite_pixmap_for_server_id(self: QtMapEditor, server_id: int, *, tile_px: int) -> QPixmap | None:
         if not self._sprite_render_enabled():
             return None
-        if self.sprite_assets is None or self.id_mapper is None:
+        if self.sprite_assets is None:
             return None
-        cid = self.id_mapper.get_client_id(int(server_id))
-        if cid is None or int(cid) <= 0:
-            return None
-        sprite_id = self._resolve_sprite_id_from_client_id(int(cid))
-        if sprite_id is None or int(sprite_id) < 0:
-            return None
-        key = (int(sprite_id), int(tile_px))
-        cached = self._sprite_cache.get(key)
-        if cached is not None:
-            # LRU bump
-            with contextlib.suppress(Exception):
-                self._sprite_cache.move_to_end(key)
-            return cached
-        try:
-            w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
-            img = QImage(bgra, int(w), int(h), int(w) * 4, QImage.Format.Format_ARGB32).copy()
-            pm = QPixmap.fromImage(img)
-            if pm.isNull():
-                self._disable_sprite_render_temporarily(reason="QPixmap.fromImage returned null")
-                return None
-            if int(tile_px) > 0 and (pm.width() != int(tile_px) or pm.height() != int(tile_px)):
-                pm2 = pm.scaled(
-                    int(tile_px),
-                    int(tile_px),
-                    Qt.AspectRatioMode.IgnoreAspectRatio,
-                    Qt.TransformationMode.FastTransformation,
-                )
-                if pm2.isNull():
-                    self._disable_sprite_render_temporarily(reason="QPixmap.scaled returned null")
+        for sprite_id in self._candidate_sprite_ids_for_server_id(int(server_id)):
+            key = (int(sprite_id), int(tile_px))
+            cached = self._sprite_cache.get(key)
+            if cached is not None:
+                with contextlib.suppress(Exception):
+                    self._sprite_cache.move_to_end(key)
+                return cached
+            try:
+                w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
+                img = QImage(bgra, int(w), int(h), int(w) * 4, QImage.Format.Format_ARGB32).copy()
+                pm = QPixmap.fromImage(img)
+                if pm.isNull():
+                    self._disable_sprite_render_temporarily(reason="QPixmap.fromImage returned null")
                     return None
-                pm = pm2
-            # Insert into LRU, then enforce memory guard limits.
-            try:
-                self._sprite_cache[key] = pm
-                self._sprite_cache.move_to_end(key)
-            except Exception:
-                # Fallback: still return pixmap even if cache bookkeeping fails.
-                return pm
-
-            try:
-                msg = self._memory_guard.check_cache_entries(
-                    kind="qt_pixmap_cache",
-                    entries=len(self._sprite_cache),
-                    stage="qt_sprite_cache",
-                )
-                if msg is not None:
-                    self.status.showMessage(str(msg))
-            except MemoryGuardError:
-                # Hard limit: evict aggressively to a target below hard.
-                hard = int(self._memory_guard.config.hard_qt_pixmap_cache_entries)
-                evict_to = int(self._memory_guard.config.evict_to_qt_pixmap_cache_entries)
-                target = min(max(0, evict_to), max(0, hard - 1)) if hard > 0 else 0
+                if int(tile_px) > 0 and (pm.width() != int(tile_px) or pm.height() != int(tile_px)):
+                    pm2 = pm.scaled(
+                        int(tile_px),
+                        int(tile_px),
+                        Qt.AspectRatioMode.IgnoreAspectRatio,
+                        Qt.TransformationMode.FastTransformation,
+                    )
+                    if pm2.isNull():
+                        self._disable_sprite_render_temporarily(reason="QPixmap.scaled returned null")
+                        return None
+                    pm = pm2
                 try:
-                    while len(self._sprite_cache) > target and self._sprite_cache:
-                        self._sprite_cache.popitem(last=False)
+                    self._sprite_cache[key] = pm
+                    self._sprite_cache.move_to_end(key)
                 except Exception:
-                    self._sprite_cache.clear()
-            return pm
-        except MemoryError:
-            self._disable_sprite_render_temporarily(reason="MemoryError while building QPixmap")
-            return None
-        except SpriteAppearancesError as e:
-            # Includes guarded failures from core sprite decoding/cache.
-            self._disable_sprite_render_temporarily(reason=str(e))
-            return None
-        except Exception:
-            return None
+                    return pm
+
+                try:
+                    msg = self._memory_guard.check_cache_entries(
+                        kind="qt_pixmap_cache",
+                        entries=len(self._sprite_cache),
+                        stage="qt_sprite_cache",
+                    )
+                    if msg is not None:
+                        self.status.showMessage(str(msg))
+                except MemoryGuardError:
+                    hard = int(self._memory_guard.config.hard_qt_pixmap_cache_entries)
+                    evict_to = int(self._memory_guard.config.evict_to_qt_pixmap_cache_entries)
+                    target = min(max(0, evict_to), max(0, hard - 1)) if hard > 0 else 0
+                    try:
+                        while len(self._sprite_cache) > target and self._sprite_cache:
+                            self._sprite_cache.popitem(last=False)
+                    except Exception:
+                        self._sprite_cache.clear()
+                return pm
+            except MemoryError:
+                self._disable_sprite_render_temporarily(reason="MemoryError while building QPixmap")
+                return None
+            except SpriteAppearancesError:
+                continue
+            except Exception:
+                continue
+        return None
 
     def _sprite_bgra_for_server_id(self: QtMapEditor, server_id: int) -> tuple[int, int, int, bytes] | None:
         if not self._sprite_render_enabled():
             return None
-        if self.sprite_assets is None or self.id_mapper is None:
+        if self.sprite_assets is None:
             return None
-        cid = self.id_mapper.get_client_id(int(server_id))
-        if cid is None or int(cid) <= 0:
+        for sprite_id in self._candidate_sprite_ids_for_server_id(int(server_id)):
+            try:
+                w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
+                return (int(sprite_id), int(w), int(h), bgra)
+            except MemoryError:
+                self._disable_sprite_render_temporarily(reason="MemoryError while building sprite bytes")
+                return None
+            except SpriteAppearancesError:
+                continue
+            except Exception:
+                continue
+        return None
+
+    def _build_item_hash_index(self: QtMapEditor) -> None:
+        """Build hash indexes keyed by ServerID for cross-instance clipboard."""
+        self._item_hash_to_server_ids: dict[int, list[int]] = {}
+        self._server_id_to_item_hash: dict[int, int] = {}
+
+        matcher = getattr(self, "sprite_matcher", None)
+        if matcher is None or self.id_mapper is None:
+            return
+
+        server_to_client = dict(getattr(self.id_mapper, "server_to_client", {}) or {})
+        indexed = 0
+        for server_id, client_id in server_to_client.items():
+            try:
+                sprite_id = self._resolve_sprite_id_from_client_id(int(client_id))
+            except Exception:
+                continue
+            if sprite_id is None or int(sprite_id) <= 0:
+                continue
+
+            sprite_hash = matcher.get_hash(int(sprite_id))
+            if sprite_hash is None:
+                # Lazy add hash for sprites outside initial preload window.
+                bgra_data = self._sprite_bgra_for_server_id(int(server_id))
+                if bgra_data is None:
+                    continue
+                sprite_id, width, height, bgra = bgra_data
+                try:
+                    matcher.add_sprite(int(sprite_id), bytes(bgra), int(width), int(height))
+                except Exception:
+                    continue
+                sprite_hash = matcher.get_hash(int(sprite_id))
+            if sprite_hash is None:
+                continue
+
+            h = int(sprite_hash)
+            sid = int(server_id)
+            self._server_id_to_item_hash[sid] = h
+            bucket = self._item_hash_to_server_ids.setdefault(h, [])
+            if sid not in bucket:
+                bucket.append(sid)
+            indexed += 1
+
+        for ids in self._item_hash_to_server_ids.values():
+            ids.sort()
+
+        logger.info(
+            "Built item hash index: %d items across %d unique hashes",
+            indexed,
+            len(self._item_hash_to_server_ids),
+        )
+
+    def _sprite_hash_for_server_id(self: QtMapEditor, server_id: int) -> int | None:
+        """Return sprite hash for a ServerID using current assets profile."""
+        sid = int(server_id)
+        cached = getattr(self, "_server_id_to_item_hash", {}).get(sid)
+        if cached is not None:
+            return int(cached)
+
+        matcher = getattr(self, "sprite_matcher", None)
+        if matcher is None:
             return None
-        sprite_id = self._resolve_sprite_id_from_client_id(int(cid))
-        if sprite_id is None or int(sprite_id) < 0:
+
+        bgra_data = self._sprite_bgra_for_server_id(sid)
+        if bgra_data is None:
             return None
+        sprite_id, width, height, bgra = bgra_data
         try:
-            w, h, bgra = self.sprite_assets.get_sprite_rgba(int(sprite_id))
-            return (int(sprite_id), int(w), int(h), bgra)
-        except MemoryError:
-            self._disable_sprite_render_temporarily(reason="MemoryError while building sprite bytes")
-            return None
-        except SpriteAppearancesError as e:
-            self._disable_sprite_render_temporarily(reason=str(e))
-            return None
+            matcher.add_sprite(int(sprite_id), bytes(bgra), int(width), int(height))
         except Exception:
             return None
+
+        sprite_hash = matcher.get_hash(int(sprite_id))
+        if sprite_hash is None:
+            return None
+
+        h = int(sprite_hash)
+        self._server_id_to_item_hash[sid] = h
+        bucket = self._item_hash_to_server_ids.setdefault(h, [])
+        if sid not in bucket:
+            bucket.append(sid)
+            bucket.sort()
+        return h
+
+    def _resolve_server_id_from_sprite_hash(
+        self: QtMapEditor,
+        sprite_hash: int,
+        original_id: int | None = None,
+        _name: str | None = None,
+    ) -> int | None:
+        """Resolve local ServerID candidate from incoming sprite hash."""
+        bucket = getattr(self, "_item_hash_to_server_ids", {}).get(int(sprite_hash), [])
+        if not bucket:
+            return None
+        if original_id is not None and int(original_id) in bucket:
+            return int(original_id)
+        return int(bucket[0])
 
     def _update_sprite_preview(self: QtMapEditor) -> None:
         if self.sprite_assets is None:
@@ -562,6 +893,8 @@ class QtMapEditorAssetsMixin:
             # Skip if no assets loaded
             if self.sprite_assets is None or self.id_mapper is None:
                 logger.debug("Skipping sprite hash database build - no assets loaded")
+                self._item_hash_to_server_ids = {}
+                self._server_id_to_item_hash = {}
                 return
 
             # Get sprite count
@@ -571,6 +904,8 @@ class QtMapEditorAssetsMixin:
 
             if sprite_count <= 0:
                 logger.debug("No sprites to hash")
+                self._item_hash_to_server_ids = {}
+                self._server_id_to_item_hash = {}
                 return
 
             # Build hash for each sprite (limit to avoid performance issues)
@@ -588,10 +923,15 @@ class QtMapEditorAssetsMixin:
                     continue
 
             logger.info(f"Built sprite hash database: {hashed_count} sprites hashed from {max_sprites} total")
+            self._build_item_hash_index()
 
         except ImportError:
             logger.warning("CrossVersionClipboard not available")
             self.sprite_matcher = None
+            self._item_hash_to_server_ids = {}
+            self._server_id_to_item_hash = {}
         except Exception as e:
             logger.exception(f"Failed to build sprite hash database: {e}")
             self.sprite_matcher = None
+            self._item_hash_to_server_ids = {}
+            self._server_id_to_item_hash = {}

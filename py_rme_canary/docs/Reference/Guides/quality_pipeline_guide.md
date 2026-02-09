@@ -141,6 +141,27 @@ Notas:
 - `--timeout`: limita execução de ferramentas lentas para evitar travamentos prolongados.
 - `--no-cache`: força reexecução completa quando necessário.
 
+### Ambiente Windows (PowerShell + Git Bash)
+
+Em Windows, o `quality_lf.sh` pode resolver para um Python diferente (`/usr/bin/python3`) quando executado no Git Bash. Isso gera falsos avisos de ferramentas ausentes (`mypy`, `ruff`, etc.) mesmo com elas instaladas no Python do projeto.
+
+Use explicitamente o binário correto:
+
+```bash
+PYTHON_BIN=python.exe ./py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose
+```
+
+Ou, no PowerShell:
+
+```powershell
+$env:PYTHON_BIN='python.exe'; bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose
+```
+
+Atualização recente do pipeline:
+- `ruff`, `mypy` e `radon` são executados via `"$PYTHON_BIN" -m ...`.
+- Isso reduz divergência entre ambiente de shell e ambiente de dependências Python do projeto.
+- Se o interpretador resolvido for `<3.12`, o `mypy` é pulado com aviso técnico (sem falha falsa de sintaxe), e o log indica como forçar `PYTHON_BIN` para Python 3.12+.
+
 ### Integração Jules Local (v2.3+)
 
 Fluxo operacional esperado:

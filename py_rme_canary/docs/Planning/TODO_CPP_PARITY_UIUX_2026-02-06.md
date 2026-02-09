@@ -128,3 +128,19 @@
 8. `P1-UIUX-008`
 9. `P1-UX-009`
 10. `P2-QA-010`
+
+## Incremental Update (2026-02-08)
+- Added interactive **Client Data Loader** UX (`Load Client Data...`) with staged progress and summary output.
+- Added staged progress feedback for **Open Map** flow (detect -> parse -> session -> context -> refresh).
+- Expanded asset-definition synchronization in UI refresh path (palette + canvas + preview after data stack load).
+- Hardened Codex review workflow gating/diagnostics to reduce silent skips and surface missing-secret reasons in PR comments.
+- Added UI regression assertion for the new Assets action (`Load Client Data...`) in `tests/ui/test_toolbar_menu_sync.py`.
+- Implemented **Show Client IDs** parity:
+  - Added `Show Client IDs` action in `View`/`Window`.
+  - Synced action with `DrawingOptions.show_client_ids`.
+  - Added client-id overlays in `MapDrawer` with item metadata + id-mapper fallback.
+- Hardened quality execution path:
+  - `quality_lf.sh` now executes `ruff/mypy/radon` via `"$PYTHON_BIN" -m ...` for deterministic interpreter/tool resolution.
+- Validation refresh:
+  - `python -m pytest -q py_rme_canary/tests` -> `624 passed`.
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint --skip-jules` -> green run with cache reuse and no new normalized issues.

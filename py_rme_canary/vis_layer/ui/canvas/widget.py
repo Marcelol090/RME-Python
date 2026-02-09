@@ -11,6 +11,7 @@ from py_rme_canary.logic_layer.lasso_selection import get_lasso_tool
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
+from py_rme_canary.vis_layer.ui.canvas.tools.manager import ToolManager
 
 from ..helpers import iter_brush_border_offsets, iter_brush_offsets, qcolor_from_id
 
@@ -27,6 +28,7 @@ class MapCanvasWidget(QWidget):
         self.setMouseTracking(True)
 
         self._editor = editor
+        self.tool_manager = ToolManager(self, editor)
         self._mouse_down = False
         self._panning = False
         self._pan_anchor: tuple[QPoint, int, int] | None = None
@@ -235,6 +237,7 @@ class MapCanvasWidget(QWidget):
         drawer.viewport.tile_px = int(editor.viewport.tile_px)
         drawer.viewport.width_px = int(self.width())
         drawer.viewport.height_px = int(self.height())
+        drawer.client_id_resolver = lambda sid: editor._client_id_for_server_id(int(sid))
         self._sync_hover_to_drawer(drawer)
         with contextlib.suppress(Exception):
             drawer.set_live_cursors(editor.session.get_live_cursor_overlays())
@@ -491,6 +494,10 @@ class MapCanvasWidget(QWidget):
             event.accept()
             return
 
+        x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+        if self.tool_manager.active_tool and self.tool_manager.active_tool.mouse_press(event, (x, y)):
+            return
+
         if event.button() != Qt.MouseButton.LeftButton:
             return
 
@@ -599,9 +606,11 @@ class MapCanvasWidget(QWidget):
             editor._update_action_enabled_states()
             return
 
-        self._mouse_down = True
-
         x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+        if self.tool_manager.active_tool and self.tool_manager.active_tool.mouse_press(event, (x, y)):
+            return
+
+        self._mouse_down = True
         z = editor.viewport.z
         if not (0 <= x < editor.map.header.width and 0 <= y < editor.map.header.height):
             self._mouse_down = False
@@ -655,7 +664,10 @@ class MapCanvasWidget(QWidget):
             self._set_hover_from_pos(int(event.position().x()), int(event.position().y()))
             return
 
-        if self._mouse_down:
+        x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+        if self.tool_manager.active_tool and self.tool_manager.active_tool.mouse_move(event, (x, y)):
+            pass
+        elif self._mouse_down:
             alt = bool(event.modifiers() & Qt.KeyboardModifier.AltModifier)
             self._paint_footprint_at(int(event.position().x()), int(event.position().y()), alt=alt)
 
@@ -667,6 +679,10 @@ class MapCanvasWidget(QWidget):
             self._panning = False
             self._pan_anchor = None
             event.accept()
+            return
+
+        x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+        if self.tool_manager.active_tool and self.tool_manager.active_tool.mouse_release(event, (x, y)):
             return
 
         if event.button() != Qt.MouseButton.LeftButton:

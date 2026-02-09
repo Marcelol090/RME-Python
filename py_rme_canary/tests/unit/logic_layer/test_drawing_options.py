@@ -40,6 +40,7 @@ class TestDrawingOptions:
         assert opts.show_as_minimap is False
         assert opts.show_only_colors is False
         assert opts.show_only_modified is False
+        assert opts.show_client_ids is False
 
         # Transparency
         assert opts.transparent_floors is False
@@ -53,6 +54,7 @@ class TestDrawingOptions:
         opts.show_grid = 0
         opts.show_monsters = False
         opts.show_pickupables = True
+        opts.show_client_ids = True
 
         # Reset
         opts.set_default()
@@ -61,6 +63,7 @@ class TestDrawingOptions:
         assert opts.show_grid == 1
         assert opts.show_monsters is True
         assert opts.show_pickupables is False
+        assert opts.show_client_ids is False
 
     def test_set_ingame(self):
         """Test set_ingame() sets screenshot mode values."""
@@ -75,6 +78,7 @@ class TestDrawingOptions:
         assert opts.show_spawns_npc is False
         assert opts.show_houses is False
         assert opts.hide_items_when_zoomed is False
+        assert opts.show_client_ids is False
 
         # Items still shown
         assert opts.show_items is True

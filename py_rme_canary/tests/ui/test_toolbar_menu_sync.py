@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("PyQt6.QtWidgets")
 
-from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
+from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor  # noqa: E402
 
 
 @pytest.fixture
@@ -44,6 +44,33 @@ def test_modern_menu_bindings_are_exposed(editor):
 
     assert "Settings..." in file_action_texts
     assert "Global Search..." in edit_action_texts
+    assert "Command Palette..." in edit_action_texts
+    assert editor.act_command_palette.shortcut().toString() == "Ctrl+K"
+
+
+def test_assets_menu_exposes_client_data_loader(editor):
+    menubar_actions = editor.menuBar().actions()
+    assets_menu = next((action.menu() for action in menubar_actions if action.text() == "Assets"), None)
+    assert assets_menu is not None
+    assets_action_texts = {action.text() for action in assets_menu.actions() if action.text()}
+    assert "Load Client Data..." in assets_action_texts
+
+
+def test_view_menu_exposes_show_client_ids(editor):
+    menubar_actions = editor.menuBar().actions()
+    view_menu = next((action.menu() for action in menubar_actions if action.text() == "View"), None)
+    assert view_menu is not None
+    view_action_texts = {action.text() for action in view_menu.actions() if action.text()}
+    assert "Show Client IDs" in view_action_texts
+
+
+def test_show_client_ids_action_updates_editor_flag(editor, qtbot):
+    editor.act_show_client_ids.setChecked(True)
+    qtbot.wait(5)
+    assert editor.show_client_ids is True
+    editor.act_show_client_ids.setChecked(False)
+    qtbot.wait(5)
+    assert editor.show_client_ids is False
 
 
 def test_indicator_actions_are_bidirectionally_synced(editor, qtbot):

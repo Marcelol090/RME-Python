@@ -35,6 +35,8 @@ class QPainterRenderBackend:
         self._target_rect = target_rect
         self._sprite_lookup = sprite_lookup
         self._indicator_lookup = indicator_lookup
+        self._sprite_frame_cache: dict[tuple[int, int], QPixmap | None] = {}
+        self._indicator_frame_cache: dict[tuple[str, int], QPixmap | None] = {}
 
     def clear(self, r: int, g: int, b: int, a: int = 255) -> None:
         self._painter.fillRect(self._target_rect, QColor(int(r), int(g), int(b), int(a)))
@@ -44,7 +46,10 @@ class QPainterRenderBackend:
         self._painter.fillRect(rect, QColor(int(r), int(g), int(b), int(a)))
 
     def draw_tile_sprite(self, x: int, y: int, size: int, sprite_id: int) -> None:
-        pm = self._sprite_lookup(int(sprite_id), int(size))
+        key = (int(sprite_id), int(size))
+        if key not in self._sprite_frame_cache:
+            self._sprite_frame_cache[key] = self._sprite_lookup(int(sprite_id), int(size))
+        pm = self._sprite_frame_cache.get(key)
         if pm is None or pm.isNull():
             rect = QRect(int(x), int(y), int(size), int(size))
             self._painter.fillRect(rect, _color_from_id(int(sprite_id)))
@@ -70,7 +75,10 @@ class QPainterRenderBackend:
     def draw_indicator_icon(self, x: int, y: int, indicator_type: str, size: int) -> None:
         if self._indicator_lookup is None:
             return
-        pm = self._indicator_lookup(str(indicator_type), int(size))
+        key = (str(indicator_type), int(size))
+        if key not in self._indicator_frame_cache:
+            self._indicator_frame_cache[key] = self._indicator_lookup(str(indicator_type), int(size))
+        pm = self._indicator_frame_cache.get(key)
         if pm is None or pm.isNull():
             return
         self._painter.drawPixmap(int(x), int(y), pm)

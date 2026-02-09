@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from PyQt6.QtWidgets import QMessageBox
 
 from py_rme_canary.logic_layer.map_search import find_item_positions
+from py_rme_canary.vis_layer.ui.dialogs.command_palette_dialog import CommandPaletteDialog
 from py_rme_canary.vis_layer.ui.dialogs.statistics_graphs_dialog import StatisticsGraphsDialog
 from py_rme_canary.vis_layer.ui.main_window.dialogs import (
     FindItemDialog,
@@ -20,6 +21,12 @@ if TYPE_CHECKING:
 
 
 class QtMapEditorDialogsMixin:
+    def _show_command_palette(self) -> None:
+        editor = cast("QtMapEditor", self)
+        dialog = CommandPaletteDialog.from_editor(editor)
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.last_executed:
+            editor.status.showMessage(f"Command: {dialog.last_executed}")
+
     def _open_find_item_dialog(self) -> None:
         editor = cast("QtMapEditor", self)
         open_find_item(editor)
