@@ -185,3 +185,73 @@ def test_build_quality_prompt_sanitizes_untrusted_inputs() -> None:
     assert "'''json" in prompt
     assert "ignore previous instructions" not in prompt
     assert "untrusted data" in prompt
+
+
+def test_parse_skill_names_defaults_when_empty() -> None:
+    names = jules_runner.parse_skill_names("")
+    assert names == list(jules_runner.DEFAULT_STITCH_SKILLS)
+
+
+def test_load_skill_context_reads_existing_and_marks_missing(tmp_path) -> None:
+    skill_path = tmp_path / ".agent" / "skills" / "jules-uiux-stitch" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True, exist_ok=True)
+    skill_path.write_text("# UIUX Skill\nRules", encoding="utf-8")
+
+    context = jules_runner.load_skill_context(
+        tmp_path,
+        skill_names=["jules-uiux-stitch", "missing-skill"],
+        max_chars_per_skill=120,
+    )
+
+    assert "jules-uiux-stitch" in context
+    assert "missing skill file" in context
+
+
+def test_build_stitch_ui_prompt_embeds_skill_and_quality_context() -> None:
+    prompt = jules_runner.build_stitch_ui_prompt(
+        task="stitch-uiux-map-editor",
+        skill_context="skill-context",
+        quality_context="quality-context",
+    )
+    assert "skill-context" in prompt
+    assert "quality-context" in prompt
+    assert '"plan"' in prompt
+    assert "stitch-uiux-map-editor" in prompt
+
+
+def test_build_stitch_prompt_command_writes_outputs(tmp_path) -> None:
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# summary\n", encoding="utf-8")
+
+    skill_path = tmp_path / ".agent" / "skills" / "jules-uiux-stitch" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True, exist_ok=True)
+    skill_path.write_text("# Skill\nUse this.\n", encoding="utf-8")
+
+    prompt_out = tmp_path / ".quality_reports" / "stitch_prompt.txt"
+    json_out = tmp_path / ".quality_reports" / "stitch_prompt.json"
+
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "build-stitch-prompt",
+            "--task",
+            "uiux-sync",
+            "--skills",
+            "jules-uiux-stitch",
+            "--quality-report",
+            str(quality_report),
+            "--prompt-out",
+            str(prompt_out),
+            "--json-out",
+            str(json_out),
+        ]
+    )
+
+    assert exit_code == 0
+    assert prompt_out.exists()
+    assert json_out.exists()
+    payload = json.loads(json_out.read_text(encoding="utf-8"))
+    assert payload["task"] == "uiux-sync"
+    assert payload["skills"] == ["jules-uiux-stitch"]

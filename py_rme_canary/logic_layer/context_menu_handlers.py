@@ -225,6 +225,39 @@ class ContextMenuActionHandlers:
 
         self._show_status(f"[Select Brush] Unable to select brush for item {int(item.id)}")
 
+    def select_raw_brush(self, item: Item) -> None:
+        """Select RAW brush directly from item id."""
+        brush_id = int(item.id)
+        if self._set_selected_brush(brush_id):
+            self._show_status(f"[Select RAW] Selected RAW brush {brush_id}")
+            return
+        self._show_status(f"[Select RAW] Unable to select RAW brush {brush_id}")
+
+    def move_item_to_tileset(self, item: Item) -> None:
+        """Open tileset-assignment flow for the selected item."""
+        from py_rme_canary.core.config.user_settings import get_user_settings
+        from py_rme_canary.vis_layer.ui.main_window.add_item_dialog import AddItemDialog
+
+        if not bool(get_user_settings().get_enable_tileset_editing()):
+            self._show_status("[Tileset] Enable tileset editing in Preferences first.")
+            return
+
+        editor = self._resolve_editor()
+        parent = editor if isinstance(editor, QWidget) else None
+        selected_item_id = int(item.id)
+
+        dialog = AddItemDialog(
+            parent=parent,
+            tileset_name="Tileset",
+            initial_item_id=selected_item_id,
+        )
+        accepted = bool(dialog.exec())
+        if not accepted:
+            return
+
+        chosen = int(dialog.get_selected_item_id())
+        self._show_status(f"[Tileset] Item {chosen} prepared for tileset assignment workflow.")
+
     # ========================
     # Door Toggle
     # ========================
@@ -667,7 +700,9 @@ class ContextMenuActionHandlers:
         """
         return {
             # Smart actions
+            "select_raw": lambda: self.select_raw_brush(item),
             "select_brush": lambda: self.select_brush_for_item(item),
+            "move_to_tileset": lambda: self.move_item_to_tileset(item),
             "toggle_door": lambda: self.toggle_door(item, tile, position) if tile and position else None,
             "rotate_item": lambda: self.rotate_item(item, tile, position) if tile and position else None,
             "goto_teleport": lambda: self.goto_teleport_destination(item),

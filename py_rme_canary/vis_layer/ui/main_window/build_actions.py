@@ -95,6 +95,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_cancel.setShortcut(QKeySequence("Esc"))
     editor.act_cancel.triggered.connect(lambda _c=False: edit_tools.cancel(editor))
 
+    editor.act_command_palette = QAction("Command Palette...", editor)
+    editor.act_command_palette.setShortcut(QKeySequence("Ctrl+K"))
+    editor.act_command_palette.triggered.connect(lambda _c=False: editor._show_command_palette())
+
     editor.act_copy = QAction(load_icon("action_copy"), "Copy", editor)
     editor.act_cut = QAction(load_icon("action_cut"), "Cut", editor)
     editor.act_paste = QAction(load_icon("action_paste"), "Paste", editor)

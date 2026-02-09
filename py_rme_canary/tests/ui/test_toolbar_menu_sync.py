@@ -44,6 +44,8 @@ def test_modern_menu_bindings_are_exposed(editor):
 
     assert "Settings..." in file_action_texts
     assert "Global Search..." in edit_action_texts
+    assert "Command Palette..." in edit_action_texts
+    assert editor.act_command_palette.shortcut().toString() == "Ctrl+K"
 
 
 def test_assets_menu_exposes_client_data_loader(editor):

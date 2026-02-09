@@ -59,6 +59,9 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_edit.addAction(editor.act_undo)
     m_edit.addAction(editor.act_redo)
     m_edit.addAction(editor.act_cancel)
+    if hasattr(editor, "act_command_palette"):
+        m_edit.addSeparator()
+        m_edit.addAction(editor.act_command_palette)
     m_edit.addSeparator()
 
     # Screenshot shows Find/Replace/Map stats before Border Options.

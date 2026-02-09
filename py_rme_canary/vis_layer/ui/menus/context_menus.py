@@ -278,9 +278,21 @@ class ItemContextMenu:
         builder.add_separator()
 
         # Smart Brush Selection
-        if ItemTypeDetector.can_select_brush(category):
-            brush_name = ItemTypeDetector.get_brush_name(category)
-            builder.add_action(f"Select {brush_name}", cb("select_brush"), enabled=_enabled("select_brush"))
+        has_brush_actions = False
+        if _enabled("select_raw"):
+            builder.add_action("Select RAW Brush", cb("select_raw"), enabled=True)
+            has_brush_actions = True
+
+        if ItemTypeDetector.can_select_brush(category) and _enabled("select_brush"):
+            brush_name = ItemTypeDetector.get_brush_name(category).title()
+            builder.add_action(f"Select {brush_name} Brush", cb("select_brush"), enabled=True)
+            has_brush_actions = True
+
+        if _enabled("move_to_tileset"):
+            builder.add_action("Move To Tileset...", cb("move_to_tileset"), enabled=True)
+            has_brush_actions = True
+
+        if has_brush_actions:
             builder.add_separator()
 
         # Item-Specific Actions

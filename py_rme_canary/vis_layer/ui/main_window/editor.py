@@ -107,6 +107,7 @@ class QtMapEditor(
     act_undo: QAction
     act_redo: QAction
     act_cancel: QAction
+    act_command_palette: QAction
     act_copy: QAction
     act_cut: QAction
     act_paste: QAction

@@ -51,16 +51,17 @@ reports/
 
 # Local agent state and external references
 .agent/
-Remeres-map-editor-linux-4.0.0/
-awesome-copilot/
-remeres-map-editor-redux/
-legacy/
-legacy*/
+
+# Legacy/reference repositories (do not version in this repo)
+/awesome-copilot/
+/remeres-map-editor-redux/
+/Remeres-map-editor-linux-4.0.0/
+/legacy/
+/legacy*/
 
 # Cursor exports
 py_rme_canary/.cursor.zip
 RME/
-Remeres-map-editor-linux-4.0.0/
 
 # Archives
 *.zip
