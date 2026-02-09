@@ -72,9 +72,6 @@ def _iter_tiles_in_scope(
         if tile is not None:
             yield tile
 
-    # Explicit return to satisfy mypy reachability checks
-    return  # type: ignore[unreachable]
-
 
 def _iter_tile_items(tile: object) -> Iterable[Item]:
     ground = getattr(tile, "ground", None)

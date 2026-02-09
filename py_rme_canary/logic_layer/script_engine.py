@@ -22,11 +22,14 @@ import ast
 import logging
 import time
 import traceback
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from dataclasses import replace
 from io import StringIO
 from typing import TYPE_CHECKING, Any
+
+from py_rme_canary.core.data.item import Item
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -151,12 +154,12 @@ class MapAPI:
     @property
     def width(self) -> int:
         """Map width in tiles."""
-        return self._map.width
+        return self._map.header.width
 
     @property
     def height(self) -> int:
         """Map height in tiles."""
-        return self._map.height
+        return self._map.header.height
 
     @property
     def stats(self) -> dict[str, int]:
@@ -192,7 +195,7 @@ class MapAPI:
         """
         tile = self._map.get_tile(x, y, z)
         if tile is None:
-            tile = self._map.create_tile(x, y, z)
+            tile = self._map.ensure_tile(x, y, z)
         return TileProxy(tile, x, y, z)
 
     def tile_exists(self, x: int, y: int, z: int) -> bool:
@@ -222,15 +225,17 @@ class MapAPI:
         else:
             tile = self._map.get_tile(x, y, z)
             if tile is None:
-                tile = self._map.create_tile(x, y, z)
+                tile = self._map.ensure_tile(x, y, z)
 
             # Create item and set as ground
             if hasattr(self._map, "item_factory"):
                 item = self._map.item_factory.create(item_id)
-                tile.ground = item
             else:
                 # Basic fallback
-                tile.set_ground_id(item_id)
+                item = Item(id=item_id)
+
+            new_tile = tile.with_ground(item)
+            self._map.set_tile(new_tile)
 
         self._stats["tiles_modified"] += 1
         return True
@@ -260,15 +265,18 @@ class MapAPI:
         else:
             tile = self._map.get_tile(x, y, z)
             if tile is None:
-                tile = self._map.create_tile(x, y, z)
+                tile = self._map.ensure_tile(x, y, z)
 
             if hasattr(self._map, "item_factory"):
                 item = self._map.item_factory.create(item_id)
-                if hasattr(item, "count"):
-                    item.count = count
-                tile.add_item(item)
             else:
-                tile.add_item_by_id(item_id)
+                item = Item(id=item_id)
+
+            if hasattr(item, "count"):
+                item.count = count
+
+            new_tile = tile.add_item(item)
+            self._map.set_tile(new_tile)
 
         self._stats["items_added"] += 1
         self._stats["tiles_modified"] += 1
@@ -303,22 +311,26 @@ class MapAPI:
             return 0
 
         removed = 0
-        items_to_remove = []
+        new_items = []
+        found_removal = False
 
         for item in tile.items:
-            if item.id == item_id:
-                items_to_remove.append(item)
-                if not all_instances:
-                    break
+            should_remove = False
+            if not found_removal or all_instances:
+                if item.id == item_id:
+                    should_remove = True
+                    removed += 1
+                    found_removal = True
 
-        for item in items_to_remove:
-            tile.remove_item(item)
-            removed += 1
+            if not should_remove:
+                new_items.append(item)
 
-        self._stats["items_removed"] += removed
         if removed > 0:
+            new_tile = replace(tile, items=new_items, modified=True)
+            self._map.set_tile(new_tile)
             self._stats["tiles_modified"] += 1
 
+        self._stats["items_removed"] += removed
         return removed
 
     def clear_tile(self, x: int, y: int, z: int, keep_ground: bool = False) -> int:
@@ -348,20 +360,19 @@ class MapAPI:
             return 0
 
         removed = len(list(tile.items))
-
-        # Clear items
-        for item in list(tile.items):
-            tile.remove_item(item)
+        new_ground = tile.ground
 
         # Clear ground if requested
         if not keep_ground and tile.ground:
-            tile.ground = None
+            new_ground = None
             removed += 1
 
-        self._stats["items_removed"] += removed
         if removed > 0:
+            new_tile = replace(tile, items=[], ground=new_ground, modified=True)
+            self._map.set_tile(new_tile)
             self._stats["tiles_modified"] += 1
 
+        self._stats["items_removed"] += removed
         return removed
 
     def iter_region(
@@ -371,7 +382,7 @@ class MapAPI:
         x2: int,
         y2: int,
         z: int,
-    ):
+    ) -> Iterator[TileProxy]:
         """Iterate over tiles in a rectangular region.
 
         Args:
@@ -393,7 +404,7 @@ class MapAPI:
                 if tile is not None:
                     yield TileProxy(tile, x, y, z)
 
-    def iter_floor(self, z: int):
+    def iter_floor(self, z: int) -> Iterator[TileProxy]:
         """Iterate over all tiles on a floor.
 
         Args:
@@ -402,8 +413,8 @@ class MapAPI:
         Yields:
             TileProxy for each existing tile.
         """
-        for y in range(self._map.height):
-            for x in range(self._map.width):
+        for y in range(self._map.header.height):
+            for x in range(self._map.header.width):
                 tile = self._map.get_tile(x, y, z)
                 if tile is not None:
                     yield TileProxy(tile, x, y, z)
@@ -422,8 +433,8 @@ class MapAPI:
         floors = [floor] if floor is not None else range(16)
 
         for z in floors:
-            for y in range(self._map.height):
-                for x in range(self._map.width):
+            for y in range(self._map.header.height):
+                for x in range(self._map.header.width):
                     tile = self._map.get_tile(x, y, z)
                     if tile is None:
                         continue

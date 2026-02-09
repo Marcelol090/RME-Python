@@ -33,6 +33,7 @@ class ModernDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
+        self.setWindowTitle(title)
         self._title = title
         self._dragging = False
         self._drag_position = QPoint()
