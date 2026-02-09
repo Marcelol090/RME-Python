@@ -8,8 +8,9 @@ import datetime as dt
 import hashlib
 import json
 import sys
-import xml.etree.ElementTree as ET
 from pathlib import Path
+
+import defusedxml.ElementTree as ET
 
 ALLOWED_CHANNELS = {"stable", "beta", "nightly"}
 
