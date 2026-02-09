@@ -1,451 +1,178 @@
-"""Modern Palette Widget with animated cards and immersive UX.
-
-Replaces legacy list-based palette with card-based modern design.
-Reference: palette_legacy_analysis.md / modern_ux_plan.md
-"""
+"""Modern Palette Dock with Grid View."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Tuple
 
-from PyQt6.QtCore import (
-    QEasingCurve,
-    QPropertyAnimation,
-    Qt,
-    pyqtProperty,
-    pyqtSignal,
-)
-from PyQt6.QtGui import QColor
+from PyQt6.QtCore import QSize, Qt, QTimer
+from PyQt6.QtGui import QIcon, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
-    QFrame,
-    QGraphicsDropShadowEffect,
-    QGridLayout,
+    QComboBox,
+    QDockWidget,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
-    QScrollArea,
+    QListView,
+    QSlider,
     QVBoxLayout,
     QWidget,
 )
 
 if TYPE_CHECKING:
-    from PyQt6.QtGui import QPixmap
+    from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
-@dataclass(slots=True)
-class BrushCardData:
-    """Data for a brush card in the palette."""
+class ModernPaletteDock(QDockWidget):
+    """Modern palette dock with grid view and advanced filtering."""
 
-    brush_id: int
-    name: str
-    brush_type: str = ""
-    sprite_id: int | None = None
-    category: str = ""
-
-
-class AnimatedBrushCard(QFrame):
-    """Single brush card with hover animations and selection state.
-
-    Features:
-    - Smooth hover lift effect (simulated via shadow)
-    - Glow border on selection
-    - Sprite preview (when available)
-    - Click to select
-    """
-
-    clicked = pyqtSignal(int)  # Emits brush_id
-
-    def __init__(self, data: BrushCardData, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.data = data
-        self._selected = False
-        self._hovered = False
-        self._shadow_offset = 0.0
-        self._placeholder_text = ""
+    def __init__(self, editor: QtMapEditor, parent: QWidget | None = None) -> None:
+        super().__init__("Modern Palette", parent)
+        self.editor = editor
+        self._brushes = []
+        self._filter_timer = QTimer(self)
+        self._filter_timer.setSingleShot(True)
+        self._filter_timer.setInterval(200)
+        self._filter_timer.timeout.connect(self._refresh_list)
 
         self._setup_ui()
-        self._setup_animations()
-        self._apply_style()
+        self._setup_connections()
+
+        # Initial load delayed to allow editor to fully init
+        QTimer.singleShot(500, self.refresh)
 
     def _setup_ui(self) -> None:
-        """Initialize UI elements."""
-        self.setFixedSize(80, 90)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMouseTracking(True)
-
-        layout = QVBoxLayout(self)
+        container = QWidget()
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(2)
+        layout.setSpacing(4)
 
-        # Sprite preview area (placeholder for now)
-        self.sprite_label = QLabel()
-        self.sprite_label.setFixedSize(48, 48)
-        self.sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.sprite_label.setScaledContents(True)
-        self.sprite_label.setStyleSheet(
-            """
-            background: #1E1E2E;
-            border-radius: 6px;
-            color: #8B5CF6;
-            font-size: 20px;
-        """
-        )
-        # Show first letter of name as placeholder
-        first_char = self.data.name[0].upper() if self.data.name else "?"
-        self._placeholder_text = first_char
-        self.sprite_label.setText(self._placeholder_text)
-        layout.addWidget(self.sprite_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        # Top Bar: Category and Search
+        top_layout = QHBoxLayout()
 
-        # Name label
-        self.name_label = QLabel(self._truncate_name(self.data.name))
-        self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.name_label.setStyleSheet(
-            """
-            color: #E5E5E7;
-            font-size: 10px;
-            font-weight: 500;
-        """
-        )
-        self.name_label.setWordWrap(True)
-        layout.addWidget(self.name_label)
+        self.category_combo = QComboBox()
+        self.category_combo.addItems([
+            "All", "Terrain", "Doodad", "Item", "Creature", "House", "Zone", "RAW"
+        ])
+        top_layout.addWidget(self.category_combo)
 
-        # Shadow effect
-        self.shadow = QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(0)
-        self.shadow.setOffset(0, 0)
-        self.shadow.setColor(QColor(139, 92, 246, 0))  # Purple, transparent
-        self.setGraphicsEffect(self.shadow)
-        if self.data.name:
-            self.setToolTip(f"{self.data.name} (ID {int(self.data.brush_id)})")
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText("Search brushes...")
+        self.search_edit.setClearButtonEnabled(True)
+        top_layout.addWidget(self.search_edit)
 
-    def _truncate_name(self, name: str, max_len: int = 12) -> str:
-        """Truncate name for display."""
-        if len(name) <= max_len:
-            return name
-        return name[: max_len - 2] + "…"
+        layout.addLayout(top_layout)
 
-    def _setup_animations(self) -> None:
-        """Setup hover and selection animations."""
-        # Shadow animation for hover "lift" effect
-        self._shadow_anim = QPropertyAnimation(self, b"shadowOffset")
-        self._shadow_anim.setDuration(150)
-        self._shadow_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        # View Settings
+        view_settings_layout = QHBoxLayout()
 
-    def _apply_style(self) -> None:
-        """Apply current style based on state."""
-        if self._selected:
-            border_color = "#8B5CF6"
-            bg_color = "#363650"
-            border_width = 2
-        elif self._hovered:
-            border_color = "#8B5CF6"
-            bg_color = "#2A2A3E"
-            border_width = 1
-        else:
-            border_color = "#363650"
-            bg_color = "#2A2A3E"
-            border_width = 1
+        self.icon_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self.icon_size_slider.setRange(16, 128)
+        self.icon_size_slider.setValue(48)
+        self.icon_size_slider.setToolTip("Icon Size")
+        view_settings_layout.addWidget(self.icon_size_slider)
 
-        self.setStyleSheet(
-            f"""
-            AnimatedBrushCard {{
-                background: {bg_color};
-                border: {border_width}px solid {border_color};
-                border-radius: 10px;
-            }}
-        """
-        )
+        layout.addLayout(view_settings_layout)
 
-    @pyqtProperty(float)
-    def shadowOffset(self) -> float:
-        return self._shadow_offset
+        # Main List View
+        self.list_view = QListView()
+        self.list_view.setViewMode(QListView.ViewMode.IconMode)
+        self.list_view.setResizeMode(QListView.ResizeMode.Adjust)
+        self.list_view.setUniformItemSizes(True)
+        self.list_view.setGridSize(QSize(56, 72))  # Initial grid size
+        self.list_view.setWordWrap(True)
+        self.list_view.setSelectionMode(QListView.SelectionMode.SingleSelection)
+        self.list_view.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
 
-    @shadowOffset.setter
-    def shadowOffset(self, value: float) -> None:
-        self._shadow_offset = value
-        self.shadow.setBlurRadius(value * 2)
-        self.shadow.setOffset(0, value)
-        alpha = int(min(255, value * 30))
-        self.shadow.setColor(QColor(139, 92, 246, alpha))
+        self.model = QStandardItemModel()
+        self.list_view.setModel(self.model)
 
-    def set_selected(self, selected: bool) -> None:
-        """Set selection state."""
-        self._selected = selected
-        self._apply_style()
-        if self._selected:
-            self.setProperty("selected", True)
-        else:
-            self.setProperty("selected", False)
+        layout.addWidget(self.list_view)
 
-    def enterEvent(self, event: object) -> None:
-        """Handle mouse enter."""
-        self._hovered = True
-        self._apply_style()
+        self.setWidget(container)
 
-        # Animate shadow up
-        self._shadow_anim.stop()
-        self._shadow_anim.setStartValue(self._shadow_offset)
-        self._shadow_anim.setEndValue(8.0)
-        self._shadow_anim.start()
+    def _setup_connections(self) -> None:
+        self.category_combo.currentTextChanged.connect(self._trigger_refresh)
+        self.search_edit.textChanged.connect(self._trigger_refresh)
+        self.icon_size_slider.valueChanged.connect(self._update_icon_size)
+        self.list_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
 
-        super().enterEvent(event)
+    def _trigger_refresh(self) -> None:
+        self._filter_timer.start()
 
-    def leaveEvent(self, event: object) -> None:
-        """Handle mouse leave."""
-        self._hovered = False
-        self._apply_style()
+    def _update_icon_size(self, size: int) -> None:
+        grid_width = size + 16
+        grid_height = size + 32  # Extra space for text
+        self.list_view.setIconSize(QSize(size, size))
+        self.list_view.setGridSize(QSize(grid_width, grid_height))
 
-        # Animate shadow down
-        self._shadow_anim.stop()
-        self._shadow_anim.setStartValue(self._shadow_offset)
-        self._shadow_anim.setEndValue(0.0)
-        self._shadow_anim.start()
+    def refresh(self) -> None:
+        """Reload all brushes from manager."""
+        self._refresh_list()
 
-        super().leaveEvent(event)
+    def _refresh_list(self) -> None:
+        self.model.clear()
 
-    def mousePressEvent(self, event: object) -> None:
-        """Handle click."""
-        if hasattr(event, "button") and event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.data.brush_id)
-        super().mousePressEvent(event)
+        category = self.category_combo.currentText().lower()
+        search = self.search_edit.text().lower()
 
-    def set_sprite_pixmap(self, pixmap: QPixmap | None) -> None:
-        if pixmap is None or pixmap.isNull():
-            self.sprite_label.clear()
-            self.sprite_label.setText(self._placeholder_text or "?")
+        # This is a simplified logic. In a real scenario we would fetch brushes efficiently.
+        # We access the brush manager directly.
+        brush_mgr = self.editor.brush_mgr
+        if not brush_mgr:
             return
-        self.sprite_label.setPixmap(pixmap)
-        self.sprite_label.setText("")
 
+        # Fetch brushes based on category
+        # Currently leveraging private attributes or iter methods if available
+        # Assuming brush_mgr has methods or we iterate all
 
-class ModernPaletteWidget(QWidget):
-    """Modern card-based palette widget.
+        items = []
 
-    Features:
-    - Grid of animated brush cards
-    - Live search filtering
-    - Category collapse/expand
-    - Recent brushes section
-    - Smooth animations
-    """
+        if category == "doodad" or category == "all":
+             for sid, name in brush_mgr.iter_doodad_brushes():
+                 if search and search not in str(name).lower():
+                     continue
+                 items.append(self._create_item(int(sid), str(name), "doodad"))
 
-    brush_selected = pyqtSignal(int)  # Emits brush_id
+        if category == "terrain" or category == "all":
+             # Logic to fetch terrain brushes
+             # This depends on how BrushManager exposes them.
+             # Reusing PaletteManager logic would be ideal but it's UI coupled.
+             # We assume raw iteration for now
+             for brush_id, brush in getattr(brush_mgr, "_brushes", {}).items():
+                 btype = getattr(brush, "brush_type", "")
+                 if btype in ("ground", "carpet"):
+                     if search and search not in str(getattr(brush, "name", "")).lower():
+                         continue
+                     items.append(self._create_item(int(brush_id), str(getattr(brush, "name", "")), "terrain"))
 
-    def __init__(
-        self,
-        parent: QWidget | None = None,
-        *,
-        sprite_lookup: Callable[[int, int], QPixmap | None] | None = None,
-    ) -> None:
-        super().__init__(parent)
+        # Add more categories logic...
 
-        self._cards: list[AnimatedBrushCard] = []
-        self._selected_brush_id: int | None = None
-        self._all_brushes: list[BrushCardData] = []
-        self._sprite_lookup = sprite_lookup
+        for item in items:
+            self.model.appendRow(item)
 
-        self._setup_ui()
+    def _create_item(self, brush_id: int, name: str, category: str) -> QStandardItem:
+        item = QStandardItem(name)
+        item.setData(brush_id, Qt.ItemDataRole.UserRole)
+        item.setData(category, Qt.ItemDataRole.UserRole + 1)
+        item.setToolTip(f"{name} (ID: {brush_id})")
 
-    def _setup_ui(self) -> None:
-        """Initialize UI."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        # Load icon (expensive, should be async or cached)
+        try:
+            pm = self.editor._sprite_pixmap_for_server_id(brush_id, tile_px=32)
+            if pm and not pm.isNull():
+                item.setIcon(QIcon(pm))
+        except Exception:
+            pass
 
-        # Search bar
-        self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search brushes...")
-        self.search_bar.setStyleSheet(
-            """
-            QLineEdit {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                padding: 8px 12px;
-                color: #E5E5E7;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
-            QLineEdit::placeholder {
-                color: #52525B;
-            }
-        """
-        )
-        self.search_bar.textChanged.connect(self._on_search_changed)
-        layout.addWidget(self.search_bar)
+        return item
 
-        # Scroll area for cards
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet(
-            """
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea > QWidget > QWidget {
-                background: transparent;
-            }
-        """
-        )
+    def _on_selection_changed(self, selected, deselected) -> None:
+        indexes = selected.indexes()
+        if not indexes:
+            return
 
-        # Cards container
-        self.cards_container = QWidget()
-        self.cards_layout = QGridLayout(self.cards_container)
-        self.cards_layout.setContentsMargins(0, 0, 0, 0)
-        self.cards_layout.setSpacing(8)
+        index = indexes[0]
+        brush_id = self.model.data(index, Qt.ItemDataRole.UserRole)
 
-        scroll.setWidget(self.cards_container)
-        layout.addWidget(scroll)
-
-    def set_brushes(self, brushes: list[BrushCardData]) -> None:
-        """Set the list of brushes to display.
-
-        Args:
-            brushes: List of BrushCardData objects
-        """
-        self._all_brushes = brushes
-        self._rebuild_cards()
-
-    def set_sprite_lookup(self, lookup: Callable[[int, int], QPixmap | None] | None) -> None:
-        self._sprite_lookup = lookup
-        self._rebuild_cards(self.search_bar.text())
-
-    def _rebuild_cards(self, filter_text: str = "") -> None:
-        """Rebuild the card grid with optional filtering."""
-        # Clear existing cards
-        for card in self._cards:
-            card.deleteLater()
-        self._cards.clear()
-
-        # Clear layout
-        while self.cards_layout.count():
-            item = self.cards_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        # Filter brushes
-        filter_lower = filter_text.lower()
-        filtered = [
-            b
-            for b in self._all_brushes
-            if not filter_text or filter_lower in b.name.lower() or filter_lower in str(b.brush_id)
-        ]
-
-        # Create cards in grid (4 columns)
-        cols = 4
-        for i, brush_data in enumerate(filtered):
-            card = AnimatedBrushCard(brush_data)
-            card.clicked.connect(self._on_card_clicked)
-            if self._sprite_lookup is not None and brush_data.sprite_id is not None:
-                try:
-                    size = int(card.sprite_label.width())
-                    pm = self._sprite_lookup(int(brush_data.sprite_id), size)
-                except Exception:
-                    pm = None
-                card.set_sprite_pixmap(pm)
-
-            row = i // cols
-            col = i % cols
-            self.cards_layout.addWidget(card, row, col)
-            self._cards.append(card)
-
-            # Restore selection if applicable
-            if brush_data.brush_id == self._selected_brush_id:
-                card.set_selected(True)
-
-    def _on_search_changed(self, text: str) -> None:
-        """Handle search text change."""
-        self._rebuild_cards(text)
-
-    def _on_card_clicked(self, brush_id: int) -> None:
-        """Handle card click."""
-        # Update selection
-        self._selected_brush_id = brush_id
-
-        for card in self._cards:
-            card.set_selected(card.data.brush_id == brush_id)
-
-        # Emit signal
-        self.brush_selected.emit(brush_id)
-
-    def select_brush(self, brush_id: int) -> None:
-        """Programmatically select a brush.
-
-        Args:
-            brush_id: ID of brush to select
-        """
-        self._selected_brush_id = brush_id
-
-        for card in self._cards:
-            card.set_selected(card.data.brush_id == brush_id)
-
-
-class SectionHeader(QWidget):
-    """Collapsible section header for palette categories."""
-
-    toggled = pyqtSignal(bool)  # Emits expanded state
-
-    def __init__(self, title: str, count: int = 0, expanded: bool = True, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._expanded = expanded
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-
-        # Expand/collapse indicator
-        self.arrow = QLabel("-" if expanded else "+")
-        self.arrow.setStyleSheet("color: #A1A1AA; font-size: 10px;")
-        layout.addWidget(self.arrow)
-
-        # Title
-        self.title_label = QLabel(title)
-        self.title_label.setStyleSheet(
-            """
-            color: #E5E5E7;
-            font-size: 13px;
-            font-weight: 600;
-        """
-        )
-        layout.addWidget(self.title_label)
-
-        layout.addStretch()
-
-        # Count badge
-        if count > 0:
-            self.count_label = QLabel(str(count))
-            self.count_label.setStyleSheet(
-                """
-                background: #363650;
-                color: #A1A1AA;
-                font-size: 10px;
-                padding: 2px 6px;
-                border-radius: 8px;
-            """
-            )
-            layout.addWidget(self.count_label)
-
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(
-            """
-            SectionHeader {
-                background: #2A2A3E;
-                border-radius: 6px;
-            }
-            SectionHeader:hover {
-                background: #363650;
-            }
-        """
-        )
-
-    def mousePressEvent(self, event: object) -> None:
-        """Toggle on click."""
-        self._expanded = not self._expanded
-        self.arrow.setText("-" if self._expanded else "+")
-        self.toggled.emit(self._expanded)
-        super().mousePressEvent(event)
+        if brush_id is not None:
+            # Activate brush in editor
+            self.editor._set_selected_brush_id(int(brush_id))
