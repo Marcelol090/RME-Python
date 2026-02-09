@@ -22,11 +22,12 @@ class AbstractTool:
     def activate(self) -> None:
         """Called when the tool becomes active."""
         self.active = True
+        self.canvas.setCursor(self.cursor())
 
     def deactivate(self) -> None:
         """Called when the tool becomes inactive."""
         self.active = False
-        self.canvas.setCursor(self.cursor())
+        self.canvas.unsetCursor()
 
     def cursor(self) -> Any:
         """Return the cursor for this tool."""
