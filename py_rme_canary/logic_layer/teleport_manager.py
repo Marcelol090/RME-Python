@@ -25,7 +25,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -265,8 +265,8 @@ class TeleportManager:
 
         # Iterate through all tiles
         for z in range(16):  # Standard Z range
-            for y in range(self._map.height):
-                for x in range(self._map.width):
+            for y in range(self._map.header.height):
+                for x in range(self._map.header.width):
                     tile = self._map.get_tile(x, y, z)
                     if tile is None:
                         continue
@@ -307,17 +307,30 @@ class TeleportManager:
 
         if hasattr(item, "destination"):
             dest = item.destination
-            if dest and hasattr(dest, "__iter__") and len(dest) >= 3:
-                destination = (int(dest[0]), int(dest[1]), int(dest[2]))
+            if dest:
+                # Check for Position dataclass (x, y, z attributes)
+                if hasattr(dest, "x") and hasattr(dest, "y") and hasattr(dest, "z"):
+                    destination = (int(dest.x), int(dest.y), int(dest.z))
+                else:
+                    # Check for tuple/list - cast to Any to avoid Mypy complaint about Position vs tuple mismatch
+                    dest_any = cast(Any, dest)
+                    if isinstance(dest_any, (tuple, list)) and len(dest_any) >= 3:
+                        destination = (int(dest_any[0]), int(dest_any[1]), int(dest_any[2]))
 
         if destination is None:
             # Try alternative attribute names
             for attr in ["teleport_dest", "dest", "target"]:
                 if hasattr(item, attr):
                     dest = getattr(item, attr)
-                    if dest and len(dest) >= 3:
-                        destination = (int(dest[0]), int(dest[1]), int(dest[2]))
-                        break
+                    if dest:
+                        if hasattr(dest, "x") and hasattr(dest, "y") and hasattr(dest, "z"):
+                            destination = (int(dest.x), int(dest.y), int(dest.z))
+                            break
+                        else:
+                            dest_any = cast(Any, dest)
+                            if isinstance(dest_any, (tuple, list)) and len(dest_any) >= 3:
+                                destination = (int(dest_any[0]), int(dest_any[1]), int(dest_any[2]))
+                                break
 
         if destination is None:
             # Destination not set - create link with default destination
@@ -455,9 +468,16 @@ class TeleportManager:
 
         for item in tile.items:
             if item.id == link.item_id:
+                # Convert tuple to Item's expected Position type if needed
+                # For now, we assume Item can accept tuple or we need to import Position
+                from py_rme_canary.core.data.item import Position as ItemPosition
+
+                pos_obj = ItemPosition(x=destination[0], y=destination[1], z=destination[2])
+
                 if hasattr(item, "destination"):
-                    item.destination = destination
+                    item.destination = pos_obj
                 elif hasattr(item, "teleport_dest"):
+                    # Legacy fallback might expect tuple
                     item.teleport_dest = destination
                 break
 

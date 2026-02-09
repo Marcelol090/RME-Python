@@ -1,14 +1,13 @@
 """
 New Map Dialog for creating maps with template presets.
 
-Provides UI for selecting Tibia version templates and configuring
-new map properties (size, metadata).
+Refactored to use ModernDialog and ThemeTokens.
 """
+
+from __future__ import annotations
 
 from PyQt6.QtWidgets import (
     QComboBox,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -25,27 +24,32 @@ from py_rme_canary.logic_layer.templates import (
     MapSize,
     MapTemplate,
 )
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 
-class NewMapDialog(QDialog):
+class NewMapDialog(ModernDialog):
     """Dialog for creating new maps with template support."""
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Create New Map")
+        super().__init__(parent, title="Create New Map")
         self.setMinimumWidth(500)
 
         # Selected values
         self._selected_template: MapTemplate | None = None
         self._selected_size: MapSize | None = None
 
-        self._setup_ui()
+        self._setup_content() # Use custom method to populate content area
+        self._setup_footer()
         self._connect_signals()
         self._load_defaults()
 
-    def _setup_ui(self) -> None:
-        """Setup dialog UI."""
-        layout = QVBoxLayout(self)
+        # Apply theme-specific adjustments
+        self._apply_styles()
+
+    def _setup_content(self) -> None:
+        """Setup dialog UI inside ModernDialog content area."""
+        layout = self.content_layout # Use base class layout
 
         # Template selection group
         template_group = QGroupBox("Map Template")
@@ -58,7 +62,7 @@ class NewMapDialog(QDialog):
 
         self._template_desc = QLabel()
         self._template_desc.setWordWrap(True)
-        self._template_desc.setStyleSheet("color: gray; font-style: italic;")
+        self._template_desc.setObjectName("TemplateDesc")
         template_layout.addRow(self._template_desc)
 
         template_group.setLayout(template_layout)
@@ -91,7 +95,6 @@ class NewMapDialog(QDialog):
         custom_layout.addWidget(self._height_spin)
         custom_layout.addStretch()
 
-        self._custom_size_widget = QLabel()  # Placeholder, will be replaced
         size_layout.addRow("Custom:", custom_layout)
 
         # Initially hide custom size
@@ -121,11 +124,16 @@ class NewMapDialog(QDialog):
         metadata_group.setLayout(metadata_layout)
         layout.addWidget(metadata_group)
 
-        # Dialog buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+    def _setup_footer(self):
+        # Add buttons to ModernDialog footer
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject)
+        self.add_button("Create Map", callback=self.accept, role="primary")
+
+    def _apply_styles(self):
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        self._template_desc.setStyleSheet(f"color: {c['text']['tertiary']}; font-style: italic;")
 
     def _connect_signals(self) -> None:
         """Connect UI signals."""
@@ -135,8 +143,9 @@ class NewMapDialog(QDialog):
     def _load_defaults(self) -> None:
         """Load default values."""
         # Select first template (7.4)
-        self._template_combo.setCurrentIndex(0)
-        self._on_template_changed(0)
+        if self._template_combo.count() > 0:
+            self._template_combo.setCurrentIndex(0)
+            self._on_template_changed(0)
 
     def _on_template_changed(self, index: int) -> None:
         """Handle template selection change."""

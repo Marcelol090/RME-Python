@@ -143,6 +143,7 @@ class AreaResult:
     width: int = 0
     height: int = 0
     center: MeasurePoint | None = None
+    error: str = ""
 
     def format(self, unit: MeasureUnit = MeasureUnit.SQM) -> str:
         """Format the area for display."""

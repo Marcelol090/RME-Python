@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import QApplication, QMenu, QMessageBox
 from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.core.data.position import Position
 from py_rme_canary.logic_layer.clipboard import ClipboardManager
+from py_rme_canary.vis_layer.ui.dialogs.command_palette import CommandPalette
 from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
 from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
 from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import AboutDialog, MapPropertiesDialog
@@ -193,6 +194,12 @@ class QtMapEditorModernUXMixin:
         """Setup additional modern UI actions in menus."""
         self._setup_modern_dialog_actions()
 
+        # Command Palette Action (Hidden from menus, just shortcut)
+        self.act_command_palette = QAction("Command Palette...", self)
+        self.act_command_palette.setShortcut(QKeySequence("Ctrl+K"))
+        self.act_command_palette.triggered.connect(self.show_command_palette)
+        self.addAction(self.act_command_palette)
+
         try:
             # Add to Edit menu (if exists)
             if hasattr(self, "menu_edit"):
@@ -241,6 +248,11 @@ class QtMapEditorModernUXMixin:
             logger.warning(f"Error setting up modern actions: {e}")
 
     # ========== Dialog Methods ==========
+
+    def show_command_palette(self: QtMapEditor) -> None:
+        """Show the command palette."""
+        dialog = CommandPalette(self)
+        dialog.exec()
 
     def show_global_search(self: QtMapEditor) -> None:
         """Show global search dialog."""

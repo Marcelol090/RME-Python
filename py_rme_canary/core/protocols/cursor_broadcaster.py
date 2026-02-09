@@ -245,7 +245,8 @@ class CursorBroadcaster:
             try:
                 client_id = getattr(self._client, "client_id", 0)
                 payload = encode_cursor(client_id, x, y, z)
-                self._client.send(PacketType.CURSOR_UPDATE, payload)
+                # Corrected method: send_packet instead of send
+                self._client.send_packet(PacketType.CURSOR_UPDATE, payload)
             except Exception as e:
                 logger.debug("Cursor broadcast failed (client): %s", e)
 
