@@ -10,126 +10,15 @@ Provides right-click context menus for:
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Tuple
 
-from PyQt6.QtGui import QAction, QCursor
-from PyQt6.QtWidgets import QMenu, QWidget
+from PyQt6.QtWidgets import QWidget
+
+from py_rme_canary.vis_layer.ui.menus.menu_builder import ContextMenuBuilder
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.item import Item
     from py_rme_canary.core.data.tile import Tile
-
-
-class ContextMenuBuilder:
-    """Builder for creating context menus.
-
-    Usage:
-        menu = (ContextMenuBuilder(parent)
-            .add_action("Copy", on_copy, "Ctrl+C")
-            .add_separator()
-            .add_submenu("Selection")
-                .add_action("Select All", on_select_all)
-                .end_submenu()
-            .build())
-    """
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        self._parent = parent
-        self._menu = QMenu(parent)
-        self._current_menu = self._menu
-        self._menu_stack: list[QMenu] = []
-
-        # Apply styling
-        self._menu.setStyleSheet(
-            """
-            QMenu {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                padding: 6px;
-                color: #E5E5E7;
-            }
-
-            QMenu::item {
-                padding: 8px 24px 8px 12px;
-                border-radius: 4px;
-                margin: 2px;
-            }
-
-            QMenu::item:selected {
-                background: #8B5CF6;
-            }
-
-            QMenu::item:disabled {
-                color: #52525B;
-            }
-
-            QMenu::separator {
-                background: #363650;
-                height: 1px;
-                margin: 4px 8px;
-            }
-
-            QMenu::icon {
-                margin-left: 8px;
-            }
-        """
-        )
-
-    def add_action(
-        self,
-        text: str,
-        callback: Callable[[], None] | None = None,
-        shortcut: str | None = None,
-        icon: str | None = None,
-        enabled: bool = True,
-        checkable: bool = False,
-        checked: bool = False,
-    ) -> ContextMenuBuilder:
-        """Add an action to the menu."""
-        display = f"{icon} {text}" if icon else text
-        action = QAction(display, self._current_menu)
-
-        if callback:
-            action.triggered.connect(callback)
-        if shortcut:
-            action.setShortcut(shortcut)
-
-        action.setEnabled(enabled)
-        action.setCheckable(checkable)
-        action.setChecked(checked)
-
-        self._current_menu.addAction(action)
-        return self
-
-    def add_separator(self) -> ContextMenuBuilder:
-        """Add a separator line."""
-        self._current_menu.addSeparator()
-        return self
-
-    def add_submenu(self, title: str, icon: str | None = None) -> ContextMenuBuilder:
-        """Start a submenu."""
-        display = f"{icon} {title}" if icon else title
-        submenu = self._current_menu.addMenu(display)
-        submenu.setStyleSheet(self._menu.styleSheet())
-
-        self._menu_stack.append(self._current_menu)
-        self._current_menu = submenu
-        return self
-
-    def end_submenu(self) -> ContextMenuBuilder:
-        """End current submenu."""
-        if self._menu_stack:
-            self._current_menu = self._menu_stack.pop()
-        return self
-
-    def build(self) -> QMenu:
-        """Build and return the menu."""
-        return self._menu
-
-    def exec_at_cursor(self) -> QAction | None:
-        """Execute menu at cursor position."""
-        return self._menu.exec(QCursor.pos())
 
 
 class TileContextMenu:
@@ -139,6 +28,7 @@ class TileContextMenu:
         self._parent = parent
         self._tile: Tile | None = None
         self._callbacks: dict[str, Callable] = {}
+        self._extra_actions: List[Tuple[str, Callable, str]] = []
 
     def set_callbacks(self, callbacks: dict[str, Callable]) -> None:
         """Set action callbacks.
@@ -151,6 +41,10 @@ class TileContextMenu:
         - set_house, clear_house
         """
         self._callbacks = callbacks
+
+    def add_action(self, text: str, callback: Callable, shortcut: str = "") -> None:
+        """Add a custom action to the menu."""
+        self._extra_actions.append((text, callback, shortcut))
 
     def show_for_tile(self, tile: Tile | None, has_selection: bool = False) -> None:
         """Show context menu for a tile."""
@@ -211,6 +105,12 @@ class TileContextMenu:
                 builder.end_submenu()
             else:
                 builder.add_action("Assign to House...", cb("assign_house"))
+
+        # Extra actions injected by tools
+        if self._extra_actions:
+            builder.add_separator()
+            for text, callback, shortcut in self._extra_actions:
+                builder.add_action(text, callback, shortcut)
 
         builder.add_separator()
 
