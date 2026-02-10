@@ -1,8 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "category": "security",
-  "generated_at": "2026-02-09T12:00:00Z",
-  "task": "Security Audit and Hardening",
+  "generated_at": "2026-02-09T14:00:00Z",
+  "task": "Security Audit and Hardening Phase 2",
   "implemented": [
     {
       "id": "RCE-001",
@@ -21,22 +21,34 @@
       "summary": "Removed hardcoded API key in test",
       "files": ["py_rme_canary/tests/unit/scripts/test_jules_api.py"],
       "evidence": "Switched to os.getenv or dummy value to avoid secrets in codebase."
+    },
+    {
+      "id": "SEC-002",
+      "summary": "Secured LiveServer Authentication",
+      "files": ["py_rme_canary/core/protocols/live_server.py"],
+      "evidence": "Implemented constant-time password comparison using secrets.compare_digest to prevent timing attacks."
+    },
+    {
+      "id": "DOS-001",
+      "summary": "Prevented Denial of Service in Live Server",
+      "files": ["py_rme_canary/core/protocols/live_server.py", "py_rme_canary/core/protocols/live_socket.py"],
+      "evidence": "Implemented 16MB payload size limit, rate limiting (100 pkt/s), queue bounding (5000), and map request area limit (65536 tiles)."
     }
   ],
   "suggested_next": [
     {
-      "id": "AUDIT-001",
-      "severity": "HIGH",
-      "summary": "Implement Runtime Audit Hooks for ScriptEngine",
-      "rationale": "AST analysis can be bypassed by dynamic code generation or complex attribute access. Runtime hooks (sys.addaudithook) provide defense in depth.",
-      "files": ["py_rme_canary/logic_layer/script_engine.py"]
-    },
-    {
       "id": "TLS-001",
       "severity": "CRITICAL",
       "summary": "Implement TLS for Live Editing Protocol",
-      "rationale": "Login payloads are currently encoded but not encrypted, risking credential theft.",
+      "rationale": "Login payloads are encoded but not encrypted, risking credential theft. Requires certificate management infrastructure.",
       "files": ["py_rme_canary/core/protocols/live_client.py"]
+    },
+    {
+      "id": "AUDIT-001",
+      "severity": "HIGH",
+      "summary": "Implement Runtime Audit Hooks for ScriptEngine",
+      "rationale": "AST analysis can be bypassed by dynamic code generation. Runtime hooks (sys.addaudithook) provide defense in depth.",
+      "files": ["py_rme_canary/logic_layer/script_engine.py"]
     }
   ]
 }

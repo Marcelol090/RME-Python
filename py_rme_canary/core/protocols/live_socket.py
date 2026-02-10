@@ -15,6 +15,9 @@ from .live_packets import NetworkHeader, PacketType
 
 log = logging.getLogger(__name__)
 
+# Security: Limit maximum payload size to prevent OOM/DoS (16MB)
+MAX_PAYLOAD_SIZE = 16 * 1024 * 1024
+
 
 class LiveSocket:
     """Shared helpers for live client/server sockets."""
@@ -90,6 +93,12 @@ class LiveSocket:
             return None
 
         header = NetworkHeader.unpack(header_data)
+
+        # Security check: Payload size limit
+        if header.size > MAX_PAYLOAD_SIZE:
+            log.error(f"Packet too large: {header.size} bytes (max {MAX_PAYLOAD_SIZE})")
+            return None
+
         payload = self._read_n_bytes(int(header.size))
         if payload is None:
             return None
