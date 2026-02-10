@@ -1,6 +1,6 @@
 # Planning Documentation Index
 
-> Last updated: 2026-02-09 (session: appearances.dat flags enhancement + doc sync)
+> Last updated: 2026-02-10 (session: planning sync + automation path fixes + parity/audit refresh)
 
 ## 📁 Directory Structure
 

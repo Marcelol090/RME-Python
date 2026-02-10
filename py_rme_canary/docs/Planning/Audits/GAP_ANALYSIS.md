@@ -13,8 +13,8 @@ The legacy project (v3.9.15) emphasizes an **Event-Driven Rendering** architectu
 
 ### Core Gaps
 While the "Skeleton" (Core IO, Rendering, Basic Editing) is feature-complete, the "Flesh" (Specialized Tools, Complex Dialogs, nuanced Interaction) has significant gaps.
-- **Critical Remaining Area:** BorderBuilder still needs full custom-rule authoring parity with legacy `borders.xml`.
-- **Critical Quality Remaining:** strict QA closure (`mypy --strict` on `logic_layer` and debt cleanup) is still pending.
+- **Status Update (2026-02-10):** BorderBuilder custom-rule authoring parity with legacy `borders.xml` is completed (UI editor + import/export + runtime overrides persistence).
+- **Status Update (2026-02-10):** strict QA closure is completed (`mypy --strict` clean on full project), with remaining work focused on incremental UX parity refinements.
 
 ---
 
@@ -98,6 +98,6 @@ This list is prioritized: **P0 (Blockers)** -> **P1 (Core UX)** -> **P2 (Advance
 4.  **Legacy Reference:** When in doubt about "how a brush works", read the C++ `source/*_brush.cpp` file. It is the distinct source of truth.
 
 ## 4. Next Action
-**Recommendation:** Close the remaining parity/quality work:
-1. Complete custom BorderBuilder editing flow (`borders.xml` parity).
-2. Finish strict quality hardening (`mypy --strict` and residual technical debt).
+**Recommendation (2026-02-10):** Maintain parity through incremental verification loops:
+1. Keep validating UI/UX parity against legacy C++ (`menubar.xml`, popup menus, palette handlers) before each implementation batch.
+2. Keep syncing planning artifacts (`Features.md`, `roadmap.json`, `project_tasks.json`, audits) and automation context paths used by Jules.

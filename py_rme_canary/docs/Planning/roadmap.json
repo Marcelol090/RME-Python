@@ -1,7 +1,7 @@
 {
   "meta": {
     "project": "py_rme_canary",
-    "updated": "2026-02-05",
+    "updated": "2026-02-10",
     "source": "RELEASE_NOTES_AND_ROADMAP.md"
   },
   "versions": [
@@ -42,8 +42,8 @@
     },
     {
       "version": "3.0",
-      "name": "Version 3.0 (Planned)",
-      "status": "in_progress",
+      "name": "RME Py_Extended Edition v3.0",
+      "status": "released",
       "features": [
         "Full In-Game Preview Window Integration",
         "Advanced Lighting System",
@@ -52,7 +52,7 @@
     },
     {
       "version": "4.0",
-      "name": "Future / In-Game Preview",
+      "name": "In-Game Preview Program (Phased Delivery)",
       "status": "completed",
       "phases": [
         "Phase 1: Base Structure (Done)",

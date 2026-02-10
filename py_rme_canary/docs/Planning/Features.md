@@ -2870,6 +2870,6 @@ All systems work together to provide a powerful, flexible map editing experience
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2026-02-01
+**Document Version:** 1.1
+**Last Updated:** 2026-02-10
 **Target Audience:** RME developers, contributors, and advanced users

@@ -35,8 +35,8 @@ DEFAULT_LINEAR_TRACK_TEMPLATES: dict[str, str] = {
     "uiux": "linear_uiux.md",
 }
 DEFAULT_LINEAR_PLANNING_DOCS: tuple[str, ...] = (
-    "py_rme_canary/docs/Planning/TODO_CPP_PARITY_UIUX_2026-02-06.md",
-    "py_rme_canary/docs/Planning/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md",
+    "py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md",
+    "py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md",
 )
 
 
