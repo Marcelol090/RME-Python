@@ -28,6 +28,16 @@ DEFAULT_STITCH_SKILLS: tuple[str, ...] = (
     "jules-uiux-stitch",
     "jules-rust-memory-management",
 )
+DEFAULT_LINEAR_PROMPT_DIR = Path(".github/jules/prompts")
+DEFAULT_LINEAR_TRACK_TEMPLATES: dict[str, str] = {
+    "tests": "linear_tests.md",
+    "refactor": "linear_refactors.md",
+    "uiux": "linear_uiux.md",
+}
+DEFAULT_LINEAR_PLANNING_DOCS: tuple[str, ...] = (
+    "py_rme_canary/docs/Planning/TODO_CPP_PARITY_UIUX_2026-02-06.md",
+    "py_rme_canary/docs/Planning/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md",
+)
 
 
 def utc_now_iso() -> str:
@@ -126,6 +136,136 @@ def read_quality_context(path: Path, *, max_chars: int = 4200) -> str:
     raw = path.read_text(encoding="utf-8", errors="ignore")
     clean = _compress_quality_report(raw.strip())
     return _balanced_truncate(clean, max_chars)
+
+
+def read_context_file(path: Path, *, max_chars: int = 2400) -> str:
+    """Read generic text context from a file with bounded size."""
+    if not path.exists() or not path.is_file():
+        return ""
+    raw = path.read_text(encoding="utf-8", errors="ignore").strip()
+    clean = _sanitize_untrusted_context(raw)
+    return _balanced_truncate(clean, max_chars)
+
+
+def resolve_linear_session_name(raw_value: str | None, *, env_name: str) -> str:
+    """Resolve a mandatory fixed session name from argument or environment."""
+    if str(raw_value or "").strip():
+        return normalize_session_name(raw_value)
+    return normalize_session_name(os.environ.get(env_name, ""))
+
+
+def load_linear_prompt_template(
+    project_root: Path,
+    *,
+    track: str,
+    template_path: str,
+    max_chars: int = 5000,
+) -> str:
+    """Load track template content for linear scheduled prompts."""
+    selected_track = str(track or "").strip().lower()
+    if selected_track not in DEFAULT_LINEAR_TRACK_TEMPLATES:
+        raise ValueError(f"Invalid track: {selected_track}")
+
+    resolved_path = Path(template_path).resolve() if template_path else (
+        project_root / DEFAULT_LINEAR_PROMPT_DIR / DEFAULT_LINEAR_TRACK_TEMPLATES[selected_track]
+    )
+    if not resolved_path.exists() or not resolved_path.is_file():
+        raise ValueError(f"Prompt template file not found: {resolved_path}")
+    template_text = resolved_path.read_text(encoding="utf-8", errors="ignore").strip()
+    return _balanced_truncate(_sanitize_untrusted_context(template_text), max_chars)
+
+
+def build_linear_scheduled_prompt(
+    *,
+    track: str,
+    task: str,
+    schedule_slot: str,
+    session_name: str,
+    track_template: str,
+    skill_context: str,
+    quality_context: str,
+    planning_context: str,
+    rules_context: str,
+) -> str:
+    """Build scheduled prompt that enforces single-session linear execution."""
+    selected_track = str(track or "").strip().lower()
+    normalized_task = _sanitize_prompt_task(task or f"linear-{selected_track}-block")
+    slot_label = _sanitize_prompt_task(schedule_slot or f"{selected_track}-scheduled")
+
+    track_goals = {
+        "tests": (
+            "Strengthen deterministic tests, isolate flaky behavior, and close P0/P1 validation gaps "
+            "with reproducible evidence."
+        ),
+        "refactor": (
+            "Reduce complexity and improve maintainability while preserving behavior, undo/redo integrity, "
+            "and performance constraints."
+        ),
+        "uiux": (
+            "Improve modern PyQt6 UI/UX with production-ready interactions, icon consistency, and "
+            "strict backend integration."
+        ),
+    }
+    track_goal = track_goals.get(selected_track, "Deliver bounded improvements with measurable validation.")
+
+    template_block = _sanitize_untrusted_context(track_template or "No track template provided.")
+    skills_block = _sanitize_untrusted_context(skill_context or "No skill context provided.")
+    quality_block = _sanitize_untrusted_context(quality_context or "No quality report context available.")
+    planning_block = _sanitize_untrusted_context(planning_context or "No planning context available.")
+    rules_block = _sanitize_untrusted_context(rules_context or "No repository rules context available.")
+
+    return (
+        "You are Jules in long-running asynchronous mode for the PyQt6 map editor repository.\n"
+        "\n"
+        "SESSION LOCK (MANDATORY):\n"
+        f"- Continue only in this existing session: {session_name}\n"
+        "- Never create another session, task thread, or branch plan outside this conversation.\n"
+        "- Maintain linear continuity from previous decisions and keep implementation scope PR-sized.\n"
+        "\n"
+        f"Track: {selected_track}\n"
+        f"Schedule slot: {slot_label}\n"
+        f"Task label: {normalized_task}\n"
+        f"Goal for this slot: {track_goal}\n"
+        "\n"
+        "Priority policy:\n"
+        "1) Resolve pending P0 items first.\n"
+        "2) Continue P1 items once P0 scope in this slot is covered.\n"
+        "3) Do not expand into unrelated modules.\n"
+        "\n"
+        "Execution policy:\n"
+        "- Keep edits incremental, reversible, and fully testable.\n"
+        "- Use repository standards for quality pipeline and deterministic tests.\n"
+        "- Any UX update must call real backend/session operations (no decorative-only controls).\n"
+        "- State explicit verification commands and expected outcomes.\n"
+        "\n"
+        "Output format (required): return a single JSON fenced block with keys:\n"
+        "{\n"
+        '  "plan": [{"id":"P1","summary":"...","files":["..."],"acceptance":"..."}],\n'
+        '  "implement_first": [{"id":"I1","summary":"...","files":["..."],"verification":"..."}],\n'
+        '  "tests_to_run": ["pytest ...", "quality_lf.sh ..."],\n'
+        '  "risks": [{"id":"R1","severity":"LOW|MED|HIGH|CRITICAL","description":"...","mitigation":"..."}]\n'
+        "}\n"
+        "\n"
+        "<track_template>\n"
+        f"{template_block}\n"
+        "</track_template>\n"
+        "\n"
+        "<repository_rules>\n"
+        f"{rules_block}\n"
+        "</repository_rules>\n"
+        "\n"
+        "<skills_context>\n"
+        f"{skills_block}\n"
+        "</skills_context>\n"
+        "\n"
+        "<planning_context>\n"
+        f"{planning_block}\n"
+        "</planning_context>\n"
+        "\n"
+        "<quality_context>\n"
+        f"{quality_block}\n"
+        "</quality_context>\n"
+    )
 
 
 def build_quality_prompt(*, report_text: str, task: str) -> str:
@@ -742,6 +882,140 @@ def command_send_stitch_prompt(args: argparse.Namespace) -> int:
     return 0
 
 
+def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[str, Any]]:
+    """Build prompt payload for scheduled linear workflows."""
+    project_root = Path(args.project_root).resolve()
+    load_env_defaults(project_root, override=False)
+
+    track = str(args.track or "").strip().lower()
+    if track not in DEFAULT_LINEAR_TRACK_TEMPLATES:
+        raise ValueError(f"Invalid track: {track}")
+
+    skills = parse_skill_names(args.skills)
+    skill_context = load_skill_context(
+        project_root,
+        skill_names=skills,
+        max_chars_per_skill=int(args.max_skill_chars),
+    )
+    quality_context = read_quality_context(
+        Path(args.quality_report).resolve(),
+        max_chars=int(args.max_quality_chars),
+    )
+
+    rules_context = read_context_file(
+        (project_root / ".agent" / "jules" / "AGENTS.md").resolve(),
+        max_chars=int(args.max_rules_chars),
+    )
+
+    planning_docs = [str(v) for v in (args.planning_doc or []) if str(v).strip()]
+    if not planning_docs:
+        planning_docs = list(DEFAULT_LINEAR_PLANNING_DOCS)
+
+    planning_blocks: list[str] = []
+    for rel_path in planning_docs:
+        resolved = (project_root / rel_path).resolve()
+        content = read_context_file(resolved, max_chars=int(args.max_planning_chars))
+        if not content:
+            planning_blocks.append(f"## {rel_path}\n- Missing or empty planning file.")
+            continue
+        planning_blocks.append(f"## {rel_path}\n{content}")
+    planning_context = "\n\n".join(planning_blocks).strip()
+
+    track_template = load_linear_prompt_template(
+        project_root,
+        track=track,
+        template_path=str(args.template or "").strip(),
+    )
+
+    session_name = resolve_linear_session_name(
+        getattr(args, "session_name", ""),
+        env_name=str(args.session_env or "JULES_LINEAR_SESSION"),
+    )
+    if not session_name:
+        raise ValueError(f"Missing fixed session id in --session-name or {args.session_env}.")
+
+    prompt = build_linear_scheduled_prompt(
+        track=track,
+        task=str(args.task or f"linear-{track}-block"),
+        schedule_slot=str(args.schedule_slot or f"{track}-scheduled"),
+        session_name=session_name,
+        track_template=track_template,
+        skill_context=skill_context,
+        quality_context=quality_context,
+        planning_context=planning_context,
+        rules_context=rules_context,
+    )
+
+    metadata = {
+        "generated_at": utc_now_iso(),
+        "track": track,
+        "task": str(args.task or f"linear-{track}-block"),
+        "schedule_slot": str(args.schedule_slot or ""),
+        "session_name": session_name,
+        "session_env": str(args.session_env or "JULES_LINEAR_SESSION"),
+        "skills": skills,
+        "quality_report": str(Path(args.quality_report).resolve()),
+        "planning_docs": planning_docs,
+    }
+    return prompt, metadata
+
+
+def command_build_linear_prompt(args: argparse.Namespace) -> int:
+    """Build a linear scheduled prompt without sending it."""
+    try:
+        prompt, metadata = _build_linear_prompt_payload(args)
+    except ValueError as exc:
+        print(f"[jules] build-linear-prompt failed: {exc}")
+        return 1
+
+    if args.prompt_out:
+        out_path = Path(args.prompt_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(prompt, encoding="utf-8")
+
+    if args.json_out:
+        payload = dict(metadata)
+        payload["prompt"] = prompt
+        write_json(Path(args.json_out), payload)
+
+    print(f"[jules] linear-prompt built for track={metadata['track']} session={metadata['session_name']}")
+    return 0
+
+
+def command_send_linear_prompt(args: argparse.Namespace) -> int:
+    """Build and send a linear scheduled prompt to a fixed session."""
+    try:
+        prompt, metadata = _build_linear_prompt_payload(args)
+    except ValueError as exc:
+        print(f"[jules] send-linear-prompt failed: {exc}")
+        return 1
+
+    try:
+        client = _resolve_client(args)
+        response = client.send_message(str(metadata["session_name"]), message=prompt)
+    except (ValueError, JulesAPIError) as exc:
+        print(f"[jules] send-linear-prompt failed: {exc}")
+        return 1
+
+    if args.prompt_out:
+        out_path = Path(args.prompt_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(prompt, encoding="utf-8")
+
+    if args.json_out:
+        write_json(
+            Path(args.json_out),
+            {
+                **metadata,
+                "sent_at": utc_now_iso(),
+                "response": response,
+            },
+        )
+
+    print(f"[jules] send-linear-prompt ok: {metadata['session_name']} track={metadata['track']}")
+    return 0
+
+
 def command_generate_suggestions(args: argparse.Namespace) -> int:
     """Trigger Jules session and generate schema-compatible suggestions artifacts."""
     project_root = Path(args.project_root).resolve()
@@ -959,6 +1233,110 @@ def build_parser() -> argparse.ArgumentParser:
     send_stitch.add_argument("--prompt-out", default="", help="Optional prompt output path.")
     send_stitch.add_argument("--json-out", default="", help="Optional json output file.")
     send_stitch.set_defaults(func=command_send_stitch_prompt)
+
+    build_linear = subparsers.add_parser(
+        "build-linear-prompt",
+        help="Build scheduled linear prompt with fixed-session constraints.",
+    )
+    build_linear.add_argument("--track", required=True, choices=sorted(DEFAULT_LINEAR_TRACK_TEMPLATES), help="Track.")
+    build_linear.add_argument("--task", default="", help="Task label override.")
+    build_linear.add_argument("--schedule-slot", default="", help="Schedule slot label (e.g., tests-01am).")
+    build_linear.add_argument(
+        "--session-name",
+        default="",
+        help="Fixed Jules session id/name. If omitted, reads from --session-env.",
+    )
+    build_linear.add_argument(
+        "--session-env",
+        default="JULES_LINEAR_SESSION",
+        help="Environment variable used when --session-name is omitted.",
+    )
+    build_linear.add_argument(
+        "--skills",
+        default=",".join(DEFAULT_STITCH_SKILLS),
+        help="Comma-separated skill names from .agent/skills.",
+    )
+    build_linear.add_argument(
+        "--template",
+        default="",
+        help="Optional prompt template path. Defaults to .github/jules/prompts/<track>.md",
+    )
+    build_linear.add_argument(
+        "--quality-report",
+        default=".quality_reports/refactor_summary.md",
+        help="Quality report path.",
+    )
+    build_linear.add_argument(
+        "--planning-doc",
+        action="append",
+        default=[],
+        help="Planning document path (repeatable).",
+    )
+    build_linear.add_argument("--max-skill-chars", default=1600, type=int, help="Max chars per skill file.")
+    build_linear.add_argument("--max-quality-chars", default=3200, type=int, help="Max chars for quality context.")
+    build_linear.add_argument("--max-rules-chars", default=2200, type=int, help="Max chars for rules context.")
+    build_linear.add_argument(
+        "--max-planning-chars",
+        default=2400,
+        type=int,
+        help="Max chars per planning document context.",
+    )
+    build_linear.add_argument("--prompt-out", default="", help="Optional prompt output path.")
+    build_linear.add_argument("--json-out", default="", help="Optional json output file.")
+    build_linear.set_defaults(func=command_build_linear_prompt)
+
+    send_linear = subparsers.add_parser(
+        "send-linear-prompt",
+        help="Build and send scheduled linear prompt to a fixed Jules session.",
+    )
+    send_linear.add_argument("--source", default="", help="Jules source override.")
+    send_linear.add_argument("--branch", default="", help="Branch override.")
+    send_linear.add_argument("--track", required=True, choices=sorted(DEFAULT_LINEAR_TRACK_TEMPLATES), help="Track.")
+    send_linear.add_argument("--task", default="", help="Task label override.")
+    send_linear.add_argument("--schedule-slot", default="", help="Schedule slot label (e.g., tests-01am).")
+    send_linear.add_argument(
+        "--session-name",
+        default="",
+        help="Fixed Jules session id/name. If omitted, reads from --session-env.",
+    )
+    send_linear.add_argument(
+        "--session-env",
+        default="JULES_LINEAR_SESSION",
+        help="Environment variable used when --session-name is omitted.",
+    )
+    send_linear.add_argument(
+        "--skills",
+        default=",".join(DEFAULT_STITCH_SKILLS),
+        help="Comma-separated skill names from .agent/skills.",
+    )
+    send_linear.add_argument(
+        "--template",
+        default="",
+        help="Optional prompt template path. Defaults to .github/jules/prompts/<track>.md",
+    )
+    send_linear.add_argument(
+        "--quality-report",
+        default=".quality_reports/refactor_summary.md",
+        help="Quality report path.",
+    )
+    send_linear.add_argument(
+        "--planning-doc",
+        action="append",
+        default=[],
+        help="Planning document path (repeatable).",
+    )
+    send_linear.add_argument("--max-skill-chars", default=1600, type=int, help="Max chars per skill file.")
+    send_linear.add_argument("--max-quality-chars", default=3200, type=int, help="Max chars for quality context.")
+    send_linear.add_argument("--max-rules-chars", default=2200, type=int, help="Max chars for rules context.")
+    send_linear.add_argument(
+        "--max-planning-chars",
+        default=2400,
+        type=int,
+        help="Max chars per planning document context.",
+    )
+    send_linear.add_argument("--prompt-out", default="", help="Optional prompt output path.")
+    send_linear.add_argument("--json-out", default="", help="Optional json output file.")
+    send_linear.set_defaults(func=command_send_linear_prompt)
 
     generate = subparsers.add_parser("generate-suggestions", help="Create local suggestions artifacts.")
     generate.add_argument("--source", default="", help="Jules source override.")

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -89,20 +90,21 @@ class PodiumPropertiesWindow(QDialog):
         self._data = data or PodiumData()
 
         self.setWindowTitle("Podium Properties")
-        self.setMinimumWidth(700)
+        self.setMinimumWidth(_scale_dip(self, 700))
         self._setup_ui()
         self._style()
         self._load_data()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(_scale_dip(self, 12))
+        margin = _scale_dip(self, 16)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Main properties group
         main_group = QGroupBox("Podium Properties")
         main_layout = QFormLayout(main_group)
-        main_layout.setSpacing(8)
+        main_layout.setSpacing(_scale_dip(self, 8))
 
         # ID display
         self._id_label = QLabel(f'ID: {self._data.item_id}  "{self._data.item_name}"')
@@ -152,7 +154,7 @@ class PodiumPropertiesWindow(QDialog):
         # Outfit group
         outfit_group = QGroupBox("Outfit")
         outfit_layout = QFormLayout(outfit_group)
-        outfit_layout.setSpacing(6)
+        outfit_layout.setSpacing(_scale_dip(self, 6))
 
         self.look_type_spin = QSpinBox()
         self.look_type_spin.setRange(0, 65535)
@@ -189,7 +191,7 @@ class PodiumPropertiesWindow(QDialog):
         # Mount group
         mount_group = QGroupBox("Mount")
         mount_layout = QFormLayout(mount_group)
-        mount_layout.setSpacing(6)
+        mount_layout.setSpacing(_scale_dip(self, 6))
 
         self.look_mount_spin = QSpinBox()
         self.look_mount_spin.setRange(0, 65535)
@@ -355,3 +357,14 @@ class PodiumPropertiesWindow(QDialog):
     def get_data(self) -> PodiumData:
         """Get the podium configuration data."""
         return self._data
+
+
+def _scale_dip(dialog: QDialog, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = dialog.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

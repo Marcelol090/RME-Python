@@ -55,7 +55,7 @@ def build_zones_xml(zones: Iterable[Zone]) -> str:
         node.set("zoneid", str(int(zone.id)))
 
     _indent(root)
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8")
+    return str(ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8"))
 
 
 def load_zones(path: str | Path) -> dict[int, Zone]:

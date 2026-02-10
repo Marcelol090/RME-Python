@@ -103,7 +103,7 @@ def build_houses_xml(houses: Iterable[House]) -> str:
         node.set("beds", str(int(house.beds)))
 
     _indent(root)
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8")
+    return str(ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8"))
 
 
 def load_houses(path: str | Path) -> dict[int, House]:

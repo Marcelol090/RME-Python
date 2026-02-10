@@ -23,9 +23,15 @@ def _placeholder_color(sprite_id: int) -> tuple[int, int, int, int]:
     b = (v * 3266489917) & 0xFF
 
     def clamp(c: int) -> int:
-        return 48 + (int(c) % 160)
+        return 80 + (int(c) % 140)
 
     return (clamp(r), clamp(g), clamp(b), 255)
+
+
+def _placeholder_border_color(sprite_id: int) -> tuple[int, int, int, int]:
+    """Darker border color for placeholders to make items stand out."""
+    r, g, b, _ = _placeholder_color(sprite_id)
+    return (max(0, r - 60), max(0, g - 60), max(0, b - 60), 255)
 
 
 @dataclass(slots=True)
@@ -476,7 +482,18 @@ class OpenGLRenderBackend(RenderBackend):
 
         sprite = self._sprite_lookup(int(sprite_id))
         if sprite is None:
-            self._batcher.add_color_rect(int(x), int(y), int(size), int(size), _placeholder_color(int(sprite_id)))
+            fill = _placeholder_color(int(sprite_id))
+            border = _placeholder_border_color(int(sprite_id))
+            self._batcher.add_color_rect(int(x), int(y), int(size), int(size), fill)
+            # Draw contrasting border so placeholder items stand out
+            self._batcher.add_line(int(x), int(y), int(x + size), int(y), border)
+            self._batcher.add_line(int(x + size), int(y), int(x + size), int(y + size), border)
+            self._batcher.add_line(int(x + size), int(y + size), int(x), int(y + size), border)
+            self._batcher.add_line(int(x), int(y + size), int(x), int(y), border)
+            # Show sprite ID as text overlay for identification
+            sid_abs = abs(int(sprite_id))
+            if int(size) >= 12:
+                self.text_calls.append((int(x) + 1, int(y) + int(size) - 2, str(sid_abs), 255, 255, 255, 200))
             return
 
         client_id, w, h, bgra = sprite

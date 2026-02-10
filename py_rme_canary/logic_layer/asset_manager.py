@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtGui import QImage, QPixmap
 
@@ -120,9 +120,9 @@ class AssetManager:
             return None
 
         # Check cache first (using server ID key)
-        cached = self._sprite_cache.get_sprite(item_id)
+        cached: Any = self._sprite_cache.get_sprite(item_id)
         if cached is not None:
-            return cached
+            return QPixmap(cached) if not isinstance(cached, QPixmap) else cached
 
         # Resolve Client ID
         client_id = client_id_override

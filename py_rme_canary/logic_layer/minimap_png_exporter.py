@@ -409,7 +409,7 @@ class MinimapPNGExporter:
         """Get RGB color for a tile."""
         # Check for minimap color property
         if hasattr(tile, "minimap_color"):
-            color_idx = tile.minimap_color
+            color_idx = int(tile.minimap_color)
             if 0 <= color_idx < len(MINIMAP_PALETTE):
                 return MINIMAP_PALETTE[color_idx]
 
@@ -420,12 +420,12 @@ class MinimapPNGExporter:
 
         # Check if ground has minimap color
         if hasattr(ground, "minimap_color"):
-            color_idx = ground.minimap_color
+            color_idx = int(ground.minimap_color)
             if 0 <= color_idx < len(MINIMAP_PALETTE):
                 return MINIMAP_PALETTE[color_idx]
 
         # Fallback to ID-based mapping
-        item_id = getattr(ground, "item_id", 0) or getattr(ground, "id", 0)
+        item_id: int = int(getattr(ground, "item_id", 0) or getattr(ground, "id", 0))
         return self._id_to_color(item_id)
 
     def _id_to_color(self, item_id: int) -> tuple[int, int, int]:

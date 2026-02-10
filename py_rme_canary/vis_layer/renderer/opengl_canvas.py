@@ -173,18 +173,26 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         editor = self._editor
         x, y = self._tile_at(int(pos.x()), int(pos.y()))
         z = int(editor.viewport.z)
+        header = getattr(editor.map, "header", None)
+        if header is not None:
+            width = int(getattr(header, "width", 0))
+            height = int(getattr(header, "height", 0))
+            if int(x) < 0 or int(y) < 0 or int(x) >= width or int(y) >= height:
+                return
+
         try:
             tile = editor.map.get_tile(int(x), int(y), int(z))
         except Exception:
             tile = None
-        if tile is None:
-            return
 
-        item = tile.items[-1] if getattr(tile, "items", None) else None
-        if item is None:
+        has_selection = False
+        with contextlib.suppress(Exception):
+            has_selection = bool(editor.session.has_selection())
+
+        item = tile.items[-1] if tile is not None and getattr(tile, "items", None) else None
+        if item is None and tile is not None:
             item = getattr(tile, "ground", None)
-        if item is None:
-            return
+        position = (int(x), int(y), int(z))
 
         try:
             from py_rme_canary.logic_layer.context_menu_handlers import ContextMenuActionHandlers
@@ -195,11 +203,14 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
                 canvas=self,
                 palette=getattr(editor, "palettes", None),
             )
-            callbacks = handlers.get_item_context_callbacks(item=item, tile=tile, position=(int(x), int(y), int(z)))
+            if item is not None:
+                callbacks = handlers.get_item_context_callbacks(item=item, tile=tile, position=position)
+            else:
+                callbacks = handlers.get_tile_context_callbacks(tile=tile, position=position)
 
             menu = ItemContextMenu(self)
             menu.set_callbacks(callbacks)
-            menu.show_for_item(item, tile)
+            menu.show_for_item(item, tile, has_selection=bool(has_selection), position=position)
         except Exception:
             return
 
@@ -495,6 +506,21 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
                 dash_pen.setWidth(2)
                 p.setPen(dash_pen)
                 p.drawRect(QRect(px0, py0, pw, ph))
+
+        # "Sprites not loaded" banner when items rendered as placeholders
+        if getattr(editor, "sprite_assets", None) is None and self.width() > 100:
+            banner_text = "⚠ Sprites not loaded — Go to Assets > Load appearances.dat"
+            font = p.font()
+            font.setPointSize(9)
+            p.setFont(font)
+            fm = p.fontMetrics()
+            tw = fm.horizontalAdvance(banner_text) + 16
+            th = fm.height() + 8
+            bx = (self.width() - tw) // 2
+            by = 4
+            p.fillRect(QRect(bx, by, tw, th), QColor(40, 40, 40, 200))
+            p.setPen(QPen(QColor(255, 200, 60)))
+            p.drawText(QRect(bx, by, tw, th), Qt.AlignmentFlag.AlignCenter, banner_text)
 
         p.end()
 

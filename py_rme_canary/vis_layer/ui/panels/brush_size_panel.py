@@ -1,16 +1,24 @@
 """Brush Size Control Panel with visual preview.
 
 Modern brush size selector with:
-- Visual size preview
-- Quick size buttons
+- Animated visual size preview with gradient fill
+- Quick size buttons with hover glow
 - Slider + spinbox
-- Shape toggle
+- Shape toggle with painted icons
 """
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPen
+from PyQt6.QtCore import QRectF, Qt, pyqtSignal
+from PyQt6.QtGui import (
+    QBrush,
+    QColor,
+    QLinearGradient,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QRadialGradient,
+)
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -27,7 +35,8 @@ from PyQt6.QtWidgets import (
 class BrushSizePreview(QFrame):
     """Visual preview of current brush size.
 
-    Shows a grid representing the brush footprint.
+    Shows a grid representing the brush footprint with gradient fills
+    and a subtle glow effect on the active area.
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -36,14 +45,15 @@ class BrushSizePreview(QFrame):
         self._size = 1
         self._is_circle = False
 
-        self.setMinimumSize(80, 80)
-        self.setMaximumSize(100, 100)
+        self.setMinimumSize(88, 88)
+        self.setMaximumSize(110, 110)
         self.setStyleSheet(
             """
             BrushSizePreview {
-                background: #1E1E2E;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1E1E2E, stop:1 #16161F);
                 border: 1px solid #363650;
-                border-radius: 8px;
+                border-radius: 10px;
             }
         """
         )
@@ -59,7 +69,7 @@ class BrushSizePreview(QFrame):
         self.update()
 
     def paintEvent(self, event: object) -> None:
-        """Paint the brush preview."""
+        """Paint the brush preview with gradient fill and glow."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -75,10 +85,25 @@ class BrushSizePreview(QFrame):
         start_x = (w - total_size) // 2
         start_y = (h - total_size) // 2
 
-        # Draw cells
-        fill_color = QColor(139, 92, 246, 180)  # Purple
-        border_color = QColor(139, 92, 246, 255)
+        center_x = float(start_x + total_size / 2.0)
+        center_y = float(start_y + total_size / 2.0)
 
+        # Draw subtle glow behind the active area
+        glow = QRadialGradient(center_x, center_y, float(total_size * 0.8))
+        glow.setColorAt(0.0, QColor(139, 92, 246, 50))
+        glow.setColorAt(1.0, QColor(139, 92, 246, 0))
+        painter.setBrush(QBrush(glow))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(
+            QRectF(
+                center_x - total_size * 0.8,
+                center_y - total_size * 0.8,
+                total_size * 1.6,
+                total_size * 1.6,
+            )
+        )
+
+        # Draw cells with gradient
         center = self._size / 2.0
         radius_sq = (self._size / 2.0) ** 2
 
@@ -94,17 +119,87 @@ class BrushSizePreview(QFrame):
                     if dx * dx + dy * dy > radius_sq:
                         continue
 
-                # Draw cell
-                painter.fillRect(x, y, cell_size - 1, cell_size - 1, fill_color)
+                # Calculate distance from center for gradient intensity
+                dist = ((col + 0.5 - center) ** 2 + (row + 0.5 - center) ** 2) ** 0.5
+                max_dist = center * 1.414
+                intensity = max(0.3, 1.0 - (dist / max_dist) * 0.6) if max_dist > 0 else 1.0
+
+                # Gradient cell fill
+                cell_gradient = QLinearGradient(x, y, x, y + cell_size)
+                cell_gradient.setColorAt(
+                    0.0, QColor(139, 92, 246, int(220 * intensity))
+                )
+                cell_gradient.setColorAt(
+                    1.0, QColor(109, 62, 216, int(180 * intensity))
+                )
+                painter.setBrush(QBrush(cell_gradient))
+                painter.setPen(Qt.PenStyle.NoPen)
+
+                # Rounded cell corners for size > 1
+                if cell_size > 4:
+                    path = QPainterPath()
+                    path.addRoundedRect(
+                        QRectF(x + 0.5, y + 0.5, cell_size - 1.5, cell_size - 1.5),
+                        2.0,
+                        2.0,
+                    )
+                    painter.drawPath(path)
+                else:
+                    painter.drawRect(x, y, cell_size - 1, cell_size - 1)
 
         # Draw border
-        painter.setPen(QPen(border_color, 2))
+        border_color = QColor(139, 92, 246, 200)
+        painter.setPen(QPen(border_color, 2.0))
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self._is_circle:
             painter.drawEllipse(start_x, start_y, total_size - 1, total_size - 1)
         else:
-            painter.drawRect(start_x, start_y, total_size - 1, total_size - 1)
+            path = QPainterPath()
+            path.addRoundedRect(
+                QRectF(start_x, start_y, total_size - 1, total_size - 1), 3.0, 3.0
+            )
+            painter.drawPath(path)
+
+        painter.end()
+
+
+class _ShapeButton(QPushButton):
+    """Shape toggle button with custom-painted icon instead of Unicode characters."""
+
+    def __init__(self, shape: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._shape = shape  # "square" or "circle"
+        self.setFixedSize(36, 36)
+        self.setCheckable(True)
+
+    def paintEvent(self, event: object) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Colors based on checked state
+        if self.isChecked():
+            pen_color = QColor(255, 255, 255, 230)
+            fill_color = QColor(255, 255, 255, 40)
+        else:
+            pen_color = QColor(161, 161, 170, 200)
+            fill_color = QColor(161, 161, 170, 20)
+
+        painter.setPen(QPen(pen_color, 2.0))
+        painter.setBrush(QBrush(fill_color))
+
+        # Draw shape centered in button
+        cx, cy = self.width() / 2.0, self.height() / 2.0
+        size = 14.0
+
+        if self._shape == "circle":
+            painter.drawEllipse(QRectF(cx - size / 2, cy - size / 2, size, size))
+        else:
+            r = QRectF(cx - size / 2, cy - size / 2, size, size)
+            painter.drawRoundedRect(r, 2.0, 2.0)
+
+        painter.end()
 
 
 class BrushSizePanel(QWidget):
@@ -130,23 +225,36 @@ class BrushSizePanel(QWidget):
     def _setup_ui(self) -> None:
         """Initialize UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
 
-        # Header
-        header = QLabel("Brush Size")
+        # Header with icon
+        header_row = QHBoxLayout()
+        header_row.setSpacing(6)
+
+        from py_rme_canary.vis_layer.ui.icons import icon_brush_size
+        _icon = icon_brush_size(14)
+        icon_label = QLabel()
+        icon_label.setPixmap(_icon.pixmap(14, 14))
+        icon_label.setFixedSize(16, 16)
+        header_row.addWidget(icon_label)
+
+        header = QLabel("BRUSH SIZE")
         header.setStyleSheet(
             """
-            font-size: 12px;
-            font-weight: 600;
-            color: #A1A1AA;
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(161, 161, 170, 0.6);
+            letter-spacing: 1.5px;
         """
         )
-        layout.addWidget(header)
+        header_row.addWidget(header)
+        header_row.addStretch()
+        layout.addLayout(header_row)
 
         # Preview + controls
         main_row = QHBoxLayout()
-        main_row.setSpacing(12)
+        main_row.setSpacing(14)
 
         # Preview
         self.preview = BrushSizePreview()
@@ -154,10 +262,11 @@ class BrushSizePanel(QWidget):
 
         # Controls column
         controls = QVBoxLayout()
-        controls.setSpacing(8)
+        controls.setSpacing(10)
 
         # Slider + spinbox row
         slider_row = QHBoxLayout()
+        slider_row.setSpacing(8)
 
         self.slider = QSlider(Qt.Orientation.Horizontal)
         self.slider.setMinimum(1)
@@ -170,7 +279,8 @@ class BrushSizePanel(QWidget):
         self.spinbox.setMinimum(1)
         self.spinbox.setMaximum(11)
         self.spinbox.setValue(1)
-        self.spinbox.setFixedWidth(50)
+        self.spinbox.setFixedWidth(52)
+        self.spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.spinbox.valueChanged.connect(self._on_spinbox_changed)
         slider_row.addWidget(self.spinbox)
 
@@ -184,7 +294,8 @@ class BrushSizePanel(QWidget):
         for size in [1, 2, 3, 5, 7, 9, 11]:
             btn = QPushButton(str(size))
             btn.setCheckable(True)
-            btn.setFixedSize(28, 28)
+            btn.setFixedSize(30, 30)
+            btn.setToolTip(f"Size {size}×{size}")
             btn.clicked.connect(lambda checked, s=size: self._set_size(s))
             self.size_buttons.addButton(btn, size)
             quick_row.addWidget(btn)
@@ -200,22 +311,18 @@ class BrushSizePanel(QWidget):
         shape_row = QHBoxLayout()
         shape_row.setSpacing(8)
 
-        shape_label = QLabel("Shape:")
-        shape_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+        shape_label = QLabel("Shape")
+        shape_label.setStyleSheet("color: #8888A0; font-size: 11px; font-weight: 600;")
         shape_row.addWidget(shape_label)
 
-        self.btn_square = QPushButton("▢")
-        self.btn_square.setCheckable(True)
+        self.btn_square = _ShapeButton("square")
         self.btn_square.setChecked(True)
-        self.btn_square.setFixedSize(32, 32)
-        self.btn_square.setToolTip("Square [Q]")
+        self.btn_square.setToolTip("Square brush [Q]")
         self.btn_square.clicked.connect(lambda: self._set_shape(False))
         shape_row.addWidget(self.btn_square)
 
-        self.btn_circle = QPushButton("○")
-        self.btn_circle.setCheckable(True)
-        self.btn_circle.setFixedSize(32, 32)
-        self.btn_circle.setToolTip("Circle [Q]")
+        self.btn_circle = _ShapeButton("circle")
+        self.btn_circle.setToolTip("Circle brush [Q]")
         self.btn_circle.clicked.connect(lambda: self._set_shape(True))
         shape_row.addWidget(self.btn_circle)
 
@@ -227,63 +334,79 @@ class BrushSizePanel(QWidget):
         layout.addLayout(main_row)
 
     def _apply_style(self) -> None:
-        """Apply modern styling."""
+        """Apply Antigravity premium styling."""
         self.setStyleSheet(
             """
             BrushSizePanel {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+                background: rgba(16, 16, 24, 0.85);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
             }
 
             QSlider::groove:horizontal {
-                background: #363650;
-                height: 6px;
-                border-radius: 3px;
+                background: rgba(54, 54, 80, 0.4);
+                height: 4px;
+                border-radius: 2px;
             }
 
             QSlider::handle:horizontal {
-                background: #8B5CF6;
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                    fx:0.5, fy:0.3,
+                    stop:0 #A78BFA, stop:1 #8B5CF6);
                 width: 16px;
                 height: 16px;
-                margin: -5px 0;
+                margin: -6px 0;
                 border-radius: 8px;
+                border: 2px solid rgba(124, 58, 237, 0.7);
+            }
+
+            QSlider::handle:horizontal:hover {
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                    fx:0.5, fy:0.3,
+                    stop:0 #C4B5FD, stop:1 #A78BFA);
             }
 
             QSlider::sub-page:horizontal {
-                background: #8B5CF6;
-                border-radius: 3px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #7C3AED, stop:1 #8B5CF6);
+                border-radius: 2px;
             }
 
             QSpinBox {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
+                background: rgba(19, 19, 29, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 6px;
                 padding: 4px;
                 color: #E5E5E7;
+                font-weight: 600;
+                selection-background-color: rgba(139, 92, 246, 0.3);
             }
 
             QSpinBox:focus {
-                border-color: #8B5CF6;
+                border-color: rgba(139, 92, 246, 0.5);
+                background: rgba(19, 19, 29, 0.8);
             }
 
             QPushButton {
-                background: #363650;
-                color: #A1A1AA;
-                border: 1px solid #52525B;
-                border-radius: 4px;
-                font-weight: 600;
+                background: rgba(19, 19, 29, 0.6);
+                color: rgba(161, 161, 170, 0.8);
+                border: 1px solid transparent;
+                border-radius: 6px;
+                font-weight: 700;
+                font-size: 11px;
             }
 
             QPushButton:hover {
-                background: #404060;
+                background: rgba(139, 92, 246, 0.12);
+                border-color: rgba(139, 92, 246, 0.2);
                 color: #E5E5E7;
             }
 
             QPushButton:checked {
-                background: #8B5CF6;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(139, 92, 246, 0.35), stop:1 rgba(124, 58, 237, 0.3));
                 color: white;
-                border-color: #8B5CF6;
+                border: 1px solid rgba(139, 92, 246, 0.45);
             }
         """
         )

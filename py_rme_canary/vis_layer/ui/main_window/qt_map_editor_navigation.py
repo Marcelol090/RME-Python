@@ -65,6 +65,17 @@ class QtMapEditorNavigationMixin:
         self._set_z(int(oz))
         self.canvas.update()
 
+    def _goto_floor(self: QtMapEditor, floor: int) -> None:
+        """Navigate directly to a specific floor level (C++ FLOOR_0..FLOOR_15)."""
+        z = max(0, min(15, int(floor)))
+        # Push current position so user can go back with "Go to Previous Position"
+        self._position_history.append(
+            (int(self.viewport.origin_x), int(self.viewport.origin_y), int(self.viewport.z))
+        )
+        self._set_z(z)
+        self.canvas.update()
+        self.status.showMessage(f"Floor {z}")
+
     def update_status_from_mouse(self: QtMapEditor, px: int, py: int) -> None:
         x, y = self.canvas._tile_at(px, py)
         self._last_hover_tile = (int(x), int(y))

@@ -132,6 +132,7 @@ class PaletteManager:
             ("terrain", "Terrain"),
             ("doodad", "Doodad"),
             ("item", "Item"),
+            ("collection", "Collection"),
             ("recent", "Recent"),
             ("house", "House"),
             ("creature", "Creature"),
@@ -145,6 +146,7 @@ class PaletteManager:
         key = (palette_key or "").strip().lower()
         mapping: dict[str, set[str]] = {
             "terrain": {"ground", "carpet"},
+            "collection": {"ground", "wall", "carpet", "table"},
             # Doodad palette is backed by materials XML doodad brushes when available.
             # (Fallback behavior: show wall brushes and wrap them as doodads.)
             "doodad": {"wall"},

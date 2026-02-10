@@ -60,7 +60,7 @@ class TestSettingsDialog:
 
         dialog = SettingsDialog()
         assert dialog is not None
-        assert dialog.windowTitle() == "Settings"
+        assert dialog.windowTitle() == "Preferences"
 
     def test_settings_categories(self, app):
         """Test settings has all categories."""
@@ -68,8 +68,8 @@ class TestSettingsDialog:
 
         dialog = SettingsDialog()
 
-        # Should have 4 categories
-        assert dialog.category_list.count() == 4
+        # Should have 5 categories (General/Editor/Graphics/Interface/Client Version)
+        assert dialog.category_list.count() == 5
 
     def test_category_navigation(self, app):
         """Test navigating between categories."""

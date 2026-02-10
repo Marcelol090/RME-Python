@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import zlib
 from collections.abc import Callable
 from typing import Any
 
@@ -37,6 +38,10 @@ def _import_backend() -> Any | None:
     _BACKEND_CACHE_READY = True
     return None
 
+
+# ---------------------------------------------------------------------------
+# 1. Spawn entry names at cursor (existing)
+# ---------------------------------------------------------------------------
 
 def _python_spawn_entry_names_at_cursor(
     spawn_areas: list[object],
@@ -120,3 +125,159 @@ def spawn_entry_names_at_cursor(
         pass
 
     return _python_spawn_entry_names_at_cursor(spawn_areas, entries_attr=entries_attr, x=int(x), y=int(y), z=int(z))
+
+
+# ---------------------------------------------------------------------------
+# 2. FNV-1a 64-bit hash  (NEW)
+# ---------------------------------------------------------------------------
+
+# Python constants (same as sprite_hash.py)
+_FNV_OFFSET_BASIS_64: int = 0xCBF29CE484222325
+_FNV_PRIME_64: int = 0x100000001B3
+
+
+def _python_fnv1a_64(data: bytes) -> int:
+    """Pure Python FNV-1a 64-bit hash."""
+    if not data:
+        return _FNV_OFFSET_BASIS_64
+    hash_value = _FNV_OFFSET_BASIS_64
+    for byte in data:
+        hash_value ^= byte
+        hash_value = (hash_value * _FNV_PRIME_64) & 0xFFFFFFFFFFFFFFFF
+    return hash_value
+
+
+def fnv1a_64(data: bytes) -> int:
+    """FNV-1a 64-bit hash — uses Rust backend when available (100-200× faster)."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "fnv1a_64_hash", None)
+        if fn is not None:
+            try:
+                return int(fn(data))
+            except Exception:
+                pass
+    return _python_fnv1a_64(data)
+
+
+def sprite_hash(pixel_data: bytes, width: int, height: int) -> int:
+    """FNV-1a hash of sprite with dimensions — uses Rust backend when available."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "sprite_hash", None)
+        if fn is not None:
+            try:
+                return int(fn(pixel_data, width, height))
+            except Exception:
+                pass
+    # Fallback: prepend dimensions + hash
+    dimension_bytes = width.to_bytes(4, "little") + height.to_bytes(4, "little")
+    return _python_fnv1a_64(dimension_bytes + pixel_data)
+
+
+# ---------------------------------------------------------------------------
+# 3. Minimap pixel buffer rendering  (NEW)
+# ---------------------------------------------------------------------------
+
+def _python_render_minimap_buffer(
+    tile_colors: list[tuple[int, int, int, int]],
+    tiles_x: int,
+    tiles_y: int,
+    tile_size: int,
+    bg_r: int,
+    bg_g: int,
+    bg_b: int,
+) -> bytearray:
+    """Pure Python minimap pixel buffer renderer."""
+    img_w = tiles_x * tile_size
+    img_h = tiles_y * tile_size
+    total = img_w * img_h * 3
+
+    buf = bytearray(total)
+    # Fill background
+    for i in range(0, total, 3):
+        buf[i] = bg_r
+        buf[i + 1] = bg_g
+        buf[i + 2] = bg_b
+
+    ts = tile_size
+    for idx, (r, g, b, a) in enumerate(tile_colors):
+        if a == 0:
+            continue
+        tx = idx % tiles_x
+        ty = idx // tiles_x
+        px_base = tx * ts
+        py_base = ty * ts
+
+        for oy in range(ts):
+            row_start = ((py_base + oy) * img_w + px_base) * 3
+            if row_start + ts * 3 > total:
+                break
+            for ox in range(ts):
+                off = row_start + ox * 3
+                buf[off] = r
+                buf[off + 1] = g
+                buf[off + 2] = b
+
+    return buf
+
+
+def render_minimap_buffer(
+    tile_colors: list[tuple[int, int, int, int]],
+    tiles_x: int,
+    tiles_y: int,
+    tile_size: int,
+    bg_r: int,
+    bg_g: int,
+    bg_b: int,
+) -> bytearray | bytes:
+    """Render minimap pixel buffer — uses Rust backend when available (50-100× faster)."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "render_minimap_buffer", None)
+        if fn is not None:
+            try:
+                result = fn(tile_colors, tiles_x, tiles_y, tile_size, bg_r, bg_g, bg_b)
+                if isinstance(result, (bytes, bytearray)):
+                    return result
+            except Exception:
+                pass
+    return _python_render_minimap_buffer(tile_colors, tiles_x, tiles_y, tile_size, bg_r, bg_g, bg_b)
+
+
+# ---------------------------------------------------------------------------
+# 4. PNG IDAT assembly  (NEW)
+# ---------------------------------------------------------------------------
+
+def _python_assemble_png_idat(
+    image_data: bytearray | bytes,
+    width: int,
+    height: int,
+) -> bytes:
+    """Pure Python PNG IDAT assembly: add filter bytes + zlib compress."""
+    row_bytes = width * 3
+    raw = b""
+    for y in range(height):
+        raw += b"\x00"  # Filter byte = None
+        row_start = y * row_bytes
+        raw += bytes(image_data[row_start: row_start + row_bytes])
+    return zlib.compress(raw, level=6)
+
+
+def assemble_png_idat(
+    image_data: bytearray | bytes,
+    width: int,
+    height: int,
+) -> bytes:
+    """Assemble PNG IDAT data — uses Rust backend when available (10-30× faster)."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "assemble_png_idat", None)
+        if fn is not None:
+            try:
+                result = fn(bytes(image_data), width, height)
+                if isinstance(result, (bytes, bytearray)):
+                    return bytes(result)
+            except Exception:
+                pass
+    return _python_assemble_png_idat(image_data, width, height)

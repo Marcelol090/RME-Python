@@ -197,7 +197,7 @@ class SpriteCache:
 
     def __init__(self, max_sprites: int = 1000) -> None:
         self._cache = LRUCache[Any](max_size=max_sprites, size_func=self._pixmap_size)
-        self._animation_cache = LRUCache[list](max_size=200)
+        self._animation_cache = LRUCache[list[Any]](max_size=200)
         self._preload_queue: list[int] = []
         self._preload_thread: threading.Thread | None = None
         self._stop_preload = threading.Event()
@@ -214,7 +214,7 @@ class SpriteCache:
         """Calculate pixmap memory size."""
         try:
             if hasattr(pixmap, "width") and hasattr(pixmap, "height"):
-                return pixmap.width() * pixmap.height() * 4  # RGBA
+                return int(pixmap.width() * pixmap.height() * 4)  # RGBA
         except Exception:
             pass
         return 1024  # Default estimate
@@ -239,7 +239,7 @@ class SpriteCache:
         """
         self._cache.put(f"sprite_{item_id}", pixmap)
 
-    def get_animation(self, item_id: int) -> list | None:
+    def get_animation(self, item_id: int) -> list[Any] | None:
         """Get cached animation frames.
 
         Args:
@@ -250,7 +250,7 @@ class SpriteCache:
         """
         return self._animation_cache.get(f"anim_{item_id}")
 
-    def cache_animation(self, item_id: int, frames: list) -> None:
+    def cache_animation(self, item_id: int, frames: list[Any]) -> None:
         """Cache animation frames.
 
         Args:

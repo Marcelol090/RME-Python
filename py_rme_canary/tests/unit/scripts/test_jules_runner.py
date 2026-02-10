@@ -255,3 +255,108 @@ def test_build_stitch_prompt_command_writes_outputs(tmp_path) -> None:
     payload = json.loads(json_out.read_text(encoding="utf-8"))
     assert payload["task"] == "uiux-sync"
     assert payload["skills"] == ["jules-uiux-stitch"]
+
+
+def test_build_linear_prompt_command_writes_outputs(tmp_path) -> None:
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# summary\n", encoding="utf-8")
+
+    planning_doc = tmp_path / "py_rme_canary" / "docs" / "Planning" / "TODO_CPP_PARITY_UIUX_2026-02-06.md"
+    planning_doc.parent.mkdir(parents=True, exist_ok=True)
+    planning_doc.write_text("- [ ] P0 item\n", encoding="utf-8")
+
+    skill_path = tmp_path / ".agent" / "skills" / "jules-uiux-stitch" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True, exist_ok=True)
+    skill_path.write_text("# Skill\nUse this.\n", encoding="utf-8")
+
+    template_path = tmp_path / ".github" / "jules" / "prompts" / "linear_uiux.md"
+    template_path.parent.mkdir(parents=True, exist_ok=True)
+    template_path.write_text("## UIUX Track Template\nKeep parity.\n", encoding="utf-8")
+
+    prompt_out = tmp_path / ".quality_reports" / "linear_prompt.txt"
+    json_out = tmp_path / ".quality_reports" / "linear_prompt.json"
+
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "build-linear-prompt",
+            "--track",
+            "uiux",
+            "--session-name",
+            "sessions/123",
+            "--skills",
+            "jules-uiux-stitch",
+            "--quality-report",
+            str(quality_report),
+            "--planning-doc",
+            str(planning_doc.relative_to(tmp_path)).replace("\\", "/"),
+            "--template",
+            str(template_path),
+            "--prompt-out",
+            str(prompt_out),
+            "--json-out",
+            str(json_out),
+        ]
+    )
+
+    assert exit_code == 0
+    assert prompt_out.exists()
+    payload = json.loads(json_out.read_text(encoding="utf-8"))
+    assert payload["track"] == "uiux"
+    assert payload["session_name"] == "sessions/123"
+
+
+def test_send_linear_prompt_uses_env_session(tmp_path, monkeypatch) -> None:
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# summary\n", encoding="utf-8")
+
+    planning_doc = tmp_path / "py_rme_canary" / "docs" / "Planning" / "TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md"
+    planning_doc.parent.mkdir(parents=True, exist_ok=True)
+    planning_doc.write_text("- [ ] P1 item\n", encoding="utf-8")
+
+    template_path = tmp_path / ".github" / "jules" / "prompts" / "linear_tests.md"
+    template_path.parent.mkdir(parents=True, exist_ok=True)
+    template_path.write_text("## Tests Template\nStabilize tests.\n", encoding="utf-8")
+
+    monkeypatch.setenv("JULES_LINEAR_SESSION", "sessions/fixed-001")
+
+    captured: dict[str, str] = {}
+
+    class FakeClient:
+        def send_message(self, session_name: str, *, message: str) -> object:
+            captured["session_name"] = session_name
+            captured["message"] = message
+            return {"name": "activities/1"}
+
+    def _fake_resolve_client(args, require_source: bool = True):  # noqa: ANN001
+        return FakeClient()
+
+    monkeypatch.setattr(jules_runner, "_resolve_client", _fake_resolve_client)
+    json_out = tmp_path / ".quality_reports" / "linear_send.json"
+
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "send-linear-prompt",
+            "--track",
+            "tests",
+            "--quality-report",
+            str(quality_report),
+            "--planning-doc",
+            str(planning_doc.relative_to(tmp_path)).replace("\\", "/"),
+            "--template",
+            str(template_path),
+            "--json-out",
+            str(json_out),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["session_name"] == "sessions/fixed-001"
+    assert "SESSION LOCK" in captured["message"]
+    payload = json.loads(json_out.read_text(encoding="utf-8"))
+    assert payload["session_name"] == "sessions/fixed-001"

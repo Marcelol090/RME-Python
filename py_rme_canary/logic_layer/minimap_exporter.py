@@ -23,6 +23,10 @@ log = logging.getLogger(__name__)
 class MinimapExporter:
     """Exporter for OTMM minimap format."""
 
+    def __init__(self, *, appearance_index: Any = None) -> None:
+        self._appearance_index = appearance_index
+        self._color_cache: dict[int, int] = {}
+
     def export(self, game_map: Any, output_path: str, z_level: int = 7) -> None:
         """Export a specific Z-level to .otmm file.
 
@@ -113,29 +117,61 @@ class MinimapExporter:
     def _get_tile_minimap_color(self, tile: Any) -> int:
         """Determine minimap color index for a tile.
 
+        Uses the automap color from ``appearances.dat`` when available,
+        falling back to a basic heuristic for legacy assets.
+
         Returns a byte value (0-255).
         """
-        # TODO: Link this to real client automap colors.
-        # For now, simplistic mapping based on ground ID or defaults.
-
         ground = getattr(tile, "ground", None)
         if not ground:
             return 0  # Empty/Black
 
-        sid = getattr(ground, "server_id", 0) or getattr(ground, "id", 0)
+        # Try to resolve via appearances.dat minimap_color
+        client_id = getattr(ground, "client_id", None)
+        if client_id is None:
+            client_id = getattr(ground, "server_id", 0) or getattr(ground, "id", 0)
+        client_id = int(client_id or 0)
 
-        # Very distinct mock colors for demonstration
+        cached = self._color_cache.get(client_id)
+        if cached is not None:
+            return cached
+
+        color = self._resolve_automap_color(client_id)
+        if color is None:
+            # Fallback to ID-based heuristic
+            color = self._fallback_color(ground)
+        self._color_cache[client_id] = color
+        return color
+
+    def _resolve_automap_color(self, client_id: int) -> int | None:
+        """Look up minimap color from appearances.dat."""
+        if self._appearance_index is None:
+            return None
+        obj_info = getattr(self._appearance_index, "object_info", None)
+        if obj_info is None:
+            return None
+        info = obj_info.get(client_id)
+        if info is None:
+            return None
+        if getattr(info, "has_minimap_color", False):
+            return max(0, min(255, int(info.minimap_color)))
+        return None
+
+    @staticmethod
+    def _fallback_color(ground: Any) -> int:
+        """Simple ID-based color heuristic for legacy assets."""
+        sid = getattr(ground, "server_id", 0) or getattr(ground, "id", 0)
+        sid = int(sid)
         if sid in (4526, 4527, 4528):  # Grass
             return 24  # Greenish
-        elif sid in (351, 352, 353, 354, 355):  # Stone/Cave
+        if sid in (351, 352, 353, 354, 355):  # Stone/Cave
             return 128  # Grey
-        elif sid in (4632, 4633, 4634, 4635):  # Sand
+        if sid in (4632, 4633, 4634, 4635):  # Sand
             return 210  # Yellow/Sand
-        elif sid in (4664, 4665, 4666):  # Water
+        if sid in (4664, 4665, 4666):  # Water
             return 20  # Blue
-
         return 200  # Default generic tile
 
 
-def get_minimap_exporter() -> MinimapExporter:
-    return MinimapExporter()
+def get_minimap_exporter(*, appearance_index: Any = None) -> MinimapExporter:
+    return MinimapExporter(appearance_index=appearance_index)

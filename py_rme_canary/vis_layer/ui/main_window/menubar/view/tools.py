@@ -11,3 +11,8 @@ def toggle_grid(editor, enabled: bool) -> None:
 
 def toggle_ingame_preview(editor, enabled: bool) -> None:
     editor._toggle_ingame_preview(bool(enabled))
+
+
+def goto_floor(editor, floor: int) -> None:
+    """Navigate directly to a specific floor level (0-15)."""
+    editor._goto_floor(int(floor))

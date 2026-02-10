@@ -28,6 +28,7 @@ from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
 from py_rme_canary.vis_layer.renderer.map_drawer import MapDrawer
 from py_rme_canary.vis_layer.ui.docks.actions_history import ActionsHistoryDock
 from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.drawing_options_coordinator import (
     DrawingOptionsCoordinator,
     create_coordinator,
@@ -181,6 +182,7 @@ class QtMapEditor(
     act_palette_terrain: QAction
     act_palette_doodad: QAction
     act_palette_item: QAction
+    act_palette_collection: QAction
     act_palette_house: QAction
     act_palette_creature: QAction
     act_palette_npc: QAction
@@ -398,7 +400,7 @@ class QtMapEditor(
         self.show_npcs_spawns: bool = False
         self.show_special: bool = False
 
-        self.show_as_minimap: bool = True
+        self.show_as_minimap: bool = False
         self.only_show_colors: bool = False
         self.only_show_modified: bool = False
 
@@ -446,18 +448,18 @@ class QtMapEditor(
         self.map_drawer = MapDrawer(options=self.drawing_options, game_map=self.map)
 
         # Screenshot parity: Edit menu (Find/Replace/Stats/Tools)
-        self.act_find_item = QAction("Find Item...", self)
+        self.act_find_item = QAction(load_icon("action_find"), "Find Item...", self)
         self.act_find_item.setShortcut(QKeySequence("Ctrl+F"))
         self.act_find_item.triggered.connect(self._open_find_item_dialog)
 
-        self.act_map_statistics = QAction("Map Statistics...", self)
+        self.act_map_statistics = QAction(load_icon("action_statistics"), "Map Statistics...", self)
         self.act_map_statistics.triggered.connect(self._show_map_statistics)
 
-        self.act_map_statistics_graphs = QAction("Map Statistics (Graphs)...", self)
+        self.act_map_statistics_graphs = QAction(load_icon("action_statistics"), "Map Statistics (Graphs)...", self)
         self.act_map_statistics_graphs.setShortcut(QKeySequence("Ctrl+Shift+G"))
         self.act_map_statistics_graphs.triggered.connect(self._show_map_statistics_graphs)
 
-        self.act_replace_items = QAction("Replace Items...", self)
+        self.act_replace_items = QAction(load_icon("action_replace"), "Replace Items...", self)
         self.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
         self.act_replace_items.triggered.connect(self._open_replace_items_dialog)
 

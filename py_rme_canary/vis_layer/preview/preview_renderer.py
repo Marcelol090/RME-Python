@@ -29,6 +29,24 @@ class PreviewItem:
     client_id: int
     count: int | None
     stackable: bool
+    elevation: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewCreature:
+    """Snapshot of a creature for preview rendering."""
+
+    name: str
+    kind: str  # "monster" or "npc"
+    lookitem: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewSpawn:
+    """Snapshot of spawn area for preview rendering."""
+
+    kind: str  # "monster" or "npc"
+    radius: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +57,8 @@ class TileSnapshot:
     ground: PreviewItem | None
     items: tuple[PreviewItem, ...]
     light_strength: int = 0
+    creatures: tuple[PreviewCreature, ...] = ()
+    spawns: tuple[PreviewSpawn, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +68,7 @@ class PreviewLighting:
     ambient_level: int = 255
     ambient_color: tuple[int, int, int] = (255, 255, 255)
     show_strength: bool = False
+    outdoor_time: float = 12.0  # 0-24 hour for day/night cycle
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,6 +214,8 @@ class IngameRenderer:
 
         for item in ground + bottom + top:
             self._draw_item(surface, tile, item, screen_x, screen_y, time_ms=time_ms)
+        self._draw_creatures(surface, tile, screen_x, screen_y)
+        self._draw_spawns(surface, tile, screen_x, screen_y)
         self._draw_light_strength(surface, tile, screen_x, screen_y)
 
     def _world_to_screen(self, x: int, y: int, viewport: PreviewViewport) -> tuple[int, int]:
@@ -287,6 +310,12 @@ class IngameRenderer:
         pattern_x = 0 if info.pattern_width <= 1 else int(tile.x) % int(info.pattern_width)
         pattern_y = 0 if info.pattern_height <= 1 else int(tile.y) % int(info.pattern_height)
         pattern_z = 0
+
+        # Apply elevation offset from item flags (modern sprites)
+        elevation = int(getattr(item, "elevation", 0))
+        draw_x = int(screen_x)
+        draw_y = int(screen_y) - elevation
+
         layers = max(1, int(info.layers))
         for layer in range(layers):
             idx = (
@@ -300,7 +329,7 @@ class IngameRenderer:
                 idx = idx % len(info.sprite_ids)
             sprite_id = int(info.sprite_ids[idx])
             sprite = self._surface_cache.get_surface(sprite_id, placeholder_size=self._tile_px)
-            surface.blit(sprite, (screen_x, screen_y))
+            surface.blit(sprite, (draw_x, draw_y))
 
         self._draw_stack_count(surface, item, screen_x, screen_y)
 
@@ -330,6 +359,59 @@ class IngameRenderer:
         surface.blit(shadow, (screen_x + 3, screen_y + 15))
         surface.blit(label, (screen_x + 2, screen_y + 14))
 
+    def _draw_creatures(self, surface: pygame.Surface, tile: TileSnapshot, screen_x: int, screen_y: int) -> None:
+        """Draw creature indicators and name labels on a tile."""
+        import pygame
+
+        if not tile.creatures:
+            return
+
+        tp = int(self._tile_px)
+
+        for idx, creature in enumerate(tile.creatures):
+            # If creature has a lookitem, try to render it as a sprite
+            if creature.lookitem is not None and creature.lookitem > 0:
+                sprite = self._surface_cache.get_surface(int(creature.lookitem), placeholder_size=tp)
+                surface.blit(sprite, (screen_x, screen_y))
+            else:
+                # Draw colored diamond indicator
+                if creature.kind == "monster":
+                    color = (220, 60, 60, 200)  # red
+                else:
+                    color = (80, 160, 255, 200)  # blue
+                cx = screen_x + tp // 2
+                cy = screen_y + tp // 2
+                r = max(4, tp // 4)
+                points = [(cx, cy - r), (cx + r, cy), (cx, cy + r), (cx - r, cy)]
+                pygame.draw.polygon(surface, color, points)
+
+            # Name label
+            if self._font is not None and creature.name:
+                label_y = screen_y + tp + idx * 12
+                shadow = self._font.render(creature.name, True, (0, 0, 0))
+                if creature.kind == "monster":
+                    fg = (220, 80, 80)
+                else:
+                    fg = (100, 180, 255)
+                text = self._font.render(creature.name, True, fg)
+                surface.blit(shadow, (screen_x + 1, label_y + 1))
+                surface.blit(text, (screen_x, label_y))
+
+    def _draw_spawns(self, surface: pygame.Surface, tile: TileSnapshot, screen_x: int, screen_y: int) -> None:
+        """Draw spawn area markers (colored border rectangles)."""
+        import pygame
+
+        if not tile.spawns:
+            return
+
+        tp = int(self._tile_px)
+        for spawn in tile.spawns:
+            if spawn.kind == "monster":
+                color = (200, 60, 60, 150)
+            else:
+                color = (60, 120, 220, 150)
+            pygame.draw.rect(surface, color, (screen_x, screen_y, tp, tp), width=2)
+
     def _get_grid_surface(self, width: int, height: int, tile_px: int):
         import pygame
 
@@ -352,6 +434,8 @@ class IngameRenderer:
         return grid
 
     def _apply_lighting(self, surface: pygame.Surface, snapshot: PreviewSnapshot, tile_px: int) -> None:
+        import math
+
         import pygame
 
         lighting = getattr(snapshot, "lighting", None)
@@ -359,12 +443,28 @@ class IngameRenderer:
             return
 
         ambient_level = max(0, min(255, int(getattr(lighting, "ambient_level", 255))))
-        ambient_color = tuple(int(c) for c in getattr(lighting, "ambient_color", (255, 255, 255)))
-        ambient_alpha = max(0, min(220, int((255 - ambient_level) * 0.8)))
+        ambient_color_raw = tuple(int(c) for c in getattr(lighting, "ambient_color", (255, 255, 255)))
+
+        # Day/night cycle modulation
+        outdoor_time = float(getattr(lighting, "outdoor_time", 12.0))
+        z_level = int(getattr(snapshot.viewport, "z", 7))
+        time_factor = 1.0
+        if z_level >= 7:
+            # Surface: sinusoidal day/night (noon=1.0, midnight=0.3)
+            normalized = (outdoor_time % 24) / 24.0
+            angle = (normalized - 0.5) * 2 * math.pi
+            time_factor = 0.3 + ((math.cos(angle) + 1) / 2) * 0.7
+        else:
+            # Underground: progressive darkness
+            depth = 7 - z_level
+            time_factor = max(0.1, 0.7 ** depth)
+
+        effective_level = max(0, min(255, int(ambient_level * time_factor)))
+        ambient_alpha = max(0, min(220, int((255 - effective_level) * 0.8)))
 
         if ambient_alpha > 0:
             ambient = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-            ambient.fill((ambient_color[0], ambient_color[1], ambient_color[2], ambient_alpha))
+            ambient.fill((ambient_color_raw[0], ambient_color_raw[1], ambient_color_raw[2], ambient_alpha))
             surface.blit(ambient, (0, 0))
 
         mode = str(getattr(lighting, "mode", "off"))

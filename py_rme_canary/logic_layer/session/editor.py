@@ -2989,6 +2989,39 @@ class EditorSession:
         self._emit_tiles_changed(expanded)
         return action
 
+    def borderize_map(self) -> PaintAction | None:
+        """Re-run auto-border on the entire map (C++ BORDERIZE_MAP)."""
+        if self._gestures.is_active:
+            self.cancel_gesture()
+
+        from ..auto_border import AutoBorderProcessor
+
+        # Collect all non-empty tile positions across every floor
+        all_positions: set[tuple[int, int, int]] = set()
+        for pos in self.game_map.iter_tile_positions():
+            all_positions.add((int(pos[0]), int(pos[1]), int(pos[2])))
+
+        if not all_positions:
+            return None
+
+        expanded = self._move.calculate_expanded_area(all_positions)
+        action = PaintAction(brush_id=0)
+        proc = AutoBorderProcessor(self.game_map, self.brush_manager, change_recorder=action)
+
+        brush_ids = self._move.collect_brush_ids(expanded)
+        for bid in sorted(brush_ids):
+            proc.update_positions(expanded, int(bid))
+
+        if not action.has_changes():
+            return None
+
+        self.history.commit_action(action)
+        self.action_queue.push(
+            SessionAction(type=ActionType.BORDERIZE_SELECTION, action=action, label="Borderize Map")
+        )
+        self._emit_tiles_changed(expanded)
+        return action
+
     # === Item Operations ===
 
     def replace_items(

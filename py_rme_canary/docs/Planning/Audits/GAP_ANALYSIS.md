@@ -40,8 +40,8 @@ This list is prioritized: **P0 (Blockers)** -> **P1 (Core UX)** -> **P2 (Advance
         - [x] `SELECT_MODE_CURRENT` (Current Z only)
         - [x] `SELECT_MODE_LOWER` (Current + Lower Zs)
         - [x] `SELECT_MODE_VISIBLE` (All visible Zs)
-- [ ] **Completeness of Auto-Bordering:**
-    - **Task:** Finalize `BorderBuilder` UI or logic to allow custom border rules matching Legacy's `borders.xml` flexibility.
+- [x] **Completeness of Auto-Bordering:**
+    - ~~**Task:** Finalize `BorderBuilder` UI or logic to allow custom border rules matching Legacy's `borders.xml` flexibility.~~ ✅ Done — Full import/export/editor with `borders_xml_io.py` + `BorderBuilderDialog` + overrides persistence.
 
 ### 🛠️ P1: Essential UI & Dialogs (The User Experience)
 *Legacy RME relies heavily on these dialogs for map management.*
@@ -79,9 +79,9 @@ This list is prioritized: **P0 (Blockers)** -> **P1 (Core UX)** -> **P2 (Advance
 
 - [x] **Cleanup `data_layer/`:**
     - **Task:** Delete the `py_rme_canary/data_layer/` directory. It is a legacy artifact duplicating `core/`.
-- [ ] **Standardize Testing:**
-    - **Task:** Rename all `_minimal_test.py` to `test_*.py` and move to `tests/unit/`.
-    - **Task:** Enforce strict type checking (`mypy --strict`) on `logic_layer`.
+- [x] **Standardize Testing:**
+    - ~~**Task:** Rename all `_minimal_test.py` to `test_*.py` and move to `tests/unit/`.~~ ✅ Done
+    - ~~**Task:** Enforce strict type checking (`mypy --strict`) on `logic_layer`.~~ ✅ Done — extended to full project (369 files, 0 errors).
 - [x] **Mirroring System:**
     - **Task:** Flesh out `logic_layer/mirroring.py`. Use references from `source/ground_brush.cpp` (flip logic) to implement map mirroring.
 

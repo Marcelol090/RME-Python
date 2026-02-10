@@ -92,7 +92,11 @@ class QtMapEditorDialogsMixin:
         if dlg.exec() != dlg.DialogCode.Accepted:
             return
 
-        server_id = int(dlg.result_value().server_id)
+        result = dlg.result_value()
+        if not result.resolved:
+            QMessageBox.information(editor, "Remove Item", result.error or "Unable to resolve item ID.")
+            return
+        server_id = int(result.server_id)
         removed, _action = editor.session.remove_items(server_id=server_id, selection_only=True)
         QMessageBox.information(editor, "Remove Item", f"{removed} items removed.")
 
@@ -143,3 +147,72 @@ class QtMapEditorDialogsMixin:
         with contextlib.suppress(Exception):
             editor.session.set_single_selection(x=int(pos.x), y=int(pos.y), z=int(pos.z))
         editor.canvas.update()
+
+    # ------------------------------------------------------------------
+    # C++ parity stubs (Map menu)
+    # ------------------------------------------------------------------
+
+    def _edit_towns(self) -> None:
+        """Edit towns dialog (C++ EDIT_TOWNS action)."""
+        editor = cast("QtMapEditor", self)
+        QMessageBox.information(
+            editor,
+            "Edit Towns",
+            "The town editor is not yet implemented.\n"
+            "Towns can currently be set via 'Set Town Temple Here' in the context menu.",
+        )
+
+    def _map_cleanup(self) -> None:
+        """Map cleanup: remove items not in OTB (C++ MAP_CLEANUP action)."""
+        editor = cast("QtMapEditor", self)
+        reply = QMessageBox.question(
+            editor,
+            "Map Cleanup",
+            "This will remove all items that do not exist in the server item definitions "
+            "(items that would show as red/unknown tiles).\n\nContinue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        removed = 0
+        id_mapper = getattr(editor, "id_mapper", None)
+        if id_mapper is None:
+            QMessageBox.information(
+                editor,
+                "Map Cleanup",
+                "No item definitions loaded. Load client data first.",
+            )
+            return
+
+        known_server_ids = set(getattr(id_mapper, "server_to_client", {}).keys())
+        game_map = editor.map
+        for z in range(16):
+            for y in range(game_map.header.height):
+                for x in range(game_map.header.width):
+                    tile = game_map.get_tile(x, y, z)
+                    if tile is None:
+                        continue
+                    if tile.items:
+                        new_items = [it for it in tile.items if int(it.id) in known_server_ids]
+                        diff = len(tile.items) - len(new_items)
+                        if diff > 0:
+                            removed += diff
+                            tile.items = new_items
+
+        editor.status.showMessage(f"Map cleanup: removed {removed} unknown items.")
+        if removed > 0:
+            editor.canvas.update()
+
+    def _show_about(self: QtMapEditor) -> None:
+        """Show the About dialog (C++ About > About... / F1)."""
+        QMessageBox.about(
+            self,
+            "About PyRME Canary",
+            "<h3>PyRME Canary Map Editor</h3>"
+            "<p>A Python/PyQt6 reimplementation of Remere's Map Editor.</p>"
+            "<p>Based on RME Redux (C++/wxWidgets) by the OTServ community.</p>"
+            f"<p>Map: {self.map.header.width}×{self.map.header.height} | "
+            f"Tiles: {len(self.map.tiles)}</p>",
+        )

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtGui import QDesktopServices
-from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox, QProgressDialog
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.io.creatures_xml import clear_creature_name_cache
@@ -73,16 +73,25 @@ class QtMapEditorFileMixin:
         self.canvas.update()
 
     def _open_otbm(self: QtMapEditor) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Open Map", "", "Maps (*.otbm *.json *.otml *.xml);;All Files (*)")
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Map",
+            "",
+            "OTBM Maps (*.otbm *.otgz);;JSON Maps (*.json);;OTML Maps (*.otml);;XML Maps (*.xml);;All Map Files (*.otbm *.otgz *.json *.otml *.xml);;All Files (*)",
+        )
         if not path:
             return
         logger.info("Opening map: %s", path)
-        progress = QProgressDialog("Opening map...", "Cancel", 0, 6, self)
-        progress.setWindowTitle("Open Map")
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setAutoClose(True)
-        progress.setMinimumDuration(0)
-        progress.setValue(0)
+        from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
+        
+        progress = ModernProgressDialog(
+            title="Opening Map",
+            label_text="Detecting map format...",
+            minimum=0,
+            maximum=6,
+            parent=self
+        )
+        progress.show()
 
         def advance(step: int, message: str) -> None:
             progress.setLabelText(message)
@@ -148,18 +157,54 @@ class QtMapEditorFileMixin:
                 self.palettes.refresh_primary_list()
             self.canvas.update()
 
+            # Build and show post-load summary
             try:
                 report = gm.load_report or {}
                 warnings = report.get("warnings") or []
                 dyn = report.get("dynamic_id_conversions") or {}
-                logger.warning(
+                unknown_count = report.get("unknown_ids_count") or 0
+
+                header = gm.header
+                summary_lines = [
+                    f"Map: {Path(self.current_path).name}",
+                    f"OTBM version: {header.otbm_version}",
+                    f"Dimensions: {header.width} × {header.height}",
+                    f"Tiles loaded: {len(gm.tiles):,}",
+                    f"Towns: {len(gm.towns)}  |  Waypoints: {len(gm.waypoints)}",
+                    f"Source: {src}",
+                ]
+
+                if header.description:
+                    desc_preview = header.description[:120]
+                    if len(header.description) > 120:
+                        desc_preview += "…"
+                    summary_lines.append(f"Description: {desc_preview}")
+
+                if dyn:
+                    summary_lines.append(f"Dynamic ID conversions: {sum(dyn.values()) if isinstance(dyn, dict) else dyn}")
+                if unknown_count:
+                    summary_lines.append(f"Unknown IDs skipped: {unknown_count}")
+                if warnings:
+                    summary_lines.append(f"\nWarnings ({len(warnings)}):")
+                    for w in warnings[:8]:
+                        w_str = str(getattr(w, "message", w))
+                        summary_lines.append(f"  • {w_str[:120]}")
+                    if len(warnings) > 8:
+                        summary_lines.append(f"  … and {len(warnings) - 8} more")
+                else:
+                    summary_lines.append("\nNo warnings.")
+
+                summary_text = "\n".join(summary_lines)
+                QMessageBox.information(self, "Map Loaded", summary_text)
+
+                logger.info(
                     "Load report: warnings=%s unknown_ids=%s dynamic_conversions=%s",
                     len(warnings),
-                    report.get("unknown_ids_count"),
+                    unknown_count,
                     dyn,
                 )
             except Exception:
-                logger.exception("Failed to log load report")
+                logger.exception("Failed to show load report")
 
         except Exception as e:
             QMessageBox.critical(self, "Open failed", str(e))
@@ -168,7 +213,9 @@ class QtMapEditorFileMixin:
             progress.close()
 
     def _save_as(self: QtMapEditor) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Save OTBM As", "", "OTBM (*.otbm);;All Files (*)")
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save OTBM As", "", "OTBM Maps (*.otbm);;Compressed OTBM (*.otgz);;All Files (*)"
+        )
         if not path:
             return
         if not path.lower().endswith(".otbm"):
@@ -582,3 +629,83 @@ class QtMapEditorFileMixin:
         target_url = "https://github.com/Marcelol090/RME-Python"
         if not QDesktopServices.openUrl(QUrl(target_url)):
             QMessageBox.warning(self, "Goto Website", f"Could not open browser for:\n{target_url}")
+
+    # ------------------------------------------------------------------
+    # C++ parity stubs (File menu)
+    # ------------------------------------------------------------------
+
+    def _generate_map(self: QtMapEditor) -> None:
+        """Stub for Generate Map (C++ GENERATE_MAP action)."""
+        QMessageBox.information(
+            self,
+            "Generate Map",
+            "Map generation is not yet implemented.\n"
+            "This feature will allow procedural map generation.",
+        )
+
+    def _close_map(self: QtMapEditor) -> None:
+        """Close the currently open map without exiting (C++ CLOSE action)."""
+        if getattr(self, "_dirty", False):
+            reply = QMessageBox.question(
+                self,
+                "Close Map",
+                "The current map has unsaved changes. Save before closing?",
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save,
+            )
+            if reply == QMessageBox.StandardButton.Cancel:
+                return
+            if reply == QMessageBox.StandardButton.Save:
+                self._save()
+
+        # Reset to empty map
+        self.map = GameMap(header=MapHeader(width=256, height=256))
+        self.session = EditorSession(self.map)
+        self._current_file_path = None
+        self._dirty = False
+        self.setWindowTitle("Canary Map Editor")
+        self.status.showMessage("Map closed.")
+        with contextlib.suppress(Exception):
+            self.canvas.update()
+        with contextlib.suppress(Exception):
+            self._update_action_enabled_states()
+
+    def _export_minimap(self: QtMapEditor) -> None:
+        """Export the minimap to an image file (C++ EXPORT_MINIMAP action)."""
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Minimap",
+            "",
+            "PNG Image (*.png);;BMP Image (*.bmp);;All Files (*.*)",
+        )
+        if not path:
+            return
+
+        try:
+            from PyQt6.QtGui import QImage, QPainter as QP2, QColor as QC2
+
+            header = self.map.header
+            w = int(header.width)
+            h = int(header.height)
+            z = int(self.viewport.z)
+
+            img = QImage(w, h, QImage.Format.Format_RGB32)
+            img.fill(QC2(0, 0, 0))
+
+            for y in range(h):
+                for x in range(w):
+                    tile = self.map.get_tile(x, y, z)
+                    if tile is None:
+                        continue
+                    color = self.map_drawer._get_tile_color(tile) if hasattr(self, "map_drawer") else (100, 100, 100, 255)
+                    r, g, b = int(color[0]), int(color[1]), int(color[2])
+                    img.setPixelColor(x, y, QC2(r, g, b))
+
+            if img.save(str(path)):
+                self.status.showMessage(f"Minimap exported: {path}")
+            else:
+                QMessageBox.critical(self, "Export Minimap", f"Failed to save image to:\n{path}")
+        except Exception as exc:
+            QMessageBox.critical(self, "Export Minimap", str(exc))

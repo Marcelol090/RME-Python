@@ -117,9 +117,8 @@ class DistanceResult:
             return f"{self.euclidean:.1f} SQM"
         elif unit == MeasureUnit.PIXELS:
             return f"{self.euclidean * 32:.0f} px"
-        elif unit == MeasureUnit.WALK_TIME:
+        else:
             return f"{self.walking_time_sec:.1f}s walk"
-        return f"{self.euclidean:.1f}"
 
 
 @dataclass

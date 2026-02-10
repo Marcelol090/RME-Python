@@ -94,16 +94,16 @@ class TileData:
     ground_id: int | None = None
     ground_name: str | None = None
     ground_sprite_hash: int | None = None
-    items: list[dict] = field(default_factory=list)
-    monsters: list[dict] = field(default_factory=list)
-    npc: dict | None = None
-    spawn_monster: dict | None = None
-    spawn_npc: dict | None = None
+    items: list[dict[str, Any]] = field(default_factory=list)
+    monsters: list[dict[str, Any]] = field(default_factory=list)
+    npc: dict[str, Any] | None = None
+    spawn_monster: dict[str, Any] | None = None
+    spawn_npc: dict[str, Any] | None = None
     house_id: int | None = None
     map_flags: int = 0
 
 
-def _serialize_outfit(outfit: object | None) -> dict | None:
+def _serialize_outfit(outfit: object | None) -> dict[str, Any] | None:
     if outfit is None:
         return None
     return {
@@ -117,7 +117,7 @@ def _serialize_outfit(outfit: object | None) -> dict | None:
     }
 
 
-def _serialize_creature(creature: object | None) -> dict | None:
+def _serialize_creature(creature: object | None) -> dict[str, Any] | None:
     if creature is None:
         return None
     return {
@@ -127,7 +127,7 @@ def _serialize_creature(creature: object | None) -> dict | None:
     }
 
 
-def _serialize_spawn_monster(spawn: object | None, origin: tuple[int, int, int]) -> dict | None:
+def _serialize_spawn_monster(spawn: object | None, origin: tuple[int, int, int]) -> dict[str, Any] | None:
     if spawn is None:
         return None
     center = getattr(spawn, "center", None)
@@ -156,7 +156,7 @@ def _serialize_spawn_monster(spawn: object | None, origin: tuple[int, int, int])
     }
 
 
-def _serialize_spawn_npc(spawn: object | None, origin: tuple[int, int, int]) -> dict | None:
+def _serialize_spawn_npc(spawn: object | None, origin: tuple[int, int, int]) -> dict[str, Any] | None:
     if spawn is None:
         return None
     center = getattr(spawn, "center", None)
@@ -184,7 +184,7 @@ def _serialize_spawn_npc(spawn: object | None, origin: tuple[int, int, int]) -> 
     }
 
 
-def _deserialize_outfit(data: dict | None) -> Outfit | None:
+def _deserialize_outfit(data: dict[str, Any] | None) -> Outfit | None:
     if not data:
         return None
     from py_rme_canary.core.data.creature import Outfit
@@ -200,7 +200,7 @@ def _deserialize_outfit(data: dict | None) -> Outfit | None:
     )
 
 
-def _deserialize_monster(data: dict | None) -> Monster | None:
+def _deserialize_monster(data: dict[str, Any] | None) -> Monster | None:
     if not data:
         return None
     from py_rme_canary.core.data.creature import Monster
@@ -213,7 +213,7 @@ def _deserialize_monster(data: dict | None) -> Monster | None:
     )
 
 
-def _deserialize_npc(data: dict | None) -> Npc | None:
+def _deserialize_npc(data: dict[str, Any] | None) -> Npc | None:
     if not data:
         return None
     from py_rme_canary.core.data.creature import Npc
@@ -226,7 +226,7 @@ def _deserialize_npc(data: dict | None) -> Npc | None:
     )
 
 
-def _deserialize_spawn_monster(data: dict | None, origin: tuple[int, int, int]) -> MonsterSpawnArea | None:
+def _deserialize_spawn_monster(data: dict[str, Any] | None, origin: tuple[int, int, int]) -> MonsterSpawnArea | None:
     if not data:
         return None
     from py_rme_canary.core.data.item import Position
@@ -265,7 +265,7 @@ def _deserialize_spawn_monster(data: dict | None, origin: tuple[int, int, int]) 
     )
 
 
-def _deserialize_spawn_npc(data: dict | None, origin: tuple[int, int, int]) -> NpcSpawnArea | None:
+def _deserialize_spawn_npc(data: dict[str, Any] | None, origin: tuple[int, int, int]) -> NpcSpawnArea | None:
     if not data:
         return None
     from py_rme_canary.core.data.item import Position
@@ -841,7 +841,7 @@ class ClipboardManager:
 
     def _convert_data(
         self,
-        data: dict,
+        data: dict[str, Any],
         source_v: str,
         target_v: str,
         name_resolver: Any | None = None,
@@ -854,7 +854,7 @@ class ClipboardManager:
 
         logger.info(f"Converting clipboard data from {source_v} to {target_v}...")
 
-        def resolve_by_hash(item_dict: dict) -> int | None:
+        def resolve_by_hash(item_dict: dict[str, Any]) -> int | None:
             if not hash_resolver:
                 return None
             raw = item_dict.get("sprite_hash")
@@ -873,7 +873,7 @@ class ClipboardManager:
             return int(resolved)
 
         # Helper to convert a single item dict
-        def convert_item(item_dict: dict) -> None:
+        def convert_item(item_dict: dict[str, Any]) -> None:
             resolved_by_hash = resolve_by_hash(item_dict)
             if resolved_by_hash is not None:
                 item_dict["id"] = int(resolved_by_hash)

@@ -197,7 +197,7 @@ class SpriteAppearances:
         if pixel_offset <= 0 or pixel_offset + BYTES_IN_SPRITE_SHEET > len(decompressed):
             raise SpriteAppearancesError("Invalid BMP pixel offset in decompressed sprite sheet")
 
-        pixel_data = bytearray(decompressed[pixel_offset : pixel_offset + BYTES_IN_SPRITE_SHEET])
+        pixel_buf = bytearray(decompressed[pixel_offset : pixel_offset + BYTES_IN_SPRITE_SHEET])
 
         # Flip vertically (legacy does this in-place).
         row_bytes = SPRITE_SHEET_WIDTH_BYTES
@@ -205,11 +205,11 @@ class SpriteAppearances:
             y2 = SPRITE_SHEET_HEIGHT - y - 1
             a0 = y * row_bytes
             b0 = y2 * row_bytes
-            tmp = pixel_data[a0 : a0 + row_bytes]
-            pixel_data[a0 : a0 + row_bytes] = pixel_data[b0 : b0 + row_bytes]
-            pixel_data[b0 : b0 + row_bytes] = tmp
+            tmp = pixel_buf[a0 : a0 + row_bytes]
+            pixel_buf[a0 : a0 + row_bytes] = pixel_buf[b0 : b0 + row_bytes]
+            pixel_buf[b0 : b0 + row_bytes] = tmp
 
-        sheet.data = bytes(pixel_data)
+        sheet.data = bytes(pixel_buf)
         sheet.sheet_width = SPRITE_SHEET_WIDTH
         sheet.sheet_height = SPRITE_SHEET_HEIGHT
         sheet.loaded = True

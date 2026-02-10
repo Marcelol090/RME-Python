@@ -59,3 +59,15 @@ def import_monster_folder(editor) -> None:
 
 def import_map(editor) -> None:
     editor._import_map()
+
+
+def generate_map(editor) -> None:
+    editor._generate_map()
+
+
+def close_map(editor) -> None:
+    editor._close_map()
+
+
+def export_minimap(editor) -> None:
+    editor._export_minimap()

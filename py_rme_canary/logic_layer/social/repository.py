@@ -230,7 +230,7 @@ class FriendsRepository:
                     """,
                     (user1_id, user2_id, requester),
                 )
-                return int(cursor.lastrowid)
+                return int(cursor.lastrowid or 0)
 
             status = str(row["status"] or "")
             row_id = int(row["id"])

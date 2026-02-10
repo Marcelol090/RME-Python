@@ -53,13 +53,21 @@ def get_theme_color(name: str, alpha: int = 255) -> QColor:
     color_str = getattr(ModernTheme.colors, name, "#000000")
     # Handle rgba strings if present (though ModernTheme mostly uses hex)
     if color_str.startswith("rgba"):
-        # Simple parser for rgba(r, g, b, a)
+        # Parser for rgba(r, g, b, a) or rgba(r, g, b, a_float)
         try:
             parts = color_str.replace("rgba(", "").replace(")", "").split(",")
-            r, g, b = int(parts[0]), int(parts[1]), int(parts[2])
-            a_float = float(parts[3])
-            return QColor(r, g, b, int(a_float * 255))
+            r = int(parts[0].strip())
+            g = int(parts[1].strip())
+            b = int(parts[2].strip())
+            a_val = parts[3].strip()
+            # Handle float alpha (0.0-1.0) or int alpha (0-255)
+            if "." in a_val:
+                a = int(float(a_val) * 255)
+            else:
+                a = int(a_val)
+            return QColor(r, g, b, a)
         except (ValueError, IndexError, AttributeError):
+            # Fallback
             return QColor(color_str)
 
     return get_qcolor(color_str, alpha)

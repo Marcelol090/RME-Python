@@ -22,7 +22,7 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -71,9 +71,9 @@ class ItemChange:
     change_type: ChangeType
     item_id: int
     position: int  # Index in item list
-    old_value: dict | None = None
-    new_value: dict | None = None
-    attribute_changes: dict[str, tuple] = field(default_factory=dict)
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
+    attribute_changes: dict[str, tuple[Any, Any]] = field(default_factory=dict)
 
     def summary(self) -> str:
         """Get a summary string."""
@@ -104,7 +104,7 @@ class TileDiff:
     change_type: ChangeType = ChangeType.UNCHANGED
     ground_change: ItemChange | None = None
     item_changes: list[ItemChange] = field(default_factory=list)
-    flag_changes: dict[str, tuple] = field(default_factory=dict)
+    flag_changes: dict[str, tuple[Any, Any]] = field(default_factory=dict)
     house_id_change: tuple[int, int] | None = None  # (old, new)
 
     @property
@@ -181,8 +181,8 @@ class DiffReport:
         floor_stats: Per-floor change counts.
     """
 
-    old_map_info: dict = field(default_factory=dict)
-    new_map_info: dict = field(default_factory=dict)
+    old_map_info: dict[str, Any] = field(default_factory=dict)
+    new_map_info: dict[str, Any] = field(default_factory=dict)
     statistics: DiffStatistics = field(default_factory=DiffStatistics)
     tile_diffs: list[TileDiff] = field(default_factory=list)
     floor_stats: dict[int, dict[str, int]] = field(default_factory=dict)
@@ -356,7 +356,7 @@ class MapDiffEngine:
         report.floor_stats = floor_stats
         return report
 
-    def _extract_map_info(self, game_map: GameMap, label: str) -> dict:
+    def _extract_map_info(self, game_map: GameMap, label: str) -> dict[str, Any]:
         """Extract basic info from a map."""
         return {
             "label": label,
@@ -574,9 +574,9 @@ class MapDiffEngine:
         self,
         old_item: Item,
         new_item: Item,
-    ) -> dict[str, tuple]:
+    ) -> dict[str, tuple[Any, Any]]:
         """Compare attributes of two items."""
-        changes: dict[str, tuple] = {}
+        changes: dict[str, tuple[Any, Any]] = {}
 
         # Attributes to compare
         attrs = ["count", "action_id", "unique_id", "destination", "text", "charges"]
@@ -594,9 +594,9 @@ class MapDiffEngine:
         self,
         old_tile: Tile,
         new_tile: Tile,
-    ) -> dict[str, tuple]:
+    ) -> dict[str, tuple[Any, Any]]:
         """Compare tile flags."""
-        changes: dict[str, tuple] = {}
+        changes: dict[str, tuple[Any, Any]] = {}
 
         # Flag attributes to compare
         flag_attrs = ["flags", "pz", "no_logout", "pvp_zone", "no_pvp"]
@@ -613,7 +613,7 @@ class MapDiffEngine:
 
         return changes
 
-    def _item_to_dict(self, item: Item | None) -> dict | None:
+    def _item_to_dict(self, item: Item | None) -> dict[str, Any] | None:
         """Convert an item to a dictionary."""
         if item is None:
             return None

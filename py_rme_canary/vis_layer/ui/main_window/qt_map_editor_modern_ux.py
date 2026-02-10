@@ -23,6 +23,7 @@ from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.core.data.position import Position
 from py_rme_canary.logic_layer.clipboard import ClipboardManager
 from py_rme_canary.vis_layer.ui.dialogs.command_palette import CommandPalette
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
 from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
 from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import AboutDialog, MapPropertiesDialog
@@ -174,11 +175,11 @@ class QtMapEditorModernUXMixin:
     def _setup_modern_dialog_actions(self: QtMapEditor) -> None:
         """Setup actions for modern dialogs (About, Properties)."""
         # About
-        self.act_about = QAction("About py_rme_canary...", self)
+        self.act_about = QAction(load_icon("action_about"), "About py_rme_canary...", self)
         self.act_about.triggered.connect(lambda: AboutDialog(self).exec())
 
         # Map Properties
-        self.act_map_properties = QAction("Map Properties", self)
+        self.act_map_properties = QAction(load_icon("menu_map"), "Map Properties", self)
         self.act_map_properties.setShortcut("Ctrl+P")
         self.act_map_properties.triggered.connect(
             lambda: MapPropertiesDialog(

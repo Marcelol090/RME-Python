@@ -1,41 +1,50 @@
-/* ==================== Base Style for Canary Studio Map Editor ==================== */
-/* This file uses token placeholders that are replaced at runtime by ThemeManager */
+/* ==================== Antigravity Design System ==================== */
+/* Premium dark theme with glassmorphism, subtle gradients, and purple accents. */
+/* Token placeholders replaced at runtime by ThemeManager. */
 /* Tokens: {surface-primary}, {surface-secondary}, {surface-tertiary}, {surface-elevated} */
 /* Tokens: {text-primary}, {text-secondary}, {text-tertiary} */
 /* Tokens: {interactive-normal}, {interactive-hover}, {interactive-active} */
 /* Tokens: {border-default}, {border-strong}, {border-interactive} */
 /* Tokens: {overlay-light}, {overlay-dark} */
 
+/* ==================== Global Reset ==================== */
+* {
+    font-family: 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+}
+
 /* ==================== NavBar (Header) ==================== */
 #NavBar {
-    background-color: rgba(10, 10, 11, 0.85);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid {border-default};
-    min-height: 56px;
-    max-height: 56px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(13, 13, 20, 0.95), stop:1 rgba(10, 10, 14, 0.92));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    min-height: 52px;
+    max-height: 52px;
 }
 
 #NavBar QToolButton {
-    background-color: transparent;
+    background: transparent;
     border: none;
     border-radius: 8px;
     padding: 8px;
     min-width: 36px;
     min-height: 36px;
+    color: {text-secondary};
 }
 
 #NavBar QToolButton:hover {
-    background-color: {overlay-light};
+    background: rgba(139, 92, 246, 0.12);
+    color: {text-primary};
 }
 
 #NavBar QToolButton:pressed {
-    background-color: {interactive-active};
+    background: rgba(139, 92, 246, 0.22);
 }
 
 /* ==================== Sidebar ==================== */
 #Sidebar {
-    background-color: {surface-secondary};
-    border-right: 1px solid {border-default};
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(16, 16, 24, 0.98), stop:1 rgba(13, 13, 20, 0.96));
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
     min-width: 360px;
     max-width: 360px;
 }
@@ -52,53 +61,61 @@
 
 /* ==================== Search Bar ==================== */
 #SearchBar {
-    background-color: {surface-tertiary};
-    border: 1px solid {border-default};
-    border-radius: 20px;
-    min-height: 40px;
-    max-height: 40px;
-    padding: 0 16px;
+    background: rgba(19, 19, 29, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0 14px;
+    color: {text-primary};
+    font-size: 13px;
 }
 
 #SearchBar:focus {
-    border-color: {interactive-normal};
+    border-color: rgba(139, 92, 246, 0.5);
+    background: rgba(19, 19, 29, 1.0);
+}
+
+#SearchBar::placeholder {
+    color: rgba(161, 161, 170, 0.5);
 }
 
 /* ==================== Asset Grid ==================== */
 #AssetGrid {
-    background-color: {surface-primary};
+    background: transparent;
     border: none;
-    padding: 8px;
+    padding: 6px;
+    outline: none;
 }
 
 #AssetGrid::item {
-    background-color: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 2px;
+    background: rgba(19, 19, 29, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 4px;
 }
 
 #AssetGrid::item:hover {
-    background-color: {overlay-light};
-    border-color: {border-default};
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.25);
 }
 
 #AssetGrid::item:selected {
-    background-color: {interactive-normal};
-    border-color: {interactive-normal};
+    background: rgba(139, 92, 246, 0.18);
+    border-color: rgba(139, 92, 246, 0.45);
 }
 
 /* ==================== Brush Memory Slots ==================== */
 #BrushMemory {
-    background-color: {surface-secondary};
-    border: 1px solid {border-default};
-    border-radius: 10px;
+    background: rgba(16, 16, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
     padding: 8px;
 }
 
 .BrushSlot {
-    background-color: {surface-tertiary};
-    border: 2px dashed {border-default};
+    background: rgba(19, 19, 29, 0.8);
+    border: 2px dashed rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     min-width: 52px;
     min-height: 52px;
@@ -108,103 +125,119 @@
 
 .BrushSlot[filled="true"] {
     border-style: solid;
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .BrushSlot[active="true"] {
-    border-color: {interactive-normal};
+    border-color: rgba(139, 92, 246, 0.7);
     border-width: 2px;
-    box-shadow: 0 0 8px rgba(88, 101, 242, 0.4);
 }
 
 /* ==================== Tools Grid ==================== */
 #ToolsGrid {
-    background-color: transparent;
+    background: transparent;
     padding: 4px;
 }
 
 #ToolBtn {
-    background-color: {surface-tertiary};
+    background: rgba(19, 19, 29, 0.6);
     border: 1px solid transparent;
-    border-radius: 8px;
-    min-width: 44px;
-    min-height: 44px;
-    max-width: 44px;
-    max-height: 44px;
+    border-radius: 10px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    color: {text-secondary};
 }
 
 #ToolBtn:hover {
-    background-color: {overlay-light};
-    border-color: {border-default};
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.2);
+    color: {text-primary};
 }
 
 #ToolBtn:checked {
-    background-color: {interactive-normal};
-    border: 2px solid {interactive-normal};
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(139, 92, 246, 0.35), stop:1 rgba(124, 58, 237, 0.3));
+    border: 1px solid rgba(139, 92, 246, 0.5);
     color: white;
 }
 
 #ToolBtn:disabled {
-    opacity: 0.4;
+    opacity: 0.3;
 }
 
 /* ==================== Brush Size Control ==================== */
 #BrushSizeControl {
-    background-color: {surface-secondary};
-    border: 1px solid {border-default};
-    border-radius: 8px;
-    padding: 8px;
+    background: rgba(16, 16, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 10px;
 }
 
 #BrushSizeSlider::groove:horizontal {
-    background-color: {surface-tertiary};
+    background: rgba(54, 54, 80, 0.5);
     height: 4px;
     border-radius: 2px;
 }
 
 #BrushSizeSlider::handle:horizontal {
-    background-color: {interactive-normal};
-    border: none;
-    width: 20px;
-    height: 20px;
-    margin: -8px 0;
-    border-radius: 10px;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+        fx:0.5, fy:0.3,
+        stop:0 #A78BFA, stop:1 #8B5CF6);
+    border: 2px solid rgba(124, 58, 237, 0.8);
+    width: 16px;
+    height: 16px;
+    margin: -7px 0;
+    border-radius: 9px;
 }
 
 #BrushSizeSlider::handle:horizontal:hover {
-    background-color: {interactive-hover};
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+        fx:0.5, fy:0.3,
+        stop:0 #C4B5FD, stop:1 #A78BFA);
+}
+
+#BrushSizeSlider::sub-page:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #7C3AED, stop:1 #8B5CF6);
+    border-radius: 2px;
 }
 
 #BrushSizeValue {
-    background-color: {surface-tertiary};
-    border: 1px solid {border-default};
+    background: rgba(19, 19, 29, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 6px;
     min-width: 32px;
     min-height: 32px;
     max-width: 32px;
     max-height: 32px;
     font-weight: bold;
+    color: {text-primary};
 }
 
 /* ==================== Status Bar ==================== */
 #StatusBar {
-    background-color: {surface-secondary};
-    border-top: 1px solid {border-default};
+    background: rgba(13, 13, 20, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding: 4px 16px;
     min-height: 24px;
+    color: {text-secondary};
+    font-size: 12px;
 }
 
 /* ==================== Minimap Dock ==================== */
 #MinimapDock {
-    background-color: {surface-secondary};
-    border: 1px solid {border-default};
-    border-radius: 8px;
+    background: rgba(16, 16, 24, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
 }
 
 /* ==================== Palette Tabs ==================== */
 #PaletteTabs::pane {
-    background-color: {surface-primary};
+    background: transparent;
     border: none;
-    border-top: 1px solid {border-default};
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 #PaletteTabs::tab-bar {
@@ -212,28 +245,30 @@
 }
 
 #PaletteTabs QTabBar::tab {
-    background-color: transparent;
-    color: {text-secondary};
-    padding: 8px 16px;
+    background: transparent;
+    color: rgba(161, 161, 170, 0.7);
+    padding: 8px 12px;
     border: none;
     border-bottom: 2px solid transparent;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 #PaletteTabs QTabBar::tab:selected {
     color: {text-primary};
-    border-bottom-color: {interactive-normal};
+    border-bottom-color: #8B5CF6;
 }
 
 #PaletteTabs QTabBar::tab:hover:!selected {
     color: {text-primary};
-    background-color: {overlay-light};
+    background: rgba(139, 92, 246, 0.08);
 }
 
 /* ==================== Dialogs ==================== */
 QDialog {
-    background-color: {surface-primary};
-    border: 1px solid {border-default};
-    border-radius: 12px;
+    background: rgba(13, 13, 20, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
 }
 
 QDialog QLabel {
@@ -242,21 +277,22 @@ QDialog QLabel {
 
 /* ==================== Progress Bar ==================== */
 QProgressBar {
-    background-color: {surface-tertiary};
+    background: rgba(54, 54, 80, 0.3);
     border: none;
-    border-radius: 4px;
-    height: 8px;
+    border-radius: 5px;
+    height: 10px;
     text-align: center;
 }
 
 QProgressBar::chunk {
-    background-color: {interactive-normal};
-    border-radius: 4px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #7C3AED, stop:1 #8B5CF6);
+    border-radius: 5px;
 }
 
 /* ==================== Splitter ==================== */
 QSplitter::handle {
-    background-color: {border-default};
+    background: rgba(255, 255, 255, 0.04);
 }
 
 QSplitter::handle:horizontal {
@@ -268,5 +304,249 @@ QSplitter::handle:vertical {
 }
 
 QSplitter::handle:hover {
-    background-color: {interactive-normal};
+    background: rgba(139, 92, 246, 0.4);
+}
+
+/* ==================== QProgressDialog ==================== */
+QProgressDialog {
+    background: rgba(13, 13, 20, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    min-width: 440px;
+    padding: 20px;
+}
+
+QProgressDialog QLabel {
+    color: {text-primary};
+    font-size: 13px;
+    padding: 8px 4px;
+}
+
+QProgressDialog QPushButton {
+    background: rgba(54, 54, 80, 0.5);
+    color: {text-primary};
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 24px;
+    min-width: 90px;
+    font-weight: 600;
+}
+
+QProgressDialog QPushButton:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* ==================== QMessageBox ==================== */
+QMessageBox {
+    background: rgba(13, 13, 20, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+}
+
+QMessageBox QLabel {
+    color: {text-primary};
+    font-size: 13px;
+    min-width: 340px;
+    padding: 10px;
+}
+
+QMessageBox QPushButton {
+    background: rgba(54, 54, 80, 0.5);
+    color: {text-primary};
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 24px;
+    min-width: 90px;
+    font-weight: 600;
+}
+
+QMessageBox QPushButton:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+QMessageBox QPushButton:default {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(139, 92, 246, 0.4), stop:1 rgba(124, 58, 237, 0.35));
+    border-color: rgba(139, 92, 246, 0.5);
+    color: white;
+}
+
+QMessageBox QPushButton:default:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(167, 139, 250, 0.5), stop:1 rgba(139, 92, 246, 0.45));
+}
+
+/* ==================== Scrollbars ==================== */
+QScrollBar:vertical {
+    background: transparent;
+    width: 6px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    min-height: 32px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+    height: 0px;
+    border: none;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 6px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    min-width: 32px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    background: none;
+    width: 0px;
+    border: none;
+}
+
+/* ==================== Tooltips ==================== */
+QToolTip {
+    background: rgba(19, 19, 29, 0.95);
+    color: {text-primary};
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* ==================== QComboBox ==================== */
+QComboBox {
+    background: rgba(19, 19, 29, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 6px 14px;
+    color: {text-primary};
+    min-height: 28px;
+}
+
+QComboBox:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QComboBox QAbstractItemView {
+    background: rgba(16, 16, 24, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    selection-background-color: rgba(139, 92, 246, 0.3);
+    selection-color: white;
+    padding: 4px;
+}
+
+/* ==================== Menu Bar ==================== */
+QMenuBar {
+    background: rgba(13, 13, 20, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: {text-secondary};
+    font-size: 13px;
+    padding: 2px 0;
+}
+
+QMenuBar::item {
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 6px;
+    margin: 2px;
+}
+
+QMenuBar::item:selected {
+    background: rgba(139, 92, 246, 0.15);
+    color: {text-primary};
+}
+
+QMenu {
+    background: rgba(16, 16, 24, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 6px;
+    color: {text-primary};
+}
+
+QMenu::item {
+    padding: 8px 32px 8px 16px;
+    border-radius: 6px;
+}
+
+QMenu::item:selected {
+    background: rgba(139, 92, 246, 0.2);
+}
+
+QMenu::separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 4px 8px;
+}
+
+/* ==================== QDockWidget ==================== */
+QDockWidget {
+    titlebar-close-icon: none;
+    titlebar-normal-icon: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: {text-secondary};
+}
+
+QDockWidget::title {
+    background: rgba(16, 16, 24, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 8px 12px;
+    text-align: left;
+}
+
+/* ==================== QTabWidget (Global) ==================== */
+QTabWidget::pane {
+    background: transparent;
+    border: none;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: {text-secondary};
+    padding: 8px 16px;
+    border: none;
+    font-weight: 600;
+}
+
+QTabBar::tab:selected {
+    color: {text-primary};
+}
+
+QTabBar::tab:hover:!selected {
+    color: {text-primary};
 }

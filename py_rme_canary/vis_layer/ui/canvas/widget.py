@@ -139,18 +139,26 @@ class MapCanvasWidget(QWidget):
         editor = self._editor
         x, y = self._tile_at(int(pos.x()), int(pos.y()))
         z = int(editor.viewport.z)
+        header = getattr(editor.map, "header", None)
+        if header is not None:
+            width = int(getattr(header, "width", 0))
+            height = int(getattr(header, "height", 0))
+            if int(x) < 0 or int(y) < 0 or int(x) >= width or int(y) >= height:
+                return
+
         try:
             tile = editor.map.get_tile(int(x), int(y), int(z))
         except Exception:
             tile = None
-        if tile is None:
-            return
 
-        item = tile.items[-1] if getattr(tile, "items", None) else None
-        if item is None:
+        has_selection = False
+        with contextlib.suppress(Exception):
+            has_selection = bool(editor.session.has_selection())
+
+        item = tile.items[-1] if tile is not None and getattr(tile, "items", None) else None
+        if item is None and tile is not None:
             item = getattr(tile, "ground", None)
-        if item is None:
-            return
+        position = (int(x), int(y), int(z))
 
         try:
             from py_rme_canary.logic_layer.context_menu_handlers import ContextMenuActionHandlers
@@ -161,11 +169,14 @@ class MapCanvasWidget(QWidget):
                 canvas=self,
                 palette=getattr(editor, "palettes", None),
             )
-            callbacks = handlers.get_item_context_callbacks(item=item, tile=tile, position=(int(x), int(y), int(z)))
+            if item is not None:
+                callbacks = handlers.get_item_context_callbacks(item=item, tile=tile, position=position)
+            else:
+                callbacks = handlers.get_tile_context_callbacks(tile=tile, position=position)
 
             menu = ItemContextMenu(self)
             menu.set_callbacks(callbacks)
-            menu.show_for_item(item, tile)
+            menu.show_for_item(item, tile, has_selection=bool(has_selection), position=position)
         except Exception:
             return
 

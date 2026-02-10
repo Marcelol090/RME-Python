@@ -442,6 +442,14 @@ class CrossClipboard:
                     new_monsters.append(new_monster)
                 new_tile["monsters"] = new_monsters
 
+            # Translate NPC
+            if "npc" in new_tile and new_tile["npc"]:
+                npc = dict(new_tile["npc"])
+                if "name" in npc:
+                    npc["name"] = self._translator.translate_creature(npc["name"], from_version, to_version)
+                    self._translations += 1
+                new_tile["npc"] = npc
+
             # Translate spawn_monster entries
             if "spawn_monster" in new_tile and new_tile["spawn_monster"]:
                 spawn = dict(new_tile["spawn_monster"])
@@ -451,6 +459,16 @@ class CrossClipboard:
                             entry["name"] = self._translator.translate_creature(entry["name"], from_version, to_version)
                             self._translations += 1
                 new_tile["spawn_monster"] = spawn
+
+            # Translate spawn_npc entries
+            if "spawn_npc" in new_tile and new_tile["spawn_npc"]:
+                spawn = dict(new_tile["spawn_npc"])
+                if "npcs" in spawn:
+                    for entry in spawn.get("npcs", []):
+                        if "name" in entry:
+                            entry["name"] = self._translator.translate_creature(entry["name"], from_version, to_version)
+                            self._translations += 1
+                new_tile["spawn_npc"] = spawn
 
             translated.append(new_tile)
 

@@ -517,16 +517,145 @@ class NanoVGContext:
         except Exception as e:
             logger.error("NanoVG draw error: %s", e)
 
-    # === Text (Placeholder) ===
+    # === Text Rendering ===
+
+    # Minimal 5x7 bitmap font for ASCII 32-126.
+    # Each character is encoded as 5 columns of 7-bit bitmasks (LSB=top).
+    _FONT_WIDTH = 5
+    _FONT_HEIGHT = 7
+    _GLYPH_MAP: dict[str, tuple[int, ...]] | None = None
+
+    @classmethod
+    def _build_glyph_map(cls) -> dict[str, tuple[int, ...]]:
+        """Build a minimal 5×7 bitmap glyph table for printable ASCII."""
+        if cls._GLYPH_MAP is not None:
+            return cls._GLYPH_MAP
+
+        # fmt: off
+        glyphs: dict[str, tuple[int, ...]] = {
+            " ": (0, 0, 0, 0, 0),
+            "!": (0, 0, 0x5F, 0, 0),
+            "\"": (0, 0x03, 0, 0x03, 0),
+            "#": (0x14, 0x7F, 0x14, 0x7F, 0x14),
+            "$": (0x24, 0x2A, 0x7F, 0x2A, 0x12),
+            "%": (0x23, 0x13, 0x08, 0x64, 0x62),
+            "&": (0x36, 0x49, 0x55, 0x22, 0x50),
+            "'": (0, 0, 0x03, 0, 0),
+            "(": (0, 0x1C, 0x22, 0x41, 0),
+            ")": (0, 0x41, 0x22, 0x1C, 0),
+            "*": (0x14, 0x08, 0x3E, 0x08, 0x14),
+            "+": (0x08, 0x08, 0x3E, 0x08, 0x08),
+            ",": (0, 0x50, 0x30, 0, 0),
+            "-": (0x08, 0x08, 0x08, 0x08, 0x08),
+            ".": (0, 0x60, 0x60, 0, 0),
+            "/": (0x20, 0x10, 0x08, 0x04, 0x02),
+            "0": (0x3E, 0x51, 0x49, 0x45, 0x3E),
+            "1": (0, 0x42, 0x7F, 0x40, 0),
+            "2": (0x42, 0x61, 0x51, 0x49, 0x46),
+            "3": (0x21, 0x41, 0x45, 0x4B, 0x31),
+            "4": (0x18, 0x14, 0x12, 0x7F, 0x10),
+            "5": (0x27, 0x45, 0x45, 0x45, 0x39),
+            "6": (0x3C, 0x4A, 0x49, 0x49, 0x30),
+            "7": (0x01, 0x71, 0x09, 0x05, 0x03),
+            "8": (0x36, 0x49, 0x49, 0x49, 0x36),
+            "9": (0x06, 0x49, 0x49, 0x29, 0x1E),
+            ":": (0, 0x36, 0x36, 0, 0),
+            ";": (0, 0x56, 0x36, 0, 0),
+            "<": (0x08, 0x14, 0x22, 0x41, 0),
+            "=": (0x14, 0x14, 0x14, 0x14, 0x14),
+            ">": (0, 0x41, 0x22, 0x14, 0x08),
+            "?": (0x02, 0x01, 0x51, 0x09, 0x06),
+            "@": (0x3E, 0x41, 0x5D, 0x55, 0x1E),
+            "A": (0x7E, 0x11, 0x11, 0x11, 0x7E),
+            "B": (0x7F, 0x49, 0x49, 0x49, 0x36),
+            "C": (0x3E, 0x41, 0x41, 0x41, 0x22),
+            "D": (0x7F, 0x41, 0x41, 0x22, 0x1C),
+            "E": (0x7F, 0x49, 0x49, 0x49, 0x41),
+            "F": (0x7F, 0x09, 0x09, 0x09, 0x01),
+            "G": (0x3E, 0x41, 0x49, 0x49, 0x7A),
+            "H": (0x7F, 0x08, 0x08, 0x08, 0x7F),
+            "I": (0, 0x41, 0x7F, 0x41, 0),
+            "J": (0x20, 0x40, 0x41, 0x3F, 0x01),
+            "K": (0x7F, 0x08, 0x14, 0x22, 0x41),
+            "L": (0x7F, 0x40, 0x40, 0x40, 0x40),
+            "M": (0x7F, 0x02, 0x0C, 0x02, 0x7F),
+            "N": (0x7F, 0x04, 0x08, 0x10, 0x7F),
+            "O": (0x3E, 0x41, 0x41, 0x41, 0x3E),
+            "P": (0x7F, 0x09, 0x09, 0x09, 0x06),
+            "Q": (0x3E, 0x41, 0x51, 0x21, 0x5E),
+            "R": (0x7F, 0x09, 0x19, 0x29, 0x46),
+            "S": (0x46, 0x49, 0x49, 0x49, 0x31),
+            "T": (0x01, 0x01, 0x7F, 0x01, 0x01),
+            "U": (0x3F, 0x40, 0x40, 0x40, 0x3F),
+            "V": (0x1F, 0x20, 0x40, 0x20, 0x1F),
+            "W": (0x3F, 0x40, 0x38, 0x40, 0x3F),
+            "X": (0x63, 0x14, 0x08, 0x14, 0x63),
+            "Y": (0x07, 0x08, 0x70, 0x08, 0x07),
+            "Z": (0x61, 0x51, 0x49, 0x45, 0x43),
+        }
+        # Add lowercase as copies of uppercase
+        for ch in "abcdefghijklmnopqrstuvwxyz":
+            if ch.upper() in glyphs:
+                glyphs[ch] = glyphs[ch.upper()]
+        # fmt: on
+
+        cls._GLYPH_MAP = glyphs
+        return glyphs
 
     def text(self, x: float, y: float, text: str) -> None:
-        """Draw text at position (placeholder).
+        """Draw text at position using a minimal bitmap font.
 
-        Note: Full text rendering requires font loading and glyph rendering.
-        This is a placeholder for future implementation.
+        Uses the current fill paint for color. Each character is rendered
+        as filled rectangles per the 5×7 bitmap glyph table.
+
+        Args:
+            x: X position in screen coordinates.
+            y: Y position in screen coordinates.
+            text: The string to draw.
         """
-        # TODO: Implement proper text rendering
-        pass
+        if not text or self._program is None:
+            return
+
+        glyph_map = self._build_glyph_map()
+        paint = self._fill_paint
+        r = paint.color[0] / 255.0
+        g = paint.color[1] / 255.0
+        b = paint.color[2] / 255.0
+        a = paint.color[3] / 255.0
+
+        scale = max(1.0, self._pixel_ratio)
+        px_w = scale  # pixel width
+        px_h = scale  # pixel height
+        char_spacing = (self._FONT_WIDTH + 1) * scale
+
+        vertices: list[float] = []
+        cursor_x = float(x)
+
+        for ch in text:
+            cols = glyph_map.get(ch)
+            if cols is None:
+                cursor_x += char_spacing
+                continue
+            for col_idx, col_bits in enumerate(cols):
+                for row in range(self._FONT_HEIGHT):
+                    if col_bits & (1 << row):
+                        px = cursor_x + col_idx * px_w
+                        py = float(y) + row * px_h
+                        # Two triangles for a pixel quad
+                        x0, y0 = px, py
+                        x1, y1 = px + px_w, py + px_h
+                        vertices.extend([
+                            x0, y0, r, g, b, a,
+                            x1, y0, r, g, b, a,
+                            x0, y1, r, g, b, a,
+                            x1, y0, r, g, b, a,
+                            x1, y1, r, g, b, a,
+                            x0, y1, r, g, b, a,
+                        ])
+            cursor_x += char_spacing
+
+        if vertices:
+            self._draw_triangles(vertices, paint)
 
     def cleanup(self) -> None:
         """Release OpenGL resources."""

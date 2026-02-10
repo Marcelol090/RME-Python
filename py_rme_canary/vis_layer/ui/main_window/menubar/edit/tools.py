@@ -110,3 +110,13 @@ def check_uid(editor) -> None:
 def toggle_lasso(editor, enabled: bool) -> None:
     """Toggle lasso selection tool."""
     editor._toggle_lasso(bool(enabled))
+
+
+def borderize_map(editor) -> None:
+    """Reborder the entire map."""
+    editor._borderize_map()
+
+
+def randomize_map(editor) -> None:
+    """Randomize all ground tiles of the entire map."""
+    editor._randomize(selection_only=False)

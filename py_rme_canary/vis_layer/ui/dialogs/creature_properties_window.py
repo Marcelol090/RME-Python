@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QApplication,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -61,20 +62,21 @@ class CreaturePropertiesWindow(QDialog):
         self._data = data or CreatureData()
 
         self.setWindowTitle("Creature Properties")
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(_scale_dip(self, 350))
         self._setup_ui()
         self._style()
         self._load_data()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(_scale_dip(self, 12))
+        margin = _scale_dip(self, 16)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Properties group
         props_group = QGroupBox("Creature Properties")
         props_layout = QFormLayout(props_group)
-        props_layout.setSpacing(10)
+        props_layout.setSpacing(_scale_dip(self, 10))
 
         # Creature name
         self._name_label = QLabel(f'"{self._data.name}"')
@@ -195,3 +197,14 @@ class CreaturePropertiesWindow(QDialog):
     def get_direction(self) -> Direction:
         """Get the facing direction."""
         return self._data.direction
+
+
+def _scale_dip(dialog: QDialog, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = dialog.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

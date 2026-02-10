@@ -1,16 +1,18 @@
-"""Brush Toolbar Widget.
+"""Brush Toolbar & Tool Selector — Antigravity Design.
 
 Quick access toolbar for brush settings:
-- Brush size buttons
-- Shape toggle
+- Brush size buttons with glow states
+- Shape toggle with custom painted icons
 - Automagic toggle
+- Tool selector with painted icons
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QSize, pyqtSignal
+from PyQt6.QtCore import QRectF, QSize, pyqtSignal
+from PyQt6.QtGui import QBrush, QColor, QIcon, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -20,14 +22,69 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.icons import tool_icons
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 if TYPE_CHECKING:
     pass
 
 
+# ---------------------------------------------------------------------------
+# Painted icon helpers (no Unicode, no emoji, no external files)
+# ---------------------------------------------------------------------------
+
+def _painted_square_icon(size: int = 20, checked: bool = False) -> QIcon:
+    px = QPixmap(size, size)
+    px.fill(QColor(0, 0, 0, 0))
+    p = QPainter(px)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    color = QColor(255, 255, 255, 200) if checked else QColor(161, 161, 170, 160)
+    fill = QColor(255, 255, 255, 30) if checked else QColor(161, 161, 170, 15)
+    p.setPen(QPen(color, 1.5))
+    p.setBrush(QBrush(fill))
+    m = size * 0.2
+    p.drawRoundedRect(QRectF(m, m, size - 2 * m, size - 2 * m), 2.0, 2.0)
+    p.end()
+    return QIcon(px)
+
+
+def _painted_circle_icon(size: int = 20, checked: bool = False) -> QIcon:
+    px = QPixmap(size, size)
+    px.fill(QColor(0, 0, 0, 0))
+    p = QPainter(px)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    color = QColor(255, 255, 255, 200) if checked else QColor(161, 161, 170, 160)
+    fill = QColor(255, 255, 255, 30) if checked else QColor(161, 161, 170, 15)
+    p.setPen(QPen(color, 1.5))
+    p.setBrush(QBrush(fill))
+    m = size * 0.2
+    p.drawEllipse(QRectF(m, m, size - 2 * m, size - 2 * m))
+    p.end()
+    return QIcon(px)
+
+
+def _painted_tool_icon(letter: str, size: int = 22) -> QIcon:
+    """Fallback: letter inside a rounded square."""
+    px = QPixmap(size, size)
+    px.fill(QColor(0, 0, 0, 0))
+    p = QPainter(px)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    p.setPen(QPen(QColor(161, 161, 170, 140), 1.0))
+    p.setBrush(QBrush(QColor(54, 54, 80, 60)))
+    p.drawRoundedRect(QRectF(2, 2, size - 4, size - 4), 5, 5)
+    from PyQt6.QtGui import QFont
+    font = QFont("Segoe UI", max(8, size // 3))
+    font.setBold(True)
+    p.setFont(font)
+    p.setPen(QColor(200, 200, 210, 220))
+    from PyQt6.QtCore import Qt
+    p.drawText(0, 0, size, size, Qt.AlignmentFlag.AlignCenter, letter)
+    p.end()
+    return QIcon(px)
+
+
 class BrushToolbar(QFrame):
-    """Toolbar for brush settings.
+    """Toolbar for brush settings — Antigravity style.
 
     Signals:
         size_changed: Emits new brush size (1-11)
@@ -52,8 +109,8 @@ class BrushToolbar(QFrame):
     def _setup_ui(self) -> None:
         """Initialize UI."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
+        layout.setContentsMargins(10, 6, 10, 6)
+        layout.setSpacing(6)
 
         # Size buttons
         size_group = QButtonGroup(self)
@@ -61,7 +118,7 @@ class BrushToolbar(QFrame):
 
         for size in [1, 3, 5, 7, 9]:
             btn = QPushButton(str(size))
-            btn.setFixedSize(28, 28)
+            btn.setFixedSize(30, 30)
             btn.setCheckable(True)
             btn.setToolTip(f"Brush size {size}×{size}")
             btn.setProperty("brushSize", size)
@@ -77,21 +134,26 @@ class BrushToolbar(QFrame):
         # Separator
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.Shape.VLine)
-        sep1.setStyleSheet("background: #363650;")
+        sep1.setFixedWidth(1)
+        sep1.setStyleSheet("background: rgba(255, 255, 255, 0.06);")
         layout.addWidget(sep1)
 
-        # Shape toggle
-        self.btn_square = QPushButton("▢")
-        self.btn_square.setFixedSize(28, 28)
+        # Shape toggle — custom painted icons
+        self.btn_square = QPushButton()
+        self.btn_square.setFixedSize(32, 32)
         self.btn_square.setCheckable(True)
         self.btn_square.setChecked(True)
+        self.btn_square.setIcon(_painted_square_icon(18, True))
+        self.btn_square.setIconSize(QSize(18, 18))
         self.btn_square.setToolTip("Square brush (Q)")
         self.btn_square.clicked.connect(lambda: self._set_shape("square"))
         layout.addWidget(self.btn_square)
 
-        self.btn_circle = QPushButton("○")
-        self.btn_circle.setFixedSize(28, 28)
+        self.btn_circle = QPushButton()
+        self.btn_circle.setFixedSize(32, 32)
         self.btn_circle.setCheckable(True)
+        self.btn_circle.setIcon(_painted_circle_icon(18, False))
+        self.btn_circle.setIconSize(QSize(18, 18))
         self.btn_circle.setToolTip("Circle brush (Q)")
         self.btn_circle.clicked.connect(lambda: self._set_shape("circle"))
         layout.addWidget(self.btn_circle)
@@ -99,12 +161,13 @@ class BrushToolbar(QFrame):
         # Separator
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.VLine)
-        sep2.setStyleSheet("background: #363650;")
+        sep2.setFixedWidth(1)
+        sep2.setStyleSheet("background: rgba(255, 255, 255, 0.06);")
         layout.addWidget(sep2)
 
         # Automagic toggle
         self.btn_automagic = QPushButton("Auto")
-        self.btn_automagic.setFixedSize(32, 28)
+        self.btn_automagic.setFixedSize(44, 30)
         self.btn_automagic.setCheckable(True)
         self.btn_automagic.setChecked(True)
         self.btn_automagic.setIcon(load_icon("tool_automagic"))
@@ -115,31 +178,34 @@ class BrushToolbar(QFrame):
         layout.addStretch()
 
     def _apply_style(self) -> None:
-        """Apply styling."""
+        """Antigravity styling."""
         self.setStyleSheet(
             """
             BrushToolbar {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+                background: rgba(16, 16, 24, 0.85);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
             }
 
             QPushButton {
-                background: #363650;
-                color: #A1A1AA;
-                border: none;
-                border-radius: 6px;
+                background: rgba(19, 19, 29, 0.6);
+                color: rgba(161, 161, 170, 0.8);
+                border: 1px solid transparent;
+                border-radius: 8px;
                 font-size: 12px;
-                font-weight: 600;
+                font-weight: 700;
             }
 
             QPushButton:hover {
-                background: #404060;
+                background: rgba(139, 92, 246, 0.12);
+                border-color: rgba(139, 92, 246, 0.2);
                 color: #E5E5E7;
             }
 
             QPushButton:checked {
-                background: #8B5CF6;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(139, 92, 246, 0.35), stop:1 rgba(124, 58, 237, 0.3));
+                border: 1px solid rgba(139, 92, 246, 0.45);
                 color: white;
             }
         """
@@ -156,6 +222,9 @@ class BrushToolbar(QFrame):
         self._shape = shape
         self.btn_square.setChecked(shape == "square")
         self.btn_circle.setChecked(shape == "circle")
+        # Update icons to reflect checked state
+        self.btn_square.setIcon(_painted_square_icon(18, shape == "square"))
+        self.btn_circle.setIcon(_painted_circle_icon(18, shape == "circle"))
         self.shape_changed.emit(shape)
 
     def _on_automagic_clicked(self) -> None:
@@ -176,6 +245,8 @@ class BrushToolbar(QFrame):
         self._shape = shape
         self.btn_square.setChecked(shape == "square")
         self.btn_circle.setChecked(shape == "circle")
+        self.btn_square.setIcon(_painted_square_icon(18, shape == "square"))
+        self.btn_circle.setIcon(_painted_circle_icon(18, shape == "circle"))
 
     def set_automagic(self, enabled: bool) -> None:
         """Set automagic state."""
@@ -189,7 +260,7 @@ class BrushToolbar(QFrame):
 
 
 class ToolSelector(QFrame):
-    """Tool selection bar.
+    """Tool selection bar — Antigravity style.
 
     Signals:
         tool_changed: Emits tool name
@@ -217,23 +288,30 @@ class ToolSelector(QFrame):
     def _setup_ui(self) -> None:
         """Initialize UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 8, 6, 8)
+        layout.setContentsMargins(8, 10, 8, 10)
         layout.setSpacing(4)
 
         self._tool_buttons = {}
+        _fallbacks = tool_icons(20)
 
         for tool_id, icon_name, tooltip in self.TOOLS:
             btn = QPushButton()
-            btn.setFixedSize(36, 36)
+            btn.setFixedSize(38, 38)
             btn.setCheckable(True)
             btn.setToolTip(tooltip)
             btn.setProperty("toolId", tool_id)
             icon = load_icon(icon_name)
             if not icon.isNull():
                 btn.setIcon(icon)
-                btn.setIconSize(QSize(18, 18))
+                btn.setIconSize(QSize(20, 20))
+            elif tool_id in _fallbacks:
+                btn.setIcon(_fallbacks[tool_id])
+                btn.setIconSize(QSize(20, 20))
             else:
-                btn.setText(tool_id[:1].upper())
+                # Last resort: painted letter
+                fallback = _painted_tool_icon(tool_id[:1].upper(), 22)
+                btn.setIcon(fallback)
+                btn.setIconSize(QSize(20, 20))
             btn.clicked.connect(lambda checked, t=tool_id: self._on_tool_clicked(t))
             layout.addWidget(btn)
             self._tool_buttons[tool_id] = btn
@@ -244,29 +322,32 @@ class ToolSelector(QFrame):
         layout.addStretch()
 
     def _apply_style(self) -> None:
-        """Apply styling."""
+        """Antigravity styling."""
         self.setStyleSheet(
             """
             ToolSelector {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 10px;
+                background: rgba(16, 16, 24, 0.85);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 14px;
             }
 
             QPushButton {
                 background: transparent;
-                color: #A1A1AA;
-                border: none;
-                border-radius: 8px;
-                font-size: 18px;
+                color: rgba(161, 161, 170, 0.8);
+                border: 1px solid transparent;
+                border-radius: 10px;
+                font-size: 16px;
             }
 
             QPushButton:hover {
-                background: #363650;
+                background: rgba(139, 92, 246, 0.1);
+                border-color: rgba(139, 92, 246, 0.15);
             }
 
             QPushButton:checked {
-                background: #8B5CF6;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(139, 92, 246, 0.3), stop:1 rgba(124, 58, 237, 0.25));
+                border: 1px solid rgba(139, 92, 246, 0.45);
             }
         """
         )

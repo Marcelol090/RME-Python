@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QApplication,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -92,7 +93,7 @@ class DepotPropertiesWindow(QDialog):
         self._tile = tile
 
         self.setWindowTitle("Edit Depot")
-        self.setMinimumSize(400, 280)
+        self.setMinimumSize(_scale_dip(self, 400), _scale_dip(self, 280))
         self.setModal(True)
 
         self._setup_ui()
@@ -102,8 +103,9 @@ class DepotPropertiesWindow(QDialog):
     def _setup_ui(self) -> None:
         """Initialize UI components."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(_scale_dip(self, 16))
+        margin = _scale_dip(self, 20)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Header with item info
         header = QHBoxLayout()
@@ -116,11 +118,11 @@ class DepotPropertiesWindow(QDialog):
         # Depot configuration group
         depot_group = QGroupBox("Depot Configuration")
         depot_layout = QFormLayout(depot_group)
-        depot_layout.setSpacing(12)
+        depot_layout.setSpacing(_scale_dip(self, 12))
 
         # Depot ID / Town selector
         self._depot_combo = QComboBox()
-        self._depot_combo.setMinimumWidth(250)
+        self._depot_combo.setMinimumWidth(_scale_dip(self, 250))
 
         # Populate depot IDs/towns
         for depot_id, town_name in DEPOT_TOWNS:
@@ -335,3 +337,14 @@ class DepotPropertiesWindow(QDialog):
         return {
             "depot_id": depot_id if depot_id is not None else 0,
         }
+
+
+def _scale_dip(widget: QWidget, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = widget.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

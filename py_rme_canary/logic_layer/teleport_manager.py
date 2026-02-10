@@ -106,7 +106,7 @@ class TeleportLink:
     def z_delta(self) -> int:
         return self.destination[2] - self.source[2]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "source": list(self.source),
@@ -120,7 +120,7 @@ class TeleportLink:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> TeleportLink:
+    def from_dict(cls, data: dict[str, Any]) -> TeleportLink:
         """Create from dictionary."""
         return cls(
             source=tuple(data["source"]),

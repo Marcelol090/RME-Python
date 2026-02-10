@@ -24,7 +24,11 @@ def _write_legacy_dat_spr(tmp_path: Path) -> tuple[Path, Path]:
 
 
 def test_load_assets_modern_profile(tmp_path: Path) -> None:
-    assets_dir = tmp_path / "assets"
+    # Use a nested root to prevent detect_asset_profile from finding
+    # legacy .dat/.spr files in sibling pytest temp directories.
+    root = tmp_path / "isolated"
+    root.mkdir()
+    assets_dir = root / "assets"
     assets_dir.mkdir()
     doc = [
         {
@@ -37,7 +41,7 @@ def test_load_assets_modern_profile(tmp_path: Path) -> None:
     ]
     (assets_dir / "catalog-content.json").write_text(json.dumps(doc), encoding="utf-8")
 
-    profile = detect_asset_profile(tmp_path)
+    profile = detect_asset_profile(root)
     loaded = load_assets_from_profile(profile)
 
     assert loaded.profile.kind == "modern"

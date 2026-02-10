@@ -5,56 +5,55 @@ Based on ui_instructions.md - PyQt6 UI/UX Development Instructions.
 
 from __future__ import annotations
 
-from typing import TypedDict, Dict
-
+from typing import TypedDict
 from PyQt6.QtWidgets import QApplication
 
 
 class ThemeColors(TypedDict):
     """Color tokens structure."""
-    brand: Dict[str, str]
-    surface: Dict[str, str]
-    text: Dict[str, str]
-    border: Dict[str, str]
-    state: Dict[str, str]
+    brand: dict[str, str]
+    surface: dict[str, str]
+    text: dict[str, str]
+    border: dict[str, str]
+    state: dict[str, str]
 
 class ThemeTokens(TypedDict):
     """Type definition for theme tokens."""
     color: ThemeColors
-    spacing: Dict[str, int]
-    radius: Dict[str, int]
+    spacing: dict[str, int]
+    radius: dict[str, int]
 
 
-# Design Tokens - Premium Dark Theme (Dracula Inspired)
+# Design Tokens - Antigravity Theme (Deep Glassmorphism)
 DARK_THEME: ThemeTokens = {
     "color": {
         "brand": {
-            "primary": "#BD93F9",
-            "secondary": "#FF79C6",
-            "active": "#50FA7B",
+            "primary": "#7C3AED",  # Violet 600
+            "secondary": "#8B5CF6",  # Violet 500
+            "active": "#A78BFA",  # Violet 400
         },
         "surface": {
-            "primary": "#282A36",
-            "secondary": "#44475A",
-            "tertiary": "#6272A4",
-            "elevated": "#44475A",
-            "overlay": "rgba(40, 42, 54, 0.8)",
+            "primary": "rgba(16, 16, 24, 0.85)",  # Deep glass
+            "secondary": "rgba(19, 19, 29, 0.6)",  # Panel glass
+            "tertiary": "rgba(255, 255, 255, 0.04)",  # Subtle interactive
+            "elevated": "rgba(23, 23, 35, 0.95)",  # Popups/Menus
+            "overlay": "rgba(0, 0, 0, 0.7)",  # Modal backdrop
         },
         "text": {
-            "primary": "#F8F8F2",
-            "secondary": "#BD93F9",
-            "tertiary": "#6272A4",
-            "disabled": "#6272A4",
+            "primary": "#E5E5E7",  # Zinc 200
+            "secondary": "rgba(161, 161, 170, 0.8)",  # Zinc 400
+            "tertiary": "rgba(113, 113, 122, 0.6)",  # Zinc 500
+            "disabled": "rgba(82, 82, 91, 0.5)",  # Zinc 600
         },
         "border": {
-            "default": "#6272A4",
-            "strong": "#BD93F9",
-            "interactive": "#FF79C6",
+            "default": "rgba(255, 255, 255, 0.06)",  # Glass edge
+            "strong": "rgba(255, 255, 255, 0.1)",  # Focus edge
+            "interactive": "rgba(139, 92, 246, 0.4)",  # Violet edge
         },
         "state": {
-            "hover": "#FF79C6",
-            "active": "#50FA7B",
-            "error": "#FF5555",
+            "hover": "rgba(139, 92, 246, 0.12)",
+            "active": "rgba(139, 92, 246, 0.25)",
+            "error": "#EF4444",  # Red 500
         }
     },
     "spacing": {
@@ -66,10 +65,10 @@ DARK_THEME: ThemeTokens = {
         "xxl": 48,
     },
     "radius": {
-        "sm": 4,
-        "md": 8,
-        "lg": 12,
-        "xl": 16,
+        "sm": 6,
+        "md": 10,
+        "lg": 16,
+        "xl": 24,
         "round": 9999,
     }
 }
@@ -123,10 +122,60 @@ LIGHT_THEME: ThemeTokens = {
     }
 }
 
+# Design Tokens - Neon Theme (Cyberpunk/High Contrast)
+NEON_THEME: ThemeTokens = {
+    "color": {
+        "brand": {
+            "primary": "#06B6D4",  # Cyan 500
+            "secondary": "#22D3EE",  # Cyan 400
+            "active": "#67E8F9",  # Cyan 300
+        },
+        "surface": {
+            "primary": "rgba(5, 5, 5, 0.92)",  # Almost solid black
+            "secondary": "rgba(20, 20, 20, 0.8)",  # Dark panels
+            "tertiary": "rgba(255, 255, 255, 0.08)",
+            "elevated": "#000000",
+            "overlay": "rgba(0, 255, 255, 0.05)",  # Cyan tint overlay
+        },
+        "text": {
+            "primary": "#FFFFFF",
+            "secondary": "#94A3B8",
+            "tertiary": "#64748B",
+            "disabled": "#334155",
+        },
+        "border": {
+            "default": "rgba(6, 182, 212, 0.3)",  # Cyan glow
+            "strong": "rgba(6, 182, 212, 0.6)",
+            "interactive": "#06B6D4",
+        },
+        "state": {
+            "hover": "rgba(6, 182, 212, 0.15)",
+            "active": "rgba(6, 182, 212, 0.3)",
+            "error": "#FF0055",  # Neon Red
+        }
+    },
+    "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48,
+    },
+    "radius": {
+        "sm": 2,  # Sharper corners for cyberpunk
+        "md": 4,
+        "lg": 8,
+        "xl": 12,
+        "round": 9999,
+    }
+}
+
 # Theme registry
 THEME_TOKENS: dict[str, ThemeTokens] = {
     "dark": DARK_THEME,
     "light": LIGHT_THEME,
+    "neon": NEON_THEME,
 }
 
 

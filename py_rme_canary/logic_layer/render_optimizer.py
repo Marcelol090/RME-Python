@@ -330,7 +330,7 @@ class BatchRenderer:
         """Add creature to batch."""
         self._creature_batch.append((x, y, sprite_id))
 
-    def flush(self) -> tuple[list, list, list]:
+    def flush(self) -> tuple[list[tuple[int, int, int]], list[tuple[int, int, int]], list[tuple[int, int, int]]]:
         """Flush and return all batches.
 
         Returns:
@@ -417,6 +417,6 @@ class RenderOptimizer:
         """Prepare for new frame."""
         self.batch.clear()
 
-    def end_frame(self) -> tuple[list, list, list]:
+    def end_frame(self) -> tuple[list[tuple[int, int, int]], list[tuple[int, int, int]], list[tuple[int, int, int]]]:
         """End frame and get render batches."""
         return self.batch.flush()

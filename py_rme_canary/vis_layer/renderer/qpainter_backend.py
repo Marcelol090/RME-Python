@@ -15,9 +15,15 @@ def _color_from_id(sprite_id: int) -> QColor:
     b = (v * 3266489917) & 0xFF
 
     def clamp(c: int) -> int:
-        return 48 + (int(c) % 160)
+        return 80 + (int(c) % 140)
 
-    return QColor(clamp(r), clamp(g), clamp(b))
+    return QColor(clamp(r), clamp(g), clamp(b), 255)
+
+
+def _border_color_from_id(sprite_id: int) -> QColor:
+    """Darker border color for item placeholders."""
+    fill = _color_from_id(sprite_id)
+    return QColor(max(0, fill.red() - 60), max(0, fill.green() - 60), max(0, fill.blue() - 60))
 
 
 class QPainterRenderBackend:
@@ -53,6 +59,15 @@ class QPainterRenderBackend:
         if pm is None or pm.isNull():
             rect = QRect(int(x), int(y), int(size), int(size))
             self._painter.fillRect(rect, _color_from_id(int(sprite_id)))
+            # Border for better visibility
+            pen = QPen(_border_color_from_id(int(sprite_id)))
+            pen.setWidth(1)
+            self._painter.setPen(pen)
+            self._painter.drawRect(rect)
+            # Item ID text overlay
+            if int(size) >= 12:
+                self._painter.setPen(QPen(QColor(255, 255, 255, 200)))
+                self._painter.drawText(int(x) + 1, int(y) + int(size) - 2, str(abs(int(sprite_id))))
             return
         self._painter.drawPixmap(int(x), int(y), pm)
 

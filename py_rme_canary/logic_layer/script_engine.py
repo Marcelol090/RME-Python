@@ -149,7 +149,7 @@ class MapAPI:
             "items_added": 0,
             "items_removed": 0,
         }
-        self._pending_changes: list[dict] = []
+        self._pending_changes: list[dict[str, Any]] = []
 
     @property
     def width(self) -> int:
@@ -696,7 +696,7 @@ class ScriptEngine:
             name: str,
             globals: dict[str, Any] | None = None,
             locals: dict[str, Any] | None = None,
-            fromlist: tuple = (),
+            fromlist: tuple[str, ...] = (),
             level: int = 0,
         ) -> Any:
             base_name = name.split(".")[0]

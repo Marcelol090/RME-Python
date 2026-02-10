@@ -1,20 +1,47 @@
-"""
-Live Editing Client Implementation.
+"""Live Editing Client Implementation.
 
 Ported from source/live_client.cpp
+
+Includes auto-reconnect with exponential backoff to recover
+from transient network failures without user intervention.
 """
+
+from __future__ import annotations
 
 import logging
 import socket
 import struct
 import threading
+import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 from .live_packets import ConnectionState, PacketType, encode_cursor
 from .live_socket import LiveSocket
 
 log = logging.getLogger(__name__)
+
+
+@dataclass
+class ReconnectConfig:
+    """Configuration for automatic reconnection.
+
+    Attributes:
+        enabled: Whether auto-reconnect is active.
+        max_attempts: Maximum number of reconnect attempts (0 = unlimited).
+        base_delay: Initial delay between attempts in seconds.
+        max_delay: Maximum delay (cap for exponential growth).
+        backoff_factor: Multiplier applied each failed attempt.
+        jitter: Random factor added (0.0–1.0) to avoid thundering herd.
+    """
+
+    enabled: bool = True
+    max_attempts: int = 10
+    base_delay: float = 1.0
+    max_delay: float = 30.0
+    backoff_factor: float = 2.0
+    jitter: float = 0.1
 
 
 def _encode_login_payload(name: str, password: str) -> bytes:
@@ -24,11 +51,19 @@ def _encode_login_payload(name: str, password: str) -> bytes:
 
 
 class LiveClient(LiveSocket):
-    """
-    Handles connection to a Live Server for collaborative editing.
+    """Handles connection to a Live Server for collaborative editing.
+
+    Supports automatic reconnection with exponential backoff
+    when the connection is lost unexpectedly.
     """
 
-    def __init__(self, host: str = "localhost", port: int = 7171):
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 7171,
+        *,
+        reconnect_config: ReconnectConfig | None = None,
+    ) -> None:
         super().__init__(None)
         self.host = host
         self.port = port
@@ -39,6 +74,17 @@ class LiveClient(LiveSocket):
         self._incoming_queue: list[tuple[int, bytes]] = []
         self._queue_lock = threading.Lock()
         self.client_id: int | None = None
+
+        # Auto-reconnect
+        self._reconnect_cfg = reconnect_config or ReconnectConfig()
+        self._reconnect_attempt: int = 0
+        self._reconnect_thread: threading.Thread | None = None
+        self._intentional_disconnect: bool = False
+
+        # Connection event callbacks
+        self._on_connected: Callable[[], None] | None = None
+        self._on_disconnected: Callable[[str], None] | None = None
+        self._on_reconnecting: Callable[[int, float], None] | None = None
 
         # Callbacks for specific events
         self._on_cursor_update: Callable[[int, int, int, int], None] | None = None
@@ -71,6 +117,34 @@ class LiveClient(LiveSocket):
         """Set callback for tile updates."""
         self._on_tile_update = callback
 
+    # --- Connection lifecycle callbacks ---
+
+    def set_connected_callback(self, callback: Callable[[], None] | None) -> None:
+        """Set callback invoked after a successful (re)connection."""
+        self._on_connected = callback
+
+    def set_disconnected_callback(self, callback: Callable[[str], None] | None) -> None:
+        """Set callback invoked on disconnection. Receives reason string."""
+        self._on_disconnected = callback
+
+    def set_reconnecting_callback(
+        self, callback: Callable[[int, float], None] | None
+    ) -> None:
+        """Set callback invoked before each reconnect attempt.
+
+        Receives (attempt_number, delay_seconds).
+        """
+        self._on_reconnecting = callback
+
+    @property
+    def reconnect_config(self) -> ReconnectConfig:
+        """Return the current reconnect configuration."""
+        return self._reconnect_cfg
+
+    @reconnect_config.setter
+    def reconnect_config(self, cfg: ReconnectConfig) -> None:
+        self._reconnect_cfg = cfg
+
     def pop_packet(self) -> tuple[int, bytes] | None:
         """Pop the next available packet from the queue (thread-safe enough for lists)."""
         with self._queue_lock:
@@ -79,10 +153,22 @@ class LiveClient(LiveSocket):
             return None
 
     def connect(self) -> bool:
-        """Initiates connection to the server."""
+        """Initiates connection to the server.
+
+        Resets the intentional-disconnect flag so that auto-reconnect
+        can kick in if the connection drops unexpectedly.
+        """
+        self._intentional_disconnect = False
+        self._reconnect_attempt = 0
+        return self._try_connect()
+
+    def _try_connect(self) -> bool:
+        """Low-level connection attempt (no flag reset)."""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10.0)
             sock.connect((self.host, self.port))
+            sock.settimeout(None)
             self.socket = sock
             self.state = ConnectionState.CONNECTED
 
@@ -96,19 +182,112 @@ class LiveClient(LiveSocket):
                 self.disconnect()
                 return False
 
-            log.info(f"Connected to Live Server at {self.host}:{self.port}")
+            log.info("Connected to Live Server at %s:%s", self.host, self.port)
+            self._reconnect_attempt = 0
+
+            if self._on_connected:
+                try:
+                    self._on_connected()
+                except Exception:
+                    pass
+
             return True
         except Exception as e:
-            log.error(f"Failed to connect to {self.host}:{self.port}: {e}")
+            log.error("Failed to connect to %s:%s: %s", self.host, self.port, e)
             self.state = ConnectionState.DISCONNECTED
             return False
 
     def disconnect(self) -> None:
-        """Terminates the connection."""
+        """Terminates the connection intentionally (no auto-reconnect)."""
+        self._intentional_disconnect = True
+        self._do_disconnect("User requested disconnect")
+
+    def _do_disconnect(self, reason: str = "Connection lost") -> None:
+        """Internal disconnect handler."""
+        was_connected = self.state >= ConnectionState.CONNECTED
         self._running = False
         self.close()
         self.state = ConnectionState.DISCONNECTED
-        log.info("Disconnected from Live Server")
+        log.info("Disconnected from Live Server: %s", reason)
+
+        if was_connected and self._on_disconnected:
+            try:
+                self._on_disconnected(reason)
+            except Exception:
+                pass
+
+        # Trigger auto-reconnect if the disconnect was NOT intentional
+        if was_connected and not self._intentional_disconnect:
+            self._schedule_reconnect()
+
+    def _schedule_reconnect(self) -> None:
+        """Start the reconnection loop in a background thread."""
+        cfg = self._reconnect_cfg
+        if not cfg.enabled:
+            return
+
+        if cfg.max_attempts > 0 and self._reconnect_attempt >= cfg.max_attempts:
+            log.warning(
+                "Auto-reconnect exhausted (%d attempts), giving up",
+                self._reconnect_attempt,
+            )
+            return
+
+        # Don't start a second reconnect thread
+        if self._reconnect_thread and self._reconnect_thread.is_alive():
+            return
+
+        self._reconnect_thread = threading.Thread(
+            target=self._reconnect_loop, daemon=True
+        )
+        self._reconnect_thread.start()
+
+    def _reconnect_loop(self) -> None:
+        """Exponential backoff reconnection loop."""
+        import random
+
+        cfg = self._reconnect_cfg
+        success = False
+
+        while not self._intentional_disconnect:
+            self._reconnect_attempt += 1
+
+            if cfg.max_attempts > 0 and self._reconnect_attempt > cfg.max_attempts:
+                log.warning("Max reconnect attempts reached (%d)", cfg.max_attempts)
+                break
+
+            # Calculate delay with exponential backoff + jitter
+            delay = min(
+                cfg.base_delay * (cfg.backoff_factor ** (self._reconnect_attempt - 1)),
+                cfg.max_delay,
+            )
+            if cfg.jitter > 0:
+                delay += random.uniform(0, cfg.jitter * delay)  # noqa: S311
+
+            log.info(
+                "Reconnect attempt %d in %.1fs ...",
+                self._reconnect_attempt,
+                delay,
+            )
+
+            if self._on_reconnecting:
+                try:
+                    self._on_reconnecting(self._reconnect_attempt, delay)
+                except Exception:
+                    pass
+
+            time.sleep(delay)
+
+            if self._try_connect():
+                log.info(
+                    "Reconnected successfully after %d attempt(s)",
+                    self._reconnect_attempt,
+                )
+                success = True
+                break
+
+        if not success:
+            log.info("Reconnection loop ended")
 
     def send_packet(self, packet_type: PacketType, payload: bytes) -> bool:
         """Sends a packet to the server."""
@@ -157,10 +336,12 @@ class LiveClient(LiveSocket):
                 self._handle_packet(int(packet_type), payload)
 
             except Exception as e:
-                log.error(f"Receive loop error: {e}")
+                log.error("Receive loop error: %s", e)
                 break
 
-        self.disconnect()
+        # Use _do_disconnect so auto-reconnect can kick in
+        if not self._intentional_disconnect:
+            self._do_disconnect("Connection lost")
 
     def _handle_packet(self, packet_type: int, payload: bytes) -> None:
         """Queue received packet for polling on the main thread."""
@@ -193,4 +374,4 @@ class LiveClient(LiveSocket):
         if self._on_map_chunk:
             self._on_map_chunk(chunk)
 
-        log.debug(f"Received map chunk {chunk_id + 1}/{total} with {len(chunk.get('tiles', []))} tiles")
+        log.debug("Received map chunk %d/%d with %d tiles", chunk_id + 1, total, len(chunk.get("tiles", [])))

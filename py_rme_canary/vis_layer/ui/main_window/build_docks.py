@@ -18,10 +18,11 @@ def build_docks(editor: QtMapEditor) -> None:
     editor.dock_palette = ModernPaletteDock(editor, editor)
     editor.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, editor.dock_palette)
 
-    # Backwards compatibility attributes (for tests/legacy logic)
-    editor.dock_brushes = editor.dock_palette  # Mapping to new dock
-    # editor.brush_filter and editor.brush_list are not directly exposed on ModernPaletteDock
-    # We might need to mock them if tests fail, but for now we follow the Modern UX plan.
+    # Backwards compatibility aliases expected by legacy mixins/actions.
+    editor.dock_brushes = editor.dock_palette
+    editor.palettes = editor.dock_palette
+    editor.brush_filter = editor.dock_palette.brush_filter
+    editor.brush_list = editor.dock_palette.brush_list
 
     # Minimap dock
     editor.dock_minimap = QDockWidget("Minimap", editor)

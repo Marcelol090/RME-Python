@@ -1,0 +1,71 @@
+name: Jules Linear Scheduler - UIUX
+
+on:
+  schedule:
+    - cron: "0 10,15 * * *" # 07:00 and 12:00 America/Sao_Paulo (UTC-3)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jules-linear-single-session
+  cancel-in-progress: false
+
+jobs:
+  uiux_slot:
+    runs-on: ubuntu-latest
+    env:
+      JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+      JULES_SOURCE: ${{ vars.JULES_SOURCE }}
+      JULES_BRANCH: development
+      JULES_LINEAR_SESSION: ${{ vars.JULES_LINEAR_SESSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate required Jules env
+        run: |
+          set -euo pipefail
+          [ -n "${JULES_API_KEY:-}" ] || { echo "Missing secret: JULES_API_KEY"; exit 1; }
+          [ -n "${JULES_SOURCE:-}" ] || { echo "Missing variable: JULES_SOURCE"; exit 1; }
+          [ -n "${JULES_LINEAR_SESSION:-}" ] || { echo "Missing variable: JULES_LINEAR_SESSION"; exit 1; }
+
+      - name: Resolve slot label
+        id: slot
+        run: |
+          hour="$(date -u +%H)"
+          if [ "$hour" = "10" ]; then
+            echo "slot=uiux-07am" >> "$GITHUB_OUTPUT"
+          else
+            echo "slot=uiux-12pm" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send linear UIUX prompt to fixed session
+        run: |
+          python py_rme_canary/scripts/jules_runner.py --project-root . send-linear-prompt \
+            --track uiux \
+            --schedule-slot "${{ steps.slot.outputs.slot }}" \
+            --task p0-p1-uiux-slot \
+            --json-out .quality_reports/jules_linear_uiux_response.json \
+            --prompt-out .quality_reports/jules_linear_uiux_prompt.txt
+
+      - name: Snapshot fixed session status
+        run: |
+          python py_rme_canary/scripts/jules_runner.py --project-root . session-status "$JULES_LINEAR_SESSION" \
+            --json-out .quality_reports/jules_linear_uiux_status.json
+
+      - name: Upload scheduler artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jules-linear-uiux-${{ github.run_id }}
+          path: |
+            .quality_reports/jules_linear_uiux_response.json
+            .quality_reports/jules_linear_uiux_prompt.txt
+            .quality_reports/jules_linear_uiux_status.json

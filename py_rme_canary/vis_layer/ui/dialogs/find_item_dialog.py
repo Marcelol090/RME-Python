@@ -17,8 +17,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
+    QApplication,
     QButtonGroup,
     QCheckBox,
     QDialog,
@@ -45,6 +47,7 @@ class SearchMode(str, Enum):
     """Search mode enum."""
 
     ID = "id"
+    CLIENT_ID = "client_id"
     NAME = "name"
     TYPE = "type"
 
@@ -94,7 +97,10 @@ class SearchResultWidget(QWidget):
     def _setup_ui(self) -> None:
         """Setup widget UI."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
+        margin_h = self._scale_dip(8)
+        margin_v = self._scale_dip(4)
+        layout.setContentsMargins(margin_h, margin_v, margin_h, margin_v)
+        layout.setSpacing(self._scale_dip(8))
 
         # Item info
         item = self.result.item
@@ -105,6 +111,23 @@ class SearchResultWidget(QWidget):
 
         asset_mgr = AssetManager.instance()
         item_name = asset_mgr.get_item_name(item.id)
+
+        # Build scalable sprite preview when available.
+        sprite_label = QLabel()
+        sprite_size = self._scale_dip(32)
+        sprite_label.setFixedSize(sprite_size, sprite_size)
+        sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sprite_label.setStyleSheet("background: #1E1E2E; border: 1px solid #363650; border-radius: 4px;")
+        pixmap = self._resolve_sprite_pixmap(asset_mgr=asset_mgr, item=item, size=sprite_size)
+        if pixmap is not None and not pixmap.isNull():
+            sprite_label.setPixmap(pixmap)
+            sprite_label.setToolTip(f"Sprite preview (size {sprite_size}x{sprite_size})")
+        else:
+            sprite_label.setText("—")
+            sprite_label.setStyleSheet(
+                "background: #1E1E2E; border: 1px solid #363650; border-radius: 4px; color: #6B7280;"
+            )
+        layout.addWidget(sprite_label, 0)
 
         # Format info text with name
         if item_name != f"Item #{item.id}":
@@ -118,6 +141,9 @@ class SearchResultWidget(QWidget):
             attrs.append(f"AID:{item.action_id}")
         if item.unique_id:
             attrs.append(f"UID:{item.unique_id}")
+        client_id = self._resolve_client_id(asset_mgr=asset_mgr, item=item)
+        if client_id is not None:
+            attrs.append(f"CID:{client_id}")
         if attrs:
             info_text += f" - {', '.join(attrs)}"
 
@@ -135,7 +161,7 @@ class SearchResultWidget(QWidget):
 
         # Jump button
         jump_btn = QPushButton("Jump →")
-        jump_btn.setFixedWidth(80)
+        jump_btn.setFixedWidth(self._scale_dip(88))
         jump_btn.setStyleSheet(
             """
             QPushButton {
@@ -154,6 +180,74 @@ class SearchResultWidget(QWidget):
         )
         jump_btn.clicked.connect(lambda: self.clicked.emit(pos))
         layout.addWidget(jump_btn)
+
+    def _scale_dip(self, value: int) -> int:
+        app = QApplication.instance()
+        if app is None:
+            return int(value)
+        screen = self.screen() or app.primaryScreen()
+        if screen is None:
+            return int(value)
+        factor = float(screen.logicalDotsPerInch()) / 96.0
+        return max(1, int(round(float(value) * max(1.0, factor))))
+
+    @staticmethod
+    def _resolve_client_id(*, asset_mgr: object, item: Item) -> int | None:
+        direct = getattr(item, "client_id", None)
+        if direct is not None:
+            try:
+                numeric = int(direct)
+                if numeric > 0:
+                    return numeric
+            except Exception:
+                pass
+
+        metadata = None
+        getter = getattr(asset_mgr, "get_item_metadata", None)
+        if callable(getter):
+            try:
+                metadata = getter(int(item.id))
+            except Exception:
+                metadata = None
+
+        if metadata is not None:
+            meta_cid = getattr(metadata, "client_id", None)
+            if meta_cid is not None:
+                try:
+                    numeric = int(meta_cid)
+                    if numeric > 0:
+                        return numeric
+                except Exception:
+                    pass
+
+        mapper = getattr(asset_mgr, "_id_mapper", None)
+        if mapper is not None and hasattr(mapper, "get_client_id"):
+            try:
+                mapped = mapper.get_client_id(int(item.id))
+                if mapped is not None and int(mapped) > 0:
+                    return int(mapped)
+            except Exception:
+                return None
+        return None
+
+    def _resolve_sprite_pixmap(self, *, asset_mgr: object, item: Item, size: int) -> QPixmap | None:
+        getter = getattr(asset_mgr, "get_sprite", None)
+        if not callable(getter):
+            return None
+
+        client_id = self._resolve_client_id(asset_mgr=asset_mgr, item=item)
+        try:
+            pixmap = getter(int(item.id), client_id_override=client_id)
+        except Exception:
+            return None
+        if pixmap is None or pixmap.isNull():
+            return None
+        return pixmap.scaled(
+            size,
+            size,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
 
 
 class FindItemDialog(QDialog):
@@ -176,7 +270,7 @@ class FindItemDialog(QDialog):
         self._search_results: list[SearchResult] = []
 
         self.setWindowTitle("Find Items")
-        self.setMinimumSize(600, 700)
+        self.setMinimumSize(self._scale_dip(600), self._scale_dip(700))
 
         self._setup_ui()
         self._apply_style()
@@ -198,6 +292,10 @@ class FindItemDialog(QDialog):
         self.mode_group.addButton(self.id_radio)
         mode_layout.addWidget(self.id_radio)
 
+        self.client_id_radio = QRadioButton("Client ID")
+        self.mode_group.addButton(self.client_id_radio)
+        mode_layout.addWidget(self.client_id_radio)
+
         self.name_radio = QRadioButton("Name")
         self.mode_group.addButton(self.name_radio)
         mode_layout.addWidget(self.name_radio)
@@ -217,6 +315,10 @@ class FindItemDialog(QDialog):
         self.search_input.setPlaceholderText("Enter ID, name, or type...")
         self.search_input.returnPressed.connect(self._on_search)
         search_layout.addRow("Value:", self.search_input)
+        self.id_radio.toggled.connect(self._refresh_search_mode_ui)
+        self.client_id_radio.toggled.connect(self._refresh_search_mode_ui)
+        self.name_radio.toggled.connect(self._refresh_search_mode_ui)
+        self.type_radio.toggled.connect(self._refresh_search_mode_ui)
 
         layout.addWidget(search_group)
 
@@ -280,7 +382,7 @@ class FindItemDialog(QDialog):
         # Search Button
         search_btn = QPushButton("Find")
         search_btn.clicked.connect(self._on_search)
-        search_btn.setFixedHeight(40)
+        search_btn.setFixedHeight(self._scale_dip(40))
         layout.addWidget(search_btn)
 
         # Results
@@ -335,6 +437,7 @@ class FindItemDialog(QDialog):
         button_layout.addWidget(close_btn)
 
         layout.addLayout(button_layout)
+        self._refresh_search_mode_ui()
 
     def _on_search(self) -> None:
         """Execute search based on current filters."""
@@ -356,6 +459,8 @@ class FindItemDialog(QDialog):
         # Determine search mode
         if self.id_radio.isChecked():
             mode = SearchMode.ID
+        elif self.client_id_radio.isChecked():
+            mode = SearchMode.CLIENT_ID
         elif self.name_radio.isChecked():
             mode = SearchMode.NAME
         else:
@@ -477,6 +582,16 @@ class FindItemDialog(QDialog):
                 except ValueError:
                     return False
 
+        elif filters.search_mode == SearchMode.CLIENT_ID:
+            if filters.search_value:
+                try:
+                    search_client_id = int(filters.search_value)
+                except ValueError:
+                    return False
+                item_client_id = self._resolve_client_id(item)
+                if item_client_id != search_client_id:
+                    return False
+
         elif filters.search_mode == SearchMode.NAME:
             # Search by item name using items.xml
             if filters.search_value:
@@ -505,6 +620,59 @@ class FindItemDialog(QDialog):
 
         # Text filter
         return not (filters.has_text and (not item.text or filters.text_value.lower() not in item.text.lower()))
+
+    @staticmethod
+    def _resolve_client_id(item: Item) -> int | None:
+        direct = getattr(item, "client_id", None)
+        if direct is not None:
+            try:
+                numeric = int(direct)
+                if numeric > 0:
+                    return numeric
+            except Exception:
+                pass
+
+        from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+        asset_mgr = AssetManager.instance()
+        metadata = asset_mgr.get_item_metadata(int(item.id))
+        if metadata is not None and getattr(metadata, "client_id", None) is not None:
+            try:
+                numeric = int(metadata.client_id)
+                if numeric > 0:
+                    return numeric
+            except Exception:
+                pass
+
+        mapper = getattr(asset_mgr, "_id_mapper", None)
+        if mapper is not None and hasattr(mapper, "get_client_id"):
+            try:
+                mapped = mapper.get_client_id(int(item.id))
+                if mapped is not None and int(mapped) > 0:
+                    return int(mapped)
+            except Exception:
+                return None
+        return None
+
+    def _refresh_search_mode_ui(self) -> None:
+        if self.id_radio.isChecked():
+            self.search_input.setPlaceholderText("Enter server ID...")
+        elif self.client_id_radio.isChecked():
+            self.search_input.setPlaceholderText("Enter client ID...")
+        elif self.name_radio.isChecked():
+            self.search_input.setPlaceholderText("Enter item name...")
+        else:
+            self.search_input.setPlaceholderText("Enter type (door, container, teleport...)")
+
+    def _scale_dip(self, value: int) -> int:
+        app = QApplication.instance()
+        if app is None:
+            return int(value)
+        screen = self.screen() or app.primaryScreen()
+        if screen is None:
+            return int(value)
+        factor = float(screen.logicalDotsPerInch()) / 96.0
+        return max(1, int(round(float(value) * max(1.0, factor))))
 
     @staticmethod
     def _normalize_type_token(value: str) -> str:
