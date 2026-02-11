@@ -5,6 +5,7 @@ This package provides modular components for auto-border functionality:
 - alignment: Border alignment selection
 - transitions: Transition border handling
 - processor: Main AutoBorderProcessor class
+- borders_xml_io: Legacy borders.xml import/export
 """
 
 from .alignment import (

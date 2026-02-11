@@ -252,7 +252,7 @@ class MonorepoScanner:
 
         # Simple glob support (no full fnmatch for speed)
         if "*" in pattern:
-            base = pattern.split("*")[0]
+            base = pattern.split("*", maxsplit=1)[0]
             base_path = self.root / base
 
             if base_path.exists():

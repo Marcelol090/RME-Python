@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
+    QApplication,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -43,7 +44,8 @@ class SpawnRadiusPreview(QFrame):
         super().__init__(parent)
         self._radius = 3
         self._max_creatures = 4
-        self.setFixedSize(150, 150)
+        size = _scale_dip(self, 150)
+        self.setFixedSize(size, size)
         self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Sunken)
 
     def set_radius(self, radius: int) -> None:
@@ -159,7 +161,7 @@ class SpawnPropertiesWindow(QDialog):
         self._tile = tile
 
         self.setWindowTitle("Edit Spawn")
-        self.setMinimumSize(450, 420)
+        self.setMinimumSize(_scale_dip(self, 450), _scale_dip(self, 420))
         self.setModal(True)
 
         self._setup_ui()
@@ -169,8 +171,9 @@ class SpawnPropertiesWindow(QDialog):
     def _setup_ui(self) -> None:
         """Initialize UI components."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(_scale_dip(self, 16))
+        margin = _scale_dip(self, 20)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Header
         header = QHBoxLayout()
@@ -182,7 +185,7 @@ class SpawnPropertiesWindow(QDialog):
 
         # Main content - preview and settings side by side
         content_layout = QHBoxLayout()
-        content_layout.setSpacing(20)
+        content_layout.setSpacing(_scale_dip(self, 20))
 
         # Left side - Preview
         preview_group = QGroupBox("Preview")
@@ -203,7 +206,7 @@ class SpawnPropertiesWindow(QDialog):
         # Right side - Settings
         settings_group = QGroupBox("Settings")
         settings_layout = QFormLayout(settings_group)
-        settings_layout.setSpacing(16)
+        settings_layout.setSpacing(_scale_dip(self, 16))
 
         # Spawn Radius
         radius_layout = QHBoxLayout()
@@ -496,3 +499,14 @@ class SpawnPropertiesWindow(QDialog):
             "max_creatures": self._creatures_spin.value(),
             "interval": self._interval_spin.value(),
         }
+
+
+def _scale_dip(widget: QWidget, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = widget.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

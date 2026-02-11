@@ -177,7 +177,7 @@ def _xml_bytes(doc: ElementTree) -> bytes:
     root = doc.getroot()
     if root is None:
         return b""
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return bytes(ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
 def _indent(elem: Element, level: int = 0) -> None:
@@ -217,7 +217,7 @@ def build_monster_spawns_xml(areas: Iterable[MonsterSpawnArea]) -> str:
                 m.set("weight", str(int(entry.weight)))
 
     _indent(root)
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8")
+    return str(ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8"))
 
 
 def build_npc_spawns_xml(areas: Iterable[NpcSpawnArea]) -> str:
@@ -241,7 +241,7 @@ def build_npc_spawns_xml(areas: Iterable[NpcSpawnArea]) -> str:
                 n.set("direction", str(int(entry.direction)))
 
     _indent(root)
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8")
+    return str(ET.tostring(root, encoding="utf-8", xml_declaration=True).decode("utf-8"))
 
 
 def load_monster_spawns(path: str | Path) -> tuple[MonsterSpawnArea, ...]:

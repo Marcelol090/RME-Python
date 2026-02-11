@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal
 from PyQt6.QtWidgets import QMessageBox
 
 from py_rme_canary.core.data.item import Position
+from py_rme_canary.logic_layer.asset_manager import AssetManager
 from py_rme_canary.logic_layer.map_search import (
     find_action_item_positions,
     find_container_item_positions,
@@ -28,8 +29,16 @@ def open_find_item(editor: QtMapEditor) -> None:
     open_find_dialog(editor, initial_mode="item")
 
 
-def open_find_dialog(editor: QtMapEditor, initial_mode: Literal["item", "creature", "house"] = "item") -> None:
+def open_find_dialog(editor: QtMapEditor, initial_mode: Literal["item", "creature", "house"] = "item", *, selection_only: bool = False) -> None:
     """UI handler for Find actions."""
+
+    # If selection_only, verify we have a selection first
+    if selection_only:
+        selection_scope = _selection_scope(editor, selection_only=True)
+        if not selection_scope:
+            return
+    else:
+        selection_scope = None
 
     dlg = FindEntityDialog(editor, title=f"Find {initial_mode.capitalize()}...")
     dlg.set_mode(initial_mode)
@@ -42,8 +51,28 @@ def open_find_dialog(editor: QtMapEditor, initial_mode: Literal["item", "creatur
     named_results: list[tuple[str, Position]] = []
 
     if res.mode == "item":
-        sid = int(res.query_id)
+        sid: int | None
+        if str(res.query_mode).strip().lower() == "client_id":
+            sid = _resolve_server_id_from_client_id(int(res.query_id))
+            if sid is None:
+                QMessageBox.information(
+                    editor,
+                    "Find Item",
+                    f"No serverId mapping found for clientId={int(res.query_id)}.",
+                )
+                return
+        else:
+            sid = int(res.query_id)
+
         positions = find_item_positions(editor.map, server_id=sid)
+
+        # Filter to selection scope when selection_only is active
+        if selection_scope:
+            positions = [
+                p for p in positions
+                if (int(p.x), int(p.y), int(p.z)) in selection_scope
+            ]
+
         if not positions:
             QMessageBox.information(editor, "Find Item", f"No tiles found with serverId={sid}.")
             return
@@ -208,3 +237,60 @@ def _jump_to_position(editor: QtMapEditor, pos: Position) -> None:
         pass
 
     editor.status.showMessage(f"Jumped to {pos.x},{pos.y},{pos.z}.")
+
+
+def _resolve_server_id_from_client_id(client_id: int) -> int | None:
+    if int(client_id) <= 0:
+        return None
+
+    asset_mgr = AssetManager.instance()
+    mapper = getattr(asset_mgr, "_id_mapper", None)
+    if mapper is not None and hasattr(mapper, "get_server_id"):
+        try:
+            mapped = mapper.get_server_id(int(client_id))
+            if mapped is not None and int(mapped) > 0:
+                return int(mapped)
+        except Exception:
+            pass
+
+    items_xml = getattr(asset_mgr, "_items_xml", None)
+    if items_xml is not None and hasattr(items_xml, "get_server_id"):
+        try:
+            mapped = items_xml.get_server_id(int(client_id))
+            if mapped is not None and int(mapped) > 0:
+                return int(mapped)
+        except Exception:
+            pass
+    return None
+
+
+def open_find_everything(editor: QtMapEditor, *, selection_only: bool = False) -> None:
+    """Find all unique/action/text/container items (C++ parity: Find Everything)."""
+    selection_scope = _selection_scope(editor, selection_only=selection_only)
+    if selection_only and not selection_scope:
+        return
+
+    all_positions: list[Position] = []
+    seen: set[tuple[int, int, int]] = set()
+
+    for finder in (
+        find_unique_item_positions,
+        find_action_item_positions,
+        find_container_item_positions,
+        find_writeable_item_positions,
+    ):
+        with contextlib.suppress(Exception):
+            results = finder(editor.map, selection_tiles=selection_scope)
+            for pos in results:
+                key = (int(pos.x), int(pos.y), int(pos.z))
+                if key not in seen:
+                    seen.add(key)
+                    all_positions.append(pos)
+
+    scope_text = "selection" if selection_only else "map"
+    _find_by_positions(
+        editor,
+        title="Find Everything",
+        empty_message=f"No unique/action/container/writeable items found in {scope_text}.",
+        positions=all_positions,
+    )

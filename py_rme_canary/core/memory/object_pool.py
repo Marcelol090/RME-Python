@@ -307,15 +307,11 @@ class TilePool(ObjectPool["Tile"]):
 
             return Tile(x=0, y=0, z=7)
 
-        def reset_fn(tile: Tile) -> None:
-            tile.clear()
-            tile.x = 0
-            tile.y = 0
-            tile.z = 7
-
+        # Tile is immutable, so we can't reset or reuse effectively without creating new instances.
+        # We disable reset to avoid errors.
         super().__init__(
             factory=factory,
-            reset_fn=reset_fn,
+            reset_fn=None,
             max_size=max_size,
             name="TilePool",
         )
@@ -323,19 +319,16 @@ class TilePool(ObjectPool["Tile"]):
     def acquire_at(self, x: int, y: int, z: int) -> Tile:
         """Acquire a tile and set its position.
 
-        Convenience method that combines acquire + position setting.
-
         Args:
             x, y, z: Tile coordinates.
 
         Returns:
             Tile positioned at (x, y, z).
         """
-        tile = self.acquire()
-        tile.x = int(x)
-        tile.y = int(y)
-        tile.z = int(z)
-        return tile
+        # Since Tile is immutable, we must create a new instance.
+        # Pooling is effectively bypassed for Tile creation but interface is kept.
+        from py_rme_canary.core.data.tile import Tile
+        return Tile(x=int(x), y=int(y), z=int(z))
 
 
 class ItemPool(ObjectPool["Item"]):
@@ -349,19 +342,18 @@ class ItemPool(ObjectPool["Item"]):
         def factory() -> Item:
             from py_rme_canary.core.data.item import Item
 
-            return Item(item_id=0)
+            return Item(id=0)
 
         def reset_fn(item: Item) -> None:
-            item.item_id = 0
+            item.id = 0
             item.count = 1
-            item.action_id = 0
-            item.unique_id = 0
-            item.text = ""
-            item.special_dest_x = 0
-            item.special_dest_y = 0
-            item.special_dest_z = 0
-            if hasattr(item, "container_items"):
-                item.container_items.clear()
+            item.action_id = None
+            item.unique_id = None
+            item.text = None
+            item.destination = None
+            # Items attribute is a tuple (immutable default), so we can't clear it.
+            # If mutable list was intended, Item definition needs update.
+            # For now, we assume we can't easily reuse container items without replacement.
 
         super().__init__(
             factory=factory,
@@ -381,7 +373,7 @@ class ItemPool(ObjectPool["Item"]):
             Item configured with ID and count.
         """
         item = self.acquire()
-        item.item_id = int(item_id)
+        item.id = int(item_id)
         item.count = max(1, int(count))
         return item
 

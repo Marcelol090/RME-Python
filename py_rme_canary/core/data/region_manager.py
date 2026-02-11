@@ -372,8 +372,8 @@ class RegionManager:
         self._dirty_regions: set[RegionCoord] = set()
 
         # Calculate grid dimensions
-        self._grid_width = math.ceil(game_map.width / chunk_size)
-        self._grid_height = math.ceil(game_map.height / chunk_size)
+        self._grid_width = math.ceil(game_map.header.width / chunk_size)
+        self._grid_height = math.ceil(game_map.header.height / chunk_size)
 
         # On-change callback
         self._on_region_dirty: Callable[[MapRegion], None] | None = None
@@ -438,8 +438,8 @@ class RegionManager:
         bounds = RegionBounds(
             min_x=rx * self._chunk_size,
             min_y=ry * self._chunk_size,
-            max_x=min((rx + 1) * self._chunk_size - 1, self._map.width - 1),
-            max_y=min((ry + 1) * self._chunk_size - 1, self._map.height - 1),
+            max_x=min((rx + 1) * self._chunk_size - 1, self._map.header.width - 1),
+            max_y=min((ry + 1) * self._chunk_size - 1, self._map.header.height - 1),
             z=z,
         )
 

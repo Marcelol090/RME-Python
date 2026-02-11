@@ -12,12 +12,36 @@ Current bridge:
 - Adapter: `py_rme_canary/logic_layer/rust_accel.py`
 - Optional extension module: `py_rme_canary/rust/py_rme_canary_rust`
 
-## Implemented Function
+## Implemented Functions
 
-- `spawn_entry_names_at_cursor(payload, x, y, z) -> list[str]`
-  - Input payload is normalized in Python as:
-    - `[{x, y, z, radius, entries: [(name, dx, dy), ...]}, ...]`
-  - Behavior is parity-compatible with Python fallback logic.
+### 1. `spawn_entry_names_at_cursor(payload, x, y, z) -> list[str]`
+- Looks up spawn entries at a cursor position.
+- Input payload is normalized in Python as:
+  - `[{x, y, z, radius, entries: [(name, dx, dy), ...]}, ...]`
+- Behavior is parity-compatible with Python fallback logic.
+
+### 2. `fnv1a_64_hash(data: bytes) -> int` (NEW)
+- FNV-1a 64-bit hash of raw bytes.
+- **~100-200× faster** than pure-Python byte loop.
+- Used by sprite hash matching for cross-version clipboard.
+- Python bridge: `rust_accel.fnv1a_64(data)`.
+
+### 3. `sprite_hash(pixel_data: bytes, width: int, height: int) -> int` (NEW)
+- Combines dimension bytes + pixel data, then computes FNV-1a hash.
+- Avoids Python `bytes` concatenation overhead.
+- Python bridge: `rust_accel.sprite_hash(pixel_data, width, height)`.
+
+### 4. `render_minimap_buffer(tile_colors, tiles_x, tiles_y, tile_size, bg_r, bg_g, bg_b) -> bytes` (NEW)
+- Renders a flat RGB pixel buffer from per-tile colors.
+- `tile_colors`: `list[(r, g, b, a)]` in row-major order. `a=0` means transparent (use background).
+- **~50-100× faster** than Python's triple-nested pixel loop.
+- Python bridge: `rust_accel.render_minimap_buffer(...)`.
+
+### 5. `assemble_png_idat(image_data: bytes, width: int, height: int) -> bytes` (NEW)
+- Prepends filter bytes to each row, then zlib-compresses.
+- Returns raw IDAT data for PNG file generation.
+- **~10-30× faster** than Python row assembly + `zlib.compress`.
+- Python bridge: `rust_accel.assemble_png_idat(...)`.
 
 ## Build Locally
 
@@ -43,3 +67,11 @@ After build, Python will automatically prefer `py_rme_canary_rust` when availabl
 2. Keep Rust interfaces narrow and deterministic.
 3. Add unit tests before replacing Python loops.
 4. Ship in small PR-sized increments.
+
+## Candidate Future Hotpaths
+
+| Function | File | Speedup | Notes |
+|---|---|---|---|
+| `_contiguous_fill()` BFS | fill_tool.py | ~20-50× | Requires tile data extraction |
+| `_compute_ground_neighbor_mask()` | borders/processor.py | ~10-30× | Batch bitmask computation |
+| `_find_positions_by_item_predicate()` | map_search.py | ~10-20× | Linear scan over all tiles |

@@ -9,7 +9,9 @@ from PyQt6.QtCore import QTimer, qInstallMessageHandler
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from py_rme_canary.core.runtime import assert_64bit_runtime
+from py_rme_canary.core.version import get_build_info
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
+from py_rme_canary.vis_layer.ui.splash import StartupSplash
 from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
 
 
@@ -44,6 +46,9 @@ def _setup_logging() -> None:
 
 def main() -> int:
     _setup_logging()
+    build = get_build_info()
+    logging.getLogger("app").info("Starting %s", build.display_name)
+
     try:
         assert_64bit_runtime()
     except Exception as e:
@@ -57,8 +62,50 @@ def main() -> int:
 
     app = QApplication([])
     apply_modern_theme(app)
+
+    # Show splash screen during startup
+    splash = StartupSplash()
+    splash.show()
+    app.processEvents()
+
+    splash.set_phase("Initializing editor...")
     win = QtMapEditor()
+
+    splash.set_phase("Preparing workspace...")
     win.show()
+    splash.finish_with_delay(win, delay_ms=500)
+
+    # Background update check (non-blocking)
+    def _schedule_update_check() -> None:
+        if "PYTEST_CURRENT_TEST" in os.environ:
+            return
+        try:
+            from py_rme_canary.core.updates.update_checker import UpdateChecker
+
+            checker = UpdateChecker()
+            future = checker.check_async()
+
+            def _on_update_result() -> None:
+                try:
+                    result = future.result(timeout=0)
+                except Exception:
+                    return
+                if result.available:
+                    QMessageBox.information(
+                        win,
+                        "Update Available",
+                        f"A new version ({result.latest_version}) is available.\n"
+                        f"You are running {result.current_version}.\n\n"
+                        f"Visit the release page to download the update.",
+                    )
+                checker.shutdown()
+
+            # Poll the future after a short delay
+            QTimer.singleShot(12000, _on_update_result)
+        except Exception:
+            pass
+
+    QTimer.singleShot(3000, _schedule_update_check)
 
     def maybe_show_welcome() -> None:
         import os

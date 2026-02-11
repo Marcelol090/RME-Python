@@ -1,7 +1,7 @@
 {
   "meta": {
     "project": "py_rme_canary",
-    "updated": "2026-02-05",
+    "updated": "2026-02-10",
     "source": "MASTER_TODO.md"
   },
   "priorities": {
@@ -147,16 +147,16 @@
       "priority": "P0",
       "category": "Config",
       "title": "BorderBuilder Custom Rules",
-      "status": "pending",
-      "description": "Expose editable custom border mappings to match legacy borders.xml flexibility."
+      "status": "completed",
+      "description": "Expose editable custom border mappings to match legacy borders.xml flexibility. Border Builder dialog has rule editor with Apply/Clear, persistent overrides in brushes.overrides.json, and runtime reload."
     },
     {
       "id": "QA-001",
       "priority": "P3",
       "category": "Quality",
       "title": "Strict Quality Hardening",
-      "status": "pending",
-      "description": "Consolidate residual debt: mypy strict scope on logic_layer and remaining quality backlog."
+      "status": "completed",
+      "description": "mypy --strict passes clean on logic_layer (96 source files, 0 errors). Fixed 66 type errors across 15+ files: parametrized bare generics, cast() wrappers for getattr/Any returns, resolved unreachable/no-redef/import-untyped issues."
     }
   ]
 }

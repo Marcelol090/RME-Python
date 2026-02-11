@@ -208,7 +208,7 @@ class RawBrush:
                 z=pos.z,
                 ground=new_item,
                 items=items_to_keep,
-                flags=tile.flags if hasattr(tile, "flags") else 0,
+                map_flags=tile.map_flags if hasattr(tile, "map_flags") else 0,
             )
         else:
             # Add to items
@@ -219,7 +219,7 @@ class RawBrush:
                 z=pos.z,
                 ground=tile.ground,
                 items=items_to_keep,
-                flags=tile.flags if hasattr(tile, "flags") else 0,
+                map_flags=tile.map_flags if hasattr(tile, "map_flags") else 0,
             )
 
         # Update map
@@ -281,7 +281,7 @@ class RawBrush:
             z=pos.z,
             ground=new_ground,
             items=new_items,
-            flags=tile.flags if hasattr(tile, "flags") else 0,
+            map_flags=tile.map_flags if hasattr(tile, "map_flags") else 0,
         )
 
         game_map.set_tile(new_tile)
@@ -297,7 +297,7 @@ class RawBrush:
         try:
             from py_rme_canary.core.data.item import Item
 
-            return Item(item_id=self.item_id)
+            return Item(id=self.item_id)
         except Exception:
             # Fallback: return a simple item-like object
             return _SimpleItem(self.item_id)

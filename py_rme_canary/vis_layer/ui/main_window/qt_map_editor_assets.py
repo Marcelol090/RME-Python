@@ -10,14 +10,14 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QProgressDialog
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox, QProgressDialog
 
 from py_rme_canary.core.assets.appearances_dat import AppearancesDatError, load_appearances_dat
 from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
 from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteError
 from py_rme_canary.core.assets.loader import load_assets_from_profile
 from py_rme_canary.core.assets.sprite_appearances import SpriteAppearancesError
-from py_rme_canary.core.config.client_profiles import ClientProfile
+from py_rme_canary.core.config.client_profiles import ClientProfile, create_client_profile
 from py_rme_canary.core.config.configuration_manager import ConfigurationManager
 from py_rme_canary.core.config.project import MapMetadata, find_project_for_otbm
 from py_rme_canary.core.config.user_settings import get_user_settings
@@ -25,7 +25,7 @@ from py_rme_canary.core.database.id_mapper import IdMapper
 from py_rme_canary.core.database.items_otb import ItemsOTB, ItemsOTBError
 from py_rme_canary.core.database.items_xml import ItemsXML
 from py_rme_canary.core.memory_guard import MemoryGuardError
-from py_rme_canary.vis_layer.ui.dialogs.client_data_loader_dialog import ClientDataLoadConfig, ClientDataLoaderDialog
+from py_rme_canary.vis_layer.ui.dialogs.client_data_loader_dialog import ClientDataLoadConfig
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -101,6 +101,11 @@ class QtMapEditorAssetsMixin:
         return Path(normalized).expanduser().resolve()
 
     def _refresh_after_asset_data_load(self: QtMapEditor) -> None:
+        # Auto-disable minimap mode when real sprites become available
+        if self._sprite_render_enabled() and getattr(self, "show_as_minimap", False):
+            self.show_as_minimap = False
+            with contextlib.suppress(Exception):
+                self.act_show_as_minimap.setChecked(False)
         with contextlib.suppress(Exception):
             self.palettes.refresh_primary_list()
         with contextlib.suppress(Exception):
@@ -109,14 +114,21 @@ class QtMapEditorAssetsMixin:
             self._update_sprite_preview()
 
     def _open_client_data_loader(self: QtMapEditor) -> None:
-        dialog = ClientDataLoaderDialog(
-            self,
-            default_assets_path=str(getattr(self, "assets_selection_path", "") or ""),
-            default_client_version=int(getattr(self, "client_version", 0) or 0),
+        from py_rme_canary.vis_layer.ui.dialogs.asset_loader_wizard import AssetLoaderWizard
+
+        defaults = ClientDataLoadConfig(
+            assets_path=str(getattr(self, "assets_selection_path", "") or ""),
+            prefer_kind="auto",
+            client_version_hint=int(getattr(self, "client_version", 0) or 0),
+            items_otb_path="",
+            items_xml_path="",
+            show_summary=True,
         )
-        if dialog.exec() != QDialog.DialogCode.Accepted:
+
+        wizard = AssetLoaderWizard(self, defaults=defaults)
+        if wizard.exec() != QDialog.DialogCode.Accepted:
             return
-        config = dialog.config()
+        config = wizard.get_config()
         self._load_client_data_stack(config, source="interactive_loader")
 
     def _load_client_data_stack(self: QtMapEditor, config: ClientDataLoadConfig, *, source: str) -> None:
@@ -181,6 +193,9 @@ class QtMapEditorAssetsMixin:
                 explicit_counts=explicit_counts,
                 source=source,
             )
+            saved_profile = self._maybe_save_loaded_client_profile(config=config, profile=profile, source=source)
+            if saved_profile is not None:
+                summary = f"{summary}\nProfile saved: {saved_profile.name} ({saved_profile.profile_id})"
             self._update_status_capabilities(prefix="Client data stack loaded")
             if bool(config.show_summary):
                 QMessageBox.information(self, "Load Client Data", summary)
@@ -190,6 +205,142 @@ class QtMapEditorAssetsMixin:
             QMessageBox.critical(self, "Load Client Data", str(exc))
         finally:
             progress.close()
+
+    def _maybe_save_loaded_client_profile(
+        self: QtMapEditor,
+        *,
+        config: ClientDataLoadConfig,
+        profile: object,
+        source: str,
+    ) -> ClientProfile | None:
+        if not self._should_offer_profile_save(config=config, source=source):
+            return None
+
+        suggested_name = self._suggest_profile_name(config=config, profile=profile)
+        reply = QMessageBox.question(
+            self,
+            "Load Client Data",
+            "Save this loaded configuration as a reusable client profile?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return None
+
+        name, accepted = QInputDialog.getText(
+            self,
+            "Save Client Profile",
+            "Profile name:",
+            text=suggested_name,
+        )
+        if not accepted:
+            return None
+
+        normalized_name = str(name or "").strip()
+        if not normalized_name:
+            normalized_name = suggested_name
+
+        saved = self._save_client_profile(
+            profile_name=normalized_name,
+            config=config,
+            profile=profile,
+        )
+        if saved is not None:
+            with contextlib.suppress(Exception):
+                self.status.showMessage(f"Client profile saved: {saved.name}")
+        return saved
+
+    @staticmethod
+    def _should_offer_profile_save(*, config: ClientDataLoadConfig, source: str) -> bool:
+        if str(source or "").strip().lower() != "interactive_loader":
+            return False
+        return bool(str(config.assets_path or "").strip())
+
+    def _suggest_profile_name(self: QtMapEditor, *, config: ClientDataLoadConfig, profile: object) -> str:
+        assets_dir = str(
+            config.assets_path
+            or getattr(profile, "assets_dir", None)
+            or getattr(profile, "root", "")
+            or ""
+        ).strip()
+        folder_name = Path(assets_dir).name.strip() if assets_dir else "assets"
+        version = int(config.client_version_hint or int(getattr(self, "client_version", 0) or 0))
+        kind = str(config.prefer_kind or getattr(profile, "kind", "auto") or "auto").strip().lower()
+        if kind not in {"auto", "modern", "legacy"}:
+            kind = "auto"
+        if version > 0:
+            return f"{version}-{kind}-{folder_name}"
+        return f"{kind}-{folder_name}"
+
+    def _save_client_profile(
+        self: QtMapEditor,
+        *,
+        profile_name: str,
+        config: ClientDataLoadConfig,
+        profile: object,
+    ) -> ClientProfile | None:
+        name = str(profile_name or "").strip()
+        if not name:
+            return None
+
+        assets_dir = str(
+            config.assets_path
+            or getattr(profile, "assets_dir", None)
+            or getattr(profile, "root", "")
+            or ""
+        ).strip()
+        if not assets_dir:
+            return None
+
+        preferred_kind = str(config.prefer_kind or getattr(profile, "kind", "auto") or "auto").strip().lower()
+        if preferred_kind not in {"auto", "modern", "legacy"}:
+            preferred_kind = "auto"
+        client_version = int(config.client_version_hint or int(getattr(self, "client_version", 0) or 0))
+
+        user_settings = get_user_settings()
+        current_profiles = list(user_settings.get_client_profiles())
+
+        target_assets = os.path.normcase(os.path.normpath(assets_dir))
+        existing = next(
+            (
+                p
+                for p in current_profiles
+                if os.path.normcase(os.path.normpath(str(p.assets_dir or ""))) == target_assets
+                and int(p.client_version or 0) == int(client_version)
+                and str(p.preferred_kind or "auto").strip().lower() == preferred_kind
+            ),
+            None,
+        )
+
+        existing_ids = {p.profile_id for p in current_profiles}
+        if existing is not None:
+            with contextlib.suppress(Exception):
+                existing_ids.discard(existing.profile_id)
+            saved = create_client_profile(
+                name=name,
+                client_version=client_version,
+                assets_dir=assets_dir,
+                preferred_kind=preferred_kind,
+                profile_id=existing.profile_id,
+                existing_ids=existing_ids,
+            )
+            for index, current in enumerate(current_profiles):
+                if current.profile_id == existing.profile_id:
+                    current_profiles[index] = saved
+                    break
+        else:
+            saved = create_client_profile(
+                name=name,
+                client_version=client_version,
+                assets_dir=assets_dir,
+                preferred_kind=preferred_kind,
+                existing_ids=existing_ids,
+            )
+            current_profiles.append(saved)
+
+        user_settings.set_client_profiles(current_profiles)
+        user_settings.set_active_client_profile_id(saved.profile_id)
+        return saved
 
     def _build_client_data_load_summary(
         self: QtMapEditor,
@@ -253,8 +404,20 @@ class QtMapEditorAssetsMixin:
             except Exception as exc:
                 warnings.append(f"items_otb_error: {exc}")
 
-        if id_mapper is None and items_db is not None:
-            id_mapper = IdMapper.from_items_xml(items_db)
+        xml_mapper: IdMapper | None = None
+        if items_db is not None:
+            with contextlib.suppress(Exception):
+                xml_mapper = IdMapper.from_items_xml(items_db)
+
+        if id_mapper is not None and xml_mapper is not None:
+            merged, added = self._merge_id_mappers(primary=id_mapper, secondary=xml_mapper)
+            if merged is not None:
+                id_mapper = merged
+                counts["items_otb_count"] = len(getattr(id_mapper, "server_to_client", {}) or {})
+            if int(added) > 0:
+                warnings.append(f"items_mapper_merge: added {int(added)} mappings from explicit items.xml")
+        elif id_mapper is None and xml_mapper is not None:
+            id_mapper = xml_mapper
             counts["items_otb_count"] = len(getattr(id_mapper, "server_to_client", {}) or {})
             warnings.append("items_otb_fallback: using explicit items.xml mapping fallback")
 
@@ -468,11 +631,61 @@ class QtMapEditorAssetsMixin:
             except Exception as e:
                 warnings.append(f"items_otb_error: {e}")
 
-        if id_mapper is None and items_db is not None:
-            id_mapper = IdMapper.from_items_xml(items_db)
+        xml_mapper: IdMapper | None = None
+        if items_db is not None:
+            with contextlib.suppress(Exception):
+                xml_mapper = IdMapper.from_items_xml(items_db)
+
+        if id_mapper is not None and xml_mapper is not None:
+            merged, added = QtMapEditorAssetsMixin._merge_id_mappers(primary=id_mapper, secondary=xml_mapper)
+            if merged is not None:
+                id_mapper = merged
+            if int(added) > 0:
+                warnings.append(f"items_mapper_merge: added {int(added)} mappings from items.xml")
+        elif id_mapper is None and xml_mapper is not None:
+            id_mapper = xml_mapper
             warnings.append("items_otb_fallback: using items.xml mapping fallback")
 
         return items_db, id_mapper, warnings
+
+    @staticmethod
+    def _merge_id_mappers(*, primary: IdMapper | None, secondary: IdMapper | None) -> tuple[IdMapper | None, int]:
+        """Merge mappers preserving primary entries and filling gaps from secondary."""
+        if primary is None and secondary is None:
+            return None, 0
+        if primary is None:
+            return secondary, len(getattr(secondary, "server_to_client", {}) or {})
+        if secondary is None:
+            return primary, 0
+
+        merged_server_to_client = dict(getattr(primary, "server_to_client", {}) or {})
+        merged_client_to_server = dict(getattr(primary, "client_to_server", {}) or {})
+        added = 0
+
+        secondary_map = dict(getattr(secondary, "server_to_client", {}) or {})
+        for raw_server_id, raw_client_id in secondary_map.items():
+            try:
+                server_id = int(raw_server_id)
+                client_id = int(raw_client_id)
+            except Exception:
+                continue
+            if server_id <= 0 or client_id <= 0:
+                continue
+            if server_id in merged_server_to_client:
+                continue
+            if client_id in merged_client_to_server:
+                continue
+            merged_server_to_client[server_id] = client_id
+            merged_client_to_server[client_id] = server_id
+            added += 1
+
+        return (
+            IdMapper(
+                client_to_server=merged_client_to_server,
+                server_to_client=merged_server_to_client,
+            ),
+            int(added),
+        )
 
     def _maybe_reselect_assets_for_metadata(self: QtMapEditor) -> None:
         prefer = self._preferred_asset_kind()
@@ -576,30 +789,51 @@ class QtMapEditorAssetsMixin:
         self._update_status_capabilities(prefix="Appearances unloaded")
 
     def _resolve_sprite_id_from_client_id(self: QtMapEditor, client_id: int) -> int | None:
+        cid = int(client_id)
+        if cid <= 0:
+            return None
         if self.appearance_assets is None:
-            return int(client_id)
+            return int(cid)
         profile = getattr(self, "asset_profile", None)
         if str(getattr(profile, "kind", "")).lower() == "legacy":
-            return int(client_id)
-        cv = int(self.client_version or 0)
-        if cv > 0 and cv < 1100:
-            return int(client_id)
+            return int(cid)
         time_ms = None
         if hasattr(self, "animation_time_ms") and getattr(self, "show_preview", False):
             time_ms = int(self.animation_time_ms())
-        sprite_id = self.appearance_assets.get_sprite_id(
-            int(client_id),
-            kind="object",
-            time_ms=time_ms,
-            seed=int(client_id),
-        )
-        if sprite_id is None:
-            return int(client_id)
-        return int(sprite_id)
+        for kind in ("object", "outfit", "effect", "missile"):
+            sprite_id = self.appearance_assets.get_sprite_id(
+                int(cid),
+                kind=str(kind),
+                time_ms=time_ms,
+                seed=int(cid),
+            )
+            if sprite_id is None:
+                continue
+            rid = int(sprite_id)
+            if rid > 0:
+                return rid
+        return int(cid)
 
     def _candidate_sprite_ids_for_server_id(self: QtMapEditor, server_id: int) -> list[int]:
         candidates: list[int] = []
         sid = int(server_id)
+
+        # Negative ids encode a raw ClientID request path (sid = -client_id).
+        if sid < 0:
+            cid = abs(int(sid))
+            resolved_cid = self._resolve_sprite_id_from_client_id(int(cid))
+            if resolved_cid is not None and int(resolved_cid) > 0:
+                candidates.append(int(resolved_cid))
+            candidates.append(int(cid))
+            unique: list[int] = []
+            seen: set[int] = set()
+            for value in candidates:
+                iv = int(value)
+                if iv <= 0 or iv in seen:
+                    continue
+                seen.add(iv)
+                unique.append(iv)
+            return unique
 
         if self.id_mapper is not None:
             with contextlib.suppress(Exception):

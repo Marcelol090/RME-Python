@@ -13,6 +13,16 @@ ICON_ALIASES: dict[str, str] = {
     "action_export": "action_save_as",
     "tool_brush": "tool_pencil",
     "tool_bucket": "tool_fill",
+    # Menu-level icon aliases
+    "menu_selection": "action_select",
+    "menu_mode": "action_select",
+    "menu_tools": "menu_edit",
+    "action_command_palette": "action_find",
+    "action_map_properties": "menu_map",
+    "action_towns": "action_house",
+    "action_zones": "menu_map",
+    "action_spawn": "action_creature",
+    "action_borderize": "tool_automagic",
 }
 
 

@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QAction, QCursor
 from PyQt6.QtWidgets import QMenu, QWidget
+
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 
 class ContextMenuBuilder:
@@ -28,40 +29,46 @@ class ContextMenuBuilder:
         self._current_menu = self._menu
         self._menu_stack: list[QMenu] = []
 
-        # Apply styling
+        # Apply styling from theme tokens
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        s = tm.tokens["spacing"]
+        r = tm.tokens["radius"]
+
         self._menu.setStyleSheet(
-            """
-            QMenu {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                padding: 6px;
-                color: #E5E5E7;
-            }
+            f"""
+            QMenu {{
+                background: {c["surface"]["elevated"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                padding: {s["xs"]}px;
+                color: {c["text"]["primary"]};
+            }}
 
-            QMenu::item {
-                padding: 8px 24px 8px 12px;
-                border-radius: 4px;
+            QMenu::item {{
+                padding: {s["sm"]}px {s["lg"]}px {s["sm"]}px {s["lg"]}px;
+                border-radius: {r["sm"]}px;
                 margin: 2px;
-            }
+            }}
 
-            QMenu::item:selected {
-                background: #8B5CF6;
-            }
+            QMenu::item:selected {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QMenu::item:disabled {
-                color: #52525B;
-            }
+            QMenu::item:disabled {{
+                color: {c["text"]["disabled"]};
+            }}
 
-            QMenu::separator {
-                background: #363650;
+            QMenu::separator {{
+                background: {c["border"]["default"]};
                 height: 1px;
-                margin: 4px 8px;
-            }
+                margin: {s["xs"]}px {s["sm"]}px;
+            }}
 
-            QMenu::icon {
-                margin-left: 8px;
-            }
+            QMenu::icon {{
+                margin-left: {s["sm"]}px;
+            }}
         """
         )
 

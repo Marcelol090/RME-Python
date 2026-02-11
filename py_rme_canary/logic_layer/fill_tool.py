@@ -23,12 +23,11 @@ from collections import deque
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
     from py_rme_canary.core.data.tile import Tile
-    from py_rme_canary.logic_layer.brushes.base_brush import BaseBrush
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +128,7 @@ class FloodFillEngine:
             game_map: The map to perform fills on.
         """
         self._map = game_map
-        self._brush: BaseBrush | None = None
+        self._brush: Any | None = None
         self._config = FillConfig()
 
         # Tracking
@@ -140,7 +139,7 @@ class FloodFillEngine:
     def fill(
         self,
         start: Position,
-        brush: BaseBrush,
+        brush: Any,
         config: FillConfig | None = None,
     ) -> FillResult:
         """Perform flood fill starting from a position.
@@ -177,7 +176,8 @@ class FloodFillEngine:
         elif self._config.mode == FillMode.BORDER_ONLY:
             result = self._border_fill(start)
         else:
-            return FillResult(error=f"Unknown fill mode: {self._config.mode}")
+            # Should be unreachable given FillMode enum, but safe fallback
+            return FillResult(error=f"Unknown fill mode: {self._config.mode}")  # type: ignore[unreachable]
 
         # Apply brush to collected tiles
         if self._to_fill:
@@ -350,7 +350,7 @@ class FloodFillEngine:
     def _is_valid_position(self, x: int, y: int, z: int) -> bool:
         """Check if position is within map bounds."""
         return (
-            0 <= x < self._map.width and 0 <= y < self._map.height and 0 <= z < 16  # Standard Z range
+            0 <= x < self._map.header.width and 0 <= y < self._map.header.height and 0 <= z < 16  # Standard Z range
         )
 
     def _matches_reference(self, x: int, y: int, z: int) -> bool:
@@ -404,7 +404,7 @@ class FloodFillEngine:
                 # Get or create tile
                 tile = self._map.get_tile(x, y, z)
                 if tile is None:
-                    tile = self._map.create_tile(x, y, z)
+                    tile = self._map.ensure_tile(x, y, z)
 
                 # Apply brush (implementation depends on brush type)
                 if hasattr(self._brush, "apply"):
@@ -418,7 +418,7 @@ class FloodFillEngine:
     def preview_fill(
         self,
         start: Position,
-        brush: BaseBrush,
+        brush: Any,
         config: FillConfig | None = None,
     ) -> Iterator[Position]:
         """Generate preview of fill without applying changes.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .project import MapMetadata, MapProject, normalize_engine
 
@@ -216,7 +216,7 @@ class ConfigurationManager:
                     elif brush.get("client_id"):
                         brush["active_id"] = brush["client_id"]
 
-            return brush_data
+            return cast("dict[str, Any]", brush_data)
         except Exception as e:
             print(f"Warning: Could not load brush definitions: {e}")
             return None
@@ -233,6 +233,6 @@ class ConfigurationManager:
 
         for brush in brushes.get("brushes", []):
             if brush.get("name", "").lower() == brush_name.lower():
-                return brush
+                return cast("dict[str, Any]", brush)
 
         return None

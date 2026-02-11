@@ -1,7 +1,7 @@
-# -*- mode: python ; coding: utf-8 -*-
+remeres-map-editor-redux# -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_submodules
 
-hiddenimports = ['PyQt6', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets', 'PyQt6.QtOpenGL', 'PyQt6.QtOpenGLWidgets', 'OpenGL', 'OpenGL.GL', 'OpenGL.arrays.arraydatatype', 'OpenGL.raw.GL.VERSION.GL_1_1', 'PIL', 'PIL.Image', 'defusedxml', 'defusedxml.ElementTree', 'defusedxml', 'defusedxml.ElementTree', 'pkgutil', 'importlib', 'importlib.metadata', 'importlib.resources', 'typing_extensions']
+hiddenimports = ['PyQt6', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets', 'PyQt6.QtOpenGL', 'PyQt6.QtOpenGLWidgets', 'OpenGL', 'OpenGL.GL', 'OpenGL.arrays.arraydatatype', 'OpenGL.raw.GL.VERSION.GL_1_1', 'PIL', 'PIL.Image', 'defusedxml', 'defusedxml.ElementTree', 'pkgutil', 'importlib', 'importlib.metadata', 'importlib.resources', 'typing_extensions']
 hiddenimports += collect_submodules('PyQt6')
 
 
@@ -39,4 +39,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    version='C:\\Users\\MARCEL~1\\AppData\\Local\\Temp\\tmpdg7di2ta_version.py',
 )

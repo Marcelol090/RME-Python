@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtGui import QAction
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -11,12 +11,16 @@ if TYPE_CHECKING:
 def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     mb = editor.menuBar()
 
-    m_file = mb.addMenu("File")
+    m_file = mb.addMenu(load_icon("menu_file"), "File")
     editor.menu_file = m_file
     m_file.addAction(editor.act_new)
     m_file.addAction(editor.act_open)
     m_file.addAction(editor.act_save)
     m_file.addAction(editor.act_save_as)
+    if hasattr(editor, "act_generate_map"):
+        m_file.addAction(editor.act_generate_map)
+    if hasattr(editor, "act_close_map"):
+        m_file.addAction(editor.act_close_map)
     m_file.addSeparator()
 
     if (
@@ -34,8 +38,10 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_file.addSeparator()
 
     # Export submenu
-    if any(hasattr(editor, act) for act in ("act_export_png", "act_export_otmm", "act_export_tilesets")):
+    if any(hasattr(editor, act) for act in ("act_export_png", "act_export_otmm", "act_export_tilesets", "act_export_minimap")):
         m_export = m_file.addMenu("Export")
+        if hasattr(editor, "act_export_minimap"):
+            m_export.addAction(editor.act_export_minimap)
         if hasattr(editor, "act_export_png"):
             m_export.addAction(editor.act_export_png)
         if hasattr(editor, "act_export_otmm"):
@@ -54,251 +60,228 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
 
     m_file.addAction(editor.act_exit)
 
-    m_edit = mb.addMenu("Edit")
+    m_edit = mb.addMenu(load_icon("menu_edit"), "Edit")
     editor.menu_edit = m_edit
     m_edit.addAction(editor.act_undo)
     m_edit.addAction(editor.act_redo)
-    m_edit.addAction(editor.act_cancel)
-    if hasattr(editor, "act_command_palette"):
-        m_edit.addSeparator()
-        m_edit.addAction(editor.act_command_palette)
     m_edit.addSeparator()
 
-    # Screenshot shows Find/Replace/Map stats before Border Options.
-    if hasattr(editor, "act_find_item"):
-        m_edit.addAction(editor.act_find_item)
-    if hasattr(editor, "act_find_creature"):
-        m_edit.addAction(editor.act_find_creature)
-    if hasattr(editor, "act_find_house"):
-        m_edit.addAction(editor.act_find_house)
-    if hasattr(editor, "act_find_npc"):
-        m_edit.addAction(editor.act_find_npc)
-    if hasattr(editor, "act_find_monster"):
-        m_edit.addAction(editor.act_find_monster)
+    # Replace Items (C++ Edit > Replace Items... Ctrl+Shift+F)
+    m_edit.addAction(editor.act_replace_items)
+    m_edit.addSeparator()
 
-    if hasattr(editor, "act_map_statistics"):
-        m_edit.addAction(editor.act_map_statistics)
-    if hasattr(editor, "act_map_statistics_graphs"):
-        m_edit.addAction(editor.act_map_statistics_graphs)
-    if hasattr(editor, "act_replace_items"):
-        m_edit.addAction(editor.act_replace_items)
-    if hasattr(editor, "act_replace_items_on_selection"):
-        m_edit.addAction(editor.act_replace_items_on_selection)
-    if hasattr(editor, "act_remove_item_on_selection"):
-        m_edit.addAction(editor.act_remove_item_on_selection)
-    if hasattr(editor, "menu_find_on_map"):
-        m_edit.addMenu(editor.menu_find_on_map)
-
-    if any(
-        hasattr(editor, a)
-        for a in (
-            "act_find_item",
-            "act_map_statistics",
-            "act_replace_items",
-            "act_replace_items_on_selection",
-            "act_remove_item_on_selection",
-            "menu_find_on_map",
-        )
-    ):
-        m_edit.addSeparator()
-
+    # Border Options submenu (C++ Edit > Border Options)
     m_border = m_edit.addMenu("Border Options")
     m_border.addAction(editor.act_automagic)
     m_border.addSeparator()
     m_border.addAction(editor.act_borderize_selection)
+    if hasattr(editor, "act_borderize_map"):
+        m_border.addAction(editor.act_borderize_map)
+    if hasattr(editor, "act_randomize_selection"):
+        m_border.addAction(editor.act_randomize_selection)
+    if hasattr(editor, "act_randomize_map_full"):
+        m_border.addAction(editor.act_randomize_map_full)
     if hasattr(editor, "act_border_builder"):
         m_border.addSeparator()
         m_border.addAction(editor.act_border_builder)
 
-    # Symmetry submenu
-    if hasattr(editor, "act_symmetry_vertical"):
-        m_symmetry = m_edit.addMenu("Symmetry")
-        m_symmetry.addAction(editor.act_symmetry_vertical)
-        m_symmetry.addAction(editor.act_symmetry_horizontal)
-
-    # Tools Menu (Top Level)
-    if hasattr(editor, "menu_tools"):
-        mb.addMenu(editor.menu_tools)
+    # Other Options submenu (C++ Edit > Other Options)
+    m_other = m_edit.addMenu("Other Options")
+    m_other.addAction(editor.act_remove_item_map)
+    m_other.addAction(editor.act_remove_corpses_map)
+    m_other.addAction(editor.act_remove_unreachable_map)
+    m_other.addAction(editor.act_clear_invalid_house_tiles_map)
+    m_other.addAction(editor.act_clear_modified_state)
 
     m_edit.addSeparator()
-    m_edit.addAction(editor.act_goto_previous_position)
-    m_edit.addAction(editor.act_goto_position)
-    m_edit.addSeparator()
-
-    m_edit.addAction(editor.act_jump_to_brush)
-    m_edit.addAction(editor.act_jump_to_item)
-    m_edit.addSeparator()
-
     m_edit.addAction(editor.act_cut)
     m_edit.addAction(editor.act_copy)
     m_edit.addAction(editor.act_paste)
     m_edit.addSeparator()
-    m_edit.addAction(editor.act_delete_selection)
+    if hasattr(editor, "act_global_search"):
+        m_edit.addAction(editor.act_global_search)
+    m_edit.addAction(editor.act_command_palette)
 
-    m_edit.addSeparator()
-    m_edit.addAction(editor.act_copy_position)
-    m_edit.addAction(editor.act_duplicate_selection)
-    m_edit.addAction(editor.act_clear_selection)
+    # ---- Editor Menu (C++ separate "Editor" menu) ----
+    m_editor = mb.addMenu("Editor")
+    m_editor.addAction(editor.act_new_view)
+    m_editor.addAction(editor.act_fullscreen)
+    m_editor.addAction(editor.act_take_screenshot)
+    m_editor.addSeparator()
+    m_zoom_ed = m_editor.addMenu("Zoom")
+    m_zoom_ed.addAction(editor.act_zoom_in)
+    m_zoom_ed.addAction(editor.act_zoom_out)
+    m_zoom_ed.addAction(editor.act_zoom_normal)
 
-    m_edit.addSeparator()
-    m_edit.addAction(editor.act_move_selection_up)
-    m_edit.addAction(editor.act_move_selection_down)
-
-    m_edit.addSeparator()
-    m_edit.addAction(editor.act_fill)
-
-    m_edit.addSeparator()
-    m_edit.addAction(editor.act_merge_move)
-    m_edit.addAction(editor.act_borderize_drag)
-    m_edit.addAction(editor.act_merge_paste)
-    m_edit.addAction(editor.act_borderize_paste)
-
-    m_mode = mb.addMenu("Mode")
-    m_mode.addAction(editor.act_selection_mode)
-    m_selection_depth = m_mode.addMenu("Selection Depth")
-    m_selection_depth.addAction(editor.act_selection_depth_compensate)
-    m_selection_depth.addAction(editor.act_selection_depth_current)
-    m_selection_depth.addAction(editor.act_selection_depth_lower)
-    m_selection_depth.addAction(editor.act_selection_depth_visible)
-
-    m_search = mb.addMenu("Search")
+    # ---- Search Menu (C++ Search) ----
+    m_search = mb.addMenu(load_icon("menu_search"), "Search")
     editor.menu_search = m_search
-    if hasattr(editor, "act_find_item"):
-        m_search.addAction(editor.act_find_item)
-    if hasattr(editor, "act_find_creature"):
-        m_search.addAction(editor.act_find_creature)
-    if hasattr(editor, "act_find_monster"):
-        m_search.addAction(editor.act_find_monster)
-    if hasattr(editor, "act_find_npc"):
-        m_search.addAction(editor.act_find_npc)
-    if hasattr(editor, "act_find_house"):
-        m_search.addAction(editor.act_find_house)
-    if hasattr(editor, "menu_find_on_map"):
-        m_search.addSeparator()
-        m_search.addMenu(editor.menu_find_on_map)
-    if any(
-        hasattr(editor, action_name)
-        for action_name in (
-            "act_find_unique_map",
-            "act_find_action_map",
-            "act_find_container_map",
-            "act_find_writeable_map",
-            "act_find_unique_selection",
-            "act_find_action_selection",
-            "act_find_container_selection",
-            "act_find_writeable_selection",
-        )
-    ):
-        m_search.addSeparator()
-        m_advanced_item_find = m_search.addMenu("Advanced Item Find")
-        if hasattr(editor, "act_find_unique_map"):
-            m_advanced_item_find.addAction(editor.act_find_unique_map)
-        if hasattr(editor, "act_find_action_map"):
-            m_advanced_item_find.addAction(editor.act_find_action_map)
-        if hasattr(editor, "act_find_container_map"):
-            m_advanced_item_find.addAction(editor.act_find_container_map)
-        if hasattr(editor, "act_find_writeable_map"):
-            m_advanced_item_find.addAction(editor.act_find_writeable_map)
-        if any(
-            hasattr(editor, action_name)
-            for action_name in (
-                "act_find_unique_selection",
-                "act_find_action_selection",
-                "act_find_container_selection",
-                "act_find_writeable_selection",
-            )
-        ):
-            m_advanced_item_find.addSeparator()
-            if hasattr(editor, "act_find_unique_selection"):
-                m_advanced_item_find.addAction(editor.act_find_unique_selection)
-            if hasattr(editor, "act_find_action_selection"):
-                m_advanced_item_find.addAction(editor.act_find_action_selection)
-            if hasattr(editor, "act_find_container_selection"):
-                m_advanced_item_find.addAction(editor.act_find_container_selection)
-            if hasattr(editor, "act_find_writeable_selection"):
-                m_advanced_item_find.addAction(editor.act_find_writeable_selection)
+    m_search.addAction(editor.act_find_item)
+    m_search.addSeparator()
+    if hasattr(editor, "act_find_unique_map"):
+        m_search.addAction(editor.act_find_unique_map)
+    if hasattr(editor, "act_find_action_map"):
+        m_search.addAction(editor.act_find_action_map)
+    if hasattr(editor, "act_find_container_map"):
+        m_search.addAction(editor.act_find_container_map)
+    if hasattr(editor, "act_find_writeable_map"):
+        m_search.addAction(editor.act_find_writeable_map)
+    m_search.addSeparator()
+    m_search.addAction(editor.act_find_everything_map)
 
+    # ---- Map Menu (C++ Map) ----
+    m_map = mb.addMenu(load_icon("menu_map"), "Map")
+    m_map.addAction(editor.act_edit_towns)
+    m_map.addSeparator()
+    m_map.addAction(editor.act_map_cleanup)
+    m_map.addAction(editor.act_map_properties)
+    m_map.addAction(editor.act_map_statistics_legacy)
+
+    # ---- Selection Menu (C++ Selection) ----
     m_selection = mb.addMenu("Selection")
     editor.menu_selection = m_selection
-    if hasattr(editor, "act_replace_items_on_selection"):
-        m_selection.addAction(editor.act_replace_items_on_selection)
-    if hasattr(editor, "act_remove_item_on_selection"):
-        m_selection.addAction(editor.act_remove_item_on_selection)
-    if hasattr(editor, "act_find_unique_selection"):
-        m_selection.addAction(editor.act_find_unique_selection)
-    if hasattr(editor, "act_find_action_selection"):
-        m_selection.addAction(editor.act_find_action_selection)
-    if hasattr(editor, "act_find_container_selection"):
-        m_selection.addAction(editor.act_find_container_selection)
-    if hasattr(editor, "act_find_writeable_selection"):
-        m_selection.addAction(editor.act_find_writeable_selection)
-    if hasattr(editor, "act_clear_selection"):
-        m_selection.addAction(editor.act_clear_selection)
-    if hasattr(editor, "act_delete_selection"):
-        m_selection.addAction(editor.act_delete_selection)
+    m_selection.addAction(editor.act_replace_items_on_selection)
+    m_selection.addAction(editor.act_find_item_selection)
+    m_selection.addAction(editor.act_remove_item_on_selection)
     m_selection.addSeparator()
-    if hasattr(editor, "act_borderize_selection"):
-        m_selection.addAction(editor.act_borderize_selection)
+
+    # Find on Selection submenu (C++ Selection > Find on Selection)
+    m_find_sel = m_selection.addMenu("Find on Selection")
+    m_find_sel.addAction(editor.act_find_everything_selection)
+    m_find_sel.addSeparator()
+    m_find_sel.addAction(editor.act_find_unique_selection)
+    m_find_sel.addAction(editor.act_find_action_selection)
+    m_find_sel.addAction(editor.act_find_container_selection)
+    m_find_sel.addAction(editor.act_find_writeable_selection)
+
+    m_selection.addSeparator()
+    # Selection Mode submenu (C++ Selection > Selection Mode)
+    m_sel_mode = m_selection.addMenu("Selection Mode")
+    m_sel_mode.addAction(editor.act_selection_depth_compensate)
+    m_sel_mode.addSeparator()
+    m_sel_mode.addAction(editor.act_selection_depth_current)
+    m_sel_mode.addAction(editor.act_selection_depth_lower)
+    m_sel_mode.addAction(editor.act_selection_depth_visible)
+
+    m_selection.addSeparator()
+    m_selection.addAction(editor.act_borderize_selection)
     if hasattr(editor, "act_randomize_selection"):
         m_selection.addAction(editor.act_randomize_selection)
-    m_sel_depth = m_selection.addMenu("Selection Depth")
-    m_sel_depth.addAction(editor.act_selection_depth_compensate)
-    m_sel_depth.addAction(editor.act_selection_depth_current)
-    m_sel_depth.addAction(editor.act_selection_depth_lower)
-    m_sel_depth.addAction(editor.act_selection_depth_visible)
 
-    # Map Menu (Legacy Parity)
-    m_map = mb.addMenu("Map")
-    if hasattr(editor, "act_map_properties"):
-        m_map.addAction(editor.act_map_properties)
-        m_map.addSeparator()
-
-    if hasattr(editor, "act_remove_item_map"):
-        m_map.addAction(editor.act_remove_item_map)
-    if hasattr(editor, "act_remove_corpses_map"):
-        m_map.addAction(editor.act_remove_corpses_map)
-    if hasattr(editor, "act_remove_unreachable_map"):
-        m_map.addAction(editor.act_remove_unreachable_map)
-    if hasattr(editor, "act_clear_invalid_house_tiles_map"):
-        m_map.addAction(editor.act_clear_invalid_house_tiles_map)
-    if any(
-        hasattr(editor, a)
-        for a in (
-            "act_remove_item_map",
-            "act_remove_corpses_map",
-            "act_remove_unreachable_map",
-            "act_clear_invalid_house_tiles_map",
-        )
-    ):
-        m_map.addSeparator()
-
-    if hasattr(editor, "act_remove_monsters_selection"):
-        m_map.addAction(editor.act_remove_monsters_selection)
-    if hasattr(editor, "act_convert_map_format"):
-        m_map.addAction(editor.act_convert_map_format)
-
-    m_view = mb.addMenu("View")
-    m_view.addAction(editor.act_zoom_in)
-    m_view.addAction(editor.act_zoom_out)
-    m_view.addAction(editor.act_zoom_normal)
+    # ---- View Menu (C++ View) ----
+    m_view = mb.addMenu(load_icon("menu_view"), "View")
+    # C++ "View" menu: view options
+    m_view.addAction(editor.act_show_all_floors)
+    m_view.addAction(editor.act_show_as_minimap)
+    m_view.addAction(editor.act_only_show_colors)
+    m_view.addAction(editor.act_only_show_modified)
+    if hasattr(editor, "act_always_show_zones"):
+        m_view.addAction(editor.act_always_show_zones)
+    if hasattr(editor, "act_ext_house_shader"):
+        m_view.addAction(editor.act_ext_house_shader)
     m_view.addSeparator()
+    m_view.addAction(editor.act_show_tooltips)
     m_view.addAction(editor.act_show_grid)
+    m_view.addAction(editor.act_show_client_box)
+    m_view.addSeparator()
+    m_view.addAction(editor.act_show_loose_items)
+    m_view.addAction(editor.act_ghost_higher_floors)
+    m_view.addAction(editor.act_show_shade)
     if hasattr(editor, "act_show_client_ids"):
+        m_view.addSeparator()
         m_view.addAction(editor.act_show_client_ids)
     if hasattr(editor, "act_ingame_preview"):
         m_view.addAction(editor.act_ingame_preview)
 
-    m_mirror = mb.addMenu("Mirror")
-    m_mirror.addAction(editor.act_toggle_mirror)
+    # C++ "Show" menu: item/zone filters (merged into a submenu)
+    m_show = mb.addMenu("Show")
+    m_show.addAction(editor.act_show_preview)
+    if hasattr(editor, "act_show_lights"):
+        m_show.addAction(editor.act_show_lights)
+    if hasattr(editor, "act_show_light_strength"):
+        m_show.addAction(editor.act_show_light_strength)
+    if hasattr(editor, "act_show_technical_items"):
+        m_show.addAction(editor.act_show_technical_items)
+    m_show.addSeparator()
+    m_show.addAction(editor.act_show_monsters)
+    m_show.addAction(editor.act_show_monsters_spawns)
+    m_show.addAction(editor.act_show_npcs)
+    m_show.addAction(editor.act_show_npcs_spawns)
+    m_show.addAction(editor.act_show_special)
+    m_show.addAction(editor.act_show_houses)
+    m_show.addAction(editor.act_show_pathing)
+    if hasattr(editor, "act_show_towns"):
+        m_show.addAction(editor.act_show_towns)
+    if hasattr(editor, "act_show_waypoints"):
+        m_show.addAction(editor.act_show_waypoints)
+    m_show.addSeparator()
+    m_show.addAction(editor.act_highlight_items)
+    if hasattr(editor, "act_highlight_locked_doors"):
+        m_show.addAction(editor.act_highlight_locked_doors)
+    m_show.addAction(editor.act_show_wall_hooks)
 
-    # Match legacy structure: "Mirror Axis" submenu.
+    # C++ "Navigate" menu
+    m_navigate = mb.addMenu("Navigate")
+    m_navigate.addAction(editor.act_goto_previous_position)
+    m_navigate.addAction(editor.act_goto_position)
+    if hasattr(editor, "act_jump_to_brush"):
+        m_navigate.addAction(editor.act_jump_to_brush)
+    if hasattr(editor, "act_jump_to_item"):
+        m_navigate.addAction(editor.act_jump_to_item)
+    m_navigate.addSeparator()
+    # Floor submenu (0-15)
+    m_floor = m_navigate.addMenu("Floor")
+    if hasattr(editor, "act_floor_actions"):
+        for act in editor.act_floor_actions:
+            m_floor.addAction(act)
+
+    # ---- Window Menu (C++ Window) ----
+    m_window = mb.addMenu(load_icon("menu_window"), "Window")
+    m_window.addAction(editor.act_window_minimap)
+    if hasattr(editor, "act_ingame_preview"):
+        m_window.addAction(editor.act_ingame_preview)
+    m_window.addAction(editor.act_new_palette)
+
+    # Palette submenu (C++ Window > Palette)
+    m_palette = m_window.addMenu("Palette")
+    m_palette.addAction(editor.act_palette_terrain)
+    m_palette.addAction(editor.act_palette_doodad)
+    m_palette.addAction(editor.act_palette_item)
+    m_palette.addAction(editor.act_palette_collection)
+    m_palette.addAction(editor.act_palette_house)
+    m_palette.addAction(editor.act_palette_creature)
+    m_palette.addAction(editor.act_palette_npc)
+    m_palette.addAction(editor.act_palette_waypoint)
+    m_palette.addAction(editor.act_palette_zones)
+    m_palette.addAction(editor.act_palette_raw)
+
+    # Toolbars submenu (C++ Window > Toolbars)
+    m_toolbars = m_window.addMenu("Toolbars")
+    # toggleViewAction()s added after toolbars are created
+    editor._menu_toolbars = m_toolbars
+
+    # Extra Window items (PyRME extensions beyond C++)
+    m_window.addSeparator()
+    m_window.addAction(editor.act_window_actions_history)
+    m_window.addAction(editor.act_window_live_log)
+    if hasattr(editor, "act_window_friends"):
+        m_window.addAction(editor.act_window_friends)
+    m_window.addSeparator()
+    m_window.addAction(editor.act_palette_large_icons)
+    if hasattr(editor, "act_toggle_dark_mode"):
+        m_window.addAction(editor.act_toggle_dark_mode)
+
+    # ---- Mirror Menu (PyRME extension) ----
+    m_mirror = mb.addMenu(load_icon("menu_mirror"), "Mirror")
+    m_mirror.addAction(editor.act_toggle_mirror)
     m_axis = m_mirror.addMenu("Mirror Axis")
     m_axis.addAction(editor.act_mirror_axis_x)
     m_axis.addAction(editor.act_mirror_axis_y)
     m_mirror.addSeparator()
     m_mirror.addAction(editor.act_mirror_axis_set_from_cursor)
 
-    m_assets = mb.addMenu("Assets")
+    # ---- Assets Menu (PyRME extension) ----
+    m_assets = mb.addMenu(load_icon("menu_assets"), "Assets")
     if hasattr(editor, "act_manage_client_profiles"):
         m_assets.addAction(editor.act_manage_client_profiles)
         m_assets.addSeparator()
@@ -310,7 +293,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "act_unload_appearances"):
         m_assets.addAction(editor.act_unload_appearances)
 
-    m_live = mb.addMenu("Live")
+    # ---- Live Menu (PyRME extension) ----
+    m_live = mb.addMenu(load_icon("menu_live"), "Live")
     if hasattr(editor, "act_live_host"):
         m_live.addAction(editor.act_live_host)
     if hasattr(editor, "act_live_stop"):
@@ -328,100 +312,13 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "act_live_ban"):
         m_live.addAction(editor.act_live_ban)
 
-    # Window menu: keep legacy view toggles block + palettes/docks
-    m_window = mb.addMenu("Window")
+    # ---- Experimental Menu (C++ parity) ----
+    m_experimental = mb.addMenu("Experimental")
+    if hasattr(editor, "act_experimental_fog"):
+        m_experimental.addAction(editor.act_experimental_fog)
 
-    m_toolbars = m_window.addMenu("Toolbars")
-    m_window.addAction(editor.act_new_view)
-    if hasattr(editor, "act_new_instance"):
-        m_window.addAction(editor.act_new_instance)
-    m_window.addAction(editor.act_fullscreen)
-    m_window.addAction(editor.act_take_screenshot)
-    m_window.addSeparator()
-
-    m_window.addAction(editor.act_zoom_in)
-    m_window.addAction(editor.act_zoom_out)
-    m_window.addAction(editor.act_zoom_normal)
-    m_window.addSeparator()
-
-    m_window.addAction(editor.act_show_shade)
-    m_window.addAction(editor.act_show_all_floors)
-    m_window.addAction(editor.act_show_loose_items)
-    m_window.addAction(editor.act_ghost_higher_floors)
-    m_window.addAction(editor.act_show_client_box)
-    if hasattr(editor, "act_show_client_ids"):
-        m_window.addAction(editor.act_show_client_ids)
-
-    # Lights submenu (placeholder action can be swapped for a richer group later)
-    m_lights = m_window.addMenu("Lights")
-    if hasattr(editor, "act_show_lights"):
-        m_lights.addAction(editor.act_show_lights)
-    else:
-        act = QAction("Show lights", editor)
-        act.setCheckable(True)
-        act.setChecked(bool(getattr(editor, "show_lights", False)))
-        act.toggled.connect(lambda v: editor._set_view_flag("show_lights", v))
-        editor.act_show_lights = act
-        m_lights.addAction(act)
-
-    m_window.addAction(editor.act_show_grid)
-    m_window.addAction(editor.act_highlight_items)
-    m_window.addSeparator()
-
-    m_window.addAction(editor.act_show_monsters)
-    m_window.addAction(editor.act_show_monsters_spawns)
-    m_window.addAction(editor.act_show_npcs)
-    m_window.addAction(editor.act_show_npcs_spawns)
-    m_window.addAction(editor.act_show_special)
-    m_window.addAction(editor.act_show_as_minimap)
-    m_window.addAction(editor.act_only_show_colors)
-    m_window.addAction(editor.act_only_show_modified)
-    m_window.addAction(editor.act_clear_modified_state)
-    m_window.addSeparator()
-
-    # Appearance
-    if hasattr(editor, "act_toggle_dark_mode"):
-        m_window.addAction(editor.act_toggle_dark_mode)
-        m_window.addSeparator()
-
-    m_window.addAction(editor.act_show_houses)
-    m_window.addAction(editor.act_show_pathing)
-    m_window.addAction(editor.act_show_tooltips)
-    m_window.addAction(editor.act_show_preview)
-
-    # Keep "Show Indicators" as submenu for fine-grained toggles.
-    m_ind = m_window.addMenu("Show Indicators")
-    m_ind.addAction(editor.act_show_wall_hooks)
-    m_ind.addAction(editor.act_show_pickupables)
-    m_ind.addAction(editor.act_show_moveables)
-    m_ind.addAction(editor.act_show_avoidables)
-
-    m_window.addSeparator()
-    m_window.addAction(editor.act_window_minimap)
-    m_window.addAction(editor.act_window_actions_history)
-    m_window.addAction(editor.act_window_live_log)
-    if hasattr(editor, "act_window_friends"):
-        m_window.addAction(editor.act_window_friends)
-
-    m_window.addSeparator()
-    m_window.addAction(editor.act_new_palette)
-    m_window.addAction(editor.act_palette_large_icons)
-    m_window.addSeparator()
-    m_window.addAction(editor.act_palette_terrain)
-    m_window.addAction(editor.act_palette_doodad)
-    m_window.addAction(editor.act_palette_item)
-    m_window.addAction(editor.act_palette_house)
-    m_window.addAction(editor.act_palette_creature)
-    m_window.addAction(editor.act_palette_npc)
-    m_window.addAction(editor.act_palette_waypoint)
-    m_window.addAction(editor.act_palette_zones)
-    m_window.addAction(editor.act_palette_raw)
-
-    # Toolbars menu gets toggleViewAction() after toolbars are created.
-    editor._menu_toolbars = m_toolbars
-
-    # Help Menu
-    m_help = mb.addMenu("Help")
+    # ---- Help / About Menu (C++ About) ----
+    m_help = mb.addMenu(load_icon("menu_help"), "Help")
     editor.menu_help = m_help
     if hasattr(editor, "act_extensions"):
         m_help.addAction(editor.act_extensions)

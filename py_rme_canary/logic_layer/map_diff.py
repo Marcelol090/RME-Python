@@ -22,7 +22,7 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -71,9 +71,9 @@ class ItemChange:
     change_type: ChangeType
     item_id: int
     position: int  # Index in item list
-    old_value: dict | None = None
-    new_value: dict | None = None
-    attribute_changes: dict[str, tuple] = field(default_factory=dict)
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
+    attribute_changes: dict[str, tuple[Any, Any]] = field(default_factory=dict)
 
     def summary(self) -> str:
         """Get a summary string."""
@@ -104,7 +104,7 @@ class TileDiff:
     change_type: ChangeType = ChangeType.UNCHANGED
     ground_change: ItemChange | None = None
     item_changes: list[ItemChange] = field(default_factory=list)
-    flag_changes: dict[str, tuple] = field(default_factory=dict)
+    flag_changes: dict[str, tuple[Any, Any]] = field(default_factory=dict)
     house_id_change: tuple[int, int] | None = None  # (old, new)
 
     @property
@@ -181,8 +181,8 @@ class DiffReport:
         floor_stats: Per-floor change counts.
     """
 
-    old_map_info: dict = field(default_factory=dict)
-    new_map_info: dict = field(default_factory=dict)
+    old_map_info: dict[str, Any] = field(default_factory=dict)
+    new_map_info: dict[str, Any] = field(default_factory=dict)
     statistics: DiffStatistics = field(default_factory=DiffStatistics)
     tile_diffs: list[TileDiff] = field(default_factory=list)
     floor_stats: dict[int, dict[str, int]] = field(default_factory=dict)
@@ -281,8 +281,8 @@ class MapDiffEngine:
             min_x, min_y, max_x, max_y = region
         else:
             min_x = min_y = 0
-            max_x = max(old_map.width, new_map.width)
-            max_y = max(old_map.height, new_map.height)
+            max_x = max(old_map.header.width, new_map.header.width)
+            max_y = max(old_map.header.height, new_map.header.height)
 
         if floors is None:
             floors = range(16)
@@ -334,7 +334,8 @@ class MapDiffEngine:
                         continue
 
                     # Both tiles exist - compare them
-                    diff = self._compare_tiles(old_tile, new_tile, (x, y, z))
+                    # old_tile and new_tile are not None here because of previous checks
+                    diff = self._compare_tiles(old_tile, new_tile, (x, y, z))  # type: ignore[arg-type]
 
                     if diff.has_changes:
                         report.tile_diffs.append(diff)
@@ -355,13 +356,13 @@ class MapDiffEngine:
         report.floor_stats = floor_stats
         return report
 
-    def _extract_map_info(self, game_map: GameMap, label: str) -> dict:
+    def _extract_map_info(self, game_map: GameMap, label: str) -> dict[str, Any]:
         """Extract basic info from a map."""
         return {
             "label": label,
-            "width": game_map.width,
-            "height": game_map.height,
-            "description": getattr(game_map, "description", ""),
+            "width": game_map.header.width,
+            "height": game_map.header.height,
+            "description": getattr(game_map.header, "description", ""),
         }
 
     def _items_to_changes(
@@ -475,7 +476,7 @@ class MapDiffEngine:
             )
 
         # Same ID - check attributes if deep comparison
-        if self._level in (DiffLevel.ITEMS_DEEP, DiffLevel.FULL):
+        if self._level in (DiffLevel.ITEMS_DEEP, DiffLevel.FULL) and old_ground and new_ground:
             attr_changes = self._compare_item_attributes(old_ground, new_ground)
             if attr_changes:
                 return ItemChange(
@@ -573,9 +574,9 @@ class MapDiffEngine:
         self,
         old_item: Item,
         new_item: Item,
-    ) -> dict[str, tuple]:
+    ) -> dict[str, tuple[Any, Any]]:
         """Compare attributes of two items."""
-        changes: dict[str, tuple] = {}
+        changes: dict[str, tuple[Any, Any]] = {}
 
         # Attributes to compare
         attrs = ["count", "action_id", "unique_id", "destination", "text", "charges"]
@@ -593,9 +594,9 @@ class MapDiffEngine:
         self,
         old_tile: Tile,
         new_tile: Tile,
-    ) -> dict[str, tuple]:
+    ) -> dict[str, tuple[Any, Any]]:
         """Compare tile flags."""
-        changes: dict[str, tuple] = {}
+        changes: dict[str, tuple[Any, Any]] = {}
 
         # Flag attributes to compare
         flag_attrs = ["flags", "pz", "no_logout", "pvp_zone", "no_pvp"]
@@ -612,7 +613,7 @@ class MapDiffEngine:
 
         return changes
 
-    def _item_to_dict(self, item: Item | None) -> dict | None:
+    def _item_to_dict(self, item: Item | None) -> dict[str, Any] | None:
         """Convert an item to a dictionary."""
         if item is None:
             return None
@@ -639,14 +640,14 @@ class MapDiffEngine:
             True if maps appear identical, False otherwise.
         """
         # Quick size check
-        if old_map.width != new_map.width or old_map.height != new_map.height:
+        if old_map.header.width != new_map.header.width or old_map.header.height != new_map.header.height:
             return False
 
         # Sample some tiles
         sample_positions = [
             (0, 0, 7),
-            (old_map.width // 2, old_map.height // 2, 7),
-            (old_map.width - 1, old_map.height - 1, 7),
+            (old_map.header.width // 2, old_map.header.height // 2, 7),
+            (old_map.header.width - 1, old_map.header.height - 1, 7),
         ]
 
         for x, y, z in sample_positions:

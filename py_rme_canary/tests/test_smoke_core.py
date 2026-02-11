@@ -1,9 +1,11 @@
 import pytest
+
 from py_rme_canary.core.data.gamemap import GameMap, MapHeader
 from py_rme_canary.core.data.item import Item
 from py_rme_canary.core.data.tile import Tile
 from py_rme_canary.logic_layer.brush_definitions import BrushManager
 from py_rme_canary.logic_layer.session.editor import EditorSession
+
 
 def test_smoke_core_functionality():
     # Test that we can load brushes

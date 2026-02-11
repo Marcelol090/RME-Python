@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
+    QApplication,
     QDialog,
     QDialogButtonBox,
     QGridLayout,
@@ -54,7 +55,7 @@ class ContainerItemButton(QPushButton):
         self._item = item
         self._large = large
 
-        size = 36 if large else 20
+        size = _scale_dip(self, 36 if large else 20)
         self.setFixedSize(size, size)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -165,19 +166,20 @@ class ContainerPropertiesWindow(QDialog):
                 self._items.append(ContainerItem(index=i))
 
         self.setWindowTitle("Container Properties")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(_scale_dip(self, 400))
         self._setup_ui()
         self._style()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(_scale_dip(self, 12))
+        margin = _scale_dip(self, 16)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Properties group
         props_group = QGroupBox("Container Properties")
         props_layout = QGridLayout(props_group)
-        props_layout.setSpacing(8)
+        props_layout.setSpacing(_scale_dip(self, 8))
 
         # ID and name
         props_layout.addWidget(QLabel(f"ID: {self._container_id}"), 0, 0)
@@ -205,7 +207,7 @@ class ContainerPropertiesWindow(QDialog):
         contents_group = QGroupBox(f"Contents (0/{self._volume})")
         self._contents_label = contents_group
         contents_layout = QGridLayout(contents_group)
-        contents_layout.setSpacing(4)
+        contents_layout.setSpacing(_scale_dip(self, 4))
 
         # Calculate columns based on icon size
         max_columns = 6 if self._use_large else 12
@@ -385,3 +387,14 @@ class ContainerPropertiesWindow(QDialog):
             if i < len(self._items):
                 btn.set_item(self._items[i])
         self._update_contents_label()
+
+
+def _scale_dip(widget: QWidget, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = widget.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

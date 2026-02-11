@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
 from importlib import resources
 from pathlib import Path
+from typing import cast
 
 from py_rme_canary.core.data.door import DoorType
 from py_rme_canary.core.io.creatures_xml import load_monster_names, load_npc_names
@@ -2187,7 +2188,7 @@ def _parse_xml_root_tolerant(xml_path: str) -> Element:
         raw = f.read()
     raw = _strip_invalid_xml_chars(raw)
     raw = _XML_AMPERSAND_RE.sub("&amp;", raw)
-    return ET.fromstring(raw)
+    return cast(Element, ET.fromstring(raw))
 
 
 def _int_attr(elem: Element, name: str) -> int | None:

@@ -101,3 +101,17 @@ def test_automagic_action_and_checkbox_stay_synced(editor, qtbot):
     editor.automagic_cb.setChecked(True)
     qtbot.wait(5)
     assert editor.act_automagic.isChecked() is True
+
+
+def test_palette_menu_actions_target_modern_palette_dock(editor, qtbot):
+    editor.act_palette_item.trigger()
+    qtbot.wait(10)
+    assert editor.palettes.current_palette_name == "item"
+    assert editor.brush_filter is editor.dock_palette.brush_filter
+    assert editor.brush_list is editor.dock_palette.brush_list
+
+
+def test_palette_collection_action_targets_modern_palette_dock(editor, qtbot):
+    editor.act_palette_collection.trigger()
+    qtbot.wait(10)
+    assert editor.palettes.current_palette_name == "collection"

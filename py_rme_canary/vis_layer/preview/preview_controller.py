@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QObject, QTimer
@@ -9,9 +10,11 @@ from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteArchive
 from py_rme_canary.logic_layer.settings.light_settings import LightMode
 from py_rme_canary.logic_layer.sprite_system import LegacyDatError, LegacyItemSpriteInfo, load_legacy_item_sprites
 from py_rme_canary.vis_layer.preview.preview_renderer import (
+    PreviewCreature,
     PreviewItem,
     PreviewLighting,
     PreviewSnapshot,
+    PreviewSpawn,
     PreviewViewport,
     TileSnapshot,
 )
@@ -19,6 +22,8 @@ from py_rme_canary.vis_layer.preview.preview_thread import PreviewThread
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
+
+log = logging.getLogger(__name__)
 
 
 class PreviewController(QObject):
@@ -32,6 +37,7 @@ class PreviewController(QObject):
         self._legacy_items: dict[int, LegacyItemSpriteInfo] | None = None
         self._items_xml = None
         self._light_drawer = None
+        self._health_check_counter: int = 0
 
     def start(self) -> None:
         if self._thread is not None:
@@ -60,8 +66,18 @@ class PreviewController(QObject):
             return
         self._timer.stop()
         self._thread.stop()
-        self._thread.join(timeout=1.5)
+        self._thread.join(timeout=2.0)
+        if self._thread.is_alive():
+            log.warning("Preview thread did not stop within timeout")
+        error = self._thread.last_error
+        if error:
+            log.warning("Preview thread reported error: %s", error)
         self._thread = None
+
+    @property
+    def is_running(self) -> bool:
+        """Return True if the preview thread is alive."""
+        return self._thread is not None and self._thread.is_alive()
 
     def _initial_window_size(self) -> tuple[int, int]:
         tiles_wide, tiles_high = self._tiles_from_editor()
@@ -79,6 +95,21 @@ class PreviewController(QObject):
     def _sync(self) -> None:
         if self._thread is None:
             return
+
+        # Health check: detect if thread has died unexpectedly
+        self._health_check_counter += 1
+        if self._health_check_counter % 10 == 0 and not self._thread.is_alive():
+            error = self._thread.last_error or "Unknown error"
+            log.error("Preview thread died: %s", error)
+            self._timer.stop()
+            self._thread = None
+            QMessageBox.warning(
+                self._editor,
+                "In-Game Preview",
+                f"Preview window closed unexpectedly:\n{error}",
+            )
+            return
+
         snapshot = self._build_snapshot()
         self._thread.submit_snapshot(snapshot)
 
@@ -108,6 +139,10 @@ class PreviewController(QObject):
                 light_strength = 0
                 if show_lights or show_light_strength:
                     light_strength = self._light_strength_for_tile(tile)
+
+                creatures = self._snapshot_creatures(tile)
+                spawns = self._snapshot_spawns(tile)
+
                 tiles.append(
                     TileSnapshot(
                         x=int(x),
@@ -116,6 +151,8 @@ class PreviewController(QObject):
                         ground=ground,
                         items=items,
                         light_strength=int(light_strength),
+                        creatures=creatures,
+                        spawns=spawns,
                     )
                 )
 
@@ -146,12 +183,67 @@ class PreviewController(QObject):
             if meta is not None:
                 stackable = bool(meta.stackable)
 
+        # Elevation from appearances.dat or legacy dat
+        elevation = 0
+        if self._editor.appearance_assets is not None:
+            obj_info = getattr(self._editor.appearance_assets, "object_info", None)
+            if obj_info is not None:
+                app = obj_info.get(int(client_id))
+                if app is not None:
+                    elevation = int(getattr(app, "elevation", 0))
+
         return PreviewItem(
             server_id=int(server_id),
             client_id=int(client_id),
             count=int(count) if count is not None else None,
             stackable=bool(stackable),
+            elevation=int(elevation),
         )
+
+    @staticmethod
+    def _snapshot_creatures(tile: object) -> tuple[PreviewCreature, ...]:
+        """Extract creature snapshots from a tile."""
+        result: list[PreviewCreature] = []
+        monsters = getattr(tile, "monsters", None)
+        if monsters:
+            for m in monsters:
+                name = str(getattr(m, "name", ""))
+                outfit = getattr(m, "outfit", None)
+                lookitem = int(getattr(outfit, "lookitem", 0) or 0) if outfit else 0
+                result.append(PreviewCreature(
+                    name=name,
+                    kind="monster",
+                    lookitem=lookitem if lookitem > 0 else None,
+                ))
+        npc = getattr(tile, "npc", None)
+        if npc is not None:
+            name = str(getattr(npc, "name", ""))
+            outfit = getattr(npc, "outfit", None)
+            lookitem = int(getattr(outfit, "lookitem", 0) or 0) if outfit else 0
+            result.append(PreviewCreature(
+                name=name,
+                kind="npc",
+                lookitem=lookitem if lookitem > 0 else None,
+            ))
+        return tuple(result)
+
+    @staticmethod
+    def _snapshot_spawns(tile: object) -> tuple[PreviewSpawn, ...]:
+        """Extract spawn marker snapshots from a tile."""
+        result: list[PreviewSpawn] = []
+        sm = getattr(tile, "spawn_monster", None)
+        if sm is not None:
+            result.append(PreviewSpawn(
+                kind="monster",
+                radius=int(getattr(sm, "radius", 0)),
+            ))
+        sn = getattr(tile, "spawn_npc", None)
+        if sn is not None:
+            result.append(PreviewSpawn(
+                kind="npc",
+                radius=int(getattr(sn, "radius", 0)),
+            ))
+        return tuple(result)
 
     def _load_legacy_items(self) -> dict[int, LegacyItemSpriteInfo] | None:
         profile = getattr(self._editor, "asset_profile", None)
@@ -193,12 +285,15 @@ class PreviewController(QObject):
         except Exception:
             ambient_color = (255, 255, 255)
 
+        outdoor_time = float(getattr(settings, "outdoor_time", 12.0))
+
         return PreviewLighting(
             enabled=bool(enabled),
             mode=str(mode),
             ambient_level=int(ambient_level),
             ambient_color=ambient_color,
             show_strength=bool(getattr(opts, "show_light_strength", False)),
+            outdoor_time=float(outdoor_time),
         )
 
     def _light_strength_for_tile(self, tile) -> int:

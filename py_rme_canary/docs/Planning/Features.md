@@ -8,6 +8,189 @@
 4. [Lua Monster Import](#lua-monster-import)
 5. [Quick Replace Features](#quick-replace-features)
 6. [Additional Features](#additional-features)
+7. [Implementation Tracking](#implementation-tracking)
+
+---
+
+# Implementation Tracking
+
+> **Legend:** `[ ]` = Not implemented | `[/]` = Partial | `[x]` = Complete
+
+## Core Features (RME Extended Edition Parity)
+
+### ClientID/OTBM Support
+
+- [x] ClientID Format Support (OTBM 5/6) → `logic_layer/map_format_conversion.py`
+- [x] ServerID Format Support (OTBM 1-4) → `core/io/otbm/`
+- [x] Auto ID Translation (ServerID ↔ ClientID) → `core/io/items_otb.py`
+- [x] Map Format Conversion → `logic_layer/map_format_conversion.py`
+- [x] Appearances.dat Support → `core/assets/appearances_dat.py` (protobuf parser + UI load/unload)
+
+### Clipboard System
+
+- [x] Standard Clipboard (Copy/Paste) → `logic_layer/clipboard.py`
+- [x] Cross-Instance Clipboard → `logic_layer/cross_clipboard.py`
+- [x] Sprite Hash Matching (FNV-1a) → `logic_layer/sprite_hash.py` + `vis_layer/ui/main_window/qt_map_editor_assets.py`
+
+### Selection Tools
+
+- [x] Rectangular Selection → `vis_layer/ui/canvas/`
+- [x] Lasso/Freehand Selection → `logic_layer/lasso_selection.py`
+- [x] Floor Selection Modes → `logic_layer/drawing_options.py`
+
+### Import/Export
+
+- [x] Lua Monster Import (Revscript) → `core/io/lua_creature_import.py`
+- [x] Minimap PNG Export → `logic_layer/minimap_png_exporter.py`
+- [x] Minimap OTMM Export → `logic_layer/minimap_exporter.py`
+
+### Replace Features
+
+- [x] Find & Replace Items → `logic_layer/replace_items.py`
+- [x] Remove Items → `logic_layer/remove_items.py`
+- [x] Quick Replace from Map → `logic_layer/context_menu_handlers.py`
+
+---
+
+## Brush System
+
+### Core Brushes
+
+- [x] Transactional Brush Base → `logic_layer/transactional_brush.py`
+- [x] Raw Brush → `logic_layer/raw_brush.py`
+- [x] Eraser Brush → `logic_layer/eraser_brush.py`
+- [x] Fill Tool → `logic_layer/fill_tool.py`
+
+### Terrain Brushes
+
+- [x] Brush Definitions → `logic_layer/brush_definitions.py` (81KB)
+- [x] Auto Border System → `logic_layer/borders/`
+- [x] Door Brush → `logic_layer/door_brush.py`
+- [x] Optional Border Brush → `logic_layer/optional_border_brush.py`
+
+### Entity Brushes
+
+- [x] House Brush → `logic_layer/house_brush.py`
+- [x] House Exit Brush → `logic_layer/house_exit_brush.py`
+- [x] Monster Brush → `logic_layer/monster_brush.py`
+- [x] NPC Brush → `logic_layer/npc_brush.py`
+- [x] Spawn Monster Brush → `logic_layer/spawn_monster_brush.py`
+- [x] Spawn NPC Brush → `logic_layer/spawn_npc_brush.py`
+
+### Zone Brushes
+
+- [x] Zone Brush → `logic_layer/zone_brush.py`
+- [x] Waypoint Brush → `logic_layer/waypoint_brush.py`
+- [x] Flag Brush → `logic_layer/flag_brush.py`
+
+---
+
+## Advanced Features
+
+### Session Management
+
+- [x] Editor Session → `logic_layer/session/`
+- [x] History/Undo System → `logic_layer/history/`
+- [x] Autosave Manager → `logic_layer/autosave_manager.py`
+
+### Tools & Utilities
+
+- [x] Ruler Tool → `logic_layer/ruler_tool.py`
+- [x] Map Statistics → `logic_layer/map_statistics.py`
+- [x] Map Search → `logic_layer/map_search.py`
+- [x] Map Diff → `logic_layer/map_diff.py`
+- [x] UID Validator → `logic_layer/uid_validator.py`
+- [x] Teleport Manager → `logic_layer/teleport_manager.py`
+
+### Rendering & Performance
+
+- [x] Sprite Cache → `logic_layer/sprite_cache.py`
+- [x] Render Optimizer → `logic_layer/render_optimizer.py`
+- [x] Rust Acceleration → `logic_layer/rust_accel.py` (5 functions: spawn lookup, FNV-1a hash, sprite hash, minimap buffer, PNG IDAT)
+
+### UI/UX C++ Parity (Redux Menu & Dialog Alignment)
+
+- [x] Menu Icons → 55 SVG icons in `vis_layer/ui/resources/icons/` applied to all top-level menus and 40+ QActions
+- [x] Settings Dialog (5 tabs) → `vis_layer/ui/dialogs/settings_dialog.py` (General/Editor/Graphics/Interface/Client Version matching C++ 5-tab preferences)
+- [x] New Map Dialog → `vis_layer/ui/dialogs/new_map_dialog.py` (client version selector + OTBM format radio buttons)
+- [x] Open Map Dialog → `vis_layer/ui/main_window/qt_map_editor_file.py` (OTBM/OTGZ/JSON/OTML/XML filters matching C++)
+- [x] Save As Dialog → `vis_layer/ui/main_window/qt_map_editor_file.py` (OTBM + compressed OTGZ filters)
+- [x] Placeholder Sprite Rendering → `vis_layer/renderer/opengl_backend.py` + `qpainter_backend.py` (bordered colored squares with item ID text overlay when sprites not loaded)
+- [x] "Sprites Not Loaded" Banner → `vis_layer/renderer/opengl_canvas.py` (overlay warning when appearances.dat not loaded)
+- [x] Icon Aliases → `vis_layer/ui/resources/icon_pack.py` (16 aliases for menu/action icon reuse)
+- [x] Responsive Settings Dialog → QScrollArea wrapping with min/max sidebar widths instead of fixed
+
+#### Part 2 — Deep C++ Menu Parity (build_actions + build_menus)
+
+- [x] Generate Map action → `build_actions.py` + `menubar/file/tools.py` + `qt_map_editor_file.py` (stub dialog)
+- [x] Close Map action (Ctrl+Q) → checks unsaved changes, resets to blank 256×256 map
+- [x] Export Minimap → `menubar/file/tools.py` + `qt_map_editor_file.py` (PNG/BMP export of current floor)
+- [x] Borderize Map → `build_actions.py` + `qt_map_editor_session.py` + `logic_layer/session/editor.py::borderize_map()`
+- [x] Randomize Map → `build_actions.py` + `menubar/edit/tools.py`
+- [x] Find Everything (map/selection) → `find_item.py::open_find_everything()` (combines unique+action+container+writeable)
+- [x] Find Item on Selection → `open_find_dialog(selection_only=True)` filter added
+- [x] Edit Towns action (Ctrl+T) → stub dialog in `qt_map_editor_dialogs.py`
+- [x] Map Cleanup action → confirmation + removes items with unknown server_ids
+- [x] Map Properties (Ctrl+P) → wired to existing `_open_map_properties()`
+- [x] Map Statistics (F8) → wired to existing `_show_map_statistics()`
+- [x] **View menu** (new) → 14 toggle actions matching C++ (show all floors, minimap, colors, modified, zones, house shader, tooltips, grid, client box, ghost items, ghost floors, shade, client IDs, in-game preview)
+- [x] **Show menu** (new) → 14 toggle actions (preview, lights, light strength, technical items, monsters/spawns, NPCs/spawns, special, houses, pathing, towns, waypoints, highlight items, locked doors, wall hooks)
+- [x] **Navigate menu** (new) → Go to Previous Position, Go to Position, Jump to Brush, Jump to Item, Floor submenu (0–15), Zoom submenu (In/Out/Normal)
+- [x] **Experimental menu** (new) → Fog in light view toggle
+- [x] Floor navigation (0–15) → 16 QActions in `act_floor_actions` list, wired to `_goto_floor()` with position history push
+- [x] Shortcut conflict resolution → 6 conflicts fixed (Ctrl+D/H, F5, L, U, Esc)
+- [x] Forward reference bug fix → `act_goto_previous_position_nav` alias removed (was referencing action before creation)
+
+#### Part 2b — Full C++ Shortcut & Menu Alignment
+
+- [x] **All shortcuts aligned to C++ legacy** → Save As (Ctrl+Alt+S), Replace Items (Ctrl+Shift+F), Remove Items by ID (Ctrl+Shift+R), Show Animation (L), Show Light (Shift+L), Show Houses (Ctrl+H), Highlight Locked Doors (U), About (F1)
+- [x] **Editor menu** (new, C++ parity) → New View, Fullscreen, Take Screenshot, Zoom submenu (matched C++ "Editor" as separate menu from "Edit")
+- [x] **Edit menu restructured** → Undo/Redo, Replace Items, Border Options submenu, Other Options submenu (new, C++ parity), Cut/Copy/Paste, Global Search, Command Palette
+- [x] **Other Options submenu** (C++ Edit menu) → Remove Items by ID, Remove all Corpses, Remove all Unreachable Tiles, Clear Invalid Houses, Clear Modified State
+- [x] **Selection menu restructured** → Replace Items on Selection, Find Item on Selection, Remove Item on Selection, Find on Selection submenu, Selection Mode submenu, Borderize/Randomize Selection
+- [x] **Window menu restructured** → Minimap, In-Game Preview, New Palette, Palette submenu (T/D/I/H/C/W/R), Toolbars submenu, Actions History, Live Log
+- [x] `act_about` (F1) → About dialog with PyRME info, map stats → `qt_map_editor_dialogs.py::_show_about()`
+- [x] `act_show_lights` (Shift+L) → Checkable toggle for light rendering → `build_actions.py`
+- [x] `act_replace_items_on_selection` → Opens ReplaceItemsDialog pre-filtered to selection → `qt_map_editor_session.py`
+- [x] `act_remove_item_on_selection` → Opens FindItemDialog, removes matched items from selection → `qt_map_editor_session.py`
+- [x] Label renames to match C++ exactly → "Ghost loose items", "Remove Items by ID...", "Remove all Corpses...", "Remove all Unreachable Tiles...", "Clear Invalid Houses", "Show Animation"
+- [x] **Item rendering pipeline fix** → `show_as_minimap` default changed from `True` to `False` so items render as sprites instead of colored rectangles
+- [x] Auto-disable minimap mode on sprite load → `_refresh_after_asset_data_load()` clears minimap flag when sprites become available
+- [x] **15 new SVG icons** → action_show_lights, action_generate, action_close, action_town, action_cleanup, action_properties, action_statistics, action_borderize, action_show_pathing, action_show_houses, action_animation, action_ingame_preview, action_goto_back, action_randomize, action_remove_item (total: 70 SVG icons)
+- [x] Icons added to 18 key menu actions → About, Show Lights, Borderize, Edit Towns, Cleanup, Properties, Statistics, Show Houses, Show Pathing, Show Animation, In-Game Preview, Go To Previous Position, Randomize, Remove Items, Replace/Remove Items on Selection, Generate Map, Close Map
+
+### Scripting
+
+- [x] Script Engine → `logic_layer/script_engine.py` (26KB)
+
+---
+
+## Legacy RME Parity Matrix
+
+| Feature                  | Redux (TFS) | Canary (Modern) | py_rme_canary |
+| ------------------------ | :---------: | :-------------: | :-----------: |
+| OTBM 1-4 Load/Save       |     ✅      |       ✅        |      ✅       |
+| OTBM 5-6 (ClientID)      |     ❌      |       ✅        |      ✅       |
+| Cross-Instance Clipboard |     ✅      |       ✅        |      ✅       |
+| Lasso Selection          |     ✅      |       ✅        |      ✅       |
+| Lua Monster Import       |     ✅      |       ✅        |      ✅       |
+| Live Collaboration       |     ✅      |       ✅        |      ✅       |
+| All Brush Types          |     ✅      |       ✅        |      ✅       |
+| PyQt6 Modern UI          |     ❌      |       ❌        |      ✅       |
+| Python Scripting         |     ❌      |       ❌        |      ✅       |
+| Menu Icons (70 SVGs)     |     ✅      |       ✅        |      ✅       |
+| 5-Tab Preferences        |     ✅      |       ✅        |      ✅       |
+| OTGZ Compressed Maps     |     ✅      |       ✅        |      ✅       |
+| View/Show/Navigate Menus |     ✅      |       ✅        |      ✅       |
+| Floor Navigation (0-15)  |     ✅      |       ✅        |      ✅       |
+| Borderize/Randomize Map  |     ✅      |       ✅        |      ✅       |
+| Find Everything          |     ✅      |       ✅        |      ✅       |
+| C++ Legacy Shortcuts     |     ✅      |       ✅        |      ✅       |
+| Item Rendering on Canvas |     ✅      |       ✅        |      ✅       |
+| Editor/Edit/Selection    |     ✅      |       ✅        |      ✅       |
+| About Dialog (F1)        |     ✅      |       ✅        |      ✅       |
+
+**Legend:** ✅ = Supported | ❌ = Not Supported | ⏳ = Planned
 
 ---
 
@@ -22,6 +205,7 @@ RME supports both traditional ServerID-based maps (OTBM 1-4) and modern ClientID
 Open and edit maps created with ClientID-based map editors. This format uses ClientIDs directly instead of ServerIDs, commonly used by modern OT servers like Canary.
 
 **Quick Start:**
+
 1. Load any client version (e.g., Client 14) with its items.otb
 2. Open maps in OTBM 5/6 format → Auto-detected
 3. IDs translated automatically via items.otb mappings
@@ -34,6 +218,7 @@ Open and edit maps created with ClientID-based map editors. This format uses Cli
 ### Traditional ServerID System (OTBM 1-4)
 
 **How it works:**
+
 1. Server defines items in `items.otb` with unique ServerIDs
 2. Each ServerID has a corresponding ClientID for sprite rendering
 3. Maps store ServerIDs
@@ -41,6 +226,7 @@ Open and edit maps created with ClientID-based map editors. This format uses Cli
 5. Client uses ClientID to display the correct sprite
 
 **Example:**
+
 ```
 items.otb defines:
   ServerID: 2160 (Crystal Coin)
@@ -60,12 +246,14 @@ Workflow:
 ### Modern ClientID System (OTBM 5-6)
 
 **How it works:**
+
 1. ClientID and ServerID are unified (ClientID = ServerID)
 2. Maps store ClientIDs directly
 3. No translation needed - ID goes straight from map to client
 4. Item definitions reference `Tibia.dat` or `appearances.dat`
 
 **Example:**
+
 ```
 Map stores ClientID directly:
   Map file: stores "3043"
@@ -130,11 +318,11 @@ Map stores ClientID directly:
 
 ### Key Classes
 
-| Class | File | Purpose |
-|-------|------|---------|
-| ItemIdMapper | id_mapper.cpp/h | Builds and stores ServerID ↔ ClientID mappings from items.otb |
-| MapVersion | client_version.h | Extended with usesClientIdAsServerId flag and isCanaryFormat() |
-| IOMapOTBM | iomap_otbm.cpp | Detects OTBM version, translates IDs on load/save |
+| Class               | File                       | Purpose                                                          |
+| ------------------- | -------------------------- | ---------------------------------------------------------------- |
+| ItemIdMapper        | id_mapper.cpp/h            | Builds and stores ServerID ↔ ClientID mappings from items.otb    |
+| MapVersion          | client_version.h           | Extended with usesClientIdAsServerId flag and isCanaryFormat()   |
+| IOMapOTBM           | iomap_otbm.cpp             | Detects OTBM version, translates IDs on load/save                |
 | AppearancesDatabase | appearances_database.cpp/h | Optional protobuf loader for appearances.dat (extra sprite info) |
 
 ---
@@ -354,16 +542,19 @@ Mappings ready for use
 ### 1. Why No Protobuf/appearances.dat Required?
 
 **items.otb already contains ClientIDs:**
+
 - Each OTB entry has BOTH ServerID and ClientID stored
 - The OTB format includes a `clientID` field
 - When RME loads items.otb, it reads both IDs
 
 **appearances.dat is optional:**
+
 - Only provides extra sprite metadata (animations, colors, etc)
 - NOT required for ID translation
 - Can be loaded for enhanced sprite information
 
 **Example OTB entry:**
+
 ```
 Item {
     ServerID: 2160
@@ -379,11 +570,13 @@ Item {
 ### 2. Editor Always Uses ServerIDs Internally
 
 **Why this design?**
+
 - Consistency: All editing logic works with one ID system
 - Compatibility: Existing editor code doesn't need changes
 - Translation: Only happens at file I/O boundaries
 
 **Internal representation:**
+
 ```cpp
 class Item {
 private:
@@ -396,6 +589,7 @@ public:
 ```
 
 **Translation only at boundaries:**
+
 - **Loading:** File (ClientID) → Translation → Internal (ServerID)
 - **Saving:** Internal (ServerID) → Translation → File (ClientID)
 - **Editing:** Always ServerID, no translation needed
@@ -427,6 +621,7 @@ struct MapVersion {
 ```
 
 **Detection logic:**
+
 ```cpp
 // When loading a map
 uint32_t version = readVersionFromFile();
@@ -481,22 +676,26 @@ When saving:
 ## 🎨 Features
 
 ### Auto ID Translation
+
 - ClientID ↔ ServerID mapping built from items.otb
 - Transparent to user during editing
 - Preserves item properties and attributes
 
 ### No appearances.dat Required
+
 - Works with just items.otb
 - Mappings already present in OTB format
 - appearances.dat optional for enhanced sprite metadata
 
 ### Format Conversion
+
 - Convert maps between ServerID and ClientID formats
 - Menu: Map → Convert Map Format...
 - Confirm conversion direction
 - All item IDs translated automatically
 
 ### Show ClientIDs
+
 - Toggle View menu option to display ClientIDs in editor
 - Useful when working with ClientID-format maps
 - Helps verify correct sprite references
@@ -508,6 +707,7 @@ When saving:
 Optionally load appearances.dat for enhanced ClientID format support and sprite information.
 
 **Actions:**
+
 - Load: File → Appearances → Load Appearances...
 - Unload: File → Appearances → Unload Appearances
 - Auto-load: Enable in Preferences → Editor tab
@@ -521,6 +721,7 @@ Optionally load appearances.dat for enhanced ClientID format support and sprite 
 Full support for Client 14 and OTBM versions 5/6. Compatible with maps from various modern OT server projects.
 
 **Supported:**
+
 - OTBM versions: 2, 3, 4, 5, 6
 - Data directory: 1100
 - Data format: Format 11 (same as Client 11)
@@ -553,6 +754,7 @@ if (serverId == 0) {
 ```
 
 **User notification:**
+
 - Warning dialog after loading
 - List of unmapped IDs
 - Recommend updating items.otb
@@ -662,6 +864,7 @@ Newer Content                   Receives Content
 ### Traditional Clipboard Limitations
 
 **Same-version copying (works fine):**
+
 ```
 Source RME (Client 12.x)     Target RME (Client 12.x)
 Item ID: 2148 (gold coin) → Item ID: 2148 (gold coin)
@@ -669,6 +872,7 @@ Item ID: 2148 (gold coin) → Item ID: 2148 (gold coin)
 ```
 
 **Cross-version copying (breaks):**
+
 ```
 Source RME (Client 13.x)     Target RME (Client 10.x)
 Item ID: 5234 (new item)  → Item ID: 5234 (doesn't exist!)
@@ -705,6 +909,7 @@ Hash Matching Approach (works):
 ### The Technology Stack
 
 **FNV-1a 64-bit Hashing Algorithm:**
+
 - **Fast** - Minimal performance impact
 - **Reliable** - 64-bit provides ~18 quintillion possible values (collision probability ≈ 0)
 - **Deterministic** - Same pixels always produce same hash
@@ -715,18 +920,20 @@ Hash Matching Approach (works):
 ## 🚀 Quick Setup Guide
 
 ### SOURCE Editor (Copy From)
+
 The RME instance with the newer/different content you want to copy.
 
 **Setting:** Sprite Match on Paste → **OFF**
 
-*This editor only needs to write hashes to the clipboard, not read them.*
+_This editor only needs to write hashes to the clipboard, not read them._
 
 ### TARGET Editor (Paste To)
+
 The RME instance where you want to paste the content.
 
 **Setting:** Sprite Match on Paste → **ON**
 
-*This editor reads the hashes and finds matching items in its own item database.*
+_This editor reads the hashes and finds matching items in its own item database._
 
 ### Where to Find the Setting
 
@@ -765,21 +972,21 @@ For an item to be matched successfully, the TARGET editor needs:
 
 ### Compatibility Matrix
 
-| Sprite in YOUR .spr/.dat | items.otb Mapping | Result |
-|---------------------------|-------------------|--------|
-| ✓ Present | ✓ Correct | Works perfectly |
-| ✓ Present | ✗ Wrong mapping | May place different item (hash mismatch) |
-| ✓ Present | ✗ Not registered | Red tile (itemID/clientID missing in .otb) |
-| ✗ Missing | — | Red tile (sprite not in .spr/.dat) |
+| Sprite in YOUR .spr/.dat | items.otb Mapping | Result                                     |
+| ------------------------ | ----------------- | ------------------------------------------ |
+| ✓ Present                | ✓ Correct         | Works perfectly                            |
+| ✓ Present                | ✗ Wrong mapping   | May place different item (hash mismatch)   |
+| ✓ Present                | ✗ Not registered  | Red tile (itemID/clientID missing in .otb) |
+| ✗ Missing                | —                 | Red tile (sprite not in .spr/.dat)         |
 
 ### Version Compatibility Examples
 
-| Scenario | Will It Work? | Notes |
-|----------|---------------|-------|
-| 10.98 → 10.77 | Excellent | Most items exist in both, high match rate |
-| 12.x → 10.x | Good | Older items match, newer items need to be added |
-| 13.x → 7.4 (vanilla) | Limited | Only items that exist in both will match |
-| 13.x → 7.4 (custom with 13.x sprites added) | Excellent | If you've added the sprites, they will match! |
+| Scenario                                    | Will It Work? | Notes                                           |
+| ------------------------------------------- | ------------- | ----------------------------------------------- |
+| 10.98 → 10.77                               | Excellent     | Most items exist in both, high match rate       |
+| 12.x → 10.x                                 | Good          | Older items match, newer items need to be added |
+| 13.x → 7.4 (vanilla)                        | Limited       | Only items that exist in both will match        |
+| 13.x → 7.4 (custom with 13.x sprites added) | Excellent     | If you've added the sprites, they will match!   |
 
 ### Pro Tip: Building a Universal Client
 
@@ -792,21 +999,27 @@ You can create a "universal" client by adding sprites from multiple Tibia versio
 ## 📖 Step-by-Step Instructions
 
 ### 1. Open both RME instances
+
 Launch two separate RME editors - one with your source content (newer client) and one with your target map (older/different client).
 
 ### 2. Configure the TARGET editor
+
 In the editor where you will PASTE content, enable:
+
 ```
 Edit → Preferences → Editing → Sprite Match on Paste
 ```
 
 ### 3. Select content in SOURCE editor
+
 Use the selection tool to select the area you want to copy. This includes tiles, items, creatures, and spawns.
 
 ### 4. Copy (CTRL+C)
+
 The clipboard now contains all selected content with embedded sprite hashes for each item.
 
 ### 5. Paste in TARGET editor (CTRL+V)
+
 The target editor reads the sprite hashes and attempts to find matching items in its database.
 
 ---
@@ -961,12 +1174,12 @@ This multi-layer approach prevents incorrect matches. Even if an item ID exists 
 
 ### Matching Results
 
-| Result Type | Description | What Happens |
-|-------------|-------------|--------------|
-| EXACT_MATCH | Original ID exists and hash matches | Item pasted with original ID |
-| HASH_MATCH | Different ID but same sprite hash found | Item pasted with matched ID |
-| NO_MATCH | No matching sprite found | Item skipped or fallback used |
-| COLLISION | Hash exists but might be wrong item | Best-effort match attempted |
+| Result Type | Description                             | What Happens                  |
+| ----------- | --------------------------------------- | ----------------------------- |
+| EXACT_MATCH | Original ID exists and hash matches     | Item pasted with original ID  |
+| HASH_MATCH  | Different ID but same sprite hash found | Item pasted with matched ID   |
+| NO_MATCH    | No matching sprite found                | Item skipped or fallback used |
+| COLLISION   | Hash exists but might be wrong item     | Best-effort match attempted   |
 
 ---
 
@@ -1036,7 +1249,7 @@ void ClipboardManager::copySelection(const Selection& selection) {
   "sourceClient": "13.40",
   "tiles": [
     {
-      "position": {"x": 1000, "y": 1000, "z": 7},
+      "position": { "x": 1000, "y": 1000, "z": 7 },
       "items": [
         {
           "originalId": 5234,
@@ -1252,12 +1465,14 @@ The cross-instance clipboard also supports creatures and spawns. These are seria
 The clipboard captures and transfers the following data between RME instances:
 
 **Items:**
+
 - Original item ID
 - Sprite fingerprint (hash)
 - All item attributes
 - Position data
 
 **Creatures & Spawns:**
+
 - Creature name
 - Facing direction
 - Spawn time interval
@@ -1276,6 +1491,7 @@ When RME starts, it automatically builds a hash database by scanning all sprites
 **Memory efficient:** Only stores hash-to-ID mappings
 
 **Typical Performance:**
+
 ```
 Hash Database Building (Startup):
 - 10,000 items × ~5 sprites each = 50,000 sprites
@@ -1303,6 +1519,7 @@ Paste Operation:
 **Problem:** Some items use multiple sprites (2x2 beds, 3x3 trees, animated water)
 
 **Solution:**
+
 ```cpp
 // Combine all sprite hashes into one master hash
 uint64_t calculateMultiSpriteHash(const ItemType& itemType) {
@@ -1330,6 +1547,7 @@ uint64_t calculateMultiSpriteHash(const ItemType& itemType) {
 **Problem:** Water, fire, torches have multiple animation frames
 
 **Solution:**
+
 ```cpp
 // Hash ALL animation frames together
 uint64_t calculateAnimatedItemHash(const ItemType& itemType) {
@@ -1353,6 +1571,7 @@ uint64_t calculateAnimatedItemHash(const ItemType& itemType) {
 **Problem:** Some items have variations (fluid types, runes with different charges)
 
 **Solution:**
+
 ```cpp
 // Store separate hashes for each subtype
 void buildHashDatabase() {
@@ -1379,6 +1598,7 @@ void buildHashDatabase() {
 **Problem:** Creatures don't have sprites in the same way items do
 
 **Solution:**
+
 ```cpp
 // Creatures matched by NAME, not by sprite hash
 struct CreatureData {
@@ -1467,6 +1687,7 @@ Edit → Preferences → Editing → Sprite Match on Paste
 ### Configuration Scenarios
 
 **Scenario 1: Same-Version Copying**
+
 ```
 Source: Client 12.x
 Target: Client 12.x
@@ -1474,6 +1695,7 @@ Setting: OFF (traditional clipboard is faster)
 ```
 
 **Scenario 2: Cross-Version Copying**
+
 ```
 Source: Client 13.x (newer content)
 Target: Client 10.x (older client)
@@ -1481,6 +1703,7 @@ Setting: ON (enables hash matching)
 ```
 
 **Scenario 3: One-Way Import**
+
 ```
 Source: Client 13.x
   └─ Sprite Match: OFF (only writes hashes, doesn't read)
@@ -1547,6 +1770,7 @@ Target: Client 10.x
 ### Limitation 1: Missing Sprites
 
 **Scenario:**
+
 ```
 Source has sprite that doesn't exist in target .spr file
   └─ Hash lookup will fail
@@ -1554,6 +1778,7 @@ Source has sprite that doesn't exist in target .spr file
 ```
 
 **Solution:**
+
 ```
 Options:
 1. Skip item (default)
@@ -1566,6 +1791,7 @@ Options:
 ### Limitation 2: Hash Collisions (Extremely Rare)
 
 **Probability:**
+
 ```
 With 64-bit FNV-1a hash:
 - Unique sprites: ~50,000 in typical client
@@ -1576,6 +1802,7 @@ Practically: Won't happen in normal use
 ```
 
 **Handling:**
+
 ```cpp
 if (g_hashDatabase.count(hash) > 1) {
     // Collision detected - use first match but warn
@@ -1589,6 +1816,7 @@ if (g_hashDatabase.count(hash) > 1) {
 ### Limitation 3: Visually Identical Items
 
 **Problem:**
+
 ```
 Two different items with identical sprites:
   Item A: "Gold Coin" (usable, stackable)
@@ -1598,6 +1826,7 @@ Same sprite → Same hash → Will match to first one found
 ```
 
 **Mitigation:**
+
 ```
 Priority system:
 1. Prefer exact ID match if hash also matches
@@ -1624,6 +1853,7 @@ Priority system:
 ### Debug Mode
 
 **Enable verbose logging:**
+
 ```cpp
 // In settings
 g_settings.setBoolean("debugSpriteMatching", true);
@@ -1663,6 +1893,7 @@ void exportUnmatchedReport(const PasteStatistics& stats) {
 ```
 
 **Users can:**
+
 1. Review which items failed to match
 2. Find corresponding sprites in source .spr file
 3. Add sprites to target client manually
@@ -1730,14 +1961,15 @@ Draw custom polygon shapes to select tiles instead of rectangular selection. Per
 
 ### Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| Shift + Drag | Replace selection |
-| Ctrl + Shift + Drag | Add to selection |
+| Shortcut            | Action            |
+| ------------------- | ----------------- |
+| Shift + Drag        | Replace selection |
+| Ctrl + Shift + Drag | Add to selection  |
 
 ### Floor Selection
 
 Respects current floor settings:
+
 - **Current Floor** - Selects only tiles on current floor
 - **All Floors** - Selects tiles across all floors
 - **Visible Floors** - Selects tiles on visible floors
@@ -1775,6 +2007,7 @@ bool isPointInPolygon(const Point& point, const std::vector<Point>& polygon) {
 ### Use Cases
 
 **Perfect for:**
+
 - Selecting cave systems with irregular boundaries
 - Coastlines and water bodies
 - Organic terrain features
@@ -1782,6 +2015,7 @@ bool isPointInPolygon(const Point& point, const std::vector<Point>& polygon) {
 - Natural formations (mountains, forests)
 
 **Example workflow:**
+
 ```
 1. Enable Lasso tool
 2. Draw around a cave entrance (freehand)
@@ -1803,11 +2037,13 @@ Import monsters from TFS 1.x Lua/revscript format. Supports individual files and
 ### Import Methods
 
 **Individual files:**
+
 ```
 File → Import → Import Monsters/NPC...
 ```
 
 **Entire folder:**
+
 ```
 File → Import → Import Monster Folder...
 ```
@@ -1867,11 +2103,13 @@ npcType:register(npc)
 ### Import Behavior
 
 **File Processing:**
+
 - Files without valid definitions are skipped
 - Existing monsters are updated (not duplicated)
 - Invalid Lua syntax is logged as error
 
 **Folder Import:**
+
 - Recursively scans all subdirectories
 - Processes all `.lua` files found
 - Shows progress bar for large imports
@@ -1960,12 +2198,14 @@ private:
 ### Use Cases
 
 **Perfect for:**
+
 - Importing monster definitions from TFS distributions
 - Migrating from code-based monster systems to editor
 - Batch updating creature outfits
 - Synchronizing with server-side monster files
 
 **Workflow example:**
+
 ```
 1. Export monsters from TFS server (/data/monster/)
 2. File → Import → Import Monster Folder...
@@ -1994,6 +2234,7 @@ Skip the RAW palette! Right-click any item directly on the map to set it as Find
 ### Comparison: Before vs After
 
 **Before:**
+
 ```
 1. Click RAW palette tab
 2. Search for item by name/ID
@@ -2005,6 +2246,7 @@ Skip the RAW palette! Right-click any item directly on the map to set it as Find
 ```
 
 **Now:**
+
 ```
 1. Right-click item on map → Set as Find Item
 2. Right-click another item → Set as Replace Item
@@ -2035,10 +2277,12 @@ When right-clicking an item on the map:
 **New checkbox:** "Only replace on visible map and current floor"
 
 **Behavior:**
+
 - **Checked**: Limits replacement to visible viewport and current floor only
 - **Unchecked**: Replaces throughout entire map (all floors)
 
 **Use cases:**
+
 - Checked: Quick local fixes, testing changes
 - Unchecked: Global map-wide replacements
 
@@ -2171,12 +2415,14 @@ public:
 ### Workflow Benefits
 
 **Speed improvement:**
+
 - 7 steps → 3 steps
 - No palette navigation needed
 - Visual item selection from map
 - Immediate context
 
 **Use cases:**
+
 - Quick texture fixes
 - Replacing wrong items
 - Batch corrections
@@ -2197,11 +2443,13 @@ A collection of quality-of-life improvements and enhancements to the RME editor.
 **Description:** Creature names are displayed above them on the map for easier identification
 
 **Benefits:**
+
 - Quickly identify creatures without clicking
 - Easier spawn management
 - Better visual overview of creature distribution
 
 **Technical:**
+
 ```cpp
 void MapCanvas::renderCreature(Creature* creature, const Position& pos) {
     // Render creature sprite
@@ -2237,6 +2485,7 @@ void MapCanvas::renderCreature(Creature* creature, const Position& pos) {
 **Description:** Full dark mode support for the editor UI - easier on the eyes during long mapping sessions
 
 **Features:**
+
 - Dark window backgrounds
 - Dark toolbar and menus
 - Dark palettes
@@ -2244,11 +2493,13 @@ void MapCanvas::renderCreature(Creature* creature, const Position& pos) {
 - Dark dialog boxes
 
 **Configuration:**
+
 ```
 Edit → Preferences → Interface → Theme → Dark
 ```
 
 **Color Scheme:**
+
 ```cpp
 namespace DarkTheme {
     const wxColour BACKGROUND(30, 30, 30);
@@ -2267,16 +2518,19 @@ namespace DarkTheme {
 **Description:** Option for larger icons in palettes - better visibility on high-resolution screens
 
 **Configuration:**
+
 ```
 Edit → Preferences → Interface → Large Palette Icons
 ```
 
 **Sizes:**
+
 - Normal: 32x32 pixels
 - Large: 48x48 pixels
 - Extra Large: 64x64 pixels
 
 **Benefits:**
+
 - Better for 4K displays
 - Reduced eye strain
 - Easier item identification
@@ -2288,6 +2542,7 @@ Edit → Preferences → Interface → Large Palette Icons
 **Description:** Right-click RAW items to quickly set them as "Find" or "Replace With" targets
 
 **Context Menu:**
+
 ```
 ┌────────────────────────────┐
 │ Use Item                   │
@@ -2308,12 +2563,14 @@ Edit → Preferences → Interface → Large Palette Icons
 **Description:** Run multiple editor instances simultaneously with different SPR/DAT/OTB assets
 
 **Use Cases:**
+
 - Edit different server versions simultaneously
 - Compare maps side-by-side
 - Copy content between versions
 - Test different asset configurations
 
 **Configuration:**
+
 - Each instance loads independent assets
 - Separate preferences per instance
 - Cross-instance clipboard support
@@ -2325,6 +2582,7 @@ Edit → Preferences → Interface → Large Palette Icons
 **Description:** Create multiple data profiles per client version pointing to different asset folders
 
 **Example:**
+
 ```
 Client 10.98 Profiles:
 ├─ "10.98-vanilla"     → /data/1098/
@@ -2340,6 +2598,7 @@ Each profile contains:
 ```
 
 **Management:**
+
 ```
 Edit → Client Profiles → Manage Profiles...
 
@@ -2361,6 +2620,7 @@ Edit → Client Profiles → Manage Profiles...
 **Description:** Added support for loading Client 11 SPR/DAT format
 
 **Technical Details:**
+
 - Extended .dat parser for format 11
 - Support for new item flags
 - Enhanced sprite format handling
@@ -2373,17 +2633,20 @@ Edit → Client Profiles → Manage Profiles...
 **Description:** Export map as OTMM format - OTClient gets full minimap support immediately
 
 **How to Use:**
+
 ```
 File → Export → Export Minimap (OTMM)...
 ```
 
 **Export Options:**
+
 - **Format:** OTMM (binary) or PNG/BMP (image)
 - **Floors:** All floors or selected range
 - **Colors:** Minimap colors from items.otb
 - **Markers:** Include map markers
 
 **OTMM Format:**
+
 ```cpp
 struct OTMMHeader {
     uint32_t signature;    // 'OTMM'
@@ -2401,6 +2664,7 @@ struct OTMMTile {
 ```
 
 **Use Case:**
+
 ```
 1. Create map in RME
 2. Export as OTMM
@@ -2416,11 +2680,13 @@ struct OTMMTile {
 **Description:** Automatic detection and warning when duplicate Unique IDs exist on the map
 
 **When Triggered:**
+
 - Setting a Unique ID that already exists
 - Pasting items with duplicate UIDs
 - Loading maps with UID conflicts
 
 **Warning Dialog:**
+
 ```
 ┌────────────────────────────────────────┐
 │ ⚠ Duplicate Unique ID                  │
@@ -2437,6 +2703,7 @@ struct OTMMTile {
 ```
 
 **Technical Implementation:**
+
 ```cpp
 class UniqueIdManager {
 private:
@@ -2505,12 +2772,14 @@ public:
 **Description:** Visual highlight when using Go to Position - precise coordinate placement
 
 **When Active:**
+
 - Using "Go to Position" (Ctrl+G)
 - Setting Action IDs at exact positions
 - Configuring teleport destinations
 - Pasting map areas at specific coordinates
 
 **Visual:**
+
 ```
 ┌─────────────────────┐
 │                     │
@@ -2524,6 +2793,7 @@ public:
 ```
 
 **Implementation:**
+
 ```cpp
 class PositionHighlight {
 private:
@@ -2577,6 +2847,7 @@ public:
 ```
 
 **Settings:**
+
 - Duration: 2 seconds (configurable)
 - Fade out: Gradual opacity reduction
 - Color: Yellow (configurable)
@@ -2599,6 +2870,6 @@ All systems work together to provide a powerful, flexible map editing experience
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2026-02-01
+**Document Version:** 1.1
+**Last Updated:** 2026-02-10
 **Target Audience:** RME developers, contributors, and advanced users

@@ -12,11 +12,14 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QSpinBox,
     QVBoxLayout,
 )
 
@@ -156,15 +159,12 @@ class BrowseTileDialog(QDialog):
         # Get first selected item
         list_item = selected[0]
         data = list_item.data(Qt.ItemDataRole.UserRole)
-
-        # TODO: Open properties dialog for the selected item
-        # For now, just show a placeholder message
-        from PyQt6.QtWidgets import QMessageBox
-
-        if data[0] == "ground":
-            QMessageBox.information(self, "Properties", f"Ground item: {data[1].id}")
-        else:
-            QMessageBox.information(self, "Properties", f"Item: {data[1].id}")
+        item = data[1]
+        current_row = self._items_list.row(list_item)
+        if _edit_item_basic_properties(self, item):
+            self._update_items_list()
+            if 0 <= current_row < self._items_list.count():
+                self._items_list.setCurrentRow(current_row)
 
     def get_tile(self) -> Tile | None:
         """Get the tile being browsed.
@@ -173,3 +173,47 @@ class BrowseTileDialog(QDialog):
             The tile object (with any modifications)
         """
         return self._tile
+
+
+def _edit_item_basic_properties(parent: QDialog, item: object) -> bool:
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(f"Item Properties - ID {int(getattr(item, 'id', 0))}")
+    dialog.setModal(True)
+    dialog.setMinimumWidth(320)
+
+    action_id_spin = QSpinBox(dialog)
+    action_id_spin.setRange(0, 65535)
+    action_id_spin.setSpecialValueText("None")
+    action_id_spin.setValue(int(getattr(item, "action_id", None) or 0))
+
+    unique_id_spin = QSpinBox(dialog)
+    unique_id_spin.setRange(0, 65535)
+    unique_id_spin.setSpecialValueText("None")
+    unique_id_spin.setValue(int(getattr(item, "unique_id", None) or 0))
+
+    text_edit = QLineEdit(dialog)
+    text_edit.setText(str(getattr(item, "text", "") or ""))
+
+    form = QFormLayout()
+    form.addRow("Action ID:", action_id_spin)
+    form.addRow("Unique ID:", unique_id_spin)
+    form.addRow("Text:", text_edit)
+
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+
+    root = QVBoxLayout(dialog)
+    root.addLayout(form)
+    root.addWidget(buttons)
+
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+        return False
+
+    action_id = int(action_id_spin.value())
+    unique_id = int(unique_id_spin.value())
+    text = str(text_edit.text() or "")
+    item.action_id = action_id if action_id > 0 else None
+    item.unique_id = unique_id if unique_id > 0 else None
+    item.text = text if text else None
+    return True

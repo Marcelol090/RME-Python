@@ -148,14 +148,14 @@ class AutoBorderProcessor:
     def _border_groups_registry(self) -> BorderGroupRegistry | None:
         reg = getattr(self.brush_mgr, "border_groups", None)
         if callable(reg):
-            return reg()
-        return getattr(self.brush_mgr, "_border_groups", None)
+            return cast("BorderGroupRegistry | None", reg())
+        return cast("BorderGroupRegistry | None", getattr(self.brush_mgr, "_border_groups", None))
 
     def _ground_equivalents_registry(self) -> GroundEquivalentRegistry | None:
         reg = getattr(self.brush_mgr, "ground_equivalents", None)
         if callable(reg):
-            return reg()
-        return getattr(self.brush_mgr, "_ground_equivalents", None)
+            return cast("GroundEquivalentRegistry | None", reg())
+        return cast("GroundEquivalentRegistry | None", getattr(self.brush_mgr, "_ground_equivalents", None))
 
     def _resolve_ground_id(self, tile: Tile | None) -> int | None:
         reg = self._ground_equivalents_registry()
@@ -166,10 +166,10 @@ class AutoBorderProcessor:
     def _brush_for_ground_id(self, ground_id: int) -> BrushDefinition | None:
         getter = getattr(self.brush_mgr, "get_brush_any", None)
         if callable(getter):
-            return getter(int(ground_id))
+            return cast("BrushDefinition | None", getter(int(ground_id)))
         getter = getattr(self.brush_mgr, "get_brush", None)
         if callable(getter):
-            return getter(int(ground_id))
+            return cast("BrushDefinition | None", getter(int(ground_id)))
         return None
 
     def _is_same_ground_tile(self, tile: Tile | None, brush_def: BrushDefinition) -> bool:

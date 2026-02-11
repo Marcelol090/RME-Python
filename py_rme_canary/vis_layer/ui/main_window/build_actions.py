@@ -31,14 +31,23 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_open = QAction(load_icon("action_open"), "Open…", editor)
     editor.act_save = QAction(load_icon("action_save"), "Save", editor)
     editor.act_save_as = QAction(load_icon("action_save_as"), "Save As…", editor)
-    editor.act_exit = QAction("Exit", editor)
+    editor.act_exit = QAction(load_icon("action_exit"), "Exit", editor)
     editor.act_import_monsters_npcs = QAction("Import Monsters/NPC...", editor)
     editor.act_import_monster_folder = QAction("Import Monster Folder...", editor)
     editor.act_import_map = QAction("Import Map...", editor)
 
+    # Generate Map / Close Map (C++ parity)
+    editor.act_generate_map = QAction(load_icon("action_generate"), "Generate Map...", editor)
+    editor.act_generate_map.triggered.connect(lambda _c=False: file_tools.generate_map(editor))
+
+    editor.act_close_map = QAction(load_icon("action_close"), "Close", editor)
+    editor.act_close_map.setShortcut(QKeySequence("Ctrl+Q"))
+    editor.act_close_map.triggered.connect(lambda _c=False: file_tools.close_map(editor))
+
     editor.act_new.setShortcut(QKeySequence.StandardKey.New)
     editor.act_open.setShortcut(QKeySequence.StandardKey.Open)
     editor.act_save.setShortcut(QKeySequence.StandardKey.Save)
+    editor.act_save_as.setShortcut(QKeySequence("Ctrl+Alt+S"))
 
     editor.act_new.triggered.connect(lambda _c=False: file_tools.new_map(editor))
     editor.act_open.triggered.connect(lambda _c=False: file_tools.open_map(editor))
@@ -58,24 +67,31 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_export_tilesets = QAction("Export Tilesets...", editor)
     editor.act_export_tilesets.triggered.connect(lambda _c=False: file_tools.export_tilesets(editor))
 
-    editor.act_reload_data = QAction("Reload Data Files", editor)
+    editor.act_export_minimap = QAction("Export Minimap...", editor)
+    editor.act_export_minimap.triggered.connect(lambda _c=False: file_tools.export_minimap(editor))
+
+    editor.act_reload_data = QAction(load_icon("action_reload"), "Reload Data Files", editor)
     editor.act_reload_data.setShortcut(QKeySequence("F5"))
     editor.act_reload_data.triggered.connect(lambda _c=False: file_tools.reload_data(editor))
 
-    editor.act_preferences = QAction("Preferences...", editor)
+    editor.act_preferences = QAction(load_icon("action_preferences"), "Preferences...", editor)
     editor.act_preferences.triggered.connect(lambda _c=False: file_tools.open_preferences(editor))
 
-    editor.act_extensions = QAction("Extensions...", editor)
+    editor.act_extensions = QAction(load_icon("action_extensions"), "Extensions...", editor)
     editor.act_extensions.setShortcut(QKeySequence("F2"))
     editor.act_extensions.triggered.connect(lambda _c=False: file_tools.open_extensions(editor))
 
-    editor.act_goto_website = QAction("Goto Website", editor)
+    editor.act_goto_website = QAction(load_icon("action_website"), "Goto Website", editor)
     editor.act_goto_website.setShortcut(QKeySequence("F3"))
     editor.act_goto_website.triggered.connect(lambda _c=False: file_tools.goto_website(editor))
 
+    editor.act_about = QAction(load_icon("action_about"), "About...", editor)
+    editor.act_about.setShortcut(QKeySequence("F1"))
+    editor.act_about.triggered.connect(lambda _c=False: editor._show_about())
+
     # Replace Items
-    editor.act_replace_items = QAction("Replace Items...", editor)
-    editor.act_replace_items.setShortcut(QKeySequence("Ctrl+H"))
+    editor.act_replace_items = QAction(load_icon("action_replace"), "Replace Items...", editor)
+    editor.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
     editor.act_replace_items.triggered.connect(lambda _c=False: edit_tools.replace_items(editor))
 
     # Check Duplicate UIDs
@@ -95,7 +111,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_cancel.setShortcut(QKeySequence("Esc"))
     editor.act_cancel.triggered.connect(lambda _c=False: edit_tools.cancel(editor))
 
-    editor.act_command_palette = QAction("Command Palette...", editor)
+    editor.act_command_palette = QAction(load_icon("action_find"), "Command Palette...", editor)
     editor.act_command_palette.setShortcut(QKeySequence("Ctrl+K"))
     editor.act_command_palette.triggered.connect(lambda _c=False: editor._show_command_palette())
 
@@ -117,7 +133,7 @@ def build_actions(editor: QtMapEditor) -> None:
     # Lasso Selection
     editor.act_lasso_select = QAction("Lasso Select", editor)
     editor.act_lasso_select.setCheckable(True)
-    editor.act_lasso_select.setShortcut(QKeySequence("L"))
+    # NOTE: C++ reserves L for Show Animation. Lasso has no hotkey in legacy.
     editor.act_lasso_select.toggled.connect(lambda v: edit_tools.toggle_lasso(editor, v))
 
     # Legacy edit helpers (menubar.xml)
@@ -138,7 +154,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_duplicate_selection.triggered.connect(lambda _c=False: edit_tools.duplicate_selection(editor))
 
     editor.act_clear_selection = QAction(load_icon("action_clear_selection"), "Clear Selection", editor)
-    editor.act_clear_selection.setShortcut(QKeySequence("Esc"))
+    # NOTE: No shortcut — Esc is handled by act_cancel which calls escape_pressed()
     editor.act_clear_selection.triggered.connect(lambda _c=False: edit_tools.escape_pressed(editor))
 
     editor.act_move_selection_up = QAction("Move Selection Up", editor)
@@ -149,17 +165,23 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_move_selection_down.triggered.connect(lambda _c=False: edit_tools.move_selection_z(editor, +1))
 
     # Border Options
-    editor.act_automagic = QAction("Border Automagic", editor)
+    editor.act_automagic = QAction(load_icon("tool_automagic"), "Border Automagic", editor)
     editor.act_automagic.setCheckable(True)
     editor.act_automagic.setShortcut(QKeySequence("A"))
     editor.act_automagic.toggled.connect(lambda v: edit_tools.toggle_automagic(editor, v))
 
-    editor.act_borderize_selection = QAction("Borderize Selection", editor)
+    editor.act_borderize_selection = QAction(load_icon("action_borderize"), "Borderize Selection", editor)
     editor.act_borderize_selection.setShortcut(QKeySequence("Ctrl+B"))
     editor.act_borderize_selection.triggered.connect(lambda _c=False: edit_tools.borderize_selection(editor))
 
     editor.act_border_builder = QAction("Border Builder...", editor)
     editor.act_border_builder.triggered.connect(lambda _c=False: edit_tools.open_border_builder(editor))
+
+    editor.act_borderize_map = QAction("Borderize Map", editor)
+    editor.act_borderize_map.triggered.connect(lambda _c=False: edit_tools.borderize_map(editor))
+
+    editor.act_randomize_map_full = QAction("Randomize Map", editor)
+    editor.act_randomize_map_full.triggered.connect(lambda _c=False: edit_tools.randomize_map(editor))
 
     # Symmetry Options
     editor.act_symmetry_vertical = QAction("Symmetry Vertical", editor)
@@ -242,8 +264,8 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_mirror_axis_set_from_cursor.triggered.connect(lambda _c=False: mirror_tools.set_axis_from_cursor(editor))
 
     # Zoom
-    editor.act_zoom_in = QAction("Zoom In", editor)
-    editor.act_zoom_out = QAction("Zoom Out", editor)
+    editor.act_zoom_in = QAction(load_icon("action_zoom_in"), "Zoom In", editor)
+    editor.act_zoom_out = QAction(load_icon("action_zoom_out"), "Zoom Out", editor)
     editor.act_zoom_normal = QAction("Zoom Normal", editor)
     editor.act_zoom_normal.setShortcut(QKeySequence("Ctrl+0"))
     editor.act_zoom_in.setShortcut(QKeySequence("Ctrl++"))
@@ -261,11 +283,11 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_new_instance.setShortcut(QKeySequence("Ctrl+Alt+N"))
     editor.act_new_instance.triggered.connect(lambda _c=False: window_tools.new_instance(editor))
 
-    editor.act_fullscreen = QAction("Enter Fullscreen", editor)
+    editor.act_fullscreen = QAction(load_icon("action_fullscreen"), "Enter Fullscreen", editor)
     editor.act_fullscreen.setShortcut(QKeySequence("F11"))
     editor.act_fullscreen.triggered.connect(lambda _c=False: window_tools.toggle_fullscreen(editor))
 
-    editor.act_take_screenshot = QAction("Take Screenshot", editor)
+    editor.act_take_screenshot = QAction(load_icon("action_screenshot"), "Take Screenshot", editor)
     editor.act_take_screenshot.setShortcut(QKeySequence("F10"))
     editor.act_take_screenshot.triggered.connect(lambda _c=False: window_tools.take_screenshot(editor))
 
@@ -279,7 +301,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_all_floors.setShortcut(QKeySequence("Ctrl+W"))
     editor.act_show_all_floors.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_all_floors", v))
 
-    editor.act_show_loose_items = QAction("Show loose items", editor)
+    editor.act_show_loose_items = QAction("Ghost loose items", editor)
     editor.act_show_loose_items.setCheckable(True)
     editor.act_show_loose_items.setShortcut(QKeySequence("G"))
     editor.act_show_loose_items.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_loose_items", v))
@@ -301,7 +323,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_client_ids.setShortcut(QKeySequence("Ctrl+Shift+I"))
     editor.act_show_client_ids.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_client_ids", v))
 
-    editor.act_show_grid = QAction("Show Grid", editor)
+    editor.act_show_grid = QAction(load_icon("action_grid"), "Show Grid", editor)
     editor.act_show_grid.setCheckable(True)
     editor.act_show_grid.setShortcut(QKeySequence("Shift+G"))
     editor.act_show_grid.toggled.connect(lambda v: view_tools.toggle_grid(editor, v))
@@ -342,7 +364,7 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_show_npcs_spawns = QAction("Show npcs spawns", editor)
     editor.act_show_npcs_spawns.setCheckable(True)
-    editor.act_show_npcs_spawns.setShortcut(QKeySequence("U"))
+    # NOTE: C++ does not assign a hotkey to Show NPC Spawns. U belongs to Highlight Locked Doors.
     editor.act_show_npcs_spawns.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_npcs_spawns", v))
 
     editor.act_show_special = QAction("Show special", editor)
@@ -350,7 +372,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_special.setShortcut(QKeySequence("E"))
     editor.act_show_special.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_special", v))
 
-    editor.act_show_as_minimap = QAction("Show as minimap", editor)
+    editor.act_show_as_minimap = QAction(load_icon("action_minimap"), "Show as minimap", editor)
     editor.act_show_as_minimap.setCheckable(True)
     editor.act_show_as_minimap.setShortcut(QKeySequence("Shift+E"))
     editor.act_show_as_minimap.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_as_minimap", v))
@@ -363,7 +385,7 @@ def build_actions(editor: QtMapEditor) -> None:
     # Dark Mode
     editor.act_toggle_dark_mode = QAction("Dark Mode", editor)
     editor.act_toggle_dark_mode.setCheckable(True)
-    editor.act_toggle_dark_mode.setShortcut(QKeySequence("Ctrl+D"))
+    editor.act_toggle_dark_mode.setShortcut(QKeySequence("Ctrl+Shift+D"))
     editor.act_toggle_dark_mode.toggled.connect(lambda v: window_tools.toggle_dark_mode(editor, v))
 
     editor.act_only_show_modified = QAction("Only show modified", editor)
@@ -385,23 +407,24 @@ def build_actions(editor: QtMapEditor) -> None:
         lambda _c=False: editor._clear_invalid_tiles(selection_only=False)
     )
 
-    editor.act_randomize_selection = QAction("Randomize (Selection)", editor)
+    editor.act_randomize_selection = QAction(load_icon("action_randomize"), "Randomize (Selection)", editor)
     editor.act_randomize_selection.triggered.connect(lambda _c=False: editor._randomize(selection_only=True))
 
     editor.act_randomize_map = QAction("Randomize (Map)", editor)
     editor.act_randomize_map.triggered.connect(lambda _c=False: editor._randomize(selection_only=False))
 
     # Map Tools (New Legacy Parity)
-    editor.act_remove_item_map = QAction("Remove Item...", editor)
+    editor.act_remove_item_map = QAction(load_icon("action_remove_item"), "Remove Items by ID...", editor)
+    editor.act_remove_item_map.setShortcut(QKeySequence("Ctrl+Shift+R"))
     editor.act_remove_item_map.triggered.connect(lambda _c=False: editor._map_remove_item_global())
 
-    editor.act_remove_corpses_map = QAction("Remove Corpses", editor)
+    editor.act_remove_corpses_map = QAction("Remove all Corpses...", editor)
     editor.act_remove_corpses_map.triggered.connect(lambda _c=False: editor._map_remove_corpses())
 
-    editor.act_remove_unreachable_map = QAction("Remove Unreachable", editor)
+    editor.act_remove_unreachable_map = QAction("Remove all Unreachable Tiles...", editor)
     editor.act_remove_unreachable_map.triggered.connect(lambda _c=False: editor._map_remove_unreachable())
 
-    editor.act_clear_invalid_house_tiles_map = QAction("Clear Invalid House Tiles", editor)
+    editor.act_clear_invalid_house_tiles_map = QAction("Clear Invalid Houses", editor)
     editor.act_clear_invalid_house_tiles_map.triggered.connect(lambda _c=False: editor._map_clear_invalid_house_tiles())
 
     editor.act_remove_monsters_selection = QAction("Remove Monsters", editor)
@@ -411,6 +434,108 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_convert_map_format = QAction("Convert Map Format...", editor)
     editor.act_convert_map_format.triggered.connect(lambda _c=False: editor._convert_map_format())
+
+    # Map legacy parity (C++ Map menu)
+    editor.act_edit_towns = QAction(load_icon("action_town"), "Edit Towns...", editor)
+    editor.act_edit_towns.setShortcut(QKeySequence("Ctrl+T"))
+    editor.act_edit_towns.triggered.connect(lambda _c=False: editor._edit_towns())
+
+    editor.act_map_cleanup = QAction(load_icon("action_cleanup"), "Cleanup...", editor)
+    editor.act_map_cleanup.triggered.connect(lambda _c=False: editor._map_cleanup())
+
+    editor.act_map_properties = QAction(load_icon("action_properties"), "Properties...", editor)
+    editor.act_map_properties.setShortcut(QKeySequence("Ctrl+P"))
+    editor.act_map_properties.triggered.connect(lambda _c=False: editor._open_map_properties())
+
+    editor.act_map_statistics_legacy = QAction(load_icon("action_statistics"), "Statistics", editor)
+    editor.act_map_statistics_legacy.setShortcut(QKeySequence("F8"))
+    editor.act_map_statistics_legacy.triggered.connect(lambda _c=False: editor._show_map_statistics())
+
+    # Floor navigation (C++ Navigate > Floor submenu)
+    editor.act_floor_actions = []
+    for floor_level in range(16):
+        act = QAction(f"Floor {floor_level}", editor)
+        act.triggered.connect(
+            (lambda fl: lambda _c=False: view_tools.goto_floor(editor, fl))(floor_level)
+        )
+        editor.act_floor_actions.append(act)
+
+    # Navigate actions (C++ Navigate menu)
+    # NOTE: act_goto_previous_position is created later in this function;
+    # build_menus.py references it directly — no alias needed here.
+
+    # View/Show toggles missing from C++ parity
+    editor.act_always_show_zones = QAction("Always show zones", editor)
+    editor.act_always_show_zones.setCheckable(True)
+    editor.act_always_show_zones.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "always_show_zones", v)
+    )
+
+    editor.act_ext_house_shader = QAction("Extended house shader", editor)
+    editor.act_ext_house_shader.setCheckable(True)
+    editor.act_ext_house_shader.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "ext_house_shader", v)
+    )
+
+    editor.act_show_light_strength = QAction("Show light strength", editor)
+    editor.act_show_light_strength.setCheckable(True)
+    editor.act_show_light_strength.setShortcut(QKeySequence("Shift+K"))
+    editor.act_show_light_strength.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "show_light_strength", v)
+    )
+
+    editor.act_show_technical_items = QAction("Show technical items", editor)
+    editor.act_show_technical_items.setCheckable(True)
+    editor.act_show_technical_items.setShortcut(QKeySequence("Shift+T"))
+    editor.act_show_technical_items.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "show_technical_items", v)
+    )
+
+    editor.act_show_towns = QAction("Show towns", editor)
+    editor.act_show_towns.setCheckable(True)
+    editor.act_show_towns.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "show_towns", v)
+    )
+
+    editor.act_show_waypoints = QAction("Show waypoints", editor)
+    editor.act_show_waypoints.setCheckable(True)
+    editor.act_show_waypoints.setShortcut(QKeySequence("Shift+W"))
+    editor.act_show_waypoints.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "show_waypoints", v)
+    )
+
+    editor.act_highlight_locked_doors = QAction("Highlight locked doors", editor)
+    editor.act_highlight_locked_doors.setCheckable(True)
+    editor.act_highlight_locked_doors.setShortcut(QKeySequence("U"))
+    editor.act_highlight_locked_doors.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "highlight_locked_doors", v)
+    )
+
+    editor.act_experimental_fog = QAction("Fog in light view", editor)
+    editor.act_experimental_fog.setCheckable(True)
+    editor.act_experimental_fog.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "experimental_fog", v)
+    )
+
+    # Show Lights (C++ Show menu: Shift+L)
+    editor.act_show_lights = QAction(load_icon("action_show_lights"), "Show Light", editor)
+    editor.act_show_lights.setCheckable(True)
+    editor.act_show_lights.setShortcut(QKeySequence("Shift+L"))
+    editor.act_show_lights.setChecked(bool(getattr(editor, "show_lights", False)))
+    editor.act_show_lights.toggled.connect(
+        lambda v: window_tools.set_view_flag(editor, "show_lights", v)
+    )
+
+    # Selection menu actions (C++ parity)
+    editor.act_replace_items_on_selection = QAction(load_icon("action_replace"), "Replace Items on Selection", editor)
+    editor.act_replace_items_on_selection.triggered.connect(
+        lambda _c=False: editor._replace_items_on_selection()
+    )
+
+    editor.act_remove_item_on_selection = QAction(load_icon("action_remove_item"), "Remove Item on Selection", editor)
+    editor.act_remove_item_on_selection.triggered.connect(
+        lambda _c=False: editor._remove_item_on_selection()
+    )
 
     editor.act_waypoint_set_here = QAction("Set Waypoint Here...", editor)
     editor.act_waypoint_set_here.triggered.connect(lambda _c=False: editor._waypoint_set_here())
@@ -477,12 +602,12 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_npc_spawn_delete_entry_here = QAction("Delete NPC Here...", editor)
     editor.act_npc_spawn_delete_entry_here.triggered.connect(lambda _c=False: editor._npc_spawn_delete_entry_here())
 
-    editor.act_show_houses = QAction("Show houses", editor)
+    editor.act_show_houses = QAction(load_icon("action_show_houses"), "Show houses", editor)
     editor.act_show_houses.setCheckable(True)
     editor.act_show_houses.setShortcut(QKeySequence("Ctrl+H"))
     editor.act_show_houses.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_houses_overlay", v))
 
-    editor.act_show_pathing = QAction("Show pathing", editor)
+    editor.act_show_pathing = QAction(load_icon("action_show_pathing"), "Show pathing", editor)
     editor.act_show_pathing.setCheckable(True)
     editor.act_show_pathing.setShortcut(QKeySequence("O"))
     editor.act_show_pathing.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_pathing", v))
@@ -492,14 +617,14 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_tooltips.setShortcut(QKeySequence("Y"))
     editor.act_show_tooltips.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_tooltips", v))
 
-    editor.act_show_preview = QAction("Show Preview", editor)
+    editor.act_show_preview = QAction(load_icon("action_animation"), "Show Animation", editor)
     editor.act_show_preview.setCheckable(True)
     editor.act_show_preview.setShortcut(QKeySequence("L"))
     editor.act_show_preview.toggled.connect(lambda v: window_tools.toggle_sprite_preview(editor, v))
 
-    editor.act_ingame_preview = QAction("In-Game Preview", editor)
+    editor.act_ingame_preview = QAction(load_icon("action_ingame_preview"), "In-Game Preview", editor)
     editor.act_ingame_preview.setCheckable(True)
-    editor.act_ingame_preview.setShortcut(QKeySequence("F5"))
+    editor.act_ingame_preview.setShortcut(QKeySequence("F9"))
     editor.act_ingame_preview.toggled.connect(lambda v: view_tools.toggle_ingame_preview(editor, v))
 
     editor.act_show_indicators_simple = QAction("Show Indicators", editor)
@@ -507,41 +632,42 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_indicators_simple.toggled.connect(lambda v: window_tools.toggle_indicators_simple(editor, v))
 
     # Indicators fine-grained
-    editor.act_show_wall_hooks = QAction("Wall Hooks", editor)
+    editor.act_show_wall_hooks = QAction(load_icon("indicator_hooks"), "Wall Hooks", editor)
     editor.act_show_wall_hooks.setCheckable(True)
     editor.act_show_wall_hooks.setShortcut(QKeySequence("K"))
     editor.act_show_wall_hooks.toggled.connect(lambda v: window_tools.toggle_wall_hooks(editor, v))
 
-    editor.act_show_pickupables = QAction("Pickupables", editor)
+    editor.act_show_pickupables = QAction(load_icon("indicator_pickupables"), "Pickupables", editor)
     editor.act_show_pickupables.setCheckable(True)
     editor.act_show_pickupables.toggled.connect(lambda v: window_tools.toggle_pickupables(editor, v))
 
-    editor.act_show_moveables = QAction("Moveables", editor)
+    editor.act_show_moveables = QAction(load_icon("indicator_moveables"), "Moveables", editor)
     editor.act_show_moveables.setCheckable(True)
     editor.act_show_moveables.toggled.connect(lambda v: window_tools.toggle_moveables(editor, v))
 
-    editor.act_show_avoidables = QAction("Avoidables", editor)
+    editor.act_show_avoidables = QAction(load_icon("indicator_avoidables"), "Avoidables", editor)
     editor.act_show_avoidables.setCheckable(True)
     editor.act_show_avoidables.toggled.connect(lambda v: window_tools.toggle_avoidables(editor, v))
 
     # GoTo (matches screenshot)
-    editor.act_goto_previous_position = QAction("Go To Previous Position", editor)
+    editor.act_goto_previous_position = QAction(load_icon("action_goto_back"), "Go To Previous Position", editor)
     editor.act_goto_previous_position.setShortcut(QKeySequence("P"))
     editor.act_goto_previous_position.triggered.connect(lambda _c=False: edit_tools.goto_previous_position(editor))
 
-    editor.act_goto_position = QAction("Go To Position", editor)
+    editor.act_goto_position = QAction(load_icon("action_goto"), "Go To Position", editor)
     editor.act_goto_position.setShortcut(QKeySequence("Ctrl+G"))
     editor.act_goto_position.triggered.connect(lambda _c=False: edit_tools.goto_position(editor))
 
     # Palettes
     editor.act_new_palette = QAction("New Palette", editor)
-    editor.act_palette_terrain = QAction("Terrain", editor)
+    editor.act_palette_terrain = QAction(load_icon("action_terrain"), "Terrain", editor)
     editor.act_palette_doodad = QAction("Doodad", editor)
     editor.act_palette_item = QAction("Item", editor)
-    editor.act_palette_house = QAction("House", editor)
-    editor.act_palette_creature = QAction("Creature", editor)
+    editor.act_palette_collection = QAction("Collection", editor)
+    editor.act_palette_house = QAction(load_icon("action_house"), "House", editor)
+    editor.act_palette_creature = QAction(load_icon("action_creature"), "Creature", editor)
     editor.act_palette_npc = QAction("NPC", editor)
-    editor.act_palette_waypoint = QAction("Waypoint", editor)
+    editor.act_palette_waypoint = QAction(load_icon("action_waypoint"), "Waypoint", editor)
     editor.act_palette_zones = QAction("Zones", editor)
     editor.act_palette_raw = QAction("Raw", editor)
     editor.act_palette_large_icons = QAction("Large Palette Icons", editor)
@@ -551,9 +677,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_palette_terrain.setShortcut(QKeySequence("T"))
     editor.act_palette_doodad.setShortcut(QKeySequence("D"))
     editor.act_palette_item.setShortcut(QKeySequence("I"))
+    editor.act_palette_collection.setShortcut(QKeySequence("N"))
     editor.act_palette_house.setShortcut(QKeySequence("H"))
     editor.act_palette_creature.setShortcut(QKeySequence("C"))
-    editor.act_palette_npc.setShortcut(QKeySequence("N"))
+    editor.act_palette_npc.setShortcut(QKeySequence("Alt+N"))
     editor.act_palette_waypoint.setShortcut(QKeySequence("W"))
     editor.act_palette_zones.setShortcut(QKeySequence("Ctrl+Alt+Z"))
     editor.act_palette_raw.setShortcut(QKeySequence("R"))
@@ -562,6 +689,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_palette_terrain.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "terrain"))
     editor.act_palette_doodad.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "doodad"))
     editor.act_palette_item.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "item"))
+    editor.act_palette_collection.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "collection"))
     editor.act_palette_house.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "house"))
     editor.act_palette_creature.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "creature"))
     editor.act_palette_npc.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "npc"))
@@ -570,7 +698,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_palette_raw.triggered.connect(lambda _c=False: edit_tools.select_palette(editor, "raw"))
 
     # Docks
-    editor.act_window_minimap = QAction("Minimap", editor)
+    editor.act_window_minimap = QAction(load_icon("action_minimap"), "Minimap", editor)
     editor.act_window_minimap.setCheckable(True)
     editor.act_window_minimap.setShortcut(QKeySequence("M"))
     editor.act_window_minimap.toggled.connect(lambda v: window_tools.toggle_minimap_dock(editor, v))
@@ -604,11 +732,27 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_unload_appearances.triggered.connect(lambda _c=False: assets_tools.unload_appearances(editor))
 
     # Find
-    editor.act_find_item = QAction("Find Item...", editor)
+    editor.act_find_item = QAction(load_icon("action_find"), "Find Item...", editor)
     editor.act_find_item.setShortcut(QKeySequence("Ctrl+F"))
     editor.act_find_item.triggered.connect(lambda _c=False: find_item.open_find_dialog(editor, "item"))
 
-    editor.act_find_creature = QAction("Find Creature...", editor)
+    # Find Everything (C++ parity: Search > Find Everything)
+    editor.act_find_everything_map = QAction("Find Everything (Map)", editor)
+    editor.act_find_everything_map.triggered.connect(
+        lambda _c=False: find_item.open_find_everything(editor, selection_only=False)
+    )
+
+    editor.act_find_everything_selection = QAction("Find Everything (Selection)", editor)
+    editor.act_find_everything_selection.triggered.connect(
+        lambda _c=False: find_item.open_find_everything(editor, selection_only=True)
+    )
+
+    editor.act_find_item_selection = QAction("Find Item on Selection", editor)
+    editor.act_find_item_selection.triggered.connect(
+        lambda _c=False: find_item.open_find_dialog(editor, "item", selection_only=True)
+    )
+
+    editor.act_find_creature = QAction(load_icon("action_creature"), "Find Creature...", editor)
     editor.act_find_creature.triggered.connect(lambda _c=False: find_item.open_find_dialog(editor, "creature"))
 
     # Aliases for rollout plan coverage
@@ -618,7 +762,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_find_npc = QAction("Find NPC...", editor)
     editor.act_find_npc.triggered.connect(lambda _c=False: find_item.open_find_dialog(editor, "creature"))
 
-    editor.act_find_house = QAction("Find House...", editor)
+    editor.act_find_house = QAction(load_icon("action_house"), "Find House...", editor)
     editor.act_find_house.triggered.connect(lambda _c=False: find_item.open_find_dialog(editor, "house"))
 
     editor.act_find_unique_map = QAction("Find Unique (Map)", editor)
@@ -702,7 +846,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_npcs_spawns.setChecked(bool(getattr(editor, "show_npcs_spawns", False)))
     editor.act_show_special.setChecked(bool(getattr(editor, "show_special", False)))
 
-    editor.act_show_as_minimap.setChecked(bool(getattr(editor, "show_as_minimap", True)))
+    editor.act_show_as_minimap.setChecked(bool(getattr(editor, "show_as_minimap", False)))
     editor.act_only_show_colors.setChecked(bool(getattr(editor, "only_show_colors", False)))
     editor.act_only_show_modified.setChecked(bool(getattr(editor, "only_show_modified", False)))
 
@@ -713,6 +857,16 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_indicators_simple.setChecked(bool(getattr(editor, "show_indicators", True)))
     if hasattr(editor, "act_ingame_preview"):
         editor.act_ingame_preview.setChecked(bool(getattr(editor, "ingame_preview_enabled", False)))
+
+    # New view toggles defaults (C++ parity)
+    editor.act_always_show_zones.setChecked(bool(getattr(editor, "always_show_zones", False)))
+    editor.act_ext_house_shader.setChecked(bool(getattr(editor, "ext_house_shader", False)))
+    editor.act_show_light_strength.setChecked(bool(getattr(editor, "show_light_strength", False)))
+    editor.act_show_technical_items.setChecked(bool(getattr(editor, "show_technical_items", False)))
+    editor.act_show_towns.setChecked(bool(getattr(editor, "show_towns", False)))
+    editor.act_show_waypoints.setChecked(bool(getattr(editor, "show_waypoints", False)))
+    editor.act_highlight_locked_doors.setChecked(bool(getattr(editor, "highlight_locked_doors", False)))
+    editor.act_experimental_fog.setChecked(bool(getattr(editor, "experimental_fog", False)))
 
     # Selection depth defaults (legacy uses COMPENSATE)
     try:

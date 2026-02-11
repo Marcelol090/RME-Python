@@ -174,9 +174,9 @@ def _ensure_parent_dir(path: Path) -> None:
 
 def _load_or_create_root(path: Path, root_tag: str) -> Element:
     if not path.exists():
-        return ET.Element(root_tag)
+        return cast(Element, ET.Element(root_tag))
     try:
-        root = ET.parse(path).getroot()
+        root = cast(Element, ET.parse(path).getroot())
     except Exception as exc:
         raise ValueError(f"Failed to parse {path}") from exc
     if (root.tag or "").strip().lower() != root_tag.lower():

@@ -55,9 +55,12 @@ def read_root_header(stream: BinaryIO, *, allow_unsupported_versions: bool = Fal
         raise OTBMParseError(f"Expected NODE_START, got 0x{op:02X}")
 
     # Begin root node
+    # The root node type byte is 0x00 in real OTBM files.
+    # C++ RME skips it with root->skip(1). We accept both 0x00 and
+    # OTBM_ROOTV1 (0x01) for compatibility.
     root_type, root_payload = begin_node(stream)
-    if root_type != OTBM_ROOTV1:
-        raise OTBMParseError(f"Expected OTBM_ROOTV1 (0x01), got 0x{root_type:02X}")
+    if root_type not in (0x00, OTBM_ROOTV1):
+        raise OTBMParseError(f"Expected OTBM root type (0x00 or 0x01), got 0x{root_type:02X}")
 
     # Read version
     version_bytes = root_payload.read_escaped_bytes(4)

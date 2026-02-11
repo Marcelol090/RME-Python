@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from defusedxml import ElementTree as ET  # type: ignore[import-not-found]
+from defusedxml import ElementTree as ET  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     pass
@@ -124,6 +124,9 @@ def load_creatures_xml(
 
     tree = ET.parse(xml_path)
     root = tree.getroot()
+
+    if root is None:
+        return CreatureDatabase()
 
     database = CreatureDatabase()
 

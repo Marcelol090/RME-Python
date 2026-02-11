@@ -52,8 +52,6 @@ def _normalize_selection_tiles(selection_tiles: Iterable[tuple[int, int, int]] |
 
     normalized: set[TileKey] = set()
     for value in selection_tiles:
-        if not isinstance(value, tuple) or len(value) != 3:
-            continue
         normalized.add((int(value[0]), int(value[1]), int(value[2])))
     return normalized
 

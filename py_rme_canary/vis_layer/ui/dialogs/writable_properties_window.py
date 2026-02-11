@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
+    QApplication,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -69,7 +70,7 @@ class WritablePropertiesWindow(QDialog):
         self._tile = tile
 
         self.setWindowTitle("Edit Text")
-        self.setMinimumSize(450, 400)
+        self.setMinimumSize(_scale_dip(self, 450), _scale_dip(self, 400))
         self.setModal(True)
 
         self._setup_ui()
@@ -79,8 +80,9 @@ class WritablePropertiesWindow(QDialog):
     def _setup_ui(self) -> None:
         """Initialize UI components."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(_scale_dip(self, 16))
+        margin = _scale_dip(self, 20)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Header with item info
         header = QHBoxLayout()
@@ -93,7 +95,7 @@ class WritablePropertiesWindow(QDialog):
         # ID Fields group
         id_group = QGroupBox("Identifiers")
         id_layout = QFormLayout(id_group)
-        id_layout.setSpacing(10)
+        id_layout.setSpacing(_scale_dip(self, 10))
 
         self._action_id = QSpinBox()
         self._action_id.setRange(0, 65535)
@@ -112,7 +114,7 @@ class WritablePropertiesWindow(QDialog):
         # Text content group
         text_group = QGroupBox("Text Content")
         text_layout = QVBoxLayout(text_group)
-        text_layout.setSpacing(10)
+        text_layout.setSpacing(_scale_dip(self, 10))
 
         # Character count label
         self._char_count = QLabel("0 / 4096 characters")
@@ -337,3 +339,14 @@ class WritablePropertiesWindow(QDialog):
             "unique_id": self._unique_id.value() or None,
             "text": self._text_edit.toPlainText(),
         }
+
+
+def _scale_dip(widget: QWidget, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = widget.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

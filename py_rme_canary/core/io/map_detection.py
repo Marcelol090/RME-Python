@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from py_rme_canary.core.constants import MAGIC_OTBM, MAGIC_OTMM
+from py_rme_canary.core.constants import MAGIC_OTBM, MAGIC_OTMM, MAGIC_WILDCARD
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,7 +37,7 @@ def detect_map_file(path: str | Path) -> MapDetection:
     if suffix in (".otbm", ".otmm"):
         with p.open("rb") as f:
             magic = f.read(4)
-        if magic == MAGIC_OTBM:
+        if magic in (MAGIC_OTBM, MAGIC_WILDCARD):
             return MapDetection(kind="otbm", engine="unknown", reason="OTBM magic")
         if magic == MAGIC_OTMM:
             return MapDetection(kind="otmm", engine="unknown", reason="OTMM magic")

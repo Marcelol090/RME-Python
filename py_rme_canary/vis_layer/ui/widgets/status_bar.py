@@ -223,6 +223,73 @@ class MemoryIndicator(StatusBarSection):
             pass
 
 
+class LiveConnectionIndicator(StatusBarSection):
+    """Displays live collaboration connection status.
+
+    Shows a colored dot and text indicating the current state:
+    - Disconnected (red)
+    - Connecting / Reconnecting (yellow)
+    - Connected (green, with user count)
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(icon="LIVE", text="Offline", tooltip="Live Collaboration Status", parent=parent)
+        self._user_count: int = 0
+
+    def set_disconnected(self) -> None:
+        """Show disconnected state."""
+        self.set_icon("LIVE")
+        self.set_text("Offline")
+        self.setToolTip("Live Collaboration: Disconnected")
+        self._update_color("#EF4444")
+        self._user_count = 0
+
+    def set_connecting(self) -> None:
+        """Show connecting state."""
+        self.set_icon("LIVE")
+        self.set_text("Connecting...")
+        self.setToolTip("Live Collaboration: Connecting")
+        self._update_color("#EAB308")
+
+    def set_reconnecting(self, attempt: int = 0) -> None:
+        """Show reconnecting state."""
+        self.set_icon("LIVE")
+        text = "Reconnecting..."
+        if attempt > 0:
+            text = f"Reconnecting ({attempt})..."
+        self.set_text(text)
+        self.setToolTip(f"Live Collaboration: Reconnecting (attempt {attempt})")
+        self._update_color("#EAB308")
+
+    def set_connected(self, user_count: int = 0, *, is_host: bool = False) -> None:
+        """Show connected state."""
+        self.set_icon("LIVE")
+        self._user_count = int(user_count)
+        role = "Hosting" if is_host else "Connected"
+        if user_count > 0:
+            self.set_text(f"{role} ({user_count})")
+        else:
+            self.set_text(role)
+        self.setToolTip(f"Live Collaboration: {role}")
+        self._update_color("#22C55E")
+
+    def update_user_count(self, count: int) -> None:
+        """Update the displayed user count."""
+        self._user_count = int(count)
+        current = self.text_label.text()
+        if "Connected" in current or "Hosting" in current:
+            role = "Hosting" if "Hosting" in current else "Connected"
+            if count > 0:
+                self.set_text(f"{role} ({count})")
+            else:
+                self.set_text(role)
+
+    def _update_color(self, hex_color: str) -> None:
+        """Update the icon label color."""
+        if self.icon_label:
+            self.icon_label.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {hex_color};")
+
+
 class ModernStatusBar(QStatusBar):
     """Modern status bar for the map editor.
 
@@ -272,6 +339,9 @@ class ModernStatusBar(QStatusBar):
 
         self.zoom = ZoomIndicator()
         self.addPermanentWidget(self.zoom)
+
+        self.live_status = LiveConnectionIndicator()
+        self.addPermanentWidget(self.live_status)
 
         self.memory = MemoryIndicator()
         self.addPermanentWidget(self.memory)

@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import (
+    QApplication,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -96,7 +97,8 @@ class FluidPreviewWidget(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._fluid_type = FluidType.EMPTY
-        self.setFixedSize(40, 40)
+        size = _scale_dip(self, 40)
+        self.setFixedSize(size, size)
         self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Sunken)
 
     def set_fluid_type(self, fluid_type: FluidType) -> None:
@@ -146,7 +148,7 @@ class SplashPropertiesWindow(QDialog):
         self._tile = tile
 
         self.setWindowTitle("Edit Fluid")
-        self.setMinimumSize(380, 300)
+        self.setMinimumSize(_scale_dip(self, 380), _scale_dip(self, 300))
         self.setModal(True)
 
         self._setup_ui()
@@ -156,8 +158,9 @@ class SplashPropertiesWindow(QDialog):
     def _setup_ui(self) -> None:
         """Initialize UI components."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(_scale_dip(self, 16))
+        margin = _scale_dip(self, 20)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         # Header with item info
         header = QHBoxLayout()
@@ -170,7 +173,7 @@ class SplashPropertiesWindow(QDialog):
         # ID Fields group
         id_group = QGroupBox("Identifiers")
         id_layout = QFormLayout(id_group)
-        id_layout.setSpacing(10)
+        id_layout.setSpacing(_scale_dip(self, 10))
 
         self._action_id = QSpinBox()
         self._action_id.setRange(0, 65535)
@@ -189,7 +192,7 @@ class SplashPropertiesWindow(QDialog):
         # Fluid type group
         fluid_group = QGroupBox("Fluid Type")
         fluid_layout = QVBoxLayout(fluid_group)
-        fluid_layout.setSpacing(12)
+        fluid_layout.setSpacing(_scale_dip(self, 12))
 
         # Fluid selector with preview
         selector_layout = QHBoxLayout()
@@ -198,7 +201,7 @@ class SplashPropertiesWindow(QDialog):
         selector_layout.addWidget(self._fluid_preview)
 
         self._fluid_combo = QComboBox()
-        self._fluid_combo.setMinimumWidth(200)
+        self._fluid_combo.setMinimumWidth(_scale_dip(self, 200))
 
         # Populate fluid types
         for fluid in FluidType:
@@ -444,3 +447,14 @@ class SplashPropertiesWindow(QDialog):
             "unique_id": self._unique_id.value() or None,
             "fluid_type": fluid.value if fluid else 0,
         }
+
+
+def _scale_dip(widget: QWidget, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = widget.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))

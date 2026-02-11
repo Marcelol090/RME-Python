@@ -157,6 +157,28 @@ class QtMapEditorSessionMixin:
             changed_message="Borderize selection: done",
         )
 
+    def _borderize_map(self, _checked: bool = False) -> None:
+        """Reborder the entire map (C++ BORDERIZE_MAP action)."""
+        reply = QMessageBox.question(
+            self._as_editor(),
+            "Borderize Map",
+            "This will reborder the entire map. This may take a while.\nContinue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        ok, action = self._run_guarded("Borderize Map", self.session.borderize_map)
+        if not ok:
+            return
+
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Borderize map: no changes",
+            changed_message="Borderize map: done",
+        )
+
     def _open_border_builder(self) -> None:
         from py_rme_canary.vis_layer.ui.dialogs.border_builder_dialog import BorderBuilderDialog
 
@@ -197,6 +219,54 @@ class QtMapEditorSessionMixin:
 
         dialog = ReplaceItemsDialog(parent=self._as_editor(), session=self.session)
         dialog.exec()
+
+    def _replace_items_on_selection(self) -> None:
+        """Open Replace Items dialog scoped to selection (C++ REPLACE_ON_SELECTION_ITEMS)."""
+        if not self.session.has_selection():
+            self.status.showMessage("Replace items on selection: nothing selected")
+            return
+        from py_rme_canary.vis_layer.ui.dialogs.replace_items_dialog import ReplaceItemsDialog
+
+        dialog = ReplaceItemsDialog(parent=self._as_editor(), session=self.session)
+        # Pre-check the "Selection only" checkbox
+        if hasattr(dialog, "_selection_only_cb"):
+            dialog._selection_only_cb.setChecked(True)
+        dialog.exec()
+
+    def _remove_item_on_selection(self) -> None:
+        """Remove a specific item from the current selection (C++ REMOVE_ON_SELECTION_ITEM)."""
+        if not self.session.has_selection():
+            self.status.showMessage("Remove item on selection: nothing selected")
+            return
+        from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog
+
+        dialog = FindItemDialog(self._as_editor(), title="Remove Item From Selection")
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        result_value = dialog.result_value()
+        if not result_value.resolved:
+            self.status.showMessage(result_value.error or "Remove item: unable to resolve item id")
+            return
+
+        server_id = int(result_value.server_id)
+        if server_id <= 0:
+            self.status.showMessage("Remove item: invalid serverId")
+            return
+
+        ok, result = self._run_guarded(
+            "Remove Item on Selection",
+            lambda: self.session.remove_items(server_id=int(server_id), selection_only=True),
+        )
+        if not ok or result is None:
+            return
+        removed, action = result
+
+        self._apply_action_result(
+            action=action,
+            no_changes_message="Remove item on selection: no changes",
+            changed_message=f"Remove item on selection: {int(removed)} item(s) deleted",
+        )
 
     def _check_uid(self) -> None:
         """Open UID Report dialog."""
@@ -249,7 +319,12 @@ class QtMapEditorSessionMixin:
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
 
-        server_id = int(dialog.result_value().server_id)
+        result_value = dialog.result_value()
+        if not result_value.resolved:
+            self.status.showMessage(result_value.error or "Remove item: unable to resolve item id")
+            return
+
+        server_id = int(result_value.server_id)
         if server_id <= 0:
             self.status.showMessage("Remove item: invalid serverId")
             return

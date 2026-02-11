@@ -205,6 +205,7 @@ class ItemIdSelector(QFrame):
         super().__init__(parent)
         self._item_id = 0
         self._sprite_provider: Callable[[int], QPixmap | None] | None = None
+        self._browse_callback: Callable[[int], int | None] | None = None
 
         self._setup_ui(label)
 
@@ -251,9 +252,9 @@ class ItemIdSelector(QFrame):
         layout.addWidget(self.id_spin, 1)
 
         # Browse button
-        browse_btn = QPushButton("...")
-        browse_btn.setFixedSize(32, 32)
-        browse_btn.setStyleSheet(
+        self.browse_btn = QPushButton("...")
+        self.browse_btn.setFixedSize(32, 32)
+        self.browse_btn.setStyleSheet(
             """
             QPushButton {
                 background: #363650;
@@ -264,9 +265,9 @@ class ItemIdSelector(QFrame):
             QPushButton:hover { background: #8B5CF6; }
         """
         )
-        browse_btn.setToolTip("Browse items")
-        # browse_btn.clicked.connect(self._open_browser)  # TODO: Connect to item browser
-        layout.addWidget(browse_btn)
+        self.browse_btn.setToolTip("Browse items")
+        self.browse_btn.clicked.connect(self._on_browse_clicked)
+        layout.addWidget(self.browse_btn)
 
     def _on_id_changed(self, value: int) -> None:
         """Handle ID input change."""
@@ -292,6 +293,51 @@ class ItemIdSelector(QFrame):
         """Set the sprite provider function."""
         self._sprite_provider = provider
         self._update_preview()
+
+    def set_browse_callback(self, callback: Callable[[int], int | None] | None) -> None:
+        """Set callback used by browse button to pick a server ID."""
+        self._browse_callback = callback
+
+    def _on_browse_clicked(self) -> None:
+        selected_id: int | None = None
+        if self._browse_callback is not None:
+            try:
+                selected_id = self._browse_callback(int(self._item_id))
+            except Exception as exc:
+                logger.exception("Browse callback failed: %s", exc)
+                QMessageBox.warning(self, "Item Browser", "Failed to browse items with configured callback.")
+                return
+        else:
+            selected_id = self._open_browser_with_dialog()
+
+        if selected_id is None:
+            return
+        if int(selected_id) <= 0:
+            return
+        self.id_spin.setValue(int(selected_id))
+
+    def _open_browser_with_dialog(self) -> int | None:
+        try:
+            from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog
+        except Exception:
+            QMessageBox.information(self, "Item Browser", "Item browser is not available in this context.")
+            return None
+
+        dialog = FindItemDialog(self, title="Select Item")
+        if self._item_id > 0:
+            spin = getattr(dialog, "_id_spin", None)
+            if spin is not None and hasattr(spin, "setValue"):
+                spin.setValue(int(self._item_id))
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+
+        result = dialog.result_value()
+        if not result.resolved:
+            QMessageBox.warning(self, "Item Browser", result.error or "Unable to resolve selected item.")
+            return None
+        if int(result.server_id) <= 0:
+            return None
+        return int(result.server_id)
 
     @property
     def item_id(self) -> int:
@@ -620,11 +666,17 @@ class BatchItemEditor(QDialog):
         self.source_selector.set_sprite_provider(provider)
         self.target_selector.set_sprite_provider(provider)
 
+    def set_item_browser(self, browser: Callable[[int], int | None] | None) -> None:
+        """Set item browser callback for source/target selectors."""
+        self.source_selector.set_browse_callback(browser)
+        self.target_selector.set_browse_callback(browser)
+
 
 def show_batch_editor(
     parent: QWidget | None = None,
     selection_only: bool = False,
     executor: Callable[[list[ReplacingItem]], BatchResult] | None = None,
+    item_browser: Callable[[int], int | None] | None = None,
 ) -> BatchItemEditor:
     """Factory function to create and show the dialog.
 
@@ -632,6 +684,7 @@ def show_batch_editor(
         parent: Parent widget.
         selection_only: Whether to only affect selected tiles.
         executor: Optional executor function.
+        item_browser: Optional callback used by browse buttons.
 
     Returns:
         The dialog instance.
@@ -639,6 +692,8 @@ def show_batch_editor(
     dialog = BatchItemEditor(parent, selection_only=selection_only)
     if executor:
         dialog.set_executor(executor)
+    if item_browser is not None:
+        dialog.set_item_browser(item_browser)
     dialog.show()
     return dialog
 

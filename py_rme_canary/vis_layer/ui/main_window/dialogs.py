@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -31,6 +33,10 @@ from py_rme_canary.logic_layer.map_statistics import compute_map_statistics, for
 @dataclass(slots=True)
 class FindItemResult:
     server_id: int
+    query_mode: str = "server_id"
+    query_value: int = 0
+    resolved: bool = True
+    error: str = ""
 
 
 class FindItemDialog(QDialog):
@@ -38,13 +44,19 @@ class FindItemDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(str(title))
         self.setModal(True)
+        self.setMinimumWidth(_scale_dip(self, 360))
 
+        self._mode_combo = QComboBox(self)
+        self._mode_combo.addItem("Server ID", "server_id")
+        self._mode_combo.addItem("Client ID", "client_id")
         self._id_spin = QSpinBox(self)
         self._id_spin.setRange(0, 10_000_000)
         self._id_spin.setValue(0)
+        self._id_spin.setToolTip("Use Server ID by default. Choose Client ID when working with modern/canary assets.")
 
         form = QFormLayout()
-        form.addRow("serverId:", self._id_spin)
+        form.addRow("Search by:", self._mode_combo)
+        form.addRow("ID:", self._id_spin)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -55,13 +67,41 @@ class FindItemDialog(QDialog):
         root.addWidget(buttons)
 
     def result_value(self) -> FindItemResult:
-        return FindItemResult(server_id=int(self._id_spin.value()))
+        query_value = int(self._id_spin.value())
+        query_mode = str(self._mode_combo.currentData() or "server_id")
+
+        if query_mode == "server_id":
+            return FindItemResult(
+                server_id=int(query_value),
+                query_mode=query_mode,
+                query_value=int(query_value),
+                resolved=True,
+                error="",
+            )
+
+        mapped = _resolve_server_id_from_client_id(int(query_value))
+        if mapped is None:
+            return FindItemResult(
+                server_id=0,
+                query_mode=query_mode,
+                query_value=int(query_value),
+                resolved=False,
+                error=f"No ServerID mapping for ClientID {int(query_value)}.",
+            )
+        return FindItemResult(
+            server_id=int(mapped),
+            query_mode=query_mode,
+            query_value=int(query_value),
+            resolved=True,
+            error="",
+        )
 
 
 @dataclass(slots=True)
 class FindEntityResult:
     mode: str  # "item", "house", "monster", "npc"
     query_id: int = 0
+    query_mode: str = "server_id"
     query_name: str = ""
 
 
@@ -70,16 +110,20 @@ class FindEntityDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(_scale_dip(self, 380))
 
         self._tabs = QTabWidget(self)
 
         # -- Item Tab --
         self._tab_item = QWidget()
+        self._item_mode_combo = QComboBox()
+        self._item_mode_combo.addItem("Server ID", "server_id")
+        self._item_mode_combo.addItem("Client ID", "client_id")
         self._item_id_spin = QSpinBox()
         self._item_id_spin.setRange(0, 99999)
         l_item = QFormLayout(self._tab_item)
-        l_item.addRow("Item ID (Server):", self._item_id_spin)
+        l_item.addRow("Search by:", self._item_mode_combo)
+        l_item.addRow("Item ID:", self._item_id_spin)
         self._tabs.addTab(self._tab_item, "Item")
 
         # -- Creature Tab (Monster/NPC) --
@@ -127,13 +171,56 @@ class FindEntityDialog(QDialog):
         title = self._tabs.tabText(idx)
 
         if title == "Item":
-            return FindEntityResult(mode="item", query_id=self._item_id_spin.value())
+            return FindEntityResult(
+                mode="item",
+                query_id=int(self._item_id_spin.value()),
+                query_mode=str(self._item_mode_combo.currentData() or "server_id"),
+            )
         elif title == "Creature":
             return FindEntityResult(mode="creature", query_name=self._creature_name_edit.text())
         elif title == "House":
             return FindEntityResult(mode="house", query_name=self._house_name_edit.text())
 
         return FindEntityResult(mode="unknown")
+
+
+def _resolve_server_id_from_client_id(client_id: int) -> int | None:
+    if int(client_id) <= 0:
+        return None
+
+    from py_rme_canary.logic_layer.asset_manager import AssetManager
+
+    asset_mgr = AssetManager.instance()
+    mapper = getattr(asset_mgr, "_id_mapper", None)
+    if mapper is not None and hasattr(mapper, "get_server_id"):
+        try:
+            mapped = mapper.get_server_id(int(client_id))
+            if mapped is not None and int(mapped) > 0:
+                return int(mapped)
+        except Exception:
+            pass
+
+    items_xml = getattr(asset_mgr, "_items_xml", None)
+    if items_xml is not None and hasattr(items_xml, "get_server_id"):
+        try:
+            mapped = items_xml.get_server_id(int(client_id))
+            if mapped is not None and int(mapped) > 0:
+                return int(mapped)
+        except Exception:
+            pass
+
+    return None
+
+
+def _scale_dip(widget: QWidget, value: int) -> int:
+    app = QApplication.instance()
+    if app is None:
+        return int(value)
+    screen = widget.screen() or app.primaryScreen()
+    if screen is None:
+        return int(value)
+    factor = float(screen.logicalDotsPerInch()) / 96.0
+    return max(1, int(round(float(value) * max(1.0, factor))))
 
 
 class ReplaceItemsDialog(QDialog):

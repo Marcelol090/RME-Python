@@ -2,6 +2,7 @@
 
 UI for viewing and managing border rules for auto-connecting brushes.
 Allows users to preview border patterns and configure custom rules.
+Supports import/export of legacy RME borders.xml format.
 
 Layer: vis_layer (OK to use PyQt6)
 Reference: AutoBorderProcessor in logic_layer/borders/processor.py
@@ -16,6 +17,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
     QDialog,
+    QFileDialog,
     QFormLayout,
     QFrame,
     QGroupBox,
@@ -416,6 +418,17 @@ class BorderBuilderDialog(QDialog):
 
         # Bottom buttons
         button_layout = QHBoxLayout()
+
+        self.btn_import_xml = QPushButton("Import borders.xml")
+        self.btn_import_xml.setToolTip("Import border definitions from a legacy RME borders.xml file")
+        self.btn_import_xml.clicked.connect(self._import_borders_xml)
+        button_layout.addWidget(self.btn_import_xml)
+
+        self.btn_export_xml = QPushButton("Export borders.xml")
+        self.btn_export_xml.setToolTip("Export current border definitions to legacy RME borders.xml format")
+        self.btn_export_xml.clicked.connect(self._export_borders_xml)
+        button_layout.addWidget(self.btn_export_xml)
+
         button_layout.addStretch()
 
         self.btn_close = QPushButton("Close")
@@ -643,3 +656,72 @@ class BorderBuilderDialog(QDialog):
             return
         self._reload_current_brush()
         self._set_message(f"Reloaded overrides ({changed} brush(es) changed).")
+
+    # ── Legacy borders.xml import/export ────────────────────────────────────
+
+    def _import_borders_xml(self) -> None:
+        """Import border definitions from a legacy RME borders.xml file."""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import Legacy borders.xml",
+            "",
+            "XML files (*.xml);;All files (*)",
+        )
+        if not path:
+            return
+
+        try:
+            from py_rme_canary.logic_layer.borders.borders_xml_io import (
+                import_borders_into_manager,
+                parse_borders_xml,
+            )
+
+            borders = parse_borders_xml(path)
+            if not borders:
+                self._set_message("No border definitions found in the selected file.")
+                return
+
+            changed = import_borders_into_manager(self.brush_manager, borders)
+            self._reload_current_brush()
+            self._load_brushes_refresh()
+            self._set_message(
+                f"Imported {len(borders)} border definition(s) from XML "
+                f"({changed} rule(s) changed)."
+            )
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Import Failed",
+                f"Failed to import borders.xml:\n{exc}",
+            )
+
+    def _export_borders_xml(self) -> None:
+        """Export current border definitions to legacy RME borders.xml format."""
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Legacy borders.xml",
+            "borders.xml",
+            "XML files (*.xml);;All files (*)",
+        )
+        if not path:
+            return
+
+        try:
+            from py_rme_canary.logic_layer.borders.borders_xml_io import export_borders_xml
+
+            count = export_borders_xml(self.brush_manager, path)
+            self._set_message(f"Exported {count} border definition(s) to {path}.")
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Export Failed",
+                f"Failed to export borders.xml:\n{exc}",
+            )
+
+    def _load_brushes_refresh(self) -> None:
+        """Refresh the brush list after an import operation."""
+        current_row = self.brush_list.currentRow()
+        self.brush_list.clear()
+        self._load_brushes()
+        if current_row >= 0 and current_row < self.brush_list.count():
+            self.brush_list.setCurrentRow(current_row)
