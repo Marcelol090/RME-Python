@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from xml.etree.ElementTree import SubElement
 
 from py_rme_canary.core.io.lua_creature_import import (
     import_lua_creatures_from_folder,
@@ -52,7 +51,7 @@ def test_import_folder_merges_monsters_and_npcs(tmp_path: Path) -> None:
     npcs_path = tmp_path / "npcs.xml"
 
     root = Element("monsters")
-    existing = SubElement(root, "monster")
+    existing = ET.SubElement(root, "monster")
     existing.set("name", "Rat")
     existing.set("lookType", "1")
     monsters_path.write_bytes(ET.tostring(root, encoding="utf-8", xml_declaration=True))

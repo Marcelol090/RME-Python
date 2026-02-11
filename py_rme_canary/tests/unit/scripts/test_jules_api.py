@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -11,7 +12,8 @@ import jules_api  # type: ignore[import-not-found]
 
 
 def _config() -> jules_api.JulesConfig:
-    return jules_api.JulesConfig(api_key="x", source="sources/github/org/repo", branch="main")
+    api_key = os.getenv("TEST_JULES_API_KEY", "dummy_key_for_testing")
+    return jules_api.JulesConfig(api_key=api_key, source="sources/github/org/repo", branch="main")
 
 
 def test_jules_client_list_methods_pass_query(monkeypatch) -> None:
