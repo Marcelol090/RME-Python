@@ -626,3 +626,82 @@ def test_generate_suggestions_reuses_existing_pool_session(tmp_path, monkeypatch
 
     updated = json.loads(pool_file.read_text(encoding="utf-8"))
     assert updated["pools"][pool_key]["next_index"] == 1
+
+
+def test_generate_suggestions_prefers_track_sessions_when_available(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("JULES_API_KEY", "token")
+    monkeypatch.setenv("JULES_SOURCE", "sources/github/org/repo")
+    monkeypatch.setenv("JULES_LINEAR_SESSION_TESTS", "sessions/tests-1")
+    monkeypatch.setenv("JULES_LINEAR_SESSION_REFACTOR", "sessions/refactor-1")
+    monkeypatch.setenv("JULES_LINEAR_SESSION_UIUX", "sessions/uiux-1")
+
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# report\n", encoding="utf-8")
+
+    schema_path = tmp_path / ".github" / "jules" / "suggestions.schema.json"
+    schema_path.parent.mkdir(parents=True, exist_ok=True)
+    schema_path.write_text(
+        json.dumps({"required": ["version", "category", "implemented", "suggested_next", "generated_at"]}),
+        encoding="utf-8",
+    )
+
+    calls: dict[str, int] = {"create": 0, "send": 0, "activity": 0}
+    sent_sessions: list[str] = []
+
+    class FakeClient:
+        def __init__(self, _config: object) -> None:
+            pass
+
+        def create_session(self, **_kwargs: object) -> object:
+            calls["create"] += 1
+            return {"name": "sessions/new-a"}
+
+        def send_message(self, session_name: str, *, message: str) -> object:
+            calls["send"] += 1
+            sent_sessions.append(session_name)
+            return {"name": f"activities/{session_name}", "echo": message}
+
+        def get_latest_activity(self, session_name: str) -> object:
+            calls["activity"] += 1
+            return {
+                "activities": [
+                    {
+                        "jules_suggestions": {
+                            "implemented": [{"id": "IMP-001", "summary": f"handled {session_name}"}],
+                            "suggested_next": [{"id": "SUG-001", "severity": "MED", "summary": "next"}],
+                        }
+                    }
+                ]
+            }
+
+    monkeypatch.setattr(jules_runner, "JulesClient", FakeClient)
+
+    output_dir = tmp_path / "reports" / "jules"
+    report_dir = tmp_path / ".quality_reports"
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "generate-suggestions",
+            "--source",
+            "sources/github/org/repo",
+            "--branch",
+            "main",
+            "--quality-report",
+            str(quality_report),
+            "--output-dir",
+            str(output_dir),
+            "--report-dir",
+            str(report_dir),
+            "--schema",
+            str(schema_path),
+            "--use-track-sessions",
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["create"] == 0
+    assert calls["send"] == 3
+    assert set(sent_sessions) == {"sessions/tests-1", "sessions/refactor-1", "sessions/uiux-1"}
+    assert (report_dir / "jules_track_sessions_activity.json").exists()

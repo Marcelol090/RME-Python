@@ -50,3 +50,17 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
   - `track-session-status --track <tests|refactor|uiux>`
   - `track-sessions-status` (snapshot de todas as trilhas)
 - Objetivo: facilitar acionamento e observabilidade por categoria (`refatoração`, `teste`, `design UI/UX`) sem risco de consultar sessão errada.
+
+## Incremental Update (2026-02-11 - Suggestions Multi-Session + Web Context)
+
+- Corrigido o fluxo que gerava sessões com saída "apenas JSON" sem progresso prático:
+  - `generate-suggestions` agora tenta operar primeiro em sessões fixas por trilha (`tests/refactor/uiux`) quando disponíveis.
+  - Cada trilha recebe prompt próprio (`task::track`) e coleta de `latest_activity` com retry/backoff.
+- Reforçada confiabilidade de leitura de atividade:
+  - adicionado `_fetch_activity_with_retry(...)` para reduzir snapshots vazios imediatamente após `send_message`.
+- Adicionado contexto de atualização remota antes de acionar Jules:
+  - `fetch_web_updates_context(...)` busca referências oficiais e injeta em prompts (`build_quality_prompt`, `build_stitch_ui_prompt`, `build_linear_scheduled_prompt`).
+- Prompt contract hardening:
+  - prompts agora exigem uso explícito de MCP stack (`Stitch`, `Render`, `Context7`) e reporte de onde cada MCP foi usado.
+- Observabilidade ampliada:
+  - artefatos `jules_track_sessions_activity.json` e `jules_web_updates.json` passam a registrar execução/insumos.

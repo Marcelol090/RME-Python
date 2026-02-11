@@ -1123,3 +1123,52 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/core/protocols/test_live_security.py` -> **4 passed**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py` -> **21 passed**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **19 passed**
+
+---
+
+## Sessão 2026-02-11: Jules Runner hardening (multi-session + web context)
+
+### Contexto e diagnóstico
+
+- Sintoma reportado: o Jules estava abrindo sessões e retornando payloads JSON sem progresso real na implementação.
+- Causa principal no fluxo local: leitura única e imediata de `latest_activity` após envio de mensagem, com alta chance de capturar atividade vazia/transitória.
+
+### Implementação aplicada
+
+- **Arquivo:** `py_rme_canary/scripts/jules_runner.py`
+- **Mudanças principais:**
+  - Adicionado fetch remoto de referências do Jules antes dos prompts:
+    - `fetch_web_updates_context(...)`
+    - URLs padrão: docs oficiais Jules API + jules-action.
+  - Prompt builders atualizados com bloco `<web_updates_context>` e exigência de uso MCP:
+    - `build_quality_prompt(...)`
+    - `build_stitch_ui_prompt(...)`
+    - `build_linear_scheduled_prompt(...)`
+  - Exigência explícita de stack MCP nos prompts:
+    - `MCP_REQUIRED_STACK = ("Stitch", "Render", "Context7")`.
+  - Novo retry de atividade para reduzir resposta vazia:
+    - `_fetch_activity_with_retry(...)`.
+  - `generate-suggestions` refatorado para:
+    - priorizar sessões fixas por trilha (`tests/refactor/uiux`) quando configuradas;
+    - manter fallback para pool local/create_session quando trilhas fixas não existem;
+    - persistir artefatos de rastreio:
+      - `jules_track_sessions_activity.json`
+      - `jules_web_updates.json`
+  - CLI expandida com flags de controle:
+    - `--use-track-sessions/--no-use-track-sessions`
+    - `--activity-attempts`
+    - `--fetch-web-updates/--no-fetch-web-updates`
+    - `--max-web-updates-chars`
+    - `--web-updates-timeout`
+
+### Validação executada
+
+- `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/scripts/jules_runner.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **19 passed**
+
+### Resultado
+
+- Fluxo de sugestões deixa de depender de um snapshot único de atividade.
+- Execução passa a aproveitar sessões fixas por trilha quando presentes, reduzindo criação desnecessária e melhorando continuidade.
+- Prompts ficam alinhados à diretriz de uso MCP + contexto de documentação mais recente antes de acionar o Jules.
