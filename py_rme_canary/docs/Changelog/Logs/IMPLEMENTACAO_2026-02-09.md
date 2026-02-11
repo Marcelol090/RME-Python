@@ -1372,3 +1372,20 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 
 ### Validação
 - `ruff check` + `py_compile` no módulo alterado: **OK**
+
+---
+
+## Sessão 2026-02-11: `Navigate > Zoom` menu parity
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml` expõe submenu `Zoom` dentro de `Navigate`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - adicionado submenu `Zoom` em `Navigate` com:
+    - `act_zoom_in`
+    - `act_zoom_out`
+    - `act_zoom_normal`
+
+### Validação
+- `ruff check` + `py_compile` no módulo alterado: **OK**

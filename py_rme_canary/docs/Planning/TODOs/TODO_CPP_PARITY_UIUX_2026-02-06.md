@@ -491,3 +491,12 @@
 - Revisão do `menubar.xml` confirmou topo `About` no legado (não `Help`).
 - Ajuste aplicado em `build_menus.py`:
   - menu superior renomeado para `About`, mantendo compatibilidade com atributo interno `menu_help`.
+
+## Incremental Update (2026-02-11 - Navigate menu Zoom parity)
+- Revisão incremental de `menubar.xml` confirmou submenu `Navigate > Zoom` no legado.
+- Ajuste aplicado em `build_menus.py`:
+  - adicionado submenu `Zoom` dentro de `Navigate` com ações já existentes:
+    - `Zoom In`
+    - `Zoom Out`
+    - `Zoom Normal`
+- Mantém o submenu `Editor > Zoom` já existente e adiciona o ponto de acesso legado em `Navigate`.

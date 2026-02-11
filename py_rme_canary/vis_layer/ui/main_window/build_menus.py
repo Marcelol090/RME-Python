@@ -238,6 +238,11 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "act_floor_actions"):
         for act in editor.act_floor_actions:
             m_floor.addAction(act)
+    # Legacy parity: Navigate > Zoom
+    m_zoom_nav = m_navigate.addMenu("Zoom")
+    m_zoom_nav.addAction(editor.act_zoom_in)
+    m_zoom_nav.addAction(editor.act_zoom_out)
+    m_zoom_nav.addAction(editor.act_zoom_normal)
 
     # ---- Window Menu (C++ Window) ----
     m_window = mb.addMenu(load_icon("menu_window"), "Window")
