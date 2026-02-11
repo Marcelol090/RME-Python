@@ -171,6 +171,25 @@ def resolve_linear_session_env(track: str, requested_env: str | None = None) -> 
     return primary, (primary, "JULES_LINEAR_SESSION")
 
 
+def resolve_linear_session_for_track(
+    track: str, *, session_name: str = "", session_env: str = ""
+) -> tuple[str, str, tuple[str, ...], str]:
+    """Resolve fixed session for a linear track with optional fallback envs.
+
+    Returns:
+      (resolved_session_name, primary_session_env, env_candidates, resolved_from)
+    """
+    primary_env, env_candidates = resolve_linear_session_env(track, session_env)
+    explicit = normalize_session_name(session_name)
+    if explicit:
+        return explicit, primary_env, env_candidates, "arg:session_name"
+    for env_name in env_candidates:
+        resolved = resolve_linear_session_name("", env_name=env_name)
+        if resolved:
+            return resolved, primary_env, env_candidates, env_name
+    return "", primary_env, env_candidates, ""
+
+
 def load_linear_prompt_template(
     project_root: Path,
     *,
@@ -834,6 +853,98 @@ def command_session_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_track_session_status(args: argparse.Namespace) -> int:
+    """Fetch session payload + latest activity for a fixed linear track session."""
+    track = str(args.track or "").strip().lower()
+    if track not in DEFAULT_LINEAR_TRACK_TEMPLATES:
+        print(f"[jules] track-session-status failed: invalid track '{track}'.")
+        return 1
+    session_name, primary_env, env_candidates, resolved_from = resolve_linear_session_for_track(
+        track,
+        session_name=str(getattr(args, "session_name", "")),
+        session_env=str(getattr(args, "session_env", "")),
+    )
+    if not session_name:
+        print(
+            "[jules] track-session-status failed: missing fixed session id for "
+            f"track={track} (envs: {', '.join(env_candidates)})."
+        )
+        return 1
+
+    try:
+        client = _resolve_client(args)
+        session_payload = client.get_session(session_name)
+        latest_activity = client.get_latest_activity(session_name)
+    except (ValueError, JulesAPIError) as exc:
+        print(f"[jules] track-session-status failed: {exc}")
+        return 1
+
+    latest_normalized = _extract_first_activity(latest_activity)
+    out_payload = {
+        "checked_at": utc_now_iso(),
+        "track": track,
+        "session_name": session_name,
+        "session_env": primary_env,
+        "session_env_fallbacks": list(env_candidates),
+        "session_resolved_from": resolved_from,
+        "session": session_payload,
+        "latest_activity": latest_normalized,
+    }
+    if args.json_out:
+        write_json(Path(args.json_out), out_payload)
+    print(f"[jules] track={track} session={session_name}")
+    return 0
+
+
+def command_track_sessions_status(args: argparse.Namespace) -> int:
+    """Fetch status for all linear track sessions (tests/refactor/uiux)."""
+    tracks = sorted(DEFAULT_LINEAR_TRACK_TEMPLATES)
+    results: list[dict[str, Any]] = []
+    failed = False
+    try:
+        client = _resolve_client(args)
+    except (ValueError, JulesAPIError) as exc:
+        print(f"[jules] track-sessions-status failed: {exc}")
+        return 1
+
+    for track in tracks:
+        session_name, primary_env, env_candidates, resolved_from = resolve_linear_session_for_track(
+            track,
+            session_env=str(getattr(args, "session_env", "")),
+        )
+        row: dict[str, Any] = {
+            "track": track,
+            "session_env": primary_env,
+            "session_env_fallbacks": list(env_candidates),
+            "session_name": session_name,
+            "session_resolved_from": resolved_from,
+        }
+        if not session_name:
+            row["status"] = "missing_session_env"
+            failed = True
+            results.append(row)
+            continue
+        try:
+            session_payload = client.get_session(session_name)
+            latest_activity = client.get_latest_activity(session_name)
+            row["status"] = "ok"
+            row["session"] = session_payload
+            row["latest_activity"] = _extract_first_activity(latest_activity)
+        except JulesAPIError as exc:
+            row["status"] = "api_error"
+            row["error"] = str(exc)
+            if exc.status is not None:
+                row["http_status"] = int(exc.status)
+            failed = True
+        results.append(row)
+
+    payload = {"checked_at": utc_now_iso(), "tracks": results}
+    if args.json_out:
+        write_json(Path(args.json_out), payload)
+    print(f"[jules] track-sessions-status tracks={len(results)}")
+    return 2 if failed else 0
+
+
 def command_approve_plan(args: argparse.Namespace) -> int:
     """Approve pending plan for a session."""
     session_name = normalize_session_name(args.session_name)
@@ -999,15 +1110,11 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
         template_path=str(args.template or "").strip(),
     )
 
-    session_env, session_env_fallbacks = resolve_linear_session_env(track, getattr(args, "session_env", ""))
-    session_name = ""
-    if str(getattr(args, "session_name", "")).strip():
-        session_name = normalize_session_name(getattr(args, "session_name", ""))
-    else:
-        for env_name in session_env_fallbacks:
-            session_name = resolve_linear_session_name("", env_name=env_name)
-            if session_name:
-                break
+    session_name, session_env, session_env_fallbacks, resolved_from = resolve_linear_session_for_track(
+        track,
+        session_name=str(getattr(args, "session_name", "")),
+        session_env=str(getattr(args, "session_env", "")),
+    )
     if not session_name:
         env_list = ", ".join(session_env_fallbacks)
         raise ValueError(f"Missing fixed session id in --session-name or env(s): {env_list}.")
@@ -1032,6 +1139,7 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
         "session_name": session_name,
         "session_env": session_env,
         "session_env_fallbacks": list(session_env_fallbacks),
+        "session_resolved_from": resolved_from,
         "skills": skills,
         "quality_report": str(Path(args.quality_report).resolve()),
         "planning_docs": planning_docs,
@@ -1308,6 +1416,45 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--branch", default="", help="Branch override.")
     status.add_argument("--json-out", default="", help="Optional json output file.")
     status.set_defaults(func=command_session_status)
+
+    track_status = subparsers.add_parser(
+        "track-session-status",
+        help="Fetch session + latest activity for a fixed track session.",
+    )
+    track_status.add_argument("--source", default="", help="Jules source override.")
+    track_status.add_argument("--branch", default="", help="Branch override.")
+    track_status.add_argument(
+        "--track",
+        required=True,
+        choices=sorted(DEFAULT_LINEAR_TRACK_TEMPLATES),
+        help="Track (tests/refactor/uiux).",
+    )
+    track_status.add_argument(
+        "--session-name",
+        default="",
+        help="Fixed Jules session id/name override.",
+    )
+    track_status.add_argument(
+        "--session-env",
+        default="",
+        help="Environment variable override used when --session-name is omitted.",
+    )
+    track_status.add_argument("--json-out", default="", help="Optional json output file.")
+    track_status.set_defaults(func=command_track_session_status)
+
+    tracks_status = subparsers.add_parser(
+        "track-sessions-status",
+        help="Fetch status for all fixed track sessions.",
+    )
+    tracks_status.add_argument("--source", default="", help="Jules source override.")
+    tracks_status.add_argument("--branch", default="", help="Branch override.")
+    tracks_status.add_argument(
+        "--session-env",
+        default="",
+        help="Optional shared env override for all tracks.",
+    )
+    tracks_status.add_argument("--json-out", default="", help="Optional json output file.")
+    tracks_status.set_defaults(func=command_track_sessions_status)
 
     approve = subparsers.add_parser("approve-plan", help="Approve session plan.")
     approve.add_argument("session_name", help="Session name/id (sessions/<id> or raw id).")

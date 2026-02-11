@@ -411,6 +411,72 @@ def test_send_linear_prompt_prefers_track_specific_session_env(tmp_path, monkeyp
     assert captured["session_name"] == "sessions/track-refactor"
 
 
+def test_track_session_status_uses_track_specific_env(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("JULES_LINEAR_SESSION_UIUX", "sessions/uiux-777")
+
+    class FakeClient:
+        def get_session(self, session_name: str) -> object:
+            return {"name": session_name}
+
+        def get_latest_activity(self, _session_name: str) -> object:
+            return {"activities": [{"name": "activities/xyz"}]}
+
+    def _fake_resolve_client(args, require_source: bool = True):  # noqa: ANN001
+        return FakeClient()
+
+    monkeypatch.setattr(jules_runner, "_resolve_client", _fake_resolve_client)
+    out_path = tmp_path / "track_status.json"
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "track-session-status",
+            "--track",
+            "uiux",
+            "--json-out",
+            str(out_path),
+        ]
+    )
+    assert exit_code == 0
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert payload["track"] == "uiux"
+    assert payload["session_name"] == "sessions/uiux-777"
+    assert payload["session_resolved_from"] == "JULES_LINEAR_SESSION_UIUX"
+
+
+def test_track_sessions_status_reports_missing_envs(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("JULES_LINEAR_SESSION", raising=False)
+    monkeypatch.delenv("JULES_LINEAR_SESSION_TESTS", raising=False)
+    monkeypatch.delenv("JULES_LINEAR_SESSION_REFACTOR", raising=False)
+    monkeypatch.delenv("JULES_LINEAR_SESSION_UIUX", raising=False)
+
+    class FakeClient:
+        def get_session(self, session_name: str) -> object:
+            return {"name": session_name}
+
+        def get_latest_activity(self, _session_name: str) -> object:
+            return {"activities": [{"name": "activities/xyz"}]}
+
+    def _fake_resolve_client(args, require_source: bool = True):  # noqa: ANN001
+        return FakeClient()
+
+    monkeypatch.setattr(jules_runner, "_resolve_client", _fake_resolve_client)
+    out_path = tmp_path / "tracks_status.json"
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "track-sessions-status",
+            "--json-out",
+            str(out_path),
+        ]
+    )
+    assert exit_code == 2
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert isinstance(payload.get("tracks"), list)
+    assert {row["status"] for row in payload["tracks"]} == {"missing_session_env"}
+
+
 def test_generate_suggestions_creates_session_and_pool_file(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("JULES_API_KEY", "token")
     monkeypatch.setenv("JULES_SOURCE", "sources/github/org/repo")

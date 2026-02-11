@@ -43,3 +43,10 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
   - `jules-linear-tests-session`
   - `jules-linear-refactor-session`
   - `jules-linear-uiux-session`
+
+## Incremental Update (2026-02-11 - Track Ops Commands)
+
+- Added comandos operacionais específicos por trilha no `jules_runner.py`:
+  - `track-session-status --track <tests|refactor|uiux>`
+  - `track-sessions-status` (snapshot de todas as trilhas)
+- Objetivo: facilitar acionamento e observabilidade por categoria (`refatoração`, `teste`, `design UI/UX`) sem risco de consultar sessão errada.

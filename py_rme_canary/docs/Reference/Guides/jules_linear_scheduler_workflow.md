@@ -76,6 +76,21 @@ python py_rme_canary/scripts/jules_runner.py --project-root . send-linear-prompt
   --schedule-slot tests-01am
 ```
 
+Track-specific session status (recommended):
+
+```bash
+python py_rme_canary/scripts/jules_runner.py --project-root . track-session-status \
+  --track tests \
+  --json-out .quality_reports/jules_linear_tests_status.json
+```
+
+All tracks status snapshot:
+
+```bash
+python py_rme_canary/scripts/jules_runner.py --project-root . track-sessions-status \
+  --json-out .quality_reports/jules_linear_tracks_status.json
+```
+
 ## Operational Notes
 - Keep prompts bounded and PR-sized.
 - Prioritize pending `P0` items first, then `P1`.

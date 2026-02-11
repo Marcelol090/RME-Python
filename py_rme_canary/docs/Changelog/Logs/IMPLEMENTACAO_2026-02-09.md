@@ -1050,3 +1050,35 @@ Configuração recomendada do Jules consolidada para sessões fixas por trilha (
 - `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py .github/workflows/jules_linear_tests.yml .github/workflows/jules_linear_refactors.yml .github/workflows/jules_linear_uiux.yml` -> **All checks passed**
 - `python3 -m py_compile py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **passed**
+
+---
+
+## Sessão 25 (2026-02-11): Jules Track Ops Commands
+
+### Resumo
+
+Continuação do hardening Jules com comandos operacionais explícitos para monitorar sessões por trilha (`refactor`, `tests`, `uiux`) e snapshot consolidado de todas as sessões.
+
+### Arquivos Modificados
+
+- `py_rme_canary/scripts/jules_runner.py`
+  - Added `resolve_linear_session_for_track(...)` para resolução única e reutilizável de sessão por trilha.
+  - Added comando `track-session-status` (status de uma trilha).
+  - Added comando `track-sessions-status` (status agregado de `tests/refactor/uiux`).
+  - Metadata de prompts lineares agora inclui `session_resolved_from`.
+
+- `py_rme_canary/tests/unit/scripts/test_jules_runner.py`
+  - Added `test_track_session_status_uses_track_specific_env`.
+  - Added `test_track_sessions_status_reports_missing_envs`.
+
+- `py_rme_canary/docs/Reference/Guides/jules_linear_scheduler_workflow.md`
+  - Added exemplos operacionais para status por trilha e snapshot global.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md`
+  - Added incremental update de comandos operacionais por track.
+
+### Validação
+
+- `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **17 passed**
