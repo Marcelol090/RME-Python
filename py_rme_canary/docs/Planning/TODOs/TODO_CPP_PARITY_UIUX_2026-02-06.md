@@ -500,3 +500,10 @@
     - `Zoom Out`
     - `Zoom Normal`
 - Mantém o submenu `Editor > Zoom` já existente e adiciona o ponto de acesso legado em `Navigate`.
+
+## Incremental Update (2026-02-11 - Navigate action labels parity)
+- Ajuste de textos em `build_actions.py` para aproximar wording do legado em `Navigate`:
+  - `Jump to Brush` -> `Jump to Brush...`
+  - `Jump to Item` -> `Jump to Item...`
+  - `Go To Previous Position` -> `Go to Previous Position`
+  - `Go To Position` -> `Go to Position...`

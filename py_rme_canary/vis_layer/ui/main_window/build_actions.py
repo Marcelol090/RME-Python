@@ -141,11 +141,11 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_copy_position.setShortcut(QKeySequence("Ctrl+Shift+P"))
     editor.act_copy_position.triggered.connect(lambda _c=False: edit_tools.copy_position(editor))
 
-    editor.act_jump_to_brush = QAction("Jump to Brush", editor)
+    editor.act_jump_to_brush = QAction("Jump to Brush...", editor)
     editor.act_jump_to_brush.setShortcut(QKeySequence("J"))
     editor.act_jump_to_brush.triggered.connect(lambda _c=False: edit_tools.jump_to_brush(editor))
 
-    editor.act_jump_to_item = QAction("Jump to Item", editor)
+    editor.act_jump_to_item = QAction("Jump to Item...", editor)
     editor.act_jump_to_item.setShortcut(QKeySequence("Ctrl+J"))
     editor.act_jump_to_item.triggered.connect(lambda _c=False: edit_tools.jump_to_item(editor))
 
@@ -654,11 +654,11 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_avoidables.toggled.connect(lambda v: window_tools.toggle_avoidables(editor, v))
 
     # GoTo (matches screenshot)
-    editor.act_goto_previous_position = QAction(load_icon("action_goto_back"), "Go To Previous Position", editor)
+    editor.act_goto_previous_position = QAction(load_icon("action_goto_back"), "Go to Previous Position", editor)
     editor.act_goto_previous_position.setShortcut(QKeySequence("P"))
     editor.act_goto_previous_position.triggered.connect(lambda _c=False: edit_tools.goto_previous_position(editor))
 
-    editor.act_goto_position = QAction(load_icon("action_goto"), "Go To Position", editor)
+    editor.act_goto_position = QAction(load_icon("action_goto"), "Go to Position...", editor)
     editor.act_goto_position.setShortcut(QKeySequence("Ctrl+G"))
     editor.act_goto_position.triggered.connect(lambda _c=False: edit_tools.goto_position(editor))
 

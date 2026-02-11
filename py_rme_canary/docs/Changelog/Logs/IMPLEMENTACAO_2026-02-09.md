@@ -1389,3 +1389,21 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 
 ### Validação
 - `ruff check` + `py_compile` no módulo alterado: **OK**
+
+---
+
+## Sessão 2026-02-11: Navigate label/text parity refinements
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml` usa labels:
+  - `Go to Previous Position`
+  - `Go to Position...`
+  - `Jump to Brush...`
+  - `Jump to Item...`
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - labels ajustados para refletir o wording do legado no menu `Navigate`.
+
+### Validação
+- `ruff check` + `py_compile` no módulo alterado: **OK**
