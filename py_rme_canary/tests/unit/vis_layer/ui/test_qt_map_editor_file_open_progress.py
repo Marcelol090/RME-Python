@@ -86,6 +86,9 @@ class _FakeProgress:
     def setMinimumDuration(self, *_args) -> None:
         return None
 
+    def show(self) -> None:
+        pass
+
     def setLabelText(self, message: str) -> None:
         self.labels.append(str(message))
 
@@ -107,7 +110,13 @@ def test_open_otbm_uses_progress_phases_and_refreshes_ui(app, monkeypatch) -> No
     _FakeProgress.created.clear()
     _FakeProgress.cancel_at_step = None
 
-    gm = SimpleNamespace(load_report={"metadata": {"source": "otbm"}})
+    gm = SimpleNamespace(
+        load_report={"metadata": {"source": "otbm"}},
+        header=SimpleNamespace(otbm_version=3, width=100, height=100, description="Test"),
+        tiles=[],
+        towns=[],
+        waypoints=[],
+    )
     loader = SimpleNamespace(
         last_otbm_path="C:/maps/resolved.otbm",
         last_id_mapper="mapper-ok",
@@ -117,12 +126,13 @@ def test_open_otbm_uses_progress_phases_and_refreshes_ui(app, monkeypatch) -> No
     detection = SimpleNamespace(kind="otbm", reason="ok", engine="tfs")
     critical_calls: list[str] = []
 
-    monkeypatch.setattr(file_module, "QProgressDialog", _FakeProgress)
+    monkeypatch.setattr(file_module, "ModernProgressDialog", _FakeProgress)
     monkeypatch.setattr(file_module.QFileDialog, "getOpenFileName", staticmethod(lambda *_a, **_k: ("C:/maps/a.otbm", "")))
     monkeypatch.setattr(file_module, "detect_map_file", lambda _path: detection)
     monkeypatch.setattr(file_module, "OTBMLoader", lambda: loader)
     monkeypatch.setattr(file_module, "EditorSession", lambda *args, **kwargs: SimpleNamespace(args=args, kwargs=kwargs))
     monkeypatch.setattr(file_module.QMessageBox, "critical", staticmethod(lambda *_a, **_k: critical_calls.append("critical")))
+    monkeypatch.setattr(file_module.QMessageBox, "information", staticmethod(lambda *_a, **_k: None))
 
     editor._open_otbm()
 
@@ -139,7 +149,9 @@ def test_open_otbm_uses_progress_phases_and_refreshes_ui(app, monkeypatch) -> No
 
     progress = _FakeProgress.created[-1]
     assert progress.closed
-    assert progress.values == [0, 1, 2, 3, 4, 5, 6]
+    # Initial value 0 is not captured because setValue isn't called with 0 in _open_otbm
+    # _open_otbm calls advance(1, ...), advance(2, ...), etc.
+    assert progress.values == [1, 2, 3, 4, 5, 6]
     assert "Detecting map format..." in progress.labels
     assert "Reading map file and translating IDs..." in progress.labels
     assert "Refreshing viewport and palettes..." in progress.labels
@@ -152,7 +164,7 @@ def test_open_otbm_reports_cancelation_when_progress_is_canceled(app, monkeypatc
 
     critical_messages: list[str] = []
 
-    monkeypatch.setattr(file_module, "QProgressDialog", _FakeProgress)
+    monkeypatch.setattr(file_module, "ModernProgressDialog", _FakeProgress)
     monkeypatch.setattr(file_module.QFileDialog, "getOpenFileName", staticmethod(lambda *_a, **_k: ("C:/maps/a.otbm", "")))
     monkeypatch.setattr(file_module, "detect_map_file", lambda _path: (_ for _ in ()).throw(AssertionError("detect_map_file should not run")))
     monkeypatch.setattr(
