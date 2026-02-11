@@ -1257,3 +1257,24 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `py_compile`: **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **5 passed**
+
+---
+
+## Sessão 2026-02-11: Legacy parity (`Window > Toolbars` labels/order)
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml`:
+  - submenu `Window > Toolbars` com `Brushes`, `Position`, `Sizes`, `Standard`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py`
+  - toolbar `Brush ID` renomeada para `Brushes`.
+  - action `act_view_toolbar_brushes` renomeada para label `Brushes`.
+  - criada `act_view_toolbar_sizes` com binding no toolbar de quick settings (`tb_brush_quick`).
+  - `act_view_toolbar_brush_settings` mantida como alias de compatibilidade.
+  - submenu `Toolbars` reordenado para paridade legada e extras modernos preservados após separador.
+- limpeza de lint:
+  - remoção de import não utilizado (`QButtonGroup`) no mesmo módulo.
+
+### Validação
+- `ruff check` + `py_compile` nos módulos alterados: **OK**

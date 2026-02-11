@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QButtonGroup, QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
+from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
 
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
@@ -67,7 +67,7 @@ class QtMapEditorToolbarsMixin:
         editor.tb_brush_quick.addWidget(editor.brush_toolbar)
 
         # 3. Brush ID (Legacy support / Quick Entry)
-        editor.tb_brushes = QToolBar("Brush ID", editor)
+        editor.tb_brushes = QToolBar("Brushes", editor)
         editor.tb_brushes.setMovable(False)
         editor.addToolBar(editor.tb_brushes)
 
@@ -180,12 +180,16 @@ class QtMapEditorToolbarsMixin:
         editor.tb_indicators.addAction(editor.act_tb_avoidables)
 
         # View -> Toolbars toggles
-        editor.act_view_toolbar_brushes = QAction("Brush ID", editor)
+        editor.act_view_toolbar_brushes = QAction("Brushes", editor)
         editor.act_view_toolbar_brushes.setCheckable(True)
         editor.act_view_toolbar_brushes.setChecked(True)
         editor.act_view_toolbar_position = QAction("Position", editor)
         editor.act_view_toolbar_position.setCheckable(True)
         editor.act_view_toolbar_position.setChecked(True)
+
+        editor.act_view_toolbar_sizes = QAction("Sizes", editor)
+        editor.act_view_toolbar_sizes.setCheckable(True)
+        editor.act_view_toolbar_sizes.setChecked(True)
 
         editor.act_view_toolbar_standard = QAction("Standard", editor)
         editor.act_view_toolbar_standard.setCheckable(True)
@@ -199,9 +203,8 @@ class QtMapEditorToolbarsMixin:
         editor.act_view_toolbar_tools.setCheckable(True)
         editor.act_view_toolbar_tools.setChecked(True)
 
-        editor.act_view_toolbar_brush_settings = QAction("Brush Settings", editor)
-        editor.act_view_toolbar_brush_settings.setCheckable(True)
-        editor.act_view_toolbar_brush_settings.setChecked(True)
+        # Legacy alias retained for compatibility with existing codepaths.
+        editor.act_view_toolbar_brush_settings = editor.act_view_toolbar_sizes
 
         def _bind_toolbar_visibility(action: QAction, toolbar: QToolBar) -> None:
             action.toggled.connect(lambda visible: toolbar.setVisible(bool(visible)))
@@ -215,19 +218,22 @@ class QtMapEditorToolbarsMixin:
             action.setChecked(bool(toolbar.isVisible()))
 
         if m_toolbars is not None:
-            m_toolbars.addAction(editor.act_view_toolbar_tools)
-            m_toolbars.addAction(editor.act_view_toolbar_brush_settings)
-            m_toolbars.addAction(editor.act_view_toolbar_standard)
-            m_toolbars.addAction(editor.act_view_toolbar_position)
+            # Legacy order: Brushes, Position, Sizes, Standard.
             m_toolbars.addAction(editor.act_view_toolbar_brushes)
+            m_toolbars.addAction(editor.act_view_toolbar_position)
+            m_toolbars.addAction(editor.act_view_toolbar_sizes)
+            m_toolbars.addAction(editor.act_view_toolbar_standard)
+            # Modern extensions after legacy set.
+            m_toolbars.addSeparator()
             m_toolbars.addAction(editor.act_view_toolbar_indicators)
+            m_toolbars.addAction(editor.act_view_toolbar_tools)
 
         _bind_toolbar_visibility(editor.act_view_toolbar_brushes, editor.tb_brushes)
         _bind_toolbar_visibility(editor.act_view_toolbar_position, editor.tb_position)
         _bind_toolbar_visibility(editor.act_view_toolbar_standard, editor.tb_standard)
         _bind_toolbar_visibility(editor.act_view_toolbar_indicators, editor.tb_indicators)
         _bind_toolbar_visibility(editor.act_view_toolbar_tools, editor.tb_tools)
-        _bind_toolbar_visibility(editor.act_view_toolbar_brush_settings, editor.tb_brush_quick)
+        _bind_toolbar_visibility(editor.act_view_toolbar_sizes, editor.tb_brush_quick)
 
         # Keep mirror UI in sync with initial state
         editor._sync_mirror_actions()

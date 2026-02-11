@@ -451,3 +451,13 @@
   - `Copy Position (x, y, z)` no bloco superior agora fica habilitado apenas quando há seleção.
   - cópia de posição no submenu `Copy Data` permanece disponível para contexto de item/tile.
 - Regressão coberta com testes de estado `enabled` (sem seleção vs com seleção).
+
+## Incremental Update (2026-02-11 - Window > Toolbars naming/order parity)
+- Varredura do `menubar.xml` apontou divergência no submenu `Window > Toolbars`.
+- Ajustes aplicados em `qt_map_editor_toolbars.py`:
+  - ação `Brush ID` renomeada para `Brushes` (paridade de nomenclatura);
+  - adicionada ação `Sizes` (paridade legada) apontando para o toolbar moderno de quick brush settings;
+  - ordem do submenu alinhada ao legado: `Brushes`, `Position`, `Sizes`, `Standard`;
+  - itens modernos (`Indicators`, `Tools`) mantidos após separador para preservar UX atual.
+- Compatibilidade preservada:
+  - `act_view_toolbar_brush_settings` mantida como alias para `act_view_toolbar_sizes`.
