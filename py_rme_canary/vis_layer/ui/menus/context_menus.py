@@ -91,9 +91,9 @@ class TileContextMenu:
             # Properties
             builder.add_action("Properties...", cb("properties"))
 
-            # Browse Tile (inspect item stack)
+            # Legacy parity label uses "Browse Field"
             has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)
-            builder.add_action("Browse Tile...", cb("browse_tile"), enabled=has_items)
+            builder.add_action("Browse Field", cb("browse_tile"), enabled=has_items)
 
             builder.add_separator()
 

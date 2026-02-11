@@ -1172,3 +1172,36 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - Fluxo de sugestões deixa de depender de um snapshot único de atividade.
 - Execução passa a aproveitar sessões fixas por trilha quando presentes, reduzindo criação desnecessária e melhorando continuidade.
 - Prompts ficam alinhados à diretriz de uso MCP + contexto de documentação mais recente antes de acionar o Jules.
+
+---
+
+## Sessão 2026-02-11: Varredura Legacy Redux (context menu parity)
+
+### Escopo da varredura
+- Base de referência analisada:
+  - `remeres-map-editor-redux/data/menubar.xml`
+  - `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+- Alvo de implementação:
+  - `py_rme_canary/logic_layer/context_menu_handlers.py`
+  - `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+
+### Implementações aplicadas
+- `Copy Position` alinhado ao legado C++:
+  - antes: `x, y, z`
+  - agora: `{x=..., y=..., z=...}` (Lua table literal no clipboard)
+- Paridade de label no menu de tile:
+  - antes: `Browse Tile...`
+  - agora: `Browse Field`
+
+### Testes adicionados
+- `py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py`
+  - `test_copy_position_uses_legacy_lua_table_format`
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - `test_tile_context_menu_uses_browse_field_label`
+
+### Validação
+- `ruff check` nos arquivos alterados: **OK**
+- `python3 -m py_compile` nos arquivos alterados: **OK**
+- `pytest` focado UI/context menu: **OK** (`test_context_menus_select_actions.py`)
+- Observação de ambiente:
+  - suíte `test_context_menu_handlers.py` bloqueada por erro pré-existente de compatibilidade Python 3.10 em `py_rme_canary/logic_layer/sprite_cache.py` (`class LRUCache[T]`).

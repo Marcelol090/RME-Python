@@ -424,3 +424,12 @@
   - Initial checked-state now follows `editor.brush_shape` instead of hardcoded defaults.
 - Regression update:
   - Added `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` to validate shape exclusivity and invalid-shape fallback.
+
+## Incremental Update (2026-02-11 - Legacy Popup Parity Sweep)
+- Varredura incremental no `remeres-map-editor-redux/source/ui/map_popup_menu.cpp` com foco em labels/fluxos de contexto.
+- Paridade aplicada em `py_rme_canary`:
+  - `Copy Position` agora usa formato Lua table (`{x=..., y=..., z=...}`) no clipboard (alinhado ao legado).
+  - Menu de tile renomeado de `Browse Tile...` para `Browse Field` (label legado).
+- Cobertura adicionada:
+  - teste para formato de cópia de posição legado;
+  - teste para presença do label `Browse Field` no `TileContextMenu`.

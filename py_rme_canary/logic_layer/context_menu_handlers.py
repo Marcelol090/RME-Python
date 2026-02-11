@@ -914,9 +914,11 @@ class ContextMenuActionHandlers:
         clipboard = self._clipboard
         if clipboard is None:
             return
-        text = f"{position[0]}, {position[1]}, {position[2]}"
+        # Legacy redux parity: Copy Position uses Lua table literal.
+        x, y, z = int(position[0]), int(position[1]), int(position[2])
+        text = f"{{x={x}, y={y}, z={z}}}"
         clipboard.setText(text, QClipboard.Mode.Clipboard)
-        print(f"[Copy] Position {text} copied to clipboard")
+        self._show_status(f"[Copy] Position {text} copied to clipboard")
 
     def copy_client_id(self, item: Item) -> None:
         """Copy item's client ID to clipboard.

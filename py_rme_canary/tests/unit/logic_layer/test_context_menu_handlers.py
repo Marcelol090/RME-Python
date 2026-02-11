@@ -159,6 +159,12 @@ def test_copy_client_id_uses_id_mapper(app) -> None:
         asset_mgr._id_mapper = original_mapper
 
 
+def test_copy_position_uses_legacy_lua_table_format(app) -> None:
+    handlers = ContextMenuActionHandlers()
+    handlers.copy_position((321, 654, 7))
+    assert QApplication.clipboard().text() == "{x=321, y=654, z=7}"
+
+
 def test_select_brush_uses_editor_callback(app) -> None:
     editor = _DummyEditor()
     handlers = ContextMenuActionHandlers(canvas=_DummyCanvas(editor))
