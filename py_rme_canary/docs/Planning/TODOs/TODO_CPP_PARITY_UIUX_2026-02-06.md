@@ -532,3 +532,15 @@
 - Ajuste textual da ação de recarga para refletir o legado (`Reload`):
   - `act_reload_data` em `build_actions.py` alterada de `Reload Data Files` para `Reload`.
 - Sem alteração de comportamento/handler (`F5` permanece igual).
+
+## Incremental Update (2026-02-11 - View/Show label casing parity)
+- Ajustes de nomenclatura no `build_actions.py` para alinhamento textual com `remeres-map-editor-redux/data/menubar.xml`:
+  - `Show all Floors`
+  - `Show grid`
+  - `Show tooltips`
+  - `Show Light Strength`
+  - `Show Technical Items`
+  - `Highlight Items`
+  - `Highlight Locked Doors`
+  - `Show Wall Hooks`
+- Escopo: somente labels/UX textual; sem alteração de handlers ou regras de negócio.

@@ -83,6 +83,17 @@ def test_view_menu_exposes_show_client_ids(editor):
     assert "Show Client IDs" in view_action_texts
 
 
+def test_legacy_view_show_labels_are_aligned(editor):
+    assert editor.act_show_all_floors.text() == "Show all Floors"
+    assert editor.act_show_grid.text() == "Show grid"
+    assert editor.act_show_tooltips.text() == "Show tooltips"
+    assert editor.act_show_light_strength.text() == "Show Light Strength"
+    assert editor.act_show_technical_items.text() == "Show Technical Items"
+    assert editor.act_highlight_items.text() == "Highlight Items"
+    assert editor.act_highlight_locked_doors.text() == "Highlight Locked Doors"
+    assert editor.act_show_wall_hooks.text() == "Show Wall Hooks"
+
+
 def test_show_client_ids_action_updates_editor_flag(editor, qtbot):
     editor.act_show_client_ids.setChecked(True)
     qtbot.wait(5)

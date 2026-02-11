@@ -300,7 +300,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_shade.setShortcut(QKeySequence("Q"))
     editor.act_show_shade.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_shade", v))
 
-    editor.act_show_all_floors = QAction("Show all floors", editor)
+    editor.act_show_all_floors = QAction("Show all Floors", editor)
     editor.act_show_all_floors.setCheckable(True)
     editor.act_show_all_floors.setShortcut(QKeySequence("Ctrl+W"))
     editor.act_show_all_floors.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_all_floors", v))
@@ -327,12 +327,12 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_client_ids.setShortcut(QKeySequence("Ctrl+Shift+I"))
     editor.act_show_client_ids.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_client_ids", v))
 
-    editor.act_show_grid = QAction(load_icon("action_grid"), "Show Grid", editor)
+    editor.act_show_grid = QAction(load_icon("action_grid"), "Show grid", editor)
     editor.act_show_grid.setCheckable(True)
     editor.act_show_grid.setShortcut(QKeySequence("Shift+G"))
     editor.act_show_grid.toggled.connect(lambda v: view_tools.toggle_grid(editor, v))
 
-    editor.act_highlight_items = QAction("Highlight items", editor)
+    editor.act_highlight_items = QAction("Highlight Items", editor)
     editor.act_highlight_items.setCheckable(True)
     editor.act_highlight_items.setShortcut(QKeySequence("V"))
     editor.act_highlight_items.toggled.connect(lambda v: window_tools.set_view_flag(editor, "highlight_items", v))
@@ -481,14 +481,14 @@ def build_actions(editor: QtMapEditor) -> None:
         lambda v: window_tools.set_view_flag(editor, "ext_house_shader", v)
     )
 
-    editor.act_show_light_strength = QAction("Show light strength", editor)
+    editor.act_show_light_strength = QAction("Show Light Strength", editor)
     editor.act_show_light_strength.setCheckable(True)
     editor.act_show_light_strength.setShortcut(QKeySequence("Shift+K"))
     editor.act_show_light_strength.toggled.connect(
         lambda v: window_tools.set_view_flag(editor, "show_light_strength", v)
     )
 
-    editor.act_show_technical_items = QAction("Show technical items", editor)
+    editor.act_show_technical_items = QAction("Show Technical Items", editor)
     editor.act_show_technical_items.setCheckable(True)
     editor.act_show_technical_items.setShortcut(QKeySequence("Shift+T"))
     editor.act_show_technical_items.toggled.connect(
@@ -508,7 +508,7 @@ def build_actions(editor: QtMapEditor) -> None:
         lambda v: window_tools.set_view_flag(editor, "show_waypoints", v)
     )
 
-    editor.act_highlight_locked_doors = QAction("Highlight locked doors", editor)
+    editor.act_highlight_locked_doors = QAction("Highlight Locked Doors", editor)
     editor.act_highlight_locked_doors.setCheckable(True)
     editor.act_highlight_locked_doors.setShortcut(QKeySequence("U"))
     editor.act_highlight_locked_doors.toggled.connect(
@@ -616,7 +616,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_pathing.setShortcut(QKeySequence("O"))
     editor.act_show_pathing.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_pathing", v))
 
-    editor.act_show_tooltips = QAction("Show Tooltips", editor)
+    editor.act_show_tooltips = QAction("Show tooltips", editor)
     editor.act_show_tooltips.setCheckable(True)
     editor.act_show_tooltips.setShortcut(QKeySequence("Y"))
     editor.act_show_tooltips.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_tooltips", v))
@@ -636,7 +636,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_indicators_simple.toggled.connect(lambda v: window_tools.toggle_indicators_simple(editor, v))
 
     # Indicators fine-grained
-    editor.act_show_wall_hooks = QAction(load_icon("indicator_hooks"), "Wall Hooks", editor)
+    editor.act_show_wall_hooks = QAction(load_icon("indicator_hooks"), "Show Wall Hooks", editor)
     editor.act_show_wall_hooks.setCheckable(True)
     editor.act_show_wall_hooks.setShortcut(QKeySequence("K"))
     editor.act_show_wall_hooks.toggled.connect(lambda v: window_tools.toggle_wall_hooks(editor, v))
