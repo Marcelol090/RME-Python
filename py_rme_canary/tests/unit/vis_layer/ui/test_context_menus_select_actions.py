@@ -189,3 +189,32 @@ def test_item_context_menu_tile_mode_shows_legacy_select_actions(monkeypatch: py
     assert "Select Creature" in labels
     assert "Select Spawn" in labels
     assert "Select House" in labels
+
+
+def test_item_context_menu_tile_mode_enables_browse_field_with_selection_even_without_items(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(menus_module, "ContextMenuBuilder", _FakeBuilder)
+    callbacks = _base_callbacks()
+    callbacks.update(
+        {
+            "selection_has_selection": lambda: True,
+            "properties": lambda: None,
+            "browse_tile": lambda: None,
+        }
+    )
+
+    menu = menus_module.ItemContextMenu(None)
+    menu.set_callbacks(callbacks)
+    menu.show_for_item(
+        item=None,
+        tile=Tile(x=11, y=22, z=7, ground=None, items=[]),
+        has_selection=True,
+        position=(11, 22, 7),
+    )
+
+    builder = _FakeBuilder.last
+    assert builder is not None
+    browse_entries = [entry for entry in builder.actions if entry[0] == "action" and entry[1] == "Browse Field"]
+    assert len(browse_entries) == 1
+    assert browse_entries[0][2] is True

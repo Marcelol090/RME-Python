@@ -244,7 +244,7 @@ class ItemContextMenu:
                 builder.add_action(
                     "Browse Field",
                     cb("browse_tile"),
-                    enabled=has_items and _action_enabled("browse_tile"),
+                    enabled=(has_sel or has_items) and _action_enabled("browse_tile"),
                 )
             builder.exec_at_cursor()
             return

@@ -1428,3 +1428,24 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 
 ### Validação
 - `ruff check` + `py_compile` no módulo alterado: **OK**
+
+---
+
+## Sessão 2026-02-11: Popup `Browse Field` enablement aligned to selection context
+
+### Referência Legacy
+- `map_popup_menu.cpp` habilita ações de navegação/inspeção com base em `anything_selected`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - no ramo de tile sem item, `Browse Field` agora usa:
+    - habilitado se `has_selection` **ou** tile possui itens/ground,
+    - além do callback/capability gate.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - adicionado `test_item_context_menu_tile_mode_enables_browse_field_with_selection_even_without_items`.
+
+### Validação
+- `ruff check` + `py_compile`: **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **7 passed**
