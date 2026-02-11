@@ -1357,3 +1357,18 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `py_compile`: **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **6 passed**
+
+---
+
+## Sessão 2026-02-11: Top-level menu label parity (`Help` -> `About`)
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml` define menu superior `About`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - rótulo do menu superior alterado de `Help` para `About`.
+  - atributo interno `editor.menu_help` mantido para compatibilidade.
+
+### Validação
+- `ruff check` + `py_compile` no módulo alterado: **OK**

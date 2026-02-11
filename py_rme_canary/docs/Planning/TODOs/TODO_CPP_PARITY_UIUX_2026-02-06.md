@@ -486,3 +486,8 @@
     - `select_spawn` quando tile possui spawn monster/npc;
     - `select_house` quando tile possui `house_id`.
   - `ItemContextMenu` (ramo `item is None`) agora renderiza essas ações quando disponíveis.
+
+## Incremental Update (2026-02-11 - Top-level About menu label parity)
+- Revisão do `menubar.xml` confirmou topo `About` no legado (não `Help`).
+- Ajuste aplicado em `build_menus.py`:
+  - menu superior renomeado para `About`, mantendo compatibilidade com atributo interno `menu_help`.

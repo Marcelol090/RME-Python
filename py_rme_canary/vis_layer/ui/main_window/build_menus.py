@@ -323,8 +323,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "act_experimental_fog"):
         m_experimental.addAction(editor.act_experimental_fog)
 
-    # ---- Help / About Menu (C++ About) ----
-    m_help = mb.addMenu(load_icon("menu_help"), "Help")
+    # ---- About Menu (C++ top-level "About") ----
+    m_help = mb.addMenu(load_icon("menu_help"), "About")
     editor.menu_help = m_help
     if hasattr(editor, "act_extensions"):
         m_help.addAction(editor.act_extensions)
