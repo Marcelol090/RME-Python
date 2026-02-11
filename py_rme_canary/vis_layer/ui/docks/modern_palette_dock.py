@@ -192,6 +192,8 @@ class ModernPaletteDock(QDockWidget):
         self._refresh_palette_content(key, widget)
         self._apply_filter_to_widget(key, widget)
         self._sync_editor_brush_bindings()
+        if hasattr(self.editor, "_sync_palette_selection_actions"):
+            self.editor._sync_palette_selection_actions(key)
 
     def _on_filter_changed(self, _text: str) -> None:
         widget = self._current_palette_widget()

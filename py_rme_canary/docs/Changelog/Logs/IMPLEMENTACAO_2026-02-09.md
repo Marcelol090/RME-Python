@@ -866,3 +866,44 @@ Fechado gap de paridade no menu `Selection`: ações `on selection` existiam no 
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **7 passed**
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --timeout 120` -> **bloqueado em Bandit** neste runtime (sem progresso após início da fase de segurança)
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 120` -> **pipeline concluído** com relatório consolidado e artefatos Jules gerados
+
+---
+
+## Sessão 20 (2026-02-11): Palette Select Menu Sync + Exclusive Action State
+
+### Resumo
+
+Aplicada refatoração de `select menus` no `Window > Palette` para alinhar comportamento de seleção ativa com o legado C++ (uma paleta ativa por vez) e evitar estado visual inconsistente entre menu e dock de paletas.
+
+### Referências Externas Consultadas (fetch/context7)
+
+- Context7 / PyQt6 (`/websites/riverbankcomputing_static_pyqt6`):
+  - `QActionGroup` com exclusividade (`setExclusive`) para ações checkáveis.
+  - padrão de leitura de `checkedAction()` e política de exclusão para um único item ativo.
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - Palette actions (`terrain/doodad/item/collection/house/creature/npc/waypoint/zones/raw`) agora são `checkable`.
+  - Added `editor.palette_action_group = QActionGroup(editor)` com exclusividade para seleção única.
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py`
+  - Added `_sync_palette_selection_actions(...)` para manter checked-state do menu sincronizado com a paleta ativa.
+  - `_select_palette(...)` agora sincroniza estado após seleção.
+
+- `py_rme_canary/vis_layer/ui/docks/modern_palette_dock.py`
+  - `_on_tab_changed(...)` agora notifica `_sync_palette_selection_actions(...)` para sincronização bidirecional.
+
+- `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+  - Added `test_palette_actions_are_exclusive_and_follow_selected_palette`.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 14)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py py_rme_canary/vis_layer/ui/docks/modern_palette_dock.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py py_rme_canary/vis_layer/ui/docks/modern_palette_dock.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **4 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **bloqueado por import transitivo em runtime Python 3.10** (`sprite_cache.py` usa sintaxe Python 3.12)
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 120` -> **pipeline concluído** com relatório consolidado e artefatos Jules

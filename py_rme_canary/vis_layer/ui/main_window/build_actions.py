@@ -670,6 +670,22 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_palette_waypoint = QAction(load_icon("action_waypoint"), "Waypoint", editor)
     editor.act_palette_zones = QAction("Zones", editor)
     editor.act_palette_raw = QAction("Raw", editor)
+    editor.palette_action_group = QActionGroup(editor)
+    editor.palette_action_group.setExclusive(True)
+    for _act in (
+        editor.act_palette_terrain,
+        editor.act_palette_doodad,
+        editor.act_palette_item,
+        editor.act_palette_collection,
+        editor.act_palette_house,
+        editor.act_palette_creature,
+        editor.act_palette_npc,
+        editor.act_palette_waypoint,
+        editor.act_palette_zones,
+        editor.act_palette_raw,
+    ):
+        _act.setCheckable(True)
+        editor.palette_action_group.addAction(_act)
     editor.act_palette_large_icons = QAction("Large Palette Icons", editor)
     editor.act_palette_large_icons.setCheckable(True)
     editor.act_palette_large_icons.toggled.connect(lambda v: editor._toggle_palette_large_icons(v))

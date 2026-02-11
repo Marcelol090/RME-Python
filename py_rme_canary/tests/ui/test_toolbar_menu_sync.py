@@ -115,3 +115,20 @@ def test_palette_collection_action_targets_modern_palette_dock(editor, qtbot):
     editor.act_palette_collection.trigger()
     qtbot.wait(10)
     assert editor.palettes.current_palette_name == "collection"
+
+
+def test_palette_actions_are_exclusive_and_follow_selected_palette(editor, qtbot):
+    assert editor.act_palette_item.isCheckable() is True
+    assert editor.act_palette_terrain.isCheckable() is True
+
+    editor.act_palette_item.trigger()
+    qtbot.wait(10)
+    assert editor.palettes.current_palette_name == "item"
+    assert editor.act_palette_item.isChecked() is True
+    assert editor.act_palette_terrain.isChecked() is False
+
+    editor.act_palette_terrain.trigger()
+    qtbot.wait(10)
+    assert editor.palettes.current_palette_name == "terrain"
+    assert editor.act_palette_terrain.isChecked() is True
+    assert editor.act_palette_item.isChecked() is False

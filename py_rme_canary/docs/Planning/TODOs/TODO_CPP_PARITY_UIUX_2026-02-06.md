@@ -388,3 +388,17 @@
   - `tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py` (new)
     - validates all selection-scoped actions disabled when no selection.
     - validates all selection-scoped actions enabled when selection exists.
+
+## Incremental Update (2026-02-11 - Phase 14)
+- Palette `select` menu parity/UX hardening (`Window > Palette`):
+  - Palette actions are now `checkable` and grouped via exclusive `QActionGroup`,
+    mirroring legacy "one active palette page" behavior.
+  - Added two-way synchronization of menu checked-state with active palette:
+    - menu trigger -> dock palette selection (`_select_palette`)
+    - dock tab change -> checked menu action (`ModernPaletteDock._on_tab_changed`)
+- Files updated:
+  - `vis_layer/ui/main_window/build_actions.py`
+  - `vis_layer/ui/main_window/qt_map_editor_palettes.py`
+  - `vis_layer/ui/docks/modern_palette_dock.py`
+- Regression update:
+  - `tests/ui/test_toolbar_menu_sync.py` expanded with exclusive checked-state assertions.
