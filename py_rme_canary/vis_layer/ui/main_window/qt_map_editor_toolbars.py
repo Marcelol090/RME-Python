@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QButtonGroup, QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
 
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
+from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar, ToolSelector
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -38,112 +40,63 @@ class QtMapEditorToolbarsMixin:
         editor.tb_standard.addAction(editor.act_zoom_out)
         editor.tb_standard.addAction(editor.act_zoom_normal)
 
-        editor.tb_brushes = QToolBar("Brushes", editor)
+        # ---- Modern Toolbars ----
+
+        # 1. Tools (Left Sidebar typically)
+        editor.tb_tools = QToolBar("Tools", editor)
+        editor.tb_tools.setMovable(False)
+        editor.addToolBar(Qt.ToolBarArea.LeftToolBarArea, editor.tb_tools)
+
+        editor.tool_selector = ToolSelector(editor)
+        editor.tool_selector.tool_changed.connect(lambda t: self._on_modern_tool_changed(editor, t))
+        editor.tb_tools.addWidget(editor.tool_selector)
+
+        # 2. Brush Settings (Quick Access)
+        editor.tb_brush_quick = QToolBar("Brush Settings", editor)
+        editor.tb_brush_quick.setMovable(False)
+        editor.addToolBar(Qt.ToolBarArea.TopToolBarArea, editor.tb_brush_quick)
+
+        editor.brush_toolbar = BrushToolbar(editor)
+        editor.brush_toolbar.size_changed.connect(lambda s: editor._set_brush_size(s))
+        editor.brush_toolbar.shape_changed.connect(lambda s: editor._set_brush_shape(s))
+        editor.brush_toolbar.automagic_changed.connect(lambda b: editor.act_automagic.setChecked(b))
+
+        # Sync automagic action back to toolbar
+        editor.act_automagic.toggled.connect(lambda b: editor.brush_toolbar.set_automagic(b))
+
+        editor.tb_brush_quick.addWidget(editor.brush_toolbar)
+
+        # 3. Brush ID (Legacy support / Quick Entry)
+        editor.tb_brushes = QToolBar("Brush ID", editor)
         editor.tb_brushes.setMovable(False)
         editor.addToolBar(editor.tb_brushes)
-        editor.tb_brushes.addWidget(QLabel("Brush:"))
+
         editor.brush_id_entry = QSpinBox(editor)
         editor.brush_id_entry.setRange(0, 1000000)
         editor.brush_id_entry.setValue(4405)
+        editor.brush_id_entry.setPrefix("ID: ")
         editor.brush_id_entry.valueChanged.connect(
             lambda _v: editor._set_selected_brush_id(editor.brush_id_entry.value())
         )
         editor.tb_brushes.addWidget(editor.brush_id_entry)
+
         editor.brush_label = QLabel("", editor)
+        editor.brush_label.setStyleSheet("color: #a1a1aa; font-style: italic; margin-left: 8px;")
         editor.tb_brushes.addWidget(editor.brush_label)
         editor.tb_brushes.addSeparator()
-        editor.tb_brushes.addAction(editor.act_selection_mode)
         editor.tb_brushes.addAction(editor.act_toggle_mirror)
 
-        editor.tb_sizes = QToolBar("Sizes", editor)
-        editor.tb_sizes.setMovable(False)
-        editor.addToolBar(editor.tb_sizes)
-        editor.tb_sizes.addWidget(QLabel("Size:"))
+        # Dummy references for legacy mixin compatibility (QtMapEditorBrushesMixin)
+        # These are no longer displayed but maintained to prevent AttributeErrors in legacy code
         editor.size_spin = QSpinBox(editor)
-        editor.size_spin.setRange(0, 15)
-        editor.size_spin.setValue(0)
-        editor.size_spin.valueChanged.connect(lambda _v: editor._set_brush_size(editor.size_spin.value()))
+        editor.shape_square = QCheckBox(editor)
+        editor.shape_circle = QCheckBox(editor)
+        editor.automagic_cb = QCheckBox(editor)
+        editor.variation_spin = QSpinBox(editor)
+        editor.thickness_cb = QCheckBox(editor)
+        editor.thickness_spin = QSpinBox(editor)
 
         m_toolbars = getattr(editor, "_menu_toolbars", None)
-
-        editor.tb_sizes.addWidget(editor.size_spin)
-
-        for idx, radius in enumerate((0, 1, 2, 4, 6, 8, 11), start=1):
-            btn = QPushButton(str(idx), editor)
-            btn.setFixedWidth(26)
-            btn.clicked.connect(lambda _c=False, r=radius: editor._set_brush_size(r))
-            editor.tb_sizes.addWidget(btn)
-
-        editor.tb_sizes.addSeparator()
-        editor.tb_sizes.addWidget(QLabel("Shape:"))
-        editor.shape_square = QPushButton("square", editor)
-        editor.shape_circle = QPushButton("circle", editor)
-        editor.shape_square.setCheckable(True)
-        editor.shape_circle.setCheckable(True)
-        editor.brush_shape_group = QButtonGroup(editor)
-        editor.brush_shape_group.setExclusive(True)
-        editor.brush_shape_group.addButton(editor.shape_square)
-        editor.brush_shape_group.addButton(editor.shape_circle)
-        editor.shape_square.setChecked(bool(getattr(editor, "brush_shape", "square") != "circle"))
-        editor.shape_circle.setChecked(bool(getattr(editor, "brush_shape", "square") == "circle"))
-        editor.shape_square.clicked.connect(lambda: editor._set_brush_shape("square"))
-        editor.shape_circle.clicked.connect(lambda: editor._set_brush_shape("circle"))
-        editor.tb_sizes.addWidget(editor.shape_square)
-        editor.tb_sizes.addWidget(editor.shape_circle)
-
-        editor.tb_sizes.addSeparator()
-        editor.automagic_cb = QCheckBox("Automagic", editor)
-        editor.automagic_cb.setChecked(True)
-        editor.automagic_cb.stateChanged.connect(lambda _s: editor.apply_ui_state_to_session())
-        editor.tb_sizes.addWidget(editor.automagic_cb)
-
-        # Sync menu action state with checkbox (best-effort).
-        try:
-            editor.act_automagic.setChecked(bool(editor.automagic_cb.isChecked()))
-
-            def _sync_act_from_cb(_s: int) -> None:
-                editor.act_automagic.blockSignals(True)
-                editor.act_automagic.setChecked(bool(editor.automagic_cb.isChecked()))
-                editor.act_automagic.blockSignals(False)
-
-            editor.automagic_cb.stateChanged.connect(_sync_act_from_cb)
-
-            def _sync_cb_from_act(checked: bool) -> None:
-                editor.automagic_cb.blockSignals(True)
-                editor.automagic_cb.setChecked(bool(checked))
-                editor.automagic_cb.blockSignals(False)
-
-            editor.act_automagic.toggled.connect(_sync_cb_from_act)
-        except Exception:
-            pass
-        editor.tb_sizes.addSeparator()
-        editor.tb_sizes.addAction(editor.act_fill)
-
-        editor.tb_sizes.addSeparator()
-        editor.tb_sizes.addWidget(QLabel("Var:"))
-        editor.variation_spin = QSpinBox(editor)
-        editor.variation_spin.setRange(0, 100)
-        editor.variation_spin.setValue(int(getattr(editor, "brush_variation", 0) or 0))
-        editor.variation_spin.valueChanged.connect(
-            lambda _v: editor._set_brush_variation(editor.variation_spin.value())
-        )
-        editor.tb_sizes.addWidget(editor.variation_spin)
-
-        editor.tb_sizes.addSeparator()
-        editor.thickness_cb = QCheckBox("Thickness", editor)
-        editor.thickness_cb.setChecked(bool(getattr(editor, "doodad_thickness_enabled", False)))
-        editor.thickness_cb.stateChanged.connect(
-            lambda _s: editor._set_doodad_thickness_enabled(bool(editor.thickness_cb.isChecked()))
-        )
-        editor.tb_sizes.addWidget(editor.thickness_cb)
-        editor.tb_sizes.addWidget(QLabel("T:"))
-        editor.thickness_spin = QSpinBox(editor)
-        editor.thickness_spin.setRange(1, 10)
-        editor.thickness_spin.setValue(int(getattr(editor, "doodad_thickness_level", 5) or 5))
-        editor.thickness_spin.valueChanged.connect(
-            lambda _v: editor._set_doodad_thickness_level(editor.thickness_spin.value())
-        )
-        editor.tb_sizes.addWidget(editor.thickness_spin)
 
         editor.tb_position = QToolBar("Position", editor)
         editor.tb_position.setMovable(False)
@@ -227,15 +180,13 @@ class QtMapEditorToolbarsMixin:
         editor.tb_indicators.addAction(editor.act_tb_avoidables)
 
         # View -> Toolbars toggles
-        editor.act_view_toolbar_brushes = QAction("Brushes", editor)
+        editor.act_view_toolbar_brushes = QAction("Brush ID", editor)
         editor.act_view_toolbar_brushes.setCheckable(True)
         editor.act_view_toolbar_brushes.setChecked(True)
         editor.act_view_toolbar_position = QAction("Position", editor)
         editor.act_view_toolbar_position.setCheckable(True)
         editor.act_view_toolbar_position.setChecked(True)
-        editor.act_view_toolbar_sizes = QAction("Sizes", editor)
-        editor.act_view_toolbar_sizes.setCheckable(True)
-        editor.act_view_toolbar_sizes.setChecked(True)
+
         editor.act_view_toolbar_standard = QAction("Standard", editor)
         editor.act_view_toolbar_standard.setCheckable(True)
         editor.act_view_toolbar_standard.setChecked(True)
@@ -243,6 +194,14 @@ class QtMapEditorToolbarsMixin:
         editor.act_view_toolbar_indicators = QAction("Indicators", editor)
         editor.act_view_toolbar_indicators.setCheckable(True)
         editor.act_view_toolbar_indicators.setChecked(True)
+
+        editor.act_view_toolbar_tools = QAction("Tools", editor)
+        editor.act_view_toolbar_tools.setCheckable(True)
+        editor.act_view_toolbar_tools.setChecked(True)
+
+        editor.act_view_toolbar_brush_settings = QAction("Brush Settings", editor)
+        editor.act_view_toolbar_brush_settings.setCheckable(True)
+        editor.act_view_toolbar_brush_settings.setChecked(True)
 
         def _bind_toolbar_visibility(action: QAction, toolbar: QToolBar) -> None:
             action.toggled.connect(lambda visible: toolbar.setVisible(bool(visible)))
@@ -256,17 +215,19 @@ class QtMapEditorToolbarsMixin:
             action.setChecked(bool(toolbar.isVisible()))
 
         if m_toolbars is not None:
-            m_toolbars.addAction(editor.act_view_toolbar_brushes)
-            m_toolbars.addAction(editor.act_view_toolbar_position)
-            m_toolbars.addAction(editor.act_view_toolbar_sizes)
+            m_toolbars.addAction(editor.act_view_toolbar_tools)
+            m_toolbars.addAction(editor.act_view_toolbar_brush_settings)
             m_toolbars.addAction(editor.act_view_toolbar_standard)
+            m_toolbars.addAction(editor.act_view_toolbar_position)
+            m_toolbars.addAction(editor.act_view_toolbar_brushes)
             m_toolbars.addAction(editor.act_view_toolbar_indicators)
 
         _bind_toolbar_visibility(editor.act_view_toolbar_brushes, editor.tb_brushes)
         _bind_toolbar_visibility(editor.act_view_toolbar_position, editor.tb_position)
-        _bind_toolbar_visibility(editor.act_view_toolbar_sizes, editor.tb_sizes)
         _bind_toolbar_visibility(editor.act_view_toolbar_standard, editor.tb_standard)
         _bind_toolbar_visibility(editor.act_view_toolbar_indicators, editor.tb_indicators)
+        _bind_toolbar_visibility(editor.act_view_toolbar_tools, editor.tb_tools)
+        _bind_toolbar_visibility(editor.act_view_toolbar_brush_settings, editor.tb_brush_quick)
 
         # Keep mirror UI in sync with initial state
         editor._sync_mirror_actions()
@@ -276,3 +237,35 @@ class QtMapEditorToolbarsMixin:
 
         # Keep selection UI in sync
         editor.act_selection_mode.setChecked(bool(editor.selection_mode))
+
+    def _on_modern_tool_changed(self, editor: QtMapEditor, tool_id: str) -> None:
+        """Handle modern tool selector changes."""
+        if tool_id == "pointer":
+            # Select/Move logic
+            editor.act_selection_mode.setChecked(False) # Usually pointer is just navigation/single select
+            editor.fill_armed = False
+            editor.paste_armed = False
+        elif tool_id == "pencil":
+            # Standard draw
+            editor.act_selection_mode.setChecked(False)
+            editor.fill_armed = False
+            editor.paste_armed = False
+        elif tool_id == "select":
+            # Selection mode (Box)
+            editor.act_selection_mode.setChecked(True)
+            editor.fill_armed = False
+            editor.paste_armed = False
+        elif tool_id == "fill":
+            editor.act_fill.trigger()
+        elif tool_id == "eraser":
+            # Switch to eraser brush (usually ID 0 or specific)
+            # For now, we can just ensure not in selection mode.
+            # In RME, eraser is often a specific brush ID (0) or a mode.
+            # Assuming brush 0 is eraser for now or just selecting it in logic.
+            editor.act_selection_mode.setChecked(False)
+            # If we have an eraser brush logic:
+            # editor._set_selected_brush_id(0)
+            pass
+        elif tool_id == "picker":
+            # Eyedropper
+            editor.act_jump_to_brush.trigger()

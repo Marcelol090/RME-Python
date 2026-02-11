@@ -4,7 +4,7 @@ import logging
 import os
 from collections import OrderedDict
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction, QActionGroup, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
     QButtonGroup,
@@ -29,6 +29,7 @@ from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
 from py_rme_canary.vis_layer.renderer.map_drawer import MapDrawer
 from py_rme_canary.vis_layer.ui.docks.actions_history import ActionsHistoryDock
 from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
+from py_rme_canary.vis_layer.ui.docks.modern_palette_dock import ModernPaletteDock
 from py_rme_canary.vis_layer.ui.drawing_options_coordinator import (
     DrawingOptionsCoordinator,
     create_coordinator,
@@ -40,7 +41,6 @@ from py_rme_canary.vis_layer.ui.main_window.find_on_map import open_find_waypoin
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 logger = logging.getLogger(__name__)
-from py_rme_canary.vis_layer.ui.docks.palette import PaletteManager
 from py_rme_canary.vis_layer.ui.main_window.build_actions import build_actions
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets import QtMapEditorAssetsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes import QtMapEditorBrushesMixin
@@ -422,7 +422,10 @@ class QtMapEditor(
 
         # UI services
         self.indicators = IndicatorService()
-        self.palettes = PaletteManager(self)
+        # Modern Palette Dock replacing PaletteManager
+        self.palettes = ModernPaletteDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.palettes)
+
         self.actions_history = ActionsHistoryDock(self)
 
         # Optional docks (Window menu)

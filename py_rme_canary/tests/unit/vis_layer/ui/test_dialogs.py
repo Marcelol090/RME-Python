@@ -69,6 +69,7 @@ class TestSettingsDialog:
         dialog = SettingsDialog()
 
         # Should have 5 categories (General/Editor/Graphics/Interface/Client Version)
+        # Note: Using private attribute _nav_list as per new implementation
         assert dialog._nav_list.count() == 5
 
     def test_category_navigation(self, app):

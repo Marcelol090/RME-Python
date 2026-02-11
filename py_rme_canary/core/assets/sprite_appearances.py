@@ -308,7 +308,7 @@ def resolve_assets_dir(path: str | os.PathLike[str]) -> str:
 
 def _load_image_sheet(path: Path) -> tuple[int, int, bytes]:
     try:
-        from PIL import Image  # optional dependency
+        from PIL import Image  # type: ignore[import-not-found]
     except Exception as e:
         raise SpriteAppearancesError("Pillow is required to load PNG/BMP sprite sheets") from e
 
