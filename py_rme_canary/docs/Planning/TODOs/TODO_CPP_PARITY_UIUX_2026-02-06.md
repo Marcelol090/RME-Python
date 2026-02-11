@@ -469,3 +469,10 @@
   - novo helper `format_position_for_copy(x, y, z, copy_format=...)`;
   - `_copy_position_to_clipboard` agora usa `UserSettings.get_copy_position_format()` e aplica o formato correto.
 - Default alinhado ao legado: Lua table (`{x = X, y = Y, z = Z}`).
+
+## Incremental Update (2026-02-11 - File menu Recent Files parity)
+- `menubar.xml` revisitado: submenu `File > Recent Files` deve existir no builder principal (ordem legada).
+- Ajustes aplicados:
+  - `build_menus.py` agora cria `menu_recent_files` no `File` antes de `Preferences`.
+  - `QtMapEditorModernUXMixin._setup_recent_files()` passa a reutilizar `menu_recent_files` quando já existe e só faz fallback para `menu_file.addMenu(...)` em builders customizados.
+- Resultado: elimina risco de submenu duplicado e preserva ordem de menu alinhada ao legado.

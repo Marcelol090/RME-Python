@@ -1305,3 +1305,30 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `py_compile`: **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/main_window/test_qt_map_editor_copy_position_format.py` -> **6 passed**
+
+---
+
+## Sessão 2026-02-11: `Recent Files` integrated in core File menu build
+
+### Contexto
+- O legado (`menubar.xml`) posiciona `Recent Files` como parte estrutural do menu `File`.
+- No Python, a criação do submenu estava concentrada no mixin de UX moderno, potencialmente fora da ordem desejada e suscetível a duplicação em cenários híbridos.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - adicionada criação explícita de `editor.menu_recent_files` no fluxo principal do menu `File`.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_modern_ux.py`
+  - `_setup_recent_files()` agora:
+    - reutiliza `menu_recent_files` se já existir;
+    - usa fallback para `menu_file.addMenu("Recent Files")` apenas quando necessário.
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - tipo `menu_recent_files: QMenu` declarado.
+
+### Testes
+- Novo teste unitário:
+  - `py_rme_canary/tests/unit/vis_layer/ui/main_window/test_modern_ux_recent_files_menu.py`
+  - cobre reutilização de submenu existente e fallback quando ausente.
+
+### Validação
+- `ruff check` + `py_compile`: **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/main_window/test_modern_ux_recent_files_menu.py` -> **2 passed**

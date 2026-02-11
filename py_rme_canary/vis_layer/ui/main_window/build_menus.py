@@ -55,6 +55,10 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_reload.addAction(editor.act_reload_data)
         m_file.addSeparator()
 
+    # C++ parity: File > Recent Files
+    editor.menu_recent_files = m_file.addMenu("Recent Files")
+    m_file.addSeparator()
+
     if hasattr(editor, "act_preferences"):
         m_file.addAction(editor.act_preferences)
 

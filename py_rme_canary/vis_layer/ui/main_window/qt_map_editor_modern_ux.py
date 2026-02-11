@@ -168,9 +168,13 @@ class QtMapEditorModernUXMixin:
 
     def _setup_recent_files(self: QtMapEditor) -> None:
         """Setup recent files menu integration."""
-        if hasattr(self, "menu_file") and hasattr(self.menu_file, "addMenu"):
+        menu = getattr(self, "menu_recent_files", None)
+        if menu is None and hasattr(self, "menu_file") and hasattr(self.menu_file, "addMenu"):
+            # Fallback for partial/custom builders.
             self.menu_recent_files = self.menu_file.addMenu("Recent Files")
-            build_recent_files_menu(self.menu_recent_files, on_file_selected=self._open_recent_file)
+            menu = self.menu_recent_files
+        if menu is not None:
+            build_recent_files_menu(menu, on_file_selected=self._open_recent_file)
 
     def _setup_modern_dialog_actions(self: QtMapEditor) -> None:
         """Setup actions for modern dialogs (About, Properties)."""

@@ -83,6 +83,7 @@ class QtMapEditor(
     # Menus created by builders
     _menu_toolbars: QMenu
     menu_file: QMenu
+    menu_recent_files: QMenu
     menu_edit: QMenu
     menu_search: QMenu
     menu_selection: QMenu
