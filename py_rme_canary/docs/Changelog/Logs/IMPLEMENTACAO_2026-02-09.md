@@ -546,3 +546,90 @@ Execução completa do fluxo operacional após sincronização de planning:
 
 - `mypy` foi **pulado automaticamente** pelo pipeline no runtime atual por requerer Python `>= 3.12` (ambiente detectado: `3.10`).
 - Dependências opcionais ausentes (Pyright/Complexipy/Lizard/Prospector/Interrogate/Pydocstyle/Mutmut) foram reportadas pelo pipeline sem bloquear a execução.
+
+---
+
+## Sessão 12 (2026-02-10): Edit Towns Parity + Town Manager Backend Wiring
+
+### Resumo
+
+Continuação da paridade com `remeres-map-editor-redux` focando no fluxo de towns:
+- remoção de stub em `Edit Towns`;
+- correção de integração UI/UX -> backend no `TownListDialog`;
+- inclusão de regra legada de segurança para remoção de town com houses vinculadas.
+
+### Referência Legacy Auditada
+
+- `remeres-map-editor-redux/source/ui/main_menubar.cpp`
+- `remeres-map-editor-redux/source/ui/map/towns_window.cpp`
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_dialogs.py`
+  - `_edit_towns()` agora abre o gerenciador real (`show_town_manager`) e usa fallback seguro.
+
+- `py_rme_canary/vis_layer/ui/dialogs/zone_town_dialogs.py`
+  - `TownListDialog` agora lê/escreve `Town.temple_position`.
+  - Criação de town usando `core.data.towns.Town` real (sem dataclass ad-hoc local).
+  - `Set Temple Here` com suporte a sessão (`set_town_temple_position`) e fallback local.
+  - `Delete` bloqueia remoção quando há houses associadas ao town (`house.townid`), alinhado ao legado.
+  - Refresh pós-mudança no parent (`canvas.update` + dirty flag) para manter UI sincronizada.
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_town_list_dialog.py` (novo)
+  - cobertura para `temple_position`, add com posição atual, delegação para sessão e bloqueio de delete com houses vinculadas.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-10 - Phase 7)`.
+
+### Extra Incremento (Sessão 12-B)
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py`
+  - `_generate_map()` deixou de ser stub e passou a reutilizar o fluxo real de criação por template (`_new_map()`), mantendo paridade funcional de entrada de menu.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_open_progress.py`
+  - sem mudanças funcionais nesta fase (mantido para cobertura de open-progress).
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` (novo)
+  - Added `test_generate_map_routes_to_new_map_flow`.
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-10 - Phase 8)`.
+
+---
+
+## Sessão 13 (2026-02-10): Map Cleanup Transactional Parity
+
+### Resumo
+
+Implementado fechamento de paridade para `Map Cleanup` com fluxo transacional:
+- removida mutação direta de tiles no handler de diálogo;
+- operação agora usa pipeline de sessão com histórico/undo/queue;
+- removida dependência de `id_mapper` para cleanup.
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_dialogs.py`
+  - `_map_cleanup()` agora:
+    - mantém confirmação modal;
+    - delega para `_map_clear_invalid_tiles(confirm=False)` quando disponível;
+    - fallback seguro via `session.clear_invalid_tiles(selection_only=False)`.
+  - removido loop manual por mapa e edição direta de `tile.items`.
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_clear_invalid_tiles()` ganhou parâmetro `confirm: bool = True`.
+  - novo wrapper `_map_clear_invalid_tiles(confirm: bool = True)` para rotas de menu map-level.
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py` (novo)
+  - cobertura para cancelamento, delegação, fallback e execução sem `id_mapper`.
+
+- `py_rme_canary/docs/Planning/Features.md`
+  - sincronizado estado de `Generate Map`, `Edit Towns` e `Map Cleanup` para remover descrições de stub/fluxo antigo.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-10 - Phase 9)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_dialogs.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_dialogs.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py` -> **4 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py py_rme_canary/tests/unit/vis_layer/ui/test_town_list_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> **9 passed**
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint` -> **pipeline concluído com sucesso** (Jules artifacts generated)
+- `python3 py_rme_canary/scripts/jules_runner.py --project-root . check --source sources/github/Marcelol090/RME-Python` -> **status=ok**

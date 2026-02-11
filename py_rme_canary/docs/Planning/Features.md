@@ -122,15 +122,15 @@
 
 #### Part 2 — Deep C++ Menu Parity (build_actions + build_menus)
 
-- [x] Generate Map action → `build_actions.py` + `menubar/file/tools.py` + `qt_map_editor_file.py` (stub dialog)
+- [x] Generate Map action → `build_actions.py` + `menubar/file/tools.py` + `qt_map_editor_file.py` (routes to template-based new map flow)
 - [x] Close Map action (Ctrl+Q) → checks unsaved changes, resets to blank 256×256 map
 - [x] Export Minimap → `menubar/file/tools.py` + `qt_map_editor_file.py` (PNG/BMP export of current floor)
 - [x] Borderize Map → `build_actions.py` + `qt_map_editor_session.py` + `logic_layer/session/editor.py::borderize_map()`
 - [x] Randomize Map → `build_actions.py` + `menubar/edit/tools.py`
 - [x] Find Everything (map/selection) → `find_item.py::open_find_everything()` (combines unique+action+container+writeable)
 - [x] Find Item on Selection → `open_find_dialog(selection_only=True)` filter added
-- [x] Edit Towns action (Ctrl+T) → stub dialog in `qt_map_editor_dialogs.py`
-- [x] Map Cleanup action → confirmation + removes items with unknown server_ids
+- [x] Edit Towns action (Ctrl+T) → opens integrated Town Manager flow in `qt_map_editor_dialogs.py` / `zone_town_dialogs.py`
+- [x] Map Cleanup action → confirmation + transactional `clear_invalid_tiles` pipeline (undo/redo + action queue)
 - [x] Map Properties (Ctrl+P) → wired to existing `_open_map_properties()`
 - [x] Map Statistics (F8) → wired to existing `_show_map_statistics()`
 - [x] **View menu** (new) → 14 toggle actions matching C++ (show all floors, minimap, colors, modified, zones, house shader, tooltips, grid, client box, ghost items, ghost floors, shade, client IDs, in-game preview)

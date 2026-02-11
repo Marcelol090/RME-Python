@@ -155,55 +155,53 @@ class QtMapEditorDialogsMixin:
     def _edit_towns(self) -> None:
         """Edit towns dialog (C++ EDIT_TOWNS action)."""
         editor = cast("QtMapEditor", self)
-        QMessageBox.information(
-            editor,
-            "Edit Towns",
-            "The town editor is not yet implemented.\n"
-            "Towns can currently be set via 'Set Town Temple Here' in the context menu.",
-        )
+        if hasattr(editor, "show_town_manager"):
+            editor.show_town_manager()
+            return
+
+        # Fallback for legacy/mixin setups without modern UX mixin.
+        if hasattr(editor, "_town_add_edit"):
+            editor._town_add_edit()
+            return
+
+        QMessageBox.warning(editor, "Edit Towns", "Town manager is unavailable in this runtime.")
 
     def _map_cleanup(self) -> None:
-        """Map cleanup: remove items not in OTB (C++ MAP_CLEANUP action)."""
+        """Map cleanup using transactional invalid-tile removal (legacy parity)."""
         editor = cast("QtMapEditor", self)
         reply = QMessageBox.question(
             editor,
             "Map Cleanup",
-            "This will remove all items that do not exist in the server item definitions "
-            "(items that would show as red/unknown tiles).\n\nContinue?",
+            "This will remove placeholder/unknown items from the entire map.\n\nContinue?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        removed = 0
-        id_mapper = getattr(editor, "id_mapper", None)
-        if id_mapper is None:
-            QMessageBox.information(
-                editor,
-                "Map Cleanup",
-                "No item definitions loaded. Load client data first.",
-            )
+        if hasattr(editor, "_map_clear_invalid_tiles"):
+            # Reuse session helper to keep history/undo integration and map-level messaging centralized.
+            with contextlib.suppress(TypeError):
+                editor._map_clear_invalid_tiles(confirm=False)
+                return
+            editor._map_clear_invalid_tiles()
             return
 
-        known_server_ids = set(getattr(id_mapper, "server_to_client", {}).keys())
-        game_map = editor.map
-        for z in range(16):
-            for y in range(game_map.header.height):
-                for x in range(game_map.header.width):
-                    tile = game_map.get_tile(x, y, z)
-                    if tile is None:
-                        continue
-                    if tile.items:
-                        new_items = [it for it in tile.items if int(it.id) in known_server_ids]
-                        diff = len(tile.items) - len(new_items)
-                        if diff > 0:
-                            removed += diff
-                            tile.items = new_items
+        session = getattr(editor, "session", None)
+        if session is None or not hasattr(session, "clear_invalid_tiles"):
+            QMessageBox.warning(editor, "Map Cleanup", "Map cleanup is unavailable in this runtime.")
+            return
 
-        editor.status.showMessage(f"Map cleanup: removed {removed} unknown items.")
-        if removed > 0:
+        removed, action = session.clear_invalid_tiles(selection_only=False)
+        if action is None:
+            editor.status.showMessage("Map cleanup: no changes")
+            return
+
+        with contextlib.suppress(Exception):
             editor.canvas.update()
+        with contextlib.suppress(Exception):
+            editor._update_action_enabled_states()
+        editor.status.showMessage(f"Map cleanup: removed {int(removed)} invalid item(s)")
 
     def _show_about(self: QtMapEditor) -> None:
         """Show the About dialog (C++ About > About... / F1)."""

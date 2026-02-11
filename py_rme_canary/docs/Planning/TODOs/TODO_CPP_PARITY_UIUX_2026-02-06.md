@@ -299,3 +299,43 @@
   - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> `3 passed`.
   - Full logic-layer context-menu unit module remains blocked in this runtime by Python mismatch:
     - local interpreter is `Python 3.10`, while project source includes `Python 3.12` syntax in unrelated imports (e.g. `class LRUCache[T]`).
+
+## Incremental Update (2026-02-10 - Phase 7)
+- Closed another C++ parity gap (`Edit Towns` action):
+  - `qt_map_editor_dialogs._edit_towns()` no longer shows stub-only message.
+  - Action now routes to real Town Manager (`show_town_manager`) with fallback to session helper flow.
+- Refactored `TownListDialog` to align with real backend model:
+  - Uses `Town.temple_position` (instead of stale `temple` attribute assumption).
+  - Uses real `Town` dataclass creation on add.
+  - Temple update path now writes `temple_position` and supports session-backed mutation (`set_town_temple_position`).
+  - Delete now blocks when houses are linked to the town (legacy parity behavior from redux `towns_window.cpp`).
+  - Added parent refresh hooks after mutations (`canvas.update`, dirty flag).
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_town_list_dialog.py`
+    - loads `temple_position` correctly
+    - add uses current cursor position
+    - set temple delegates to session
+    - delete is blocked with linked houses
+
+## Incremental Update (2026-02-10 - Phase 8)
+- Removed `Generate Map` dead-end stub in file menu parity flow:
+  - `qt_map_editor_file._generate_map()` now routes to the real template-based map creation flow (`_new_map()`).
+  - Added status feedback for action visibility in UI telemetry (`Generate Map: template flow opened`).
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py::test_generate_map_routes_to_new_map_flow`
+
+## Incremental Update (2026-02-10 - Phase 9)
+- Closed `Map Cleanup` parity gap for undo/redo safety:
+  - `qt_map_editor_dialogs._map_cleanup()` no longer mutates tiles directly.
+  - Cleanup now delegates to transactional session flow via `_map_clear_invalid_tiles()` when available.
+  - Fallback path now uses `session.clear_invalid_tiles(selection_only=False)` and keeps UI/action refresh behavior.
+- Removed `id_mapper` hard requirement from cleanup path:
+  - cleanup now follows `EditorSession.clear_invalid_tiles` definition of invalid items (placeholder/unknown replacements).
+- Added map-level session wrapper:
+  - `qt_map_editor_session._map_clear_invalid_tiles(confirm: bool = True)` to centralize map cleanup routing and avoid duplicated confirmation prompts.
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py`
+    - cancel path (no changes)
+    - delegation path (`_map_clear_invalid_tiles`)
+    - fallback path (`session.clear_invalid_tiles(selection_only=False)`)
+    - behavior without `id_mapper`

@@ -286,12 +286,12 @@ class QtMapEditorSessionMixin:
         self.status.showMessage(f"Clear modified state: {cleared} tiles")
         self.canvas.update()
 
-    def _clear_invalid_tiles(self, *, selection_only: bool) -> None:
+    def _clear_invalid_tiles(self, *, selection_only: bool, confirm: bool = True) -> None:
         if bool(selection_only) and not self.session.has_selection():
             self.status.showMessage("Clear invalid tiles: nothing selected")
             return
 
-        if not bool(selection_only) and not self._confirm(
+        if bool(confirm) and not bool(selection_only) and not self._confirm(
             "Clear Invalid Tiles (Map)",
             "This will remove placeholder/unknown items (id=0 / unknown replacements) from the entire map. Do you want to proceed?",
         ):
@@ -311,6 +311,10 @@ class QtMapEditorSessionMixin:
             no_changes_message="Clear invalid tiles: no changes",
             changed_message=f"Clear invalid tiles ({scope}): removed {int(removed)} items",
         )
+
+    def _map_clear_invalid_tiles(self, *, confirm: bool = True) -> None:
+        """Map-level wrapper used by menu parity flows (e.g., Map Cleanup)."""
+        self._clear_invalid_tiles(selection_only=False, confirm=bool(confirm))
 
     def _map_remove_item_global(self) -> None:
         from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog
