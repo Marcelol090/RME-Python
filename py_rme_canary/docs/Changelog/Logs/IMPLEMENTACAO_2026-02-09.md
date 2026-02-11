@@ -1467,3 +1467,17 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 
 ### Validação
 - `ruff check` + `py_compile`: **OK**
+
+---
+
+## Sessão 2026-02-11: Reload label parity
+
+### Referência Legacy
+- `menubar.xml` define item `Reload` no submenu `File > Reload`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - `act_reload_data` label atualizado para `Reload`.
+
+### Validação
+- `ruff check` + `py_compile` no módulo alterado: **OK**

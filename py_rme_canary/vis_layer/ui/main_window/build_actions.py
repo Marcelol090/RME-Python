@@ -70,7 +70,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_export_minimap = QAction("Export Minimap...", editor)
     editor.act_export_minimap.triggered.connect(lambda _c=False: file_tools.export_minimap(editor))
 
-    editor.act_reload_data = QAction(load_icon("action_reload"), "Reload Data Files", editor)
+    editor.act_reload_data = QAction(load_icon("action_reload"), "Reload", editor)
     editor.act_reload_data.setShortcut(QKeySequence("F5"))
     editor.act_reload_data.triggered.connect(lambda _c=False: file_tools.reload_data(editor))
 

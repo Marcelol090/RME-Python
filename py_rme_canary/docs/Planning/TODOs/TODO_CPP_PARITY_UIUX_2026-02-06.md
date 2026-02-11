@@ -527,3 +527,8 @@
   - `Lower Floors`
   - `Visible Floors`
 - Mudança textual apenas (sem alteração de lógica dos modos).
+
+## Incremental Update (2026-02-11 - Reload label parity)
+- Ajuste textual da ação de recarga para refletir o legado (`Reload`):
+  - `act_reload_data` em `build_actions.py` alterada de `Reload Data Files` para `Reload`.
+- Sem alteração de comportamento/handler (`F5` permanece igual).
