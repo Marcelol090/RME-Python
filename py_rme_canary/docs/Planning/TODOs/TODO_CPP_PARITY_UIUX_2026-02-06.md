@@ -507,3 +507,9 @@
   - `Jump to Item` -> `Jump to Item...`
   - `Go To Previous Position` -> `Go to Previous Position`
   - `Go To Position` -> `Go to Position...`
+
+## Incremental Update (2026-02-11 - Search labels and RAW naming parity)
+- Ajuste textual de ações para refletir menu legado:
+  - removidos sufixos `(Map)` e `(Selection)` das ações de busca (`Find Everything/Unique/Action/Container/Writeable`), já que o escopo é definido pelo menu onde aparecem.
+  - label de palette `Raw` ajustado para `RAW`.
+- Sem mudança de comportamento/handler, apenas paridade de nomenclatura e consistência de UI.

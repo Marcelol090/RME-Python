@@ -1407,3 +1407,24 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 
 ### Validação
 - `ruff check` + `py_compile` no módulo alterado: **OK**
+
+---
+
+## Sessão 2026-02-11: Search label cleanup + `RAW` naming parity
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml` usa labels sem sufixos redundantes de escopo para os comandos de busca.
+- Palette item é explicitamente `RAW`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - ações de busca de mapa/seleção normalizadas:
+    - `Find Everything`
+    - `Find Unique`
+    - `Find Action`
+    - `Find Container`
+    - `Find Writeable`
+  - `act_palette_raw` label ajustado para `RAW`.
+
+### Validação
+- `ruff check` + `py_compile` no módulo alterado: **OK**
