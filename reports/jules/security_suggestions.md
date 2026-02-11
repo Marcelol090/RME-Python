@@ -1,26 +1,26 @@
-# Security Audit Report
+# Security Suggestions
 
-## Implemented Fixes
+- Generated at: `2026-02-09T12:00:00Z`
+- Category: `security`
+- Task: `security-scan-and-fix`
 
-### RCE-001: ScriptEngine Sandbox Hardening
-*   **Severity**: Critical
-*   **Description**: The `ScriptEngine` sandbox was vulnerable to Remote Code Execution (RCE) via `__getattribute__` and `__base__` traversal. An attacker could bypass the AST visitor's checks to access the `object` class and its subclasses, eventually reaching `os` or `subprocess` via `__init__.__globals__`.
-*   **Fix**: Modified `ScriptSecurityChecker` in `py_rme_canary/logic_layer/script_engine.py` to block access to `__getattribute__`, `__base__`, and `__closure__`.
-*   **Verification**: Verified with `test_exploit_5.py` which successfully blocked the exploit.
+## Implemented
 
-### XML-001: Secure XML Parsing
-*   **Severity**: High
-*   **Description**: The tool `generate_update_manifest.py` and test `test_lua_creature_import.py` were using the unsafe `xml.etree.ElementTree` library, which is vulnerable to Billion Laughs attacks and external entity expansion.
-*   **Fix**: Replaced usage with `defusedxml.ElementTree` and updated imports to use the project's safe XML wrappers.
-*   **Verification**: Verified that the tool runs correctly and tests pass.
+- [SEC-001] Fixed timing attack vulnerability in LiveServer password comparison using secrets.compare_digest.
+  - files: `py_rme_canary/core/protocols/live_server.py`
+  - evidence: Verified with unit tests in `py_rme_canary/tests/unit/core/protocols/test_live_server_security.py`
 
-### SEC-001: Hardcoded Secrets
-*   **Severity**: Medium
-*   **Description**: A hardcoded API key was found in `test_jules_api.py`.
-*   **Fix**: Replaced the hardcoded key with `os.getenv` and a dummy fallback value.
-*   **Verification**: Tests pass.
+- [SEC-002] Verified usage of defusedxml for safe XML parsing to prevent XXE attacks.
+  - files: `py_rme_canary/core/io/xml/safe.py`, `py_rme_canary/core/io/lua_creature_import.py`
 
-## Suggested Next Steps
+- [SEC-003] Verified ScriptEngine sandbox implementation blocking dangerous AST nodes.
+  - files: `py_rme_canary/logic_layer/script_engine.py`
 
-1.  **AUDIT-001**: Implement runtime audit hooks (`sys.addaudithook`) for the `ScriptEngine` to prevent future bypasses that might evade AST analysis.
-2.  **TLS-001**: Implement TLS encryption for the Live Editing Protocol (`py_rme_canary/core/protocols/live_client.py`) to protect user credentials during login.
+## Suggested Next
+
+- [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.
+  - rationale: Passwords and map data are currently transmitted in plain text. TLS is required to prevent eavesdropping and MITM attacks.
+  - links: https://docs.python.org/3/library/ssl.html
+
+- [HIGH] [SUG-SEC-002] Implement Rate Limiting for LiveServer.
+  - rationale: Lack of rate limiting exposes the server to DoS attacks. Implement token bucket or leaky bucket algorithm per IP.

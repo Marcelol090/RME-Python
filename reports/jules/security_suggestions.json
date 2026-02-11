@@ -2,41 +2,58 @@
   "version": 1,
   "category": "security",
   "generated_at": "2026-02-09T12:00:00Z",
-  "task": "Security Audit and Hardening",
+  "task": "security-scan-and-fix",
   "implemented": [
     {
-      "id": "RCE-001",
-      "summary": "Fixed Remote Code Execution in ScriptEngine Sandbox",
-      "files": ["py_rme_canary/logic_layer/script_engine.py"],
-      "evidence": "Blocked dangerous attributes (__getattribute__, __base__, __closure__) via AST visitor to prevent sandbox escape."
-    },
-    {
-      "id": "XML-001",
-      "summary": "Replaced unsafe XML parsing with defusedxml",
-      "files": ["py_rme_canary/tools/release/generate_update_manifest.py", "py_rme_canary/tests/unit/core/io/test_lua_creature_import.py"],
-      "evidence": "Replaced xml.etree.ElementTree with defusedxml.ElementTree to mitigate XML expansion attacks."
-    },
-    {
       "id": "SEC-001",
-      "summary": "Removed hardcoded API key in test",
-      "files": ["py_rme_canary/tests/unit/scripts/test_jules_api.py"],
-      "evidence": "Switched to os.getenv or dummy value to avoid secrets in codebase."
+      "summary": "Fixed timing attack vulnerability in LiveServer password comparison using secrets.compare_digest.",
+      "files": [
+        "py_rme_canary/core/protocols/live_server.py"
+      ],
+      "evidence": "Verified with unit tests in py_rme_canary/tests/unit/core/protocols/test_live_server_security.py"
+    },
+    {
+      "id": "SEC-002",
+      "summary": "Verified usage of defusedxml for safe XML parsing to prevent XXE attacks.",
+      "files": [
+        "py_rme_canary/core/io/xml/safe.py",
+        "py_rme_canary/core/io/lua_creature_import.py"
+      ],
+      "evidence": "Code review confirmed imports from core.io.xml.safe"
+    },
+    {
+      "id": "SEC-003",
+      "summary": "Verified ScriptEngine sandbox implementation blocking dangerous AST nodes.",
+      "files": [
+        "py_rme_canary/logic_layer/script_engine.py"
+      ],
+      "evidence": "Code review confirmed AST visitor blocks eval, exec, open, and dangerous attributes"
     }
   ],
   "suggested_next": [
     {
-      "id": "AUDIT-001",
-      "severity": "HIGH",
-      "summary": "Implement Runtime Audit Hooks for ScriptEngine",
-      "rationale": "AST analysis can be bypassed by dynamic code generation or complex attribute access. Runtime hooks (sys.addaudithook) provide defense in depth.",
-      "files": ["py_rme_canary/logic_layer/script_engine.py"]
+      "id": "SUG-SEC-001",
+      "severity": "CRITICAL",
+      "summary": "Implement TLS encryption for LiveServer connections.",
+      "rationale": "Passwords and map data are currently transmitted in plain text. TLS is required to prevent eavesdropping and MITM attacks.",
+      "files": [
+        "py_rme_canary/core/protocols/live_server.py",
+        "py_rme_canary/core/protocols/live_client.py"
+      ],
+      "links": [
+        "https://docs.python.org/3/library/ssl.html"
+      ]
     },
     {
-      "id": "TLS-001",
-      "severity": "CRITICAL",
-      "summary": "Implement TLS for Live Editing Protocol",
-      "rationale": "Login payloads are currently encoded but not encrypted, risking credential theft.",
-      "files": ["py_rme_canary/core/protocols/live_client.py"]
+      "id": "SUG-SEC-002",
+      "severity": "HIGH",
+      "summary": "Implement Rate Limiting for LiveServer.",
+      "rationale": "Lack of rate limiting exposes the server to DoS attacks. Implement token bucket or leaky bucket algorithm per IP.",
+      "files": [
+        "py_rme_canary/core/protocols/live_server.py",
+        "py_rme_canary/core/protocols/live_peer.py"
+      ],
+      "links": []
     }
   ]
 }
