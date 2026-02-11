@@ -6,6 +6,7 @@ Based on ui_instructions.md - PyQt6 UI/UX Development Instructions.
 from __future__ import annotations
 
 from typing import TypedDict
+
 from PyQt6.QtWidgets import QApplication
 
 

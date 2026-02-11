@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 
 from py_rme_canary.core.assets.appearances_dat import (
-    AppearanceFlags,
-    AppearanceFlagLight,
-    AppearanceFlagMarket,
     load_appearances_dat,
     resolve_appearances_path,
 )

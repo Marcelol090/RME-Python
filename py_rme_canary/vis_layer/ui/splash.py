@@ -16,7 +16,6 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QApplication, QSplashScreen, QWidget
 
-
 _SPLASH_WIDTH = 520
 _SPLASH_HEIGHT = 320
 

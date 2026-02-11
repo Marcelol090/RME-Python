@@ -13,7 +13,6 @@ from py_rme_canary.core.version import (
     get_build_info,
 )
 
-
 # ── BuildInfo dataclass ──────────────────────────────────────────
 
 

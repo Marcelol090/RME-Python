@@ -7,18 +7,9 @@ the application's theme and consistent layout structure.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QMouseEvent, QIcon
-from PyQt6.QtWidgets import (
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-    QFrame,
-    QSizePolicy
-)
+from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 

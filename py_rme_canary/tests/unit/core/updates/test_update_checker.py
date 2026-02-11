@@ -2,22 +2,19 @@
 from __future__ import annotations
 
 import json
-from http.client import HTTPResponse
-from io import BytesIO
 from unittest import mock
 
 import pytest
 
-from py_rme_canary.core.version import BuildInfo
 from py_rme_canary.core.updates.update_checker import (
     UpdateAsset,
-    UpdateCheckResult,
     UpdateChecker,
+    UpdateCheckResult,
     _parse_manifest,
     _version_from_string,
     check_for_updates,
 )
-
+from py_rme_canary.core.version import BuildInfo
 
 # ── _version_from_string ─────────────────────────────────────────
 

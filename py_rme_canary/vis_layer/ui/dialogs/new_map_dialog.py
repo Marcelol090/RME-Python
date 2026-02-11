@@ -10,7 +10,6 @@ Enhanced to match C++ RME Redux new map dialog:
 
 from __future__ import annotations
 
-
 from PyQt6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -196,7 +195,7 @@ class NewMapDialog(ModernDialog):
         tm = get_theme_manager()
         c = tm.tokens["color"]
         r = tm.tokens["radius"]
-        
+
         # Template description styling
         self._template_desc.setStyleSheet(f"color: {c['text']['tertiary']}; font-style: italic;")
 

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import os
 
-
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -40,7 +39,6 @@ from PyQt6.QtWidgets import (
 
 from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -568,7 +566,7 @@ class GraphicsSettings(SettingsCategory):
         self.theme = QComboBox()
         self.theme.setObjectName("theme")
         self.theme.addItems(["Dark (Modern)", "Light", "Neon (Cyberpunk)"])
-        
+
         # Select current
         tm = get_theme_manager()
         if tm.current_theme == "light":
@@ -577,7 +575,7 @@ class GraphicsSettings(SettingsCategory):
             self.theme.setCurrentIndex(2)
         else:
             self.theme.setCurrentIndex(0)
-            
+
         self.theme.currentIndexChanged.connect(self._on_theme_changed)
         form.addRow("Theme:", self.theme)
 
@@ -890,7 +888,7 @@ class SettingsDialog(ModernDialog):
         self._nav_list.setFixedWidth(240)
         self._nav_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._nav_list.currentRowChanged.connect(self._on_category_changed)
-        
+
         self.body_layout.addWidget(self._nav_list)
 
         # 2. Content Area (Stacked)
@@ -909,7 +907,7 @@ class SettingsDialog(ModernDialog):
         # Set main layout to ModernDialog content (wrapping it in a widget)
         container = QWidget()
         container.setLayout(self.body_layout)
-        
+
         wrapper_layout = QVBoxLayout()
         wrapper_layout.setContentsMargins(24, 24, 24, 24)
         wrapper_layout.addWidget(container)
@@ -929,13 +927,13 @@ class SettingsDialog(ModernDialog):
         item = QListWidgetItem(name)
         item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self._nav_list.addItem(item)
-        
+
         self._categories.append(widget)
-        
+
         # Wrap in scroll area for safety
         scroll = _scrollable(widget)
         self._stack.addWidget(scroll)
-        
+
         # Connect change signal
         widget.settings_changed.connect(self._on_settings_changed)
 
@@ -943,7 +941,7 @@ class SettingsDialog(ModernDialog):
         tm = get_theme_manager()
         c = tm.tokens["color"]
         r = tm.tokens["radius"]
-        
+
         # Custom styling for the Settings Dialog
         self.setStyleSheet(f"""
             /* Sidebar Navigation */
@@ -999,28 +997,28 @@ class SettingsDialog(ModernDialog):
         self._stack.setCurrentIndex(row)
 
     def _on_settings_changed(self) -> None:
-        # Enable save button or show indicator? 
+        # Enable save button or show indicator?
         pass
 
     def _reset_all(self) -> None:
         """Reset all categories to defaults."""
         res = QMessageBox.question(
-            self, 
-            "Reset Preferences", 
+            self,
+            "Reset Preferences",
             "Are you sure you want to reset all preferences to default values?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         if res == QMessageBox.StandardButton.Yes:
             for cat in self._categories:
                 cat.reset_settings()
-    
+
     def accept(self) -> None:
         """Save all changes on accept."""
         for cat in self._categories:
             if cat.has_changes():
                 cat.apply_settings()
-        
+
         # Emit legacy signal just in case, though usually we rely on dialog result
-        self.settings_applied.emit({}) 
-        
+        self.settings_applied.emit({})
+
         super().accept()

@@ -75,7 +75,7 @@ class _DummyEditor(QtMapEditorAssetsMixin):
 
 
 class _FakeProgress:
-    created: list["_FakeProgress"] = []
+    created: list[_FakeProgress] = []
 
     def __init__(self, *_args, **_kwargs) -> None:
         self.labels: list[str] = []

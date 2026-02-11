@@ -7,13 +7,12 @@ concurrent.futures).
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
-import urllib.request
 import urllib.error
+import urllib.request
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Final
 
 from py_rme_canary.core.version import BuildInfo, get_build_info
@@ -99,12 +98,20 @@ def check_for_updates(
         current.channel, _DEFAULT_MANIFEST_URLS["stable"]
     )
 
+    if not url.lower().startswith(("http://", "https://")):
+        return UpdateCheckResult(
+            available=False,
+            current_version=current.semver,
+            error=f"Invalid URL scheme: {url}",
+        )
+
     try:
         req = urllib.request.Request(
             url,
             headers={"User-Agent": current.user_agent},
         )
-        with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp:
+        # Scheme validation is done above
+        with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp:  # nosec B310
             raw = resp.read()
 
         data = _parse_manifest(raw)

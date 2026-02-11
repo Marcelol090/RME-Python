@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import time
-from unittest.mock import MagicMock
 
 from py_rme_canary.core.protocols.cursor_broadcaster import (
     BroadcasterConfig,
@@ -13,7 +12,6 @@ from py_rme_canary.core.protocols.cursor_broadcaster import (
     CursorReceiver,
 )
 from py_rme_canary.core.protocols.live_packets import encode_cursor
-
 
 # --- CursorOverlayData ---
 

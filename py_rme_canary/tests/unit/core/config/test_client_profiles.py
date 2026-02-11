@@ -31,10 +31,10 @@ def test_create_profile_generates_unique_ids() -> None:
 
 def test_parse_profiles_ignores_invalid_entries() -> None:
     raw = [
-        {"name": "A", "client_version": 860, "assets_dir": "/tmp/a", "preferred_kind": "legacy"},
-        {"name": "", "client_version": 0, "assets_dir": "/tmp/invalid"},
+        {"name": "A", "client_version": 860, "assets_dir": "test_data/a", "preferred_kind": "legacy"},
+        {"name": "", "client_version": 0, "assets_dir": "test_data/invalid"},
         "invalid",
-        {"name": "B", "client_version": 1310, "assets_dir": "/tmp/b", "preferred_kind": "modern"},
+        {"name": "B", "client_version": 1310, "assets_dir": "test_data/b", "preferred_kind": "modern"},
     ]
     profiles = parse_client_profiles(raw)
     assert [p.name for p in profiles] == ["A", "B"]

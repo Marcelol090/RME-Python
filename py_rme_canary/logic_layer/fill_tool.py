@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
     from py_rme_canary.core.data.tile import Tile
-    from py_rme_canary.logic_layer.brushes.base_brush import BaseBrush
 
 logger = logging.getLogger(__name__)
 

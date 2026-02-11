@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction, QKeyEvent
 from PyQt6.QtWidgets import (
     QDialog,
-    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -27,7 +26,7 @@ class CommandPalette(QDialog):
     def __init__(self, editor: QtMapEditor) -> None:
         super().__init__(editor, Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
         self.editor = editor
-        self._actions: List[Tuple[str, QAction]] = []
+        self._actions: list[tuple[str, QAction]] = []
         self._setup_ui()
         self._collect_actions()
         self._filter_list("")

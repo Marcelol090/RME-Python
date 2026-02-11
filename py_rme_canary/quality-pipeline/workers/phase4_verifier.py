@@ -138,7 +138,7 @@ class FunctionalParityVerifier:
             )
         else:
             # Check if partial (similar keywords)
-            partial_keyword = keyword.split(".")[-1].lower() if "." in keyword else keyword.lower()
+            partial_keyword = keyword.rsplit(".", maxsplit=1)[-1].lower() if "." in keyword else keyword.lower()
             partial_found = self._search_partial(full_path, partial_keyword)
 
             if partial_found:

@@ -2,15 +2,11 @@
 from __future__ import annotations
 
 import hashlib
-import json
-import tempfile
-from pathlib import Path
-from unittest import mock
-
-import pytest
-
 import importlib.util
 import sys
+from pathlib import Path
+
+import pytest
 
 # Load tools/release.py directly to avoid namespace collision with py_rme_canary/tools/
 _RELEASE_PY = Path(__file__).resolve().parents[4] / "tools" / "release.py"

@@ -64,7 +64,7 @@ class _DummyEditor(QtMapEditorFileMixin):
 
 
 class _FakeProgress:
-    created: list["_FakeProgress"] = []
+    created: list[_FakeProgress] = []
     cancel_at_step: int | None = None
 
     def __init__(self, *_args, **_kwargs) -> None:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -26,7 +26,7 @@ class ToolManager(QObject):
         self.canvas = canvas
         self.editor = editor
 
-        self.tools: Dict[str, AbstractTool] = {
+        self.tools: dict[str, AbstractTool] = {
             "brush": BrushTool(canvas, editor),
             "selection": SelectionTool(canvas, editor),
             "pan": PanTool(canvas, editor),

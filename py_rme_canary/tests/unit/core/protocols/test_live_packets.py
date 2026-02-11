@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import struct
 
-import pytest
-
 from py_rme_canary.core.protocols.live_packets import (
     ConnectionState,
     NetworkHeader,
@@ -16,7 +14,6 @@ from py_rme_canary.core.protocols.live_packets import (
     encode_chat,
     encode_cursor,
 )
-
 
 # --- PacketType enum ---
 

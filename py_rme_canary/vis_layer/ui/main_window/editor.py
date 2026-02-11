@@ -28,7 +28,6 @@ from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
 from py_rme_canary.vis_layer.renderer.map_drawer import MapDrawer
 from py_rme_canary.vis_layer.ui.docks.actions_history import ActionsHistoryDock
 from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
-from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.drawing_options_coordinator import (
     DrawingOptionsCoordinator,
     create_coordinator,
@@ -37,6 +36,7 @@ from py_rme_canary.vis_layer.ui.helpers import Viewport
 from py_rme_canary.vis_layer.ui.indicators import IndicatorService
 from py_rme_canary.vis_layer.ui.main_window.find_item import open_find_item
 from py_rme_canary.vis_layer.ui.main_window.find_on_map import open_find_waypoint
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 logger = logging.getLogger(__name__)
 from py_rme_canary.vis_layer.ui.docks.palette import PaletteManager
