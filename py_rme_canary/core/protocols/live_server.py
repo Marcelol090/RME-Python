@@ -5,6 +5,7 @@ Ported from source/live_server.cpp
 """
 
 import logging
+import secrets
 import select
 import socket
 import threading
@@ -188,7 +189,7 @@ class LiveServer:
             if peer is None:
                 return
             name, password = _decode_login_payload(payload)
-            if self.password and str(password) != str(self.password):
+            if self.password and not secrets.compare_digest(str(password), str(self.password)):
                 peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
                 self._disconnect_client(client)
                 return
