@@ -128,6 +128,14 @@ class _DummyPasteSession:
         self.paste_calls.append((int(x), int(y), int(z)))
 
 
+class _DummySelectionSession:
+    def __init__(self, *, has_selection: bool) -> None:
+        self._has_selection = bool(has_selection)
+
+    def has_selection(self) -> bool:
+        return bool(self._has_selection)
+
+
 @pytest.fixture
 def app():
     app = QApplication.instance()
@@ -307,6 +315,22 @@ def test_move_item_to_tileset_requires_setting_enabled(app, monkeypatch: pytest.
     assert any("Enable tileset editing" in msg for msg in editor.status.messages)
 
 
+def test_can_move_item_to_tileset_reflects_user_setting(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    handlers = ContextMenuActionHandlers()
+
+    monkeypatch.setattr(
+        "py_rme_canary.core.config.user_settings.get_user_settings",
+        lambda: _DummySettings(enable_tileset_editing=False),
+    )
+    assert handlers.can_move_item_to_tileset() is False
+
+    monkeypatch.setattr(
+        "py_rme_canary.core.config.user_settings.get_user_settings",
+        lambda: _DummySettings(enable_tileset_editing=True),
+    )
+    assert handlers.can_move_item_to_tileset() is True
+
+
 def test_move_item_to_tileset_opens_dialog_with_selected_item(app, monkeypatch: pytest.MonkeyPatch) -> None:
     editor = _DummyEditor()
     handlers = ContextMenuActionHandlers(canvas=_DummyCanvas(editor))
@@ -333,6 +357,30 @@ def test_move_item_to_tileset_opens_dialog_with_selected_item(app, monkeypatch: 
 
     assert captured["initial_item_id"] == 4321
     assert any("Tileset" in msg for msg in editor.status.messages)
+
+
+def test_item_context_callbacks_expose_can_move_to_tileset(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    editor = _DummyEditor()
+    handlers = ContextMenuActionHandlers(canvas=_DummyCanvas(editor))
+    tile = Tile(x=10, y=10, z=7, items=[Item(id=4321)])
+
+    monkeypatch.setattr(
+        "py_rme_canary.core.config.user_settings.get_user_settings",
+        lambda: _DummySettings(enable_tileset_editing=False),
+    )
+    callbacks = handlers.get_item_context_callbacks(item=tile.items[0], tile=tile, position=(10, 10, 7))
+    assert "can_move_to_tileset" in callbacks
+    assert callbacks["can_move_to_tileset"]() is False
+
+
+def test_tile_context_callbacks_expose_selection_replace_capability(app) -> None:
+    editor = _DummyEditor()
+    session = _DummySelectionSession(has_selection=True)
+    handlers = ContextMenuActionHandlers(editor_session=session, canvas=_DummyCanvas(editor))
+    callbacks = handlers.get_tile_context_callbacks(tile=Tile(x=1, y=2, z=7), position=(1, 2, 7))
+
+    assert "can_selection_replace_tiles" in callbacks
+    assert callbacks["can_selection_replace_tiles"]() is True
 
 
 def _make_session_with_single_item(item_id: int = 2050) -> tuple[EditorSession, Tile]:

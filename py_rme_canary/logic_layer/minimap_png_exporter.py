@@ -15,6 +15,7 @@ Layer: logic_layer (no PyQt6 imports)
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import struct
 import zlib
@@ -22,6 +23,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from py_rme_canary.logic_layer.rust_accel import assemble_png_idat, render_minimap_buffer
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -272,22 +275,18 @@ class MinimapPNGExporter:
     ) -> list[Path]:
         """Export floor to a single PNG file."""
         min_x, min_y, max_x, max_y = bounds
-        width = (max_x - min_x + 1) * config.tile_size
-        height = (max_y - min_y + 1) * config.tile_size
+        tiles_x = max_x - min_x + 1
+        tiles_y = max_y - min_y + 1
+        width = tiles_x * config.tile_size
+        height = tiles_y * config.tile_size
 
-        # Create image data (RGB)
-        image_data = bytearray(width * height * 3)
-
-        # Fill background
+        # Build per-tile color payload, then render the RGB buffer via rust_accel
+        # (Rust backend when available, pure-Python fallback otherwise).
         bg = config.background_color
-        for i in range(0, len(image_data), 3):
-            image_data[i] = bg[0]
-            image_data[i + 1] = bg[1]
-            image_data[i + 2] = bg[2]
+        tile_colors: list[tuple[int, int, int, int]] = [(0, 0, 0, 0)] * (tiles_x * tiles_y)
 
-        # Render tiles
         tiles = getattr(game_map, "tiles", {})
-        total = max_x - min_x + 1
+        total = tiles_x
 
         for tx in range(min_x, max_x + 1):
             if self._cancelled:
@@ -304,19 +303,21 @@ class MinimapPNGExporter:
                     continue
 
                 color = self._get_tile_color(tile, config)
+                local_x = tx - min_x
+                local_y = ty - min_y
+                tile_idx = local_y * tiles_x + local_x
+                tile_colors[tile_idx] = (color[0], color[1], color[2], 255)
 
-                # Calculate pixel position
-                px = (tx - min_x) * config.tile_size
-                py = (ty - min_y) * config.tile_size
-
-                # Fill tile pixels
-                for ox in range(config.tile_size):
-                    for oy in range(config.tile_size):
-                        idx = ((py + oy) * width + (px + ox)) * 3
-                        if idx + 2 < len(image_data):
-                            image_data[idx] = color[0]
-                            image_data[idx + 1] = color[1]
-                            image_data[idx + 2] = color[2]
+        rendered = render_minimap_buffer(
+            tile_colors,
+            tiles_x,
+            tiles_y,
+            config.tile_size,
+            int(bg[0]),
+            int(bg[1]),
+            int(bg[2]),
+        )
+        image_data = bytearray(rendered)
 
         # Draw grid if enabled
         if config.show_grid:
@@ -472,7 +473,6 @@ class MinimapPNGExporter:
         """Draw grid lines on image."""
         min_x, min_y, max_x, max_y = bounds
         color = config.grid_color
-        interval = config.grid_interval * config.tile_size
 
         # Vertical lines
         for tx in range(min_x, max_x + 1, config.grid_interval):
@@ -523,14 +523,7 @@ class MinimapPNGExporter:
         ihdr = png_chunk(b"IHDR", ihdr_data)
 
         # IDAT chunk (image data)
-        # Add filter byte (0 = none) to each row
-        raw_data = b""
-        for y in range(height):
-            raw_data += b"\x00"  # Filter byte
-            row_start = y * width * 3
-            raw_data += bytes(image_data[row_start : row_start + width * 3])
-
-        compressed = zlib.compress(raw_data, level=6)
+        compressed = assemble_png_idat(image_data, width, height)
         idat = png_chunk(b"IDAT", compressed)
 
         # IEND chunk
@@ -581,10 +574,8 @@ class MinimapPNGExporter:
     def _report_progress(self, progress: float, message: str) -> None:
         """Report progress via callback."""
         if self._progress_callback:
-            try:
+            with contextlib.suppress(Exception):
                 self._progress_callback(progress, message)
-            except Exception:
-                pass
 
 
 def get_minimap_png_exporter() -> MinimapPNGExporter:

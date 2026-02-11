@@ -70,6 +70,7 @@ SYMBOL_INDEX_AFTER="$REPORT_DIR/symbols_after.json"
 ISSUES_NORMALIZED="$REPORT_DIR/issues_normalized.json"
 FINAL_REPORT="$REPORT_DIR/refactor_summary.md"
 LOG_FILE="$REPORT_DIR/quality_$(date +%Y%m%d_%H%M%S).log"
+RUN_START_EPOCH="$(date +%s)"
 
 # Configurações de qualidade
 RUFF_CONFIG="${RUFF_CONFIG:-pyproject.toml}"
@@ -2206,62 +2207,111 @@ run_jules_generate_suggestions() {
 generate_final_report() {
   log INFO "Gerando relatório consolidado..."
 
-  "$PYTHON_BIN" - "$MODE" "$SYMBOL_INDEX_BEFORE" "$SYMBOL_INDEX_AFTER" "$LOG_FILE" "$ISSUES_NORMALIZED" "$FINAL_REPORT" "$REPORT_DIR" <<'PYTHON'
+  "$PYTHON_BIN" - \
+    "$MODE" \
+    "$SYMBOL_INDEX_BEFORE" \
+    "$SYMBOL_INDEX_AFTER" \
+    "$LOG_FILE" \
+    "$RUN_START_EPOCH" \
+    "$ISSUES_NORMALIZED" \
+    "$FINAL_REPORT" \
+    "$REPORT_DIR" \
+    "$SKIP_SECURITY" \
+    "$SKIP_SONARLINT" \
+    <<'PYTHON'
 import json
 from pathlib import Path
 from datetime import datetime
 import sys
 
 mode = sys.argv[1]
-report_dir = Path(sys.argv[7])
+run_started_at = float(sys.argv[5])
+report_dir = Path(sys.argv[8])
+skip_security = str(sys.argv[9]).lower() == "true"
+skip_sonarlint = str(sys.argv[10]).lower() == "true"
+log_path = Path(sys.argv[4])
+log_text = log_path.read_text(encoding="utf-8", errors="ignore") if log_path.exists() else ""
+
+def is_fresh(path: Path) -> bool:
+    try:
+        return path.exists() and path.stat().st_mtime >= run_started_at
+    except OSError:
+        return False
+
+def saw_log(fragment: str) -> bool:
+    return fragment in log_text
 
 # Coletar resultados
-ruff_issues = []
-if Path(".ruff.json").exists():
+ruff_json = Path(".ruff.json")
+issues_normalized = report_dir / "issues_normalized.json"
+ruff_issues_count = 0
+if is_fresh(issues_normalized):
     try:
-        ruff_issues = json.loads(Path(".ruff.json").read_text(encoding="utf-8"))
-    except:
-        pass
+        normalized = json.loads(issues_normalized.read_text(encoding="utf-8"))
+        by_tool = normalized.get("by_tool", {}) if isinstance(normalized, dict) else {}
+        if isinstance(by_tool, dict):
+            ruff_issues_count = int(by_tool.get("Ruff", by_tool.get("ruff", 0)) or 0)
+    except Exception:
+        ruff_issues_count = 0
 
 bandit_issues = 0
-if (report_dir / "bandit.json").exists():
+bandit_json = report_dir / "bandit.json"
+if is_fresh(bandit_json):
     try:
-        bandit_data = json.loads((report_dir / "bandit.json").read_text(encoding="utf-8"))
+        bandit_data = json.loads(bandit_json.read_text(encoding="utf-8"))
         bandit_issues = len(bandit_data.get("results", []))
     except:
         pass
 
 safety_issues = 0
-if (report_dir / "safety.json").exists():
+safety_json = report_dir / "safety.json"
+if is_fresh(safety_json):
     try:
-        safety_data = json.loads((report_dir / "safety.json").read_text(encoding="utf-8"))
+        safety_data = json.loads(safety_json.read_text(encoding="utf-8"))
         safety_issues = len(safety_data) if isinstance(safety_data, list) else 0
     except:
         pass
+
+def status_line(*, executed: bool, skipped: bool, label: str) -> str:
+    if skipped:
+        return f"- ⏭️ {label} (pulado por flag)"
+    if executed:
+        return f"- ✅ {label}"
+    return f"- ⚠️ {label} (não executado ou ferramenta indisponível)"
+
+bandit_summary = "N/A (skip-security)" if skip_security else str(bandit_issues)
+safety_summary = "N/A (skip-security)" if skip_security else str(safety_issues)
+tools_status = [
+    status_line(executed=saw_log("Executando Ruff"), skipped=False, label="Ruff (linter + formatter)"),
+    (
+        "- ⚠️ Mypy (type checking) (pulado por requisito de versão Python >= 3.12)"
+        if saw_log("Mypy pulado")
+        else status_line(executed=saw_log("Executando Mypy"), skipped=False, label="Mypy (type checking)")
+    ),
+    status_line(executed=saw_log("Executando Radon"), skipped=False, label="Radon (complexidade)"),
+    status_line(executed=saw_log("Executando Bandit"), skipped=skip_security or saw_log("Análise Bandit pulada"), label="Bandit (segurança)"),
+    status_line(executed=saw_log("Analisando Safety") or saw_log("Executando Safety"), skipped=skip_security or saw_log("Análise Safety pulada"), label="Safety (dependências)"),
+    status_line(executed=saw_log("Executando SonarLint CLI"), skipped=(skip_security or skip_sonarlint or saw_log("SonarLint pulado")), label="SonarLint CLI (análise local)"),
+]
 
 report = f"""# Relatório de Qualidade v2.0
 **Data:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Modo:** {mode}
 
 ## 📊 Sumário Executivo
-- **Issues Ruff:** {len(ruff_issues)}
-- **Vulnerabilidades Bandit:** {bandit_issues}
-- **Vulnerabilidades Safety:** {safety_issues}
+- **Issues Ruff:** {ruff_issues_count}
+- **Vulnerabilidades Bandit:** {bandit_summary}
+- **Vulnerabilidades Safety:** {safety_summary}
 
 ## 🛠️ Ferramentas Executadas
-- ✅ Ruff (linter + formatter)
-- ✅ Mypy (type checking)
-- ✅ Radon (complexidade)
-- ✅ Bandit (segurança)
-- ✅ Safety (dependências)
-- ✅ SonarLint CLI (análise local)
+{chr(10).join(tools_status)}
 
 ## 📁 Artefatos Gerados
 """
 
-for f in report_dir.glob("*.json"):
+for f in sorted(report_dir.glob("*.json")):
     report += f"- `{f.name}`\n"
-for f in report_dir.glob("*.log"):
+for f in sorted(report_dir.glob("*.log")):
     report += f"- `{f.name}`\n"
 
 report += f"""
@@ -2276,8 +2326,8 @@ report += f"""
 - Pre-commit configurado para automação
 """
 
-Path(sys.argv[6]).write_text(report, encoding="utf-8")
-print(f"[OK] Relatorio: {sys.argv[6]}")
+Path(sys.argv[7]).write_text(report, encoding="utf-8")
+print(f"[OK] Relatorio: {sys.argv[7]}")
 PYTHON
 }
 

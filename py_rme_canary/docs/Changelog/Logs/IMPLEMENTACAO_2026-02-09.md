@@ -633,3 +633,236 @@ Implementado fechamento de paridade para `Map Cleanup` com fluxo transacional:
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py py_rme_canary/tests/unit/vis_layer/ui/test_town_list_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> **9 passed**
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint` -> **pipeline concluído com sucesso** (Jules artifacts generated)
 - `python3 py_rme_canary/scripts/jules_runner.py --project-root . check --source sources/github/Marcelol090/RME-Python` -> **status=ok**
+
+---
+
+## Sessão 14 (2026-02-11): Jules Session Pooling (controle de explosão de sessões)
+
+### Resumo
+
+Correção da causa raiz onde `generate-suggestions` criava uma sessão nova em toda execução.  
+O fluxo agora reutiliza sessões existentes via pool local com rotação, mantendo padrão mínimo de 2 sessões por trilha (`source + branch + task`) e reduzindo criação desnecessária.
+
+### Arquivos Modificados
+
+- `py_rme_canary/scripts/jules_runner.py`
+  - adicionadas helpers de pool:
+    - `_pool_key(...)`
+    - `_load_session_pool(...)`
+    - `_save_session_pool(...)`
+    - `_normalize_pool_sessions(...)`
+    - `_select_reuse_session(...)`
+  - `command_generate_suggestions(...)` atualizado para:
+    - tentar `send_message` em sessão do pool (round-robin);
+    - fallback para `create_session` quando sessão falha/expira;
+    - persistir metadata em `jules_session_pool.json`;
+    - manter tamanho de pool configurável (default `2`).
+  - novos argumentos CLI:
+    - `--reuse-session-pool / --no-reuse-session-pool`
+    - `--session-pool-size` (default `2`)
+    - `--session-pool-file` (opcional)
+
+- `py_rme_canary/tests/unit/scripts/test_jules_runner.py`
+  - `test_generate_suggestions_creates_session_and_pool_file`
+  - `test_generate_suggestions_reuses_existing_pool_session`
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11)` com causa e estratégia de controle.
+
+### Validação
+
+- `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+
+---
+
+## Sessão 15 (2026-02-11): Deep Docs Analysis + Phase 7/8 Validation Closure
+
+### Resumo
+
+Consolidada análise técnica de referências operacionais (`codex/`, `awesome-copilot/`) e documentação interna de planejamento (`Features.md`, TODOs), seguida de fechamento de validação para itens de paridade C++ UI/UX já implementados nas fases 7/8.
+
+### Achados Analíticos
+
+- `codex/` reforça fluxo linear de entrega (planning -> tasking -> implementation -> verification) e confirma política de integração obrigatória com testes e validação local antes de fechamento.
+- `awesome-copilot/` foi usado como referência de governança/estrutura de prompts e agentes, mas sem impacto direto de runtime no `py_rme_canary`.
+- Foi detectada deriva documental em planning:
+  - arquivo `TODO_CPP_PARITY_UIUX_2026-02-06.md` estava com título inconsistente ("Deep Search"), apesar de conteúdo de paridade UI/UX.
+
+### Arquivos Modificados
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - título corrigido para refletir escopo real (`CPP Parity UI/UX`);
+  - Added `Incremental Update (2026-02-11 - Phase 10)` com fechamento de validação.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/dialogs/zone_town_dialogs.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py py_rme_canary/tests/unit/vis_layer/ui/test_town_list_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/dialogs/zone_town_dialogs.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py py_rme_canary/tests/unit/vis_layer/ui/test_town_list_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_town_list_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> **5 passed**
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --timeout 120` -> **pipeline concluído com sucesso** (Jules artifacts generated)
+
+### Observações de Ambiente
+
+- Em execução com segurança habilitada, `bandit` apresentou comportamento de hang neste runtime (sem saída por janela longa), mesmo com timeout configurado.
+- Mitigação aplicada para fechamento determinístico local: executar pipeline principal com `--skip-security` e manter security scans em rodada isolada por ferramenta.
+
+---
+
+## Sessão 16 (2026-02-11): quality_lf Report Accuracy Hardening
+
+### Resumo
+
+Corrigida inconsistência de relatório onde `refactor_summary.md` marcava ferramentas como executadas mesmo em execução com `--skip-security`.
+
+### Arquivos Modificados
+
+- `py_rme_canary/quality-pipeline/quality_lf.sh`
+  - `generate_final_report()` passou a receber flags de execução (`SKIP_SECURITY`, `SKIP_SONARLINT`) e timestamp fixo de início da run.
+  - Sumário de vulnerabilidades agora respeita skip (`N/A (skip-security)`).
+  - Seção `Ferramentas Executadas` agora usa status dinâmico:
+    - `✅` executado,
+    - `⏭️` pulado por flag,
+    - `⚠️` indisponível/não executado.
+  - Corrigido cálculo de `Issues Ruff` para usar `issues_normalized.json` da run atual.
+  - Corrigido índice de argumento no writer final para não sobrescrever arquivos errados.
+  - Ajustado status do mypy para diferenciar skip por requisito de versão (`Python >= 3.12`) de skip por flag.
+
+### Validação
+
+- `bash -n py_rme_canary/quality-pipeline/quality_lf.sh` -> **OK**
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --timeout 120` -> **pipeline concluído com sucesso**
+- `refactor_summary.md` validado com status coerente:
+  - `Bandit/Safety/SonarLint` marcados como pulados por flag;
+  - `Mypy` marcado como pulado por requisito de versão;
+  - `Issues Ruff` consistente com `issues_normalized.json`.
+
+---
+
+## Sessão 17 (2026-02-11): Rust-Backed Minimap PNG Export Optimization
+
+### Resumo
+
+Aplicada otimização de performance no exportador de minimap PNG para reduzir custo CPU em loops Python densos, usando a fronteira Rust já suportada pelo projeto (`logic_layer/rust_accel.py`) com fallback puro Python mantido.
+
+### Referências Externas Consultadas (fetch/context7)
+
+- PyO3 performance guide (Context7): recomenda minimizar overhead na fronteira Python↔Rust e priorizar caminho Rust para trechos CPU-bound.
+- Maturin guide (Context7): confirma fluxo `maturin develop` (dev local) e `maturin build` (wheel/CI) como trilha suportada para módulos PyO3.
+- Python docs (fetch/web): referência de custos de construção incremental de bytes/strings e impacto em loops de concatenação.
+
+### Arquivos Modificados
+
+- `py_rme_canary/logic_layer/minimap_png_exporter.py`
+  - `_export_floor_single(...)`:
+    - removeu preenchimento pixel-a-pixel em Python;
+    - passou a construir `tile_colors` e delegar para `render_minimap_buffer(...)`.
+  - `_write_png(...)`:
+    - removeu montagem manual de `raw_data` + `zlib.compress` no módulo;
+    - passou a usar `assemble_png_idat(...)` (Rust backend/fallback).
+  - Ajuste de lint em `_report_progress(...)` para `contextlib.suppress`.
+
+- `py_rme_canary/tests/unit/logic_layer/test_minimap_png_exporter_rust_path.py` (novo)
+  - cobertura para integração com `render_minimap_buffer`.
+  - cobertura para integração com `assemble_png_idat`.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 11)`.
+
+### Validação
+
+- `ruff check py_rme_canary/logic_layer/minimap_png_exporter.py py_rme_canary/tests/unit/logic_layer/test_minimap_png_exporter_rust_path.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/logic_layer/minimap_png_exporter.py py_rme_canary/tests/unit/logic_layer/test_minimap_png_exporter_rust_path.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/logic_layer/test_minimap_png_exporter_rust_path.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py` -> **25 passed**
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --timeout 120` -> **pipeline concluído com sucesso** (Jules artifacts generated)
+
+---
+
+## Sessão 18 (2026-02-11): Select Menus Capability Gating + Stable Legacy Order
+
+### Resumo
+
+Refatorado o pipeline de `select` actions do context menu para manter ordem legada estável e conectar estado de habilitação ao backend real (`can_*` callbacks), evitando ações aparentando disponíveis quando a capacidade não existe no runtime.
+
+### Referências Externas Consultadas (fetch/context7)
+
+- Context7 / PyQt6 docs (`/websites/riverbankcomputing_static_pyqt6`): uso de `QMenu`/`QAction` com estados dinâmicos de enable/disable para menus de contexto.
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - Added `_ITEM_SELECT_ACTIONS` para centralizar ações de seleção e manter ordem determinística.
+  - Added `_action_enabled(...)` com suporte a callbacks `can_<action>`.
+  - Top actions (`Cut/Copy/Paste/Delete/Replace tiles`) agora respeitam gates de capacidade.
+  - `Move To Tileset...` passa a refletir capability runtime em vez de habilitação fixa.
+
+- `py_rme_canary/logic_layer/context_menu_handlers.py`
+  - Added `can_move_item_to_tileset()`.
+  - Added `can_replace_tiles_on_selection()`.
+  - Expanded callback dictionaries:
+    - `can_move_to_tileset`
+    - `can_selection_replace_tiles`
+    - `can_selection_paste`
+
+- `py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py`
+  - Added tests for capability callbacks and selection replace capability.
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` (novo)
+  - Added UI-level tests for disabled `Move To Tileset...` and stable select-action ordering.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 12)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/menus/context_menus.py py_rme_canary/logic_layer/context_menu_handlers.py py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/menus/context_menus.py py_rme_canary/logic_layer/context_menu_handlers.py py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **2 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **3 passed**
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --timeout 180` -> **bloqueado na etapa Bandit** (sem progresso neste runtime)
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 180` -> **pipeline concluído** com geração de artefatos Jules
+
+### Observações de Ambiente
+
+- Testes de `py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py` continuam bloqueados neste runtime por incompatibilidade de versão Python durante import transitivo (`sprite_cache.py` usa sintaxe 3.12: `class LRUCache[T]`).
+
+---
+
+## Sessão 19 (2026-02-11): Selection Menu Enable-State Parity (Legacy-aligned)
+
+### Resumo
+
+Fechado gap de paridade no menu `Selection`: ações `on selection` existiam no menu, mas nem todas seguiam o estado dinâmico de habilitação baseado em `has_selection`, diferente do comportamento do legado C++ (`menubar_action_manager.cpp`).
+
+### Referências Externas Consultadas (fetch/context7)
+
+- Qt 6 docs (Context7 / `/websites/doc_qt_io_qt-6`): padrão `updateActions()` com `QAction::setEnabled(...)` dirigido por estado de seleção.
+  - Exemplo: `qtwidgets-tools-undoframework-example` (`deleteAction->setEnabled(!selectedItems().isEmpty())`).
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_update_action_enabled_states()` agora também sincroniza:
+    - `act_replace_items_on_selection`
+    - `act_find_item_selection`
+    - `act_remove_item_on_selection`
+    - `act_find_everything_selection`
+    - `act_find_unique_selection`
+    - `act_find_action_selection`
+    - `act_find_container_selection`
+    - `act_find_writeable_selection`
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py` (novo)
+  - cobertura de estado habilitado/desabilitado para todas ações selection-scoped.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 13)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **7 passed**
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --timeout 120` -> **bloqueado em Bandit** neste runtime (sem progresso após início da fase de segurança)
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 120` -> **pipeline concluído** com relatório consolidado e artefatos Jules gerados

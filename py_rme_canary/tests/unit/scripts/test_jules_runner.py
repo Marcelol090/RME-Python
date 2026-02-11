@@ -9,8 +9,8 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[3] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-import jules_api  # type: ignore[import-not-found]
-import jules_runner  # type: ignore[import-not-found]
+import jules_api  # type: ignore[import-not-found]  # noqa: E402
+import jules_runner  # type: ignore[import-not-found]  # noqa: E402
 
 
 def test_load_env_defaults_from_project_root(tmp_path, monkeypatch) -> None:
@@ -360,3 +360,154 @@ def test_send_linear_prompt_uses_env_session(tmp_path, monkeypatch) -> None:
     assert "SESSION LOCK" in captured["message"]
     payload = json.loads(json_out.read_text(encoding="utf-8"))
     assert payload["session_name"] == "sessions/fixed-001"
+
+
+def test_generate_suggestions_creates_session_and_pool_file(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("JULES_API_KEY", "token")
+    monkeypatch.setenv("JULES_SOURCE", "sources/github/org/repo")
+
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# report\n", encoding="utf-8")
+
+    schema_path = tmp_path / ".github" / "jules" / "suggestions.schema.json"
+    schema_path.parent.mkdir(parents=True, exist_ok=True)
+    schema_path.write_text(
+        json.dumps({"required": ["version", "category", "implemented", "suggested_next", "generated_at"]}),
+        encoding="utf-8",
+    )
+
+    calls: dict[str, int] = {"create": 0, "send": 0}
+
+    class FakeClient:
+        def __init__(self, _config: object) -> None:
+            pass
+
+        def create_session(self, **_kwargs: object) -> object:
+            calls["create"] += 1
+            return {"name": "sessions/new-a"}
+
+        def send_message(self, _session_name: str, *, message: str) -> object:
+            calls["send"] += 1
+            return {"name": "activities/1", "echo": message}
+
+        def get_latest_activity(self, _session_name: str) -> object:
+            return {"activities": [{"jules_suggestions": {"implemented": [], "suggested_next": []}}]}
+
+    monkeypatch.setattr(jules_runner, "JulesClient", FakeClient)
+
+    output_dir = tmp_path / "reports" / "jules"
+    report_dir = tmp_path / ".quality_reports"
+    pool_file = report_dir / "custom_pool.json"
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "generate-suggestions",
+            "--source",
+            "sources/github/org/repo",
+            "--branch",
+            "main",
+            "--quality-report",
+            str(quality_report),
+            "--output-dir",
+            str(output_dir),
+            "--report-dir",
+            str(report_dir),
+            "--schema",
+            str(schema_path),
+            "--session-pool-file",
+            str(pool_file),
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["create"] == 1
+    assert calls["send"] == 0
+    assert pool_file.exists()
+    payload = json.loads(pool_file.read_text(encoding="utf-8"))
+    pool_key = jules_runner._pool_key(source="sources/github/org/repo", branch="main", task="quality-pipeline-jules")
+    assert payload["pools"][pool_key]["sessions"] == ["sessions/new-a"]
+
+
+def test_generate_suggestions_reuses_existing_pool_session(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("JULES_API_KEY", "token")
+    monkeypatch.setenv("JULES_SOURCE", "sources/github/org/repo")
+
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# report\n", encoding="utf-8")
+
+    schema_path = tmp_path / ".github" / "jules" / "suggestions.schema.json"
+    schema_path.parent.mkdir(parents=True, exist_ok=True)
+    schema_path.write_text(
+        json.dumps({"required": ["version", "category", "implemented", "suggested_next", "generated_at"]}),
+        encoding="utf-8",
+    )
+
+    report_dir = tmp_path / ".quality_reports"
+    pool_file = report_dir / "custom_pool.json"
+    pool_key = jules_runner._pool_key(source="sources/github/org/repo", branch="main", task="quality-pipeline-jules")
+    pool_payload = {
+        "version": 1,
+        "pools": {
+            pool_key: {
+                "sessions": ["sessions/reuse-a", "sessions/reuse-b"],
+                "next_index": 0,
+            }
+        },
+    }
+    pool_file.write_text(json.dumps(pool_payload), encoding="utf-8")
+
+    calls: dict[str, int] = {"create": 0, "send": 0}
+    sent: dict[str, str] = {}
+
+    class FakeClient:
+        def __init__(self, _config: object) -> None:
+            pass
+
+        def create_session(self, **_kwargs: object) -> object:
+            calls["create"] += 1
+            return {"name": "sessions/new-a"}
+
+        def send_message(self, session_name: str, *, message: str) -> object:
+            calls["send"] += 1
+            sent["session"] = session_name
+            sent["message"] = message
+            return {"name": "activities/1"}
+
+        def get_latest_activity(self, _session_name: str) -> object:
+            return {"activities": [{"jules_suggestions": {"implemented": [], "suggested_next": []}}]}
+
+    monkeypatch.setattr(jules_runner, "JulesClient", FakeClient)
+
+    output_dir = tmp_path / "reports" / "jules"
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "generate-suggestions",
+            "--source",
+            "sources/github/org/repo",
+            "--branch",
+            "main",
+            "--quality-report",
+            str(quality_report),
+            "--output-dir",
+            str(output_dir),
+            "--report-dir",
+            str(report_dir),
+            "--schema",
+            str(schema_path),
+            "--session-pool-file",
+            str(pool_file),
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["create"] == 0
+    assert calls["send"] == 1
+    assert sent["session"] == "sessions/reuse-a"
+
+    updated = json.loads(pool_file.read_text(encoding="utf-8"))
+    assert updated["pools"][pool_key]["next_index"] == 1

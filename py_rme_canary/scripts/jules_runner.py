@@ -528,6 +528,61 @@ def _extract_first_activity(payload: object) -> object:
     return payload
 
 
+def _pool_key(*, source: str, branch: str, task: str) -> str:
+    """Build a stable key for per-workflow session pools."""
+    return f"{normalize_source(source)}|{str(branch).strip() or 'main'}|{_sanitize_prompt_task(task)}"
+
+
+def _load_session_pool(path: Path) -> dict[str, Any]:
+    """Load session pool metadata file with safe defaults."""
+    if not path.exists() or not path.is_file():
+        return {"version": 1, "pools": {}}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"version": 1, "pools": {}}
+    if not isinstance(payload, dict):
+        return {"version": 1, "pools": {}}
+    pools = payload.get("pools")
+    if not isinstance(pools, dict):
+        payload["pools"] = {}
+    payload.setdefault("version", 1)
+    return payload
+
+
+def _save_session_pool(path: Path, payload: dict[str, Any]) -> None:
+    write_json(path, payload)
+
+
+def _normalize_pool_sessions(entries: object) -> list[str]:
+    """Normalize and deduplicate session names preserving order."""
+    if not isinstance(entries, list):
+        return []
+    seen: set[str] = set()
+    normalized: list[str] = []
+    for entry in entries:
+        session = normalize_session_name(str(entry or ""))
+        if not session or session in seen:
+            continue
+        seen.add(session)
+        normalized.append(session)
+    return normalized
+
+
+def _select_reuse_session(pool_record: dict[str, Any]) -> tuple[str | None, int]:
+    """Choose next session to reuse in round-robin order."""
+    sessions = _normalize_pool_sessions(pool_record.get("sessions"))
+    if not sessions:
+        return None, 0
+    next_index_raw = pool_record.get("next_index", 0)
+    try:
+        next_index = int(next_index_raw)
+    except (TypeError, ValueError):
+        next_index = 0
+    selected_index = next_index % len(sessions)
+    return sessions[selected_index], selected_index
+
+
 def _resolve_client(args: argparse.Namespace, *, require_source: bool = True) -> JulesClient:
     project_root = Path(args.project_root).resolve()
     load_env_defaults(project_root, override=False)
@@ -1032,6 +1087,13 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
     source = normalize_source(args.source or os.environ.get("JULES_SOURCE", ""))
     task = str(args.task).strip() or "quality-pipeline-jules"
     category = str(args.category).strip() or "pipeline"
+    use_session_pool = bool(getattr(args, "reuse_session_pool", True))
+    session_pool_size = max(1, int(getattr(args, "session_pool_size", 2)))
+    session_pool_file = (
+        Path(getattr(args, "session_pool_file", "")).resolve()
+        if str(getattr(args, "session_pool_file", "")).strip()
+        else (report_dir / "jules_session_pool.json")
+    )
 
     session_name: str | None = None
     session_payload: object = {}
@@ -1073,17 +1135,66 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                 report_text=read_quality_context(quality_report),
                 task=task,
             )
-            session_payload = client.create_session(
-                prompt=prompt,
-                source=config.source,
-                branch=config.branch,
-                require_plan_approval=bool(args.require_plan_approval),
-                automation_mode=args.automation_mode,
-            )
+            reused_session = False
+            if use_session_pool:
+                pool_state = _load_session_pool(session_pool_file)
+                pools = pool_state.setdefault("pools", {})
+                if not isinstance(pools, dict):
+                    pools = {}
+                    pool_state["pools"] = pools
+                key = _pool_key(source=config.source, branch=config.branch, task=task)
+                record = pools.get(key, {})
+                if not isinstance(record, dict):
+                    record = {}
+                sessions = _normalize_pool_sessions(record.get("sessions"))
+                selected_session, selected_index = _select_reuse_session(
+                    {"sessions": sessions, "next_index": record.get("next_index", 0)}
+                )
+                if selected_session:
+                    try:
+                        session_payload = client.send_message(selected_session, message=prompt)
+                        session_name = selected_session
+                        reused_session = True
+                        record["next_index"] = (selected_index + 1) % max(1, len(sessions))
+                    except JulesAPIError as exc:
+                        if exc.status in {400, 404}:
+                            sessions = [name for name in sessions if name != selected_session]
+                        else:
+                            raise
+                if not reused_session:
+                    session_payload = client.create_session(
+                        prompt=prompt,
+                        source=config.source,
+                        branch=config.branch,
+                        require_plan_approval=bool(args.require_plan_approval),
+                        automation_mode=args.automation_mode,
+                    )
+                    if isinstance(session_payload, dict):
+                        created = normalize_session_name(str(session_payload.get("name", "")))
+                        if created:
+                            session_name = created
+                            if created not in sessions:
+                                sessions.append(created)
+                    if len(sessions) > session_pool_size:
+                        sessions = sessions[-session_pool_size:]
+                    record["next_index"] = int(record.get("next_index", 0)) % max(1, len(sessions)) if sessions else 0
+                record["sessions"] = sessions[:session_pool_size]
+                record["updated_at"] = utc_now_iso()
+                pools[key] = record
+                _save_session_pool(session_pool_file, pool_state)
+            else:
+                session_payload = client.create_session(
+                    prompt=prompt,
+                    source=config.source,
+                    branch=config.branch,
+                    require_plan_approval=bool(args.require_plan_approval),
+                    automation_mode=args.automation_mode,
+                )
             write_json(report_dir / "jules_session.json", session_payload)
 
             if isinstance(session_payload, dict):
-                session_name = normalize_session_name(str(session_payload.get("name", "")))
+                if not session_name:
+                    session_name = normalize_session_name(str(session_payload.get("name", "")))
                 if session_name:
                     try:
                         raw_activity_payload = client.get_latest_activity(session_name)
@@ -1352,6 +1463,23 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument("--automation-mode", default="", help="Optional Jules automationMode value.")
     generate.add_argument(
         "--require-plan-approval", action="store_true", help="Request plan approval in Jules session."
+    )
+    generate.add_argument(
+        "--reuse-session-pool",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Reuse a bounded local pool of Jules sessions (enabled by default).",
+    )
+    generate.add_argument(
+        "--session-pool-size",
+        default=2,
+        type=int,
+        help="Maximum sessions kept per source/branch/task pool.",
+    )
+    generate.add_argument(
+        "--session-pool-file",
+        default="",
+        help="Optional pool metadata path (defaults to <report-dir>/jules_session_pool.json).",
     )
     generate.add_argument("--strict", action="store_true", help="Return non-zero on validation/api failures.")
     generate.set_defaults(func=command_generate_suggestions)

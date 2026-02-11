@@ -20,3 +20,13 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
 - Mudanças de amizade e presença persistem em banco local.
 - Privacidade (`public`, `friends_only`, `private`) afeta exibição de atividade de mapa.
 - P0 busca/contexto segue verde em testes direcionados.
+
+## Incremental Update (2026-02-11)
+
+- Identificada causa de explosão de sessões no Jules:
+  - `generate-suggestions` criava sessão nova em toda execução sem tentativa de reuso.
+- Planejada e implementada estratégia de pool local para reuso controlado:
+  - pool por `source + branch + task`;
+  - tamanho padrão `2` sessões;
+  - rotação round-robin com `send_message`;
+  - fallback para `create_session` quando sessão não existe/expira.

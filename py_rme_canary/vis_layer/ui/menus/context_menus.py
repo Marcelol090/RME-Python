@@ -21,6 +21,22 @@ if TYPE_CHECKING:
     from py_rme_canary.core.data.tile import Tile
 
 
+_ITEM_SELECT_ACTIONS: tuple[tuple[str, str], ...] = (
+    ("select_creature", "Select Creature"),
+    ("select_spawn", "Select Spawn"),
+    ("select_raw", "Select RAW"),
+    ("move_to_tileset", "Move To Tileset..."),
+    ("select_wall", "Select Wallbrush"),
+    ("select_carpet", "Select Carpetbrush"),
+    ("select_table", "Select Tablebrush"),
+    ("select_doodad", "Select Doodadbrush"),
+    ("select_door", "Select Doorbrush"),
+    ("select_ground", "Select Groundbrush"),
+    ("select_collection", "Select Collection"),
+    ("select_house", "Select House"),
+)
+
+
 class TileContextMenu:
     """Context menu for tile operations."""
 
@@ -154,9 +170,6 @@ class ItemContextMenu:
             else ((int(tile.x), int(tile.y), int(tile.z)) if tile is not None else None)
         )
 
-        def _enabled(key: str) -> bool:
-            return bool(cb(key))
-
         def _state(key: str, default: bool = False) -> bool:
             fn = cb(key)
             if fn is None:
@@ -166,25 +179,51 @@ class ItemContextMenu:
             except Exception:
                 return bool(default)
 
+        def _action_enabled(key: str, default: bool = True) -> bool:
+            if cb(key) is None:
+                return False
+            gate = cb(f"can_{key}")
+            if gate is None:
+                return bool(default)
+            try:
+                return bool(gate())
+            except Exception:
+                return bool(default)
+
         builder = ContextMenuBuilder(self._parent)
 
         # Legacy top-level selection/edit actions
         has_sel = bool(has_selection or _state("selection_has_selection"))
         can_paste = bool(_state("selection_can_paste"))
-        builder.add_action("Cut", cb("selection_cut"), "Ctrl+X", enabled=has_sel)
-        builder.add_action("Copy", cb("selection_copy"), "Ctrl+C", enabled=has_sel)
+        builder.add_action("Cut", cb("selection_cut"), "Ctrl+X", enabled=has_sel and _action_enabled("selection_cut"))
+        builder.add_action(
+            "Copy",
+            cb("selection_copy"),
+            "Ctrl+C",
+            enabled=has_sel and _action_enabled("selection_copy"),
+        )
         if ctx_pos is not None:
             builder.add_action(
                 f"Copy Position ({ctx_pos[0]}, {ctx_pos[1]}, {ctx_pos[2]})",
                 cb("copy_position"),
-                enabled=True,
+                enabled=_action_enabled("copy_position"),
             )
         else:
             builder.add_action("Copy Position", cb("copy_position"), enabled=False)
-        builder.add_action("Paste", cb("selection_paste"), "Ctrl+V", enabled=can_paste)
-        builder.add_action("Delete", cb("selection_delete"), "Del", enabled=has_sel)
+        builder.add_action(
+            "Paste",
+            cb("selection_paste"),
+            "Ctrl+V",
+            enabled=can_paste and _action_enabled("selection_paste"),
+        )
+        builder.add_action(
+            "Delete",
+            cb("selection_delete"),
+            "Del",
+            enabled=has_sel and _action_enabled("selection_delete"),
+        )
 
-        if has_sel and _enabled("selection_replace_tiles"):
+        if has_sel and _action_enabled("selection_replace_tiles"):
             builder.add_action("Replace tiles...", cb("selection_replace_tiles"), enabled=True)
 
         builder.add_separator()
@@ -195,8 +234,12 @@ class ItemContextMenu:
             if tile is not None:
                 has_items = bool(tile.ground is not None or (tile.items and len(tile.items) > 0))
                 builder.add_separator()
-                builder.add_action("Properties...", cb("properties"), enabled=_enabled("properties"))
-                builder.add_action("Browse Field", cb("browse_tile"), enabled=has_items and _enabled("browse_tile"))
+                builder.add_action("Properties...", cb("properties"), enabled=_action_enabled("properties"))
+                builder.add_action(
+                    "Browse Field",
+                    cb("browse_tile"),
+                    enabled=has_items and _action_enabled("browse_tile"),
+                )
             builder.exec_at_cursor()
             return
 
@@ -206,17 +249,24 @@ class ItemContextMenu:
         # Detect item category
         category = ItemTypeDetector.get_category(item)
 
-        # Get item name from AssetManager
-        from py_rme_canary.logic_layer.asset_manager import AssetManager
+        # Get item name/metadata from AssetManager when available.
+        item_name = f"Item #{item.id}"
+        item_meta = None
+        asset_mgr = None
+        try:
+            from py_rme_canary.logic_layer.asset_manager import AssetManager
 
-        asset_mgr = AssetManager.instance()
-        item_name = asset_mgr.get_item_name(item.id)
-        item_meta = asset_mgr.get_item_metadata(item.id)
+            asset_mgr = AssetManager.instance()
+            item_name = asset_mgr.get_item_name(item.id)
+            item_meta = asset_mgr.get_item_metadata(item.id)
+        except Exception:
+            # Keep context menu functional in constrained runtimes.
+            pass
         client_id = getattr(item, "client_id", None)
         if client_id is None and item_meta is not None:
             client_id = item_meta.client_id
         if client_id is None:
-            mapper = getattr(asset_mgr, "_id_mapper", None)
+            mapper = getattr(asset_mgr, "_id_mapper", None) if asset_mgr is not None else None
             if mapper is not None and hasattr(mapper, "get_client_id"):
                 client_id = mapper.get_client_id(int(item.id))
         if client_id is None:
@@ -229,43 +279,14 @@ class ItemContextMenu:
 
         # Smart Brush Selection
         has_brush_actions = False
-        if _enabled("select_creature"):
-            builder.add_action("Select Creature", cb("select_creature"), enabled=True)
+        for callback_key, label in _ITEM_SELECT_ACTIONS:
+            callback = cb(callback_key)
+            if callback is None:
+                continue
+            builder.add_action(label, callback, enabled=_action_enabled(callback_key))
             has_brush_actions = True
-        if _enabled("select_spawn"):
-            builder.add_action("Select Spawn", cb("select_spawn"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_raw"):
-            builder.add_action("Select RAW", cb("select_raw"), enabled=True)
-            has_brush_actions = True
-        if _enabled("move_to_tileset"):
-            builder.add_action("Move To Tileset...", cb("move_to_tileset"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_wall"):
-            builder.add_action("Select Wallbrush", cb("select_wall"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_carpet"):
-            builder.add_action("Select Carpetbrush", cb("select_carpet"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_table"):
-            builder.add_action("Select Tablebrush", cb("select_table"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_doodad"):
-            builder.add_action("Select Doodadbrush", cb("select_doodad"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_door"):
-            builder.add_action("Select Doorbrush", cb("select_door"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_ground"):
-            builder.add_action("Select Groundbrush", cb("select_ground"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_collection"):
-            builder.add_action("Select Collection", cb("select_collection"), enabled=True)
-            has_brush_actions = True
-        if _enabled("select_house"):
-            builder.add_action("Select House", cb("select_house"), enabled=True)
-            has_brush_actions = True
-        if not has_brush_actions and ItemTypeDetector.can_select_brush(category) and _enabled("select_brush"):
+
+        if not has_brush_actions and ItemTypeDetector.can_select_brush(category) and _action_enabled("select_brush"):
             brush_name = ItemTypeDetector.get_brush_name(category).title()
             builder.add_action(f"Select {brush_name} Brush", cb("select_brush"), enabled=True)
             has_brush_actions = True
@@ -277,10 +298,10 @@ class ItemContextMenu:
         if ItemTypeDetector.is_door(item):
             is_open = ItemTypeDetector.is_door_open(item)
             action_text = "Close Door" if is_open else "Open Door"
-            builder.add_action(action_text, cb("toggle_door"), enabled=_enabled("toggle_door"))
+            builder.add_action(action_text, cb("toggle_door"), enabled=_action_enabled("toggle_door"))
             has_specific_actions = True
         if ItemTypeDetector.is_rotatable(item):
-            builder.add_action("Rotate Item", cb("rotate_item"), enabled=_enabled("rotate_item"))
+            builder.add_action("Rotate Item", cb("rotate_item"), enabled=_action_enabled("rotate_item"))
             has_specific_actions = True
         if ItemTypeDetector.is_teleport(item):
             dest = ItemTypeDetector.get_teleport_destination(item)
@@ -288,21 +309,29 @@ class ItemContextMenu:
                 builder.add_action(
                     f"Go To Destination ({dest[0]}, {dest[1]}, {dest[2]})",
                     cb("goto_teleport"),
-                    enabled=_enabled("goto_teleport"),
+                    enabled=_action_enabled("goto_teleport"),
                 )
             else:
-                builder.add_action("Set Teleport Destination...", cb("set_teleport_dest"))
+                builder.add_action(
+                    "Set Teleport Destination...",
+                    cb("set_teleport_dest"),
+                    enabled=_action_enabled("set_teleport_dest"),
+                )
             has_specific_actions = True
         if has_specific_actions:
             builder.add_separator()
 
-        builder.add_action("Properties...", cb("properties"), enabled=_enabled("properties"))
-        builder.add_action("Browse Field", cb("browse_tile"), enabled=_enabled("browse_tile"))
+        builder.add_action("Properties...", cb("properties"), enabled=_action_enabled("properties"))
+        builder.add_action("Browse Field", cb("browse_tile"), enabled=_action_enabled("browse_tile"))
         builder.add_separator()
 
         builder.add_submenu("Copy Data")
         builder.add_action(f"Server ID ({item.id})", cb("copy_server_id"))
-        builder.add_action(f"Client ID ({int(client_id)})", cb("copy_client_id"), enabled=_enabled("copy_client_id"))
+        builder.add_action(
+            f"Client ID ({int(client_id)})",
+            cb("copy_client_id"),
+            enabled=_action_enabled("copy_client_id"),
+        )
         builder.add_action("Item Name", cb("copy_item_name"))
         if ctx_pos is not None:
             builder.add_action(f"Position ({ctx_pos[0]}, {ctx_pos[1]}, {ctx_pos[2]})", cb("copy_position"))
@@ -310,22 +339,22 @@ class ItemContextMenu:
         builder.add_separator()
 
         # Item-local edit actions
-        builder.add_action("Copy Item", cb("copy"), enabled=_enabled("copy"))
-        builder.add_action("Delete Item", cb("delete"), enabled=_enabled("delete"))
+        builder.add_action("Copy Item", cb("copy"), enabled=_action_enabled("copy"))
+        builder.add_action("Delete Item", cb("delete"), enabled=_action_enabled("delete"))
         if hasattr(item, "text") and item.text:
             builder.add_separator()
-            builder.add_action("Edit Text...", cb("edit_text"), enabled=_enabled("edit_text"))
+            builder.add_action("Edit Text...", cb("edit_text"), enabled=_action_enabled("edit_text"))
         builder.add_separator()
 
         # Find/replace item helpers
-        if _enabled("set_find"):
+        if _action_enabled("set_find"):
             builder.add_action("Set as Find Item", cb("set_find"), enabled=True)
-        if _enabled("set_replace"):
+        if _action_enabled("set_replace"):
             builder.add_action("Set as Replace Item", cb("set_replace"), enabled=True)
-        if _enabled("set_find") or _enabled("set_replace"):
+        if _action_enabled("set_find") or _action_enabled("set_replace"):
             builder.add_separator()
-        builder.add_action("Find All of This Item", cb("find_all"), enabled=_enabled("find_all"))
-        builder.add_action("Replace All...", cb("replace_all"), enabled=_enabled("replace_all"))
+        builder.add_action("Find All of This Item", cb("find_all"), enabled=_action_enabled("find_all"))
+        builder.add_action("Replace All...", cb("replace_all"), enabled=_action_enabled("replace_all"))
         builder.exec_at_cursor()
 
 

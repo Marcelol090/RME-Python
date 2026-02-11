@@ -8,6 +8,7 @@ Modern dialogs for:
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -544,7 +545,7 @@ class TownListDialog(QDialog):
 
         for town_id, town in sorted(towns.items()):
             name = getattr(town, "name", f"Town {town_id}") or f"Town {town_id}"
-            temple = getattr(town, "temple", None)
+            temple = getattr(town, "temple_position", None)
 
             temple_text = f"({int(temple.x)}, {int(temple.y)}, {int(temple.z)})" if temple else "Temple not set"
 
@@ -588,19 +589,14 @@ class TownListDialog(QDialog):
         # Find next ID
         next_id = max([int(k) for k in towns], default=0) + 1
 
-        # Create town (simplified)
-        if not hasattr(self._game_map, "towns") or self._game_map.towns is None:
-            self._game_map.towns = {}
-
-        # Would need Town class
-        from dataclasses import dataclass
-
-        @dataclass
-        class TownData:
-            name: str
-            temple: object = None
-
-        self._game_map.towns[next_id] = TownData(name=name)
+        x, y, z = self._current_pos
+        self._upsert_town(
+            town_id=int(next_id),
+            name=str(name).strip(),
+            x=int(x),
+            y=int(y),
+            z=int(z),
+        )
         self._load_towns()
 
     def _on_goto_temple(self) -> None:
@@ -631,11 +627,16 @@ class TownListDialog(QDialog):
         towns = getattr(self._game_map, "towns", {}) or {}
         town = towns.get(town_id)
 
-        if town:
-            from py_rme_canary.core.data.position import Position
+        if town is None:
+            return
 
-            town.temple = Position(x=self._current_pos[0], y=self._current_pos[1], z=self._current_pos[2])
-            self._load_towns()
+        self._set_town_temple(
+            town_id=int(town_id),
+            x=int(self._current_pos[0]),
+            y=int(self._current_pos[1]),
+            z=int(self._current_pos[2]),
+        )
+        self._load_towns()
 
     def _on_delete(self) -> None:
         """Delete selected town."""
@@ -658,7 +659,93 @@ class TownListDialog(QDialog):
         )
 
         if reply == QMessageBox.StandardButton.Yes:
+            if self._town_has_linked_houses(int(town_id)):
+                QMessageBox.warning(
+                    self,
+                    "Delete Town",
+                    "You cannot delete a town that still has houses associated with it.",
+                )
+                return
+
+            self._delete_town(int(town_id))
+            self._load_towns()
+
+    def _town_has_linked_houses(self, town_id: int) -> bool:
+        houses = getattr(self._game_map, "houses", {}) if self._game_map is not None else {}
+        return any(int(getattr(house, "townid", 0) or 0) == int(town_id) for house in (houses or {}).values())
+
+    def _session(self):
+        parent = self.parent()
+        return getattr(parent, "session", None)
+
+    def _upsert_town(self, *, town_id: int, name: str, x: int, y: int, z: int) -> None:
+        session = self._session()
+        if session is not None and hasattr(session, "upsert_town"):
+            with contextlib.suppress(Exception):
+                session.upsert_town(
+                    town_id=int(town_id),
+                    name=str(name),
+                    temple_x=int(x),
+                    temple_y=int(y),
+                    temple_z=int(z),
+                )
+                self._refresh_parent_after_change()
+                return
+
+        if self._game_map is None:
+            return
+        from py_rme_canary.core.data.item import Position
+        from py_rme_canary.core.data.towns import Town
+
+        self._game_map.towns[int(town_id)] = Town(
+            id=int(town_id),
+            name=str(name),
+            temple_position=Position(x=int(x), y=int(y), z=int(z)),
+        )
+        self._refresh_parent_after_change()
+
+    def _set_town_temple(self, *, town_id: int, x: int, y: int, z: int) -> None:
+        session = self._session()
+        if session is not None and hasattr(session, "set_town_temple_position"):
+            with contextlib.suppress(Exception):
+                session.set_town_temple_position(town_id=int(town_id), x=int(x), y=int(y), z=int(z))
+                self._refresh_parent_after_change()
+                return
+
+        if self._game_map is None:
+            return
+        current = (self._game_map.towns or {}).get(int(town_id))
+        if current is None:
+            return
+        from py_rme_canary.core.data.item import Position
+        from py_rme_canary.core.data.towns import Town
+
+        self._game_map.towns[int(town_id)] = Town(
+            id=int(current.id),
+            name=str(current.name),
+            temple_position=Position(x=int(x), y=int(y), z=int(z)),
+        )
+        self._refresh_parent_after_change()
+
+    def _delete_town(self, town_id: int) -> None:
+        session = self._session()
+        if session is not None and hasattr(session, "delete_town"):
+            with contextlib.suppress(Exception):
+                session.delete_town(town_id=int(town_id))
+                self._refresh_parent_after_change()
+                return
+
+        towns = getattr(self._game_map, "towns", {}) if self._game_map is not None else {}
+        if int(town_id) in (towns or {}):
             towns = getattr(self._game_map, "towns", {}) or {}
-            if town_id in towns:
-                del towns[town_id]
-                self._load_towns()
+            del towns[int(town_id)]
+            self._refresh_parent_after_change()
+
+    def _refresh_parent_after_change(self) -> None:
+        parent = self.parent()
+        if parent is None:
+            return
+        with contextlib.suppress(Exception):
+            parent.canvas.update()
+        with contextlib.suppress(Exception):
+            parent._set_dirty(True)

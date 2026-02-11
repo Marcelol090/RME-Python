@@ -1072,6 +1072,21 @@ class QtMapEditorSessionMixin:
 
         self.act_borderize_selection.setEnabled(has_sel)
 
+        selection_scoped_actions = (
+            "act_replace_items_on_selection",
+            "act_find_item_selection",
+            "act_remove_item_on_selection",
+            "act_find_everything_selection",
+            "act_find_unique_selection",
+            "act_find_action_selection",
+            "act_find_container_selection",
+            "act_find_writeable_selection",
+        )
+        for action_name in selection_scoped_actions:
+            action = getattr(self, action_name, None)
+            if action is not None and hasattr(action, "setEnabled"):
+                action.setEnabled(has_sel)
+
         if hasattr(self, "act_clear_invalid_tiles_selection"):
             self.act_clear_invalid_tiles_selection.setEnabled(has_sel)
         if hasattr(self, "act_randomize_selection"):

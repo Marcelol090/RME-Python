@@ -1,4 +1,4 @@
-# TODO Deep Search - Paridade C++/Lua -> Python (2026-02-06)
+# TODO CPP Parity UI/UX - Paridade C++/Lua -> Python (2026-02-06)
 
 ## Escopo auditado
 - Referência C++/Lua:
@@ -339,3 +339,52 @@
     - delegation path (`_map_clear_invalid_tiles`)
     - fallback path (`session.clear_invalid_tiles(selection_only=False)`)
     - behavior without `id_mapper`
+
+## Incremental Update (2026-02-11 - Phase 10)
+- Validation closure for Phase 7/8 parity items (`Edit Towns` + `Generate Map`):
+  - `tests/unit/vis_layer/ui/test_town_list_dialog.py` -> validated temple position flow, add by current cursor, session delegation and house-linked delete guard.
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> validated `_generate_map()` delegates to `_new_map()` template flow.
+- Quality pipeline analytical run completed:
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --timeout 120` -> concluded with Jules artifacts.
+  - Noted environment-specific blocker when security stage is enabled: `bandit` process may hang in this runtime; mitigated by using `--skip-security` for deterministic local validation and keeping targeted security runs isolated.
+
+## Incremental Update (2026-02-11 - Phase 11)
+- Performance optimization using Rust acceleration boundary (legacy-compatible output preserved):
+  - `logic_layer/minimap_png_exporter.py` now routes heavy pixel-buffer rendering through `logic_layer.rust_accel.render_minimap_buffer(...)`.
+  - PNG IDAT assembly/compression now routes through `logic_layer.rust_accel.assemble_png_idat(...)`.
+  - Fallback behavior remains deterministic because `rust_accel` preserves pure-Python path when Rust module is unavailable.
+- Added dedicated regression coverage:
+  - `tests/unit/logic_layer/test_minimap_png_exporter_rust_path.py`
+    - validates `render_minimap_buffer` integration in floor export flow.
+    - validates `assemble_png_idat` integration in `_write_png`.
+
+## Incremental Update (2026-02-11 - Phase 12)
+- Context-menu `select` actions hardened for backend capability parity:
+  - `ItemContextMenu` now uses a centralized action registry (`_ITEM_SELECT_ACTIONS`) to keep legacy action order stable.
+  - Added capability gates via `can_*` callbacks for dynamic enable/disable without breaking visibility of legacy entries.
+  - `Move To Tileset...` now reflects runtime capability from user settings instead of always appearing actionable.
+- Backend callback map expanded in `ContextMenuActionHandlers`:
+  - Added `can_move_item_to_tileset()` and wired `can_move_to_tileset` callback.
+  - Added `can_replace_tiles_on_selection()` and wired `can_selection_replace_tiles` callback for tile/item context menus.
+  - Added `can_selection_paste` callback to align paste action enablement with session capability.
+- Regression coverage added:
+  - `tests/unit/logic_layer/test_context_menu_handlers.py`
+    - `test_can_move_item_to_tileset_reflects_user_setting`
+    - `test_item_context_callbacks_expose_can_move_to_tileset`
+    - `test_tile_context_callbacks_expose_selection_replace_capability`
+  - `tests/unit/vis_layer/ui/test_context_menus_select_actions.py` (new)
+    - validates disabled state for `Move To Tileset...` when capability is false.
+    - validates deterministic order for select actions (`Wallbrush` -> `Groundbrush` -> `Collection`).
+
+## Incremental Update (2026-02-11 - Phase 13)
+- Selection menu parity hardening (`Selection` top-level actions):
+  - `QtMapEditorSessionMixin._update_action_enabled_states()` now controls all selection-scoped actions
+    according to `session.has_selection()` (legacy-aligned enable/disable behavior):
+    - `Replace Items on Selection`
+    - `Find Item on Selection`
+    - `Remove Item on Selection`
+    - `Find Everything/Unique/Action/Container/Writeable (Selection)`
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py` (new)
+    - validates all selection-scoped actions disabled when no selection.
+    - validates all selection-scoped actions enabled when selection exists.

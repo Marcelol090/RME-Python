@@ -635,13 +635,12 @@ class QtMapEditorFileMixin:
     # ------------------------------------------------------------------
 
     def _generate_map(self: QtMapEditor) -> None:
-        """Stub for Generate Map (C++ GENERATE_MAP action)."""
-        QMessageBox.information(
-            self,
-            "Generate Map",
-            "Map generation is not yet implemented.\n"
-            "This feature will allow procedural map generation.",
-        )
+        """Open map template generation flow (C++ GENERATE_MAP action parity baseline)."""
+        # Legacy action opens a generation flow. In Python, reuse the modern template-driven
+        # new-map pipeline instead of keeping a dead-end stub.
+        self._new_map()
+        with contextlib.suppress(Exception):
+            self.status.showMessage("Generate Map: template flow opened")
 
     def _close_map(self: QtMapEditor) -> None:
         """Close the currently open map without exiting (C++ CLOSE action)."""
@@ -684,8 +683,7 @@ class QtMapEditorFileMixin:
             return
 
         try:
-            from PyQt6.QtGui import QColor as QC2
-            from PyQt6.QtGui import QImage
+            from PyQt6.QtGui import QColor, QImage
 
             header = self.map.header
             w = int(header.width)
@@ -693,7 +691,7 @@ class QtMapEditorFileMixin:
             z = int(self.viewport.z)
 
             img = QImage(w, h, QImage.Format.Format_RGB32)
-            img.fill(QC2(0, 0, 0))
+            img.fill(QColor(0, 0, 0))
 
             for y in range(h):
                 for x in range(w):
@@ -702,7 +700,7 @@ class QtMapEditorFileMixin:
                         continue
                     color = self.map_drawer._get_tile_color(tile) if hasattr(self, "map_drawer") else (100, 100, 100, 255)
                     r, g, b = int(color[0]), int(color[1]), int(color[2])
-                    img.setPixelColor(x, y, QC2(r, g, b))
+                    img.setPixelColor(x, y, QColor(r, g, b))
 
             if img.save(str(path)):
                 self.status.showMessage(f"Minimap exported: {path}")
