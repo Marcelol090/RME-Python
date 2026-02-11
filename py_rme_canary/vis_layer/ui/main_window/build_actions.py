@@ -216,9 +216,9 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_selection_mode.setCheckable(True)
     editor.act_selection_mode.triggered.connect(lambda _c=False: mode_tools.toggle_selection_mode(editor))
 
-    editor.act_selection_depth_compensate = QAction("Compensate (Legacy)", editor)
-    editor.act_selection_depth_current = QAction("Current Floor Only", editor)
-    editor.act_selection_depth_lower = QAction("Current + Lower Floors", editor)
+    editor.act_selection_depth_compensate = QAction("Compensate Selection", editor)
+    editor.act_selection_depth_current = QAction("Current Floor", editor)
+    editor.act_selection_depth_lower = QAction("Lower Floors", editor)
     editor.act_selection_depth_visible = QAction("Visible Floors", editor)
 
     editor.act_selection_depth_group = QActionGroup(editor)

@@ -519,3 +519,11 @@
   - agora habilita quando há seleção ativa, mesmo sem ground/items no tile;
   - mantém habilitado também quando existem itens no tile.
 - Objetivo: aproximar comportamento do popup legado orientado a seleção (`anything_selected`).
+
+## Incremental Update (2026-02-11 - Selection Mode wording parity)
+- Ajustados labels das ações de `Selection Mode` para corresponder ao legado:
+  - `Compensate Selection`
+  - `Current Floor`
+  - `Lower Floors`
+  - `Visible Floors`
+- Mudança textual apenas (sem alteração de lógica dos modos).

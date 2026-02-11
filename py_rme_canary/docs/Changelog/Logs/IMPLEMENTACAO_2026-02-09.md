@@ -1449,3 +1449,21 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `py_compile`: **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **7 passed**
+
+---
+
+## Sessão 2026-02-11: `Selection Mode` label parity
+
+### Referência Legacy
+- `menubar.xml` define `Selection Mode` com:
+  - `Compensate Selection`
+  - `Current Floor`
+  - `Lower Floors`
+  - `Visible Floors`
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - labels de `act_selection_depth_*` atualizados para os nomes legados.
+
+### Validação
+- `ruff check` + `py_compile`: **OK**
