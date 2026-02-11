@@ -28,6 +28,7 @@ from py_rme_canary.logic_layer.map_format_conversion import (
     analyze_map_format_conversion,
     apply_map_format_version,
 )
+from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -82,7 +83,6 @@ class QtMapEditorFileMixin:
         if not path:
             return
         logger.info("Opening map: %s", path)
-        from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
 
         progress = ModernProgressDialog(
             title="Opening Map",
