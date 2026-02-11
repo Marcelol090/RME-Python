@@ -74,13 +74,12 @@ class ContextMenuActionHandlers:
                     return
         print(str(message))
 
-    def _resolve_session(self) -> EditorSession | None:
+    def _resolve_session(self) -> EditorSession | object | None:
         if self.editor_session is not None:
             return self.editor_session
         editor = self._resolve_editor()
         if editor is None:
             return None
-        # In a real scenario we should strictly type editor, but for now we cast/assume
         return getattr(editor, "session", None)
 
     def _refresh_editor_after_change(self) -> None:

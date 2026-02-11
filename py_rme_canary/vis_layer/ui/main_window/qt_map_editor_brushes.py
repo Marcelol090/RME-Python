@@ -25,14 +25,9 @@ class QtMapEditorBrushesMixin:
         self.brush_size = max(0, int(size))
         with contextlib.suppress(Exception):
             self.session.brush_size = int(self.brush_size)
-
-        if hasattr(self, "size_spin") and isinstance(self.size_spin, QSpinBox):
-            self.size_spin.blockSignals(True)
-            self.size_spin.setValue(self.brush_size)
-            self.size_spin.blockSignals(False)
-
-        if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_size"):
-            self.brush_toolbar.set_size(self.brush_size)
+        self.size_spin.blockSignals(True)
+        self.size_spin.setValue(self.brush_size)
+        self.size_spin.blockSignals(False)
 
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
@@ -86,19 +81,12 @@ class QtMapEditorBrushesMixin:
         if shape not in ("square", "circle"):
             shape = "square"
         self.brush_shape = shape
-
-        if hasattr(self, "shape_square") and isinstance(self.shape_square, QCheckBox):
-            self.shape_square.blockSignals(True)
-            self.shape_square.setChecked(shape == "square")
-            self.shape_square.blockSignals(False)
-
-        if hasattr(self, "shape_circle") and isinstance(self.shape_circle, QCheckBox):
-            self.shape_circle.blockSignals(True)
-            self.shape_circle.setChecked(shape == "circle")
-            self.shape_circle.blockSignals(False)
-
-        if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_shape"):
-            self.brush_toolbar.set_shape(shape)
+        self.shape_square.blockSignals(True)
+        self.shape_circle.blockSignals(True)
+        self.shape_square.setChecked(shape == "square")
+        self.shape_circle.setChecked(shape == "circle")
+        self.shape_square.blockSignals(False)
+        self.shape_circle.blockSignals(False)
 
     def _set_z(self: QtMapEditor, z: int) -> None:
         self.viewport.z = int(z)

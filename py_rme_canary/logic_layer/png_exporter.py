@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Protocol
 log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from PIL import Image as PILImage  # type: ignore[import-not-found]
+    from PIL import Image as PILImage
 
 
 @dataclass
