@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
+from PyQt6.QtWidgets import QButtonGroup, QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
 
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
@@ -80,7 +80,12 @@ class QtMapEditorToolbarsMixin:
         editor.shape_circle = QPushButton("circle", editor)
         editor.shape_square.setCheckable(True)
         editor.shape_circle.setCheckable(True)
-        editor.shape_square.setChecked(True)
+        editor.brush_shape_group = QButtonGroup(editor)
+        editor.brush_shape_group.setExclusive(True)
+        editor.brush_shape_group.addButton(editor.shape_square)
+        editor.brush_shape_group.addButton(editor.shape_circle)
+        editor.shape_square.setChecked(bool(getattr(editor, "brush_shape", "square") != "circle"))
+        editor.shape_circle.setChecked(bool(getattr(editor, "brush_shape", "square") == "circle"))
         editor.shape_square.clicked.connect(lambda: editor._set_brush_shape("square"))
         editor.shape_circle.clicked.connect(lambda: editor._set_brush_shape("circle"))
         editor.tb_sizes.addWidget(editor.shape_square)

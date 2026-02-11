@@ -975,3 +975,32 @@ Refatoração incremental no submenu `Mirror > Mirror Axis` para garantir exclus
 - `ruff check py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` -> **All checks passed**
 - `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` -> **2 passed**
+
+---
+
+## Sessão 23 (2026-02-11): Brush Shape Selector Exclusivity
+
+### Resumo
+
+Refatoração incremental para manter consistência de UX no seletor de shape (`square/circle`), com exclusividade explícita e sincronização do estado inicial com o domínio (`editor.brush_shape`).
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py`
+  - Added `QButtonGroup` exclusivo para `shape_square` e `shape_circle`.
+  - Bootstrap de checked-state agora respeita `editor.brush_shape`.
+
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - Added type declaration `brush_shape_group: QButtonGroup`.
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` (novo)
+  - cobertura para seleção de `circle` e fallback de shape inválido para `square`.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 17)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **2 passed**

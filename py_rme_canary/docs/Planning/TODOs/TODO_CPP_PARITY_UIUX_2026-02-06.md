@@ -417,3 +417,10 @@
   - Kept runtime sync in `QtMapEditorMirrorMixin._sync_mirror_actions()` as source of truth.
 - Regression update:
   - Added `tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` to validate axis exclusivity and invalid-axis fallback.
+
+## Incremental Update (2026-02-11 - Phase 17)
+- Brush shape selector hardening (`Sizes toolbar`):
+  - Added explicit exclusive `QButtonGroup` for `shape_square` and `shape_circle`.
+  - Initial checked-state now follows `editor.brush_shape` instead of hardcoded defaults.
+- Regression update:
+  - Added `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` to validate shape exclusivity and invalid-shape fallback.

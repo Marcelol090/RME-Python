@@ -7,6 +7,7 @@ from collections import OrderedDict
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QAction, QActionGroup, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QDockWidget,
     QLabel,
@@ -281,6 +282,7 @@ class QtMapEditor(
     automagic_cb: QCheckBox
     shape_square: QPushButton
     shape_circle: QPushButton
+    brush_shape_group: QButtonGroup
     cursor_pos_label: QLabel
     goto_x_spin: QSpinBox
     goto_y_spin: QSpinBox
