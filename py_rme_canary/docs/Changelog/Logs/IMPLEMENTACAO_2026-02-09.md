@@ -1082,3 +1082,44 @@ Continuação do hardening Jules com comandos operacionais explícitos para moni
 - `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **All checks passed**
 - `python3 -m py_compile py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **17 passed**
+
+---
+
+## Sessão 26 (2026-02-11): PR Merges on Development + Quality Treatment
+
+### Resumo
+
+Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de conflitos local e tratamento de regressão de teste detectada após merge.
+
+### PRs Mesclados
+
+- `origin/pr/38` -> security hardening para live protocol + cobertura nova (`test_live_security.py`).
+- `origin/pr/42` -> ajustes de testes/settings progress e integrações correlatas.
+- `origin/pr/44` -> revert associado ao fluxo de regressão de dialogs.
+
+### Conflitos Resolvidos
+
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - Mantido import combinado com `Qt` e `QActionGroup` para compatibilidade com estado atual de ações exclusivas.
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py`
+  - Mantido fluxo moderno de toolbar do PR mesclado, removendo bloco legado conflitante durante o merge.
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py`
+  - Corrigido `dialog.stack` -> `dialog._stack` após mudança de API interna do `SettingsDialog`.
+
+### Qualidade e Tratativa de Relatórios
+
+- `quality_lf.sh --dry-run --verbose --timeout 180`:
+  - execução bloqueia em `Bandit` neste runtime (padrão já observado no ambiente).
+- `quality_lf.sh --dry-run --verbose --skip-security --timeout 180`:
+  - pipeline concluído com geração de `.quality_reports/refactor_summary.md` e artefatos Jules.
+- Tratativa aplicada:
+  - falha real pós-merge identificada e corrigida em `test_dialogs.py`.
+  - testes direcionados de segurança/live/dialogs/jules runner executados com sucesso.
+
+### Validação
+
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/core/protocols/test_live_security.py` -> **4 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py` -> **21 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **19 passed**

@@ -81,7 +81,7 @@ class TestSettingsDialog:
         # Select each category
         for i in range(dialog._nav_list.count()):
             dialog._nav_list.setCurrentRow(i)
-            assert dialog.stack.currentIndex() == i
+            assert dialog._stack.currentIndex() == i
 
 
 class TestGlobalSearchDialog:
