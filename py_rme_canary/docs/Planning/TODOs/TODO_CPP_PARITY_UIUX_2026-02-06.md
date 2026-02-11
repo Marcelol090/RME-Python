@@ -476,3 +476,13 @@
   - `build_menus.py` agora cria `menu_recent_files` no `File` antes de `Preferences`.
   - `QtMapEditorModernUXMixin._setup_recent_files()` passa a reutilizar `menu_recent_files` quando já existe e só faz fallback para `menu_file.addMenu(...)` em builders customizados.
 - Resultado: elimina risco de submenu duplicado e preserva ordem de menu alinhada ao legado.
+
+## Incremental Update (2026-02-11 - Tile-only popup legacy select actions)
+- Gap de paridade detectado no fluxo de tile sem item (menu unificado):
+  - legado exibe `Select Creature` / `Select Spawn` / `Select House` quando contexto do tile suporta.
+- Implementado:
+  - `ContextMenuActionHandlers.get_tile_context_callbacks(...)` agora expõe callbacks condicionais:
+    - `select_creature` quando tile possui monster/npc;
+    - `select_spawn` quando tile possui spawn monster/npc;
+    - `select_house` quando tile possui `house_id`.
+  - `ItemContextMenu` (ramo `item is None`) agora renderiza essas ações quando disponíveis.

@@ -231,6 +231,12 @@ class ItemContextMenu:
         if item is None:
             header = f"Tile ({ctx_pos[0]}, {ctx_pos[1]}, {ctx_pos[2]})" if ctx_pos is not None else "Tile"
             builder.add_action(header, enabled=False)
+            if _action_enabled("select_creature"):
+                builder.add_action("Select Creature", cb("select_creature"), enabled=True)
+            if _action_enabled("select_spawn"):
+                builder.add_action("Select Spawn", cb("select_spawn"), enabled=True)
+            if _action_enabled("select_house"):
+                builder.add_action("Select House", cb("select_house"), enabled=True)
             if tile is not None:
                 has_items = bool(tile.ground is not None or (tile.items and len(tile.items) > 0))
                 builder.add_separator()

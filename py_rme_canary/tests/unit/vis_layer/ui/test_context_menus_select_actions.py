@@ -164,3 +164,28 @@ def test_item_context_menu_enables_top_copy_position_with_selection(monkeypatch:
     ]
     assert len(top_copy_entries) == 1
     assert top_copy_entries[0][2] is True
+
+
+def test_item_context_menu_tile_mode_shows_legacy_select_actions(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(menus_module, "ContextMenuBuilder", _FakeBuilder)
+    callbacks = _base_callbacks()
+    callbacks.update(
+        {
+            "select_creature": lambda: None,
+            "select_spawn": lambda: None,
+            "select_house": lambda: None,
+            "properties": lambda: None,
+            "browse_tile": lambda: None,
+        }
+    )
+
+    menu = menus_module.ItemContextMenu(None)
+    menu.set_callbacks(callbacks)
+    menu.show_for_item(item=None, tile=Tile(x=11, y=22, z=7), has_selection=False, position=(11, 22, 7))
+
+    builder = _FakeBuilder.last
+    assert builder is not None
+    labels = [entry[1] for entry in builder.actions if entry[0] == "action"]
+    assert "Select Creature" in labels
+    assert "Select Spawn" in labels
+    assert "Select House" in labels

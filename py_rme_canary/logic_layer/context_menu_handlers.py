@@ -1217,7 +1217,7 @@ class ContextMenuActionHandlers:
         self, tile: Tile | None = None, position: tuple[int, int, int] | None = None
     ) -> dict[str, Callable[[], object | None]]:
         """Get unified context callbacks for empty/no-item tile menus."""
-        return {
+        callbacks: dict[str, Callable[[], object | None]] = {
             "selection_has_selection": lambda: self.has_selection(),
             "selection_can_paste": lambda: self.can_paste_buffer(),
             "can_selection_paste": lambda: self.can_paste_buffer(),
@@ -1231,6 +1231,20 @@ class ContextMenuActionHandlers:
             "browse_tile": lambda: self.browse_tile(tile, position) if tile and position else None,
             "properties": lambda: self.open_tile_properties(tile, position),
         }
+        if tile is not None:
+            has_creature = bool((getattr(tile, "monsters", []) or []) or getattr(tile, "npc", None) is not None)
+            if has_creature:
+                callbacks["select_creature"] = lambda: self.select_creature_brush(tile=tile)
+
+            has_spawn = bool(
+                getattr(tile, "spawn_monster", None) is not None or getattr(tile, "spawn_npc", None) is not None
+            )
+            if has_spawn:
+                callbacks["select_spawn"] = lambda: self.select_spawn_brush(tile=tile)
+
+            if int(getattr(tile, "house_id", 0) or 0) > 0:
+                callbacks["select_house"] = lambda: self.select_house_brush(tile=tile)
+        return callbacks
 
     # ========================
     # Helper: Create Callback Dict

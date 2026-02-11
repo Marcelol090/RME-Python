@@ -1332,3 +1332,28 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `py_compile`: **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/main_window/test_modern_ux_recent_files_menu.py` -> **2 passed**
+
+---
+
+## Sessão 2026-02-11: Popup parity for tile-only contexts (creature/spawn/house)
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`:
+  - em contexto de tile com seleção única, mesmo sem item selecionado, o menu pode exibir:
+    - `Select Creature`
+    - `Select Spawn`
+    - `Select House`
+
+### Implementação no Python
+- `py_rme_canary/logic_layer/context_menu_handlers.py`
+  - `get_tile_context_callbacks(...)` ganhou callbacks condicionais para `select_creature`, `select_spawn`, `select_house`.
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - no ramo `item is None`, o menu agora mostra as ações legadas acima quando callbacks existem.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - adicionado `test_item_context_menu_tile_mode_shows_legacy_select_actions`.
+
+### Validação
+- `ruff check` + `py_compile`: **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **6 passed**
