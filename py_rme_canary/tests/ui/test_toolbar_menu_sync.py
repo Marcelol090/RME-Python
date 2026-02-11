@@ -57,6 +57,24 @@ def test_assets_menu_exposes_client_data_loader(editor):
     assert "Load Client Data..." in assets_action_texts
 
 
+def test_window_menu_exposes_tool_options(editor):
+    menubar_actions = editor.menuBar().actions()
+    window_menu = next((action.menu() for action in menubar_actions if action.text() == "Window"), None)
+    assert window_menu is not None
+    window_action_texts = {action.text() for action in window_menu.actions() if action.text()}
+    assert "Tool Options" in window_action_texts
+
+
+def test_tool_options_action_shows_palette_dock(editor, qtbot):
+    editor.dock_palette.hide()
+    qtbot.wait(5)
+    assert editor.dock_palette.isVisible() is False
+
+    editor.act_window_tool_options.trigger()
+    qtbot.wait(10)
+    assert editor.dock_palette.isVisible() is True
+
+
 def test_view_menu_exposes_show_client_ids(editor):
     menubar_actions = editor.menuBar().actions()
     view_menu = next((action.menu() for action in menubar_actions if action.text() == "View"), None)

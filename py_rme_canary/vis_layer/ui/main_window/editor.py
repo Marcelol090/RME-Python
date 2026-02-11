@@ -193,6 +193,7 @@ class QtMapEditor(
     act_palette_raw: QAction
     act_palette_large_icons: QAction
     act_window_minimap: QAction
+    act_window_tool_options: QAction
     act_window_actions_history: QAction
     act_window_friends: QAction
     act_clear_invalid_tiles_selection: QAction

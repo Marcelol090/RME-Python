@@ -238,6 +238,8 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     # ---- Window Menu (C++ Window) ----
     m_window = mb.addMenu(load_icon("menu_window"), "Window")
     m_window.addAction(editor.act_window_minimap)
+    if hasattr(editor, "act_window_tool_options"):
+        m_window.addAction(editor.act_window_tool_options)
     if hasattr(editor, "act_ingame_preview"):
         m_window.addAction(editor.act_ingame_preview)
     m_window.addAction(editor.act_new_palette)

@@ -723,6 +723,9 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_window_minimap.setShortcut(QKeySequence("M"))
     editor.act_window_minimap.toggled.connect(lambda v: window_tools.toggle_minimap_dock(editor, v))
 
+    editor.act_window_tool_options = QAction("Tool Options", editor)
+    editor.act_window_tool_options.triggered.connect(lambda _c=False: window_tools.open_tool_options(editor))
+
     editor.act_window_actions_history = QAction("Actions History", editor)
     editor.act_window_actions_history.setCheckable(True)
     editor.act_window_actions_history.toggled.connect(lambda v: window_tools.toggle_actions_history_dock(editor, v))

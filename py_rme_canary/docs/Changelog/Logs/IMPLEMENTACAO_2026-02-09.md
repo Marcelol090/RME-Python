@@ -1205,3 +1205,33 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `pytest` focado UI/context menu: **OK** (`test_context_menus_select_actions.py`)
 - Observação de ambiente:
   - suíte `test_context_menu_handlers.py` bloqueada por erro pré-existente de compatibilidade Python 3.10 em `py_rme_canary/logic_layer/sprite_cache.py` (`class LRUCache[T]`).
+
+---
+
+## Sessão 2026-02-11: Legacy Window parity (`Tool Options`)
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml` (`Window > Tool Options`).
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - adicionada `act_window_tool_options`.
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - `Window` menu agora inclui `Tool Options` após `Minimap`.
+- `py_rme_canary/vis_layer/ui/main_window/menubar/window/tools.py`
+  - novo helper `open_tool_options(editor)`.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_docks.py`
+  - novo `_show_tool_options_panel()` que exibe/eleva `dock_palette` e foca `tool_options`.
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - tipagem adicionada para `act_window_tool_options`.
+
+### Testes
+- Novo teste unitário sem dependência de bootstrap completo de UI:
+  - `py_rme_canary/tests/unit/vis_layer/ui/main_window/test_window_tools_tool_options.py`
+  - cobre delegação `open_tool_options` e comportamento do mixin `_show_tool_options_panel`.
+
+### Validação
+- `ruff check` nos arquivos alterados: **OK**
+- `python3 -m py_compile` nos arquivos alterados: **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/main_window/test_window_tools_tool_options.py` -> **2 passed**
+- Observação: suites que importam `QtMapEditor` completo continuam bloqueadas por erro pré-existente em Python 3.10 (`py_rme_canary/logic_layer/sprite_cache.py`: `class LRUCache[T]`).

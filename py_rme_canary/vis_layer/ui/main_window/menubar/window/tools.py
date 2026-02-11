@@ -49,6 +49,10 @@ def toggle_minimap_dock(editor, value: bool) -> None:
     editor._toggle_minimap_dock(bool(value))
 
 
+def open_tool_options(editor) -> None:
+    editor._show_tool_options_panel()
+
+
 def toggle_actions_history_dock(editor, value: bool) -> None:
     editor._toggle_actions_history_dock(bool(value))
 

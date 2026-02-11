@@ -433,3 +433,13 @@
 - Cobertura adicionada:
   - teste para formato de cópia de posição legado;
   - teste para presença do label `Browse Field` no `TileContextMenu`.
+
+## Incremental Update (2026-02-11 - Window Menu parity: Tool Options)
+- Gap encontrado na varredura de `menubar.xml`: faltava `Window > Tool Options` no Python.
+- Implementado:
+  - nova action `act_window_tool_options` em `build_actions.py`;
+  - inclusão no menu `Window` em `build_menus.py`;
+  - novo handler `open_tool_options(editor)` em `menubar/window/tools.py`;
+  - novo método `_show_tool_options_panel()` em `qt_map_editor_docks.py` para exibir `dock_palette` e focar `tool_options`.
+- Sincronização com arquitetura já existente:
+  - reaproveita `ModernPaletteDock.tool_options` (sem criar dock paralelo redundante).
