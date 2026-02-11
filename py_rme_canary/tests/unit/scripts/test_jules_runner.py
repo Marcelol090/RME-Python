@@ -362,6 +362,55 @@ def test_send_linear_prompt_uses_env_session(tmp_path, monkeypatch) -> None:
     assert payload["session_name"] == "sessions/fixed-001"
 
 
+def test_send_linear_prompt_prefers_track_specific_session_env(tmp_path, monkeypatch) -> None:
+    quality_report = tmp_path / ".quality_reports" / "refactor_summary.md"
+    quality_report.parent.mkdir(parents=True, exist_ok=True)
+    quality_report.write_text("# summary\n", encoding="utf-8")
+
+    planning_doc = tmp_path / "py_rme_canary" / "docs" / "Planning" / "TODO_CPP_PARITY_UIUX_2026-02-06.md"
+    planning_doc.parent.mkdir(parents=True, exist_ok=True)
+    planning_doc.write_text("- [ ] P1 item\n", encoding="utf-8")
+
+    template_path = tmp_path / ".github" / "jules" / "prompts" / "linear_refactors.md"
+    template_path.parent.mkdir(parents=True, exist_ok=True)
+    template_path.write_text("## Refactor Template\nKeep scope bounded.\n", encoding="utf-8")
+
+    monkeypatch.setenv("JULES_LINEAR_SESSION", "sessions/fallback-shared")
+    monkeypatch.setenv("JULES_LINEAR_SESSION_REFACTOR", "sessions/track-refactor")
+
+    captured: dict[str, str] = {}
+
+    class FakeClient:
+        def send_message(self, session_name: str, *, message: str) -> object:
+            captured["session_name"] = session_name
+            captured["message"] = message
+            return {"name": "activities/2"}
+
+    def _fake_resolve_client(args, require_source: bool = True):  # noqa: ANN001
+        return FakeClient()
+
+    monkeypatch.setattr(jules_runner, "_resolve_client", _fake_resolve_client)
+
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "send-linear-prompt",
+            "--track",
+            "refactor",
+            "--quality-report",
+            str(quality_report),
+            "--planning-doc",
+            str(planning_doc.relative_to(tmp_path)).replace("\\", "/"),
+            "--template",
+            str(template_path),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["session_name"] == "sessions/track-refactor"
+
+
 def test_generate_suggestions_creates_session_and_pool_file(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("JULES_API_KEY", "token")
     monkeypatch.setenv("JULES_SOURCE", "sources/github/org/repo")

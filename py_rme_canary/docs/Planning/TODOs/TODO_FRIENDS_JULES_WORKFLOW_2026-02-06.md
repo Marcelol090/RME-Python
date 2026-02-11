@@ -30,3 +30,16 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
   - tamanho padrão `2` sessões;
   - rotação round-robin com `send_message`;
   - fallback para `create_session` quando sessão não existe/expira.
+
+## Incremental Update (2026-02-11 - Track Sessions Hardening)
+
+- Modelo recomendado atualizado para sessões fixas por trilha:
+  - `JULES_LINEAR_SESSION_TESTS`
+  - `JULES_LINEAR_SESSION_REFACTOR`
+  - `JULES_LINEAR_SESSION_UIUX`
+- `jules_runner.py` agora resolve automaticamente a variável correta por `--track`,
+  com fallback compatível para `JULES_LINEAR_SESSION` apenas quando necessário.
+- Workflows agendados separados por concorrência de trilha:
+  - `jules-linear-tests-session`
+  - `jules-linear-refactor-session`
+  - `jules-linear-uiux-session`

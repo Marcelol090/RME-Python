@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: jules-linear-single-session
+  group: jules-linear-uiux-session
   cancel-in-progress: false
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
       JULES_SOURCE: ${{ vars.JULES_SOURCE }}
       JULES_BRANCH: development
-      JULES_LINEAR_SESSION: ${{ vars.JULES_LINEAR_SESSION }}
+      JULES_LINEAR_SESSION_UIUX: ${{ vars.JULES_LINEAR_SESSION_UIUX }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
           set -euo pipefail
           [ -n "${JULES_API_KEY:-}" ] || { echo "Missing secret: JULES_API_KEY"; exit 1; }
           [ -n "${JULES_SOURCE:-}" ] || { echo "Missing variable: JULES_SOURCE"; exit 1; }
-          [ -n "${JULES_LINEAR_SESSION:-}" ] || { echo "Missing variable: JULES_LINEAR_SESSION"; exit 1; }
+          [ -n "${JULES_LINEAR_SESSION_UIUX:-}" ] || { echo "Missing variable: JULES_LINEAR_SESSION_UIUX"; exit 1; }
 
       - name: Resolve slot label
         id: slot
@@ -57,7 +57,7 @@ jobs:
 
       - name: Snapshot fixed session status
         run: |
-          python py_rme_canary/scripts/jules_runner.py --project-root . session-status "$JULES_LINEAR_SESSION" \
+          python py_rme_canary/scripts/jules_runner.py --project-root . session-status "$JULES_LINEAR_SESSION_UIUX" \
             --json-out .quality_reports/jules_linear_uiux_status.json
 
       - name: Upload scheduler artifacts

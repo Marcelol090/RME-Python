@@ -34,6 +34,11 @@ DEFAULT_LINEAR_TRACK_TEMPLATES: dict[str, str] = {
     "refactor": "linear_refactors.md",
     "uiux": "linear_uiux.md",
 }
+DEFAULT_LINEAR_TRACK_SESSION_ENV: dict[str, str] = {
+    "tests": "JULES_LINEAR_SESSION_TESTS",
+    "refactor": "JULES_LINEAR_SESSION_REFACTOR",
+    "uiux": "JULES_LINEAR_SESSION_UIUX",
+}
 DEFAULT_LINEAR_PLANNING_DOCS: tuple[str, ...] = (
     "py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md",
     "py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md",
@@ -152,6 +157,18 @@ def resolve_linear_session_name(raw_value: str | None, *, env_name: str) -> str:
     if str(raw_value or "").strip():
         return normalize_session_name(raw_value)
     return normalize_session_name(os.environ.get(env_name, ""))
+
+
+def resolve_linear_session_env(track: str, requested_env: str | None = None) -> tuple[str, tuple[str, ...]]:
+    """Resolve the primary + fallback env vars used for fixed linear sessions."""
+    normalized_track = str(track or "").strip().lower()
+    if str(requested_env or "").strip():
+        env_name = str(requested_env).strip()
+        return env_name, (env_name,)
+    primary = DEFAULT_LINEAR_TRACK_SESSION_ENV.get(normalized_track, "JULES_LINEAR_SESSION")
+    if primary == "JULES_LINEAR_SESSION":
+        return primary, (primary,)
+    return primary, (primary, "JULES_LINEAR_SESSION")
 
 
 def load_linear_prompt_template(
@@ -982,12 +999,18 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
         template_path=str(args.template or "").strip(),
     )
 
-    session_name = resolve_linear_session_name(
-        getattr(args, "session_name", ""),
-        env_name=str(args.session_env or "JULES_LINEAR_SESSION"),
-    )
+    session_env, session_env_fallbacks = resolve_linear_session_env(track, getattr(args, "session_env", ""))
+    session_name = ""
+    if str(getattr(args, "session_name", "")).strip():
+        session_name = normalize_session_name(getattr(args, "session_name", ""))
+    else:
+        for env_name in session_env_fallbacks:
+            session_name = resolve_linear_session_name("", env_name=env_name)
+            if session_name:
+                break
     if not session_name:
-        raise ValueError(f"Missing fixed session id in --session-name or {args.session_env}.")
+        env_list = ", ".join(session_env_fallbacks)
+        raise ValueError(f"Missing fixed session id in --session-name or env(s): {env_list}.")
 
     prompt = build_linear_scheduled_prompt(
         track=track,
@@ -1007,7 +1030,8 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
         "task": str(args.task or f"linear-{track}-block"),
         "schedule_slot": str(args.schedule_slot or ""),
         "session_name": session_name,
-        "session_env": str(args.session_env or "JULES_LINEAR_SESSION"),
+        "session_env": session_env,
+        "session_env_fallbacks": list(session_env_fallbacks),
         "skills": skills,
         "quality_report": str(Path(args.quality_report).resolve()),
         "planning_docs": planning_docs,
@@ -1359,8 +1383,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     build_linear.add_argument(
         "--session-env",
-        default="JULES_LINEAR_SESSION",
-        help="Environment variable used when --session-name is omitted.",
+        default="",
+        help="Environment variable used when --session-name is omitted. Default is track-specific with fallback.",
     )
     build_linear.add_argument(
         "--skills",
@@ -1412,8 +1436,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     send_linear.add_argument(
         "--session-env",
-        default="JULES_LINEAR_SESSION",
-        help="Environment variable used when --session-name is omitted.",
+        default="",
+        help="Environment variable used when --session-name is omitted. Default is track-specific with fallback.",
     )
     send_linear.add_argument(
         "--skills",

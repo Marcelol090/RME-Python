@@ -1004,3 +1004,49 @@ Refatoração incremental para manter consistência de UX no seletor de shape (`
 - `ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **All checks passed**
 - `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **2 passed**
+
+---
+
+## Sessão 24 (2026-02-11): Jules Track-Specific Session Configuration
+
+### Resumo
+
+Configuração recomendada do Jules consolidada para sessões fixas por trilha (`refactor`, `tests`, `uiux`), eliminando mistura de contexto entre categorias e mantendo fallback legado para compatibilidade local.
+
+### Arquivos Modificados
+
+- `py_rme_canary/scripts/jules_runner.py`
+  - Added `DEFAULT_LINEAR_TRACK_SESSION_ENV` com mapeamento:
+    - `tests` -> `JULES_LINEAR_SESSION_TESTS`
+    - `refactor` -> `JULES_LINEAR_SESSION_REFACTOR`
+    - `uiux` -> `JULES_LINEAR_SESSION_UIUX`
+  - Added `resolve_linear_session_env(...)` para resolver env principal + fallback.
+  - `build/send-linear-prompt` agora escolhem automaticamente a env correta pelo `--track`.
+  - `--session-env` passou a ser opcional (default vazio, auto-resolve por track).
+
+- `.github/workflows/jules_linear_tests.yml`
+  - usa `JULES_LINEAR_SESSION_TESTS`.
+  - `concurrency.group` isolado em `jules-linear-tests-session`.
+
+- `.github/workflows/jules_linear_refactors.yml`
+  - usa `JULES_LINEAR_SESSION_REFACTOR`.
+  - `concurrency.group` isolado em `jules-linear-refactor-session`.
+
+- `.github/workflows/jules_linear_uiux.yml`
+  - usa `JULES_LINEAR_SESSION_UIUX`.
+  - `concurrency.group` isolado em `jules-linear-uiux-session`.
+
+- `py_rme_canary/tests/unit/scripts/test_jules_runner.py`
+  - Added `test_send_linear_prompt_prefers_track_specific_session_env`.
+
+- `py_rme_canary/docs/Reference/Guides/jules_linear_scheduler_workflow.md`
+  - guia atualizado para modelo recomendado por trilha e fallback legado.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md`
+  - Added incremental update de hardening para sessões por track.
+
+### Validação
+
+- `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py .github/workflows/jules_linear_tests.yml .github/workflows/jules_linear_refactors.yml .github/workflows/jules_linear_uiux.yml` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **passed**
