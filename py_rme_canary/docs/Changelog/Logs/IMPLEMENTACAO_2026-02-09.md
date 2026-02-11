@@ -1235,3 +1235,25 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `python3 -m py_compile` nos arquivos alterados: **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/main_window/test_window_tools_tool_options.py` -> **2 passed**
 - Observação: suites que importam `QtMapEditor` completo continuam bloqueadas por erro pré-existente em Python 3.10 (`py_rme_canary/logic_layer/sprite_cache.py`: `class LRUCache[T]`).
+
+---
+
+## Sessão 2026-02-11: Popup parity - `Copy Position` gated by selection
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`:
+  - ação superior `Copy Position` vinculada ao estado de seleção (`anything_selected`).
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - no `ItemContextMenu`, a ação superior `Copy Position (x, y, z)` agora exige seleção ativa para ficar habilitada.
+  - mantido o comportamento de cópia de posição no submenu `Copy Data` para contexto do item.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - `test_item_context_menu_disables_top_copy_position_without_selection`
+  - `test_item_context_menu_enables_top_copy_position_with_selection`
+
+### Validação
+- `ruff check` + `py_compile`: **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **5 passed**

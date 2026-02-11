@@ -443,3 +443,11 @@
   - novo método `_show_tool_options_panel()` em `qt_map_editor_docks.py` para exibir `dock_palette` e focar `tool_options`.
 - Sincronização com arquitetura já existente:
   - reaproveita `ModernPaletteDock.tool_options` (sem criar dock paralelo redundante).
+
+## Incremental Update (2026-02-11 - Context popup selection gating)
+- Varredura do `map_popup_menu.cpp` indicou diferença no topo do menu de contexto:
+  - no legado, `Copy Position` (atalho rápido de seleção) depende de seleção ativa.
+- Ajuste aplicado no menu unificado Python (`ItemContextMenu`):
+  - `Copy Position (x, y, z)` no bloco superior agora fica habilitado apenas quando há seleção.
+  - cópia de posição no submenu `Copy Data` permanece disponível para contexto de item/tile.
+- Regressão coberta com testes de estado `enabled` (sem seleção vs com seleção).

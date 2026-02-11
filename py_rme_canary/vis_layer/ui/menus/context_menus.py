@@ -206,7 +206,7 @@ class ItemContextMenu:
             builder.add_action(
                 f"Copy Position ({ctx_pos[0]}, {ctx_pos[1]}, {ctx_pos[2]})",
                 cb("copy_position"),
-                enabled=_action_enabled("copy_position"),
+                enabled=has_sel and _action_enabled("copy_position"),
             )
         else:
             builder.add_action("Copy Position", cb("copy_position"), enabled=False)
