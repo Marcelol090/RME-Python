@@ -1,8 +1,6 @@
 """Tests for vis_layer.ui.splash module."""
 from __future__ import annotations
 
-from unittest import mock
-
 import pytest
 
 # Splash screen requires a QApplication instance.
@@ -16,10 +14,10 @@ except Exception:
     pytest.skip('PyQt6 not available', allow_module_level=True)
 
 from py_rme_canary.vis_layer.ui.splash import (
+    _SPLASH_HEIGHT,
+    _SPLASH_WIDTH,
     StartupSplash,
     _create_splash_pixmap,
-    _SPLASH_WIDTH,
-    _SPLASH_HEIGHT,
 )
 
 

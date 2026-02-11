@@ -8,12 +8,10 @@ replacing the legacy dialog with a more user-friendly experience.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QUrl
-from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QPixmap, QIcon
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import (
-    QApplication,
     QComboBox,
     QFileDialog,
     QFormLayout,

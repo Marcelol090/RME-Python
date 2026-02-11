@@ -4,16 +4,16 @@ Modern Progress Dialog for Map Loading.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
+    QGraphicsDropShadowEffect,
     QLabel,
     QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
-    QGraphicsDropShadowEffect,
 )
 
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
@@ -55,7 +55,7 @@ class ModernProgressDialog(QDialog):
         # Glass container
         self.container = QWidget()
         self.container.setObjectName("Container")
-        
+
         # Shadow effect
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(30)
@@ -92,8 +92,8 @@ class ModernProgressDialog(QDialog):
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.cancel_btn.setFixedWidth(120)
-        self.cancel_btn.clicked.connect(self.cancel) 
-        
+        self.cancel_btn.clicked.connect(self.cancel)
+
         # Center button
         btn_wrapper = QWidget()
         btn_layout = QVBoxLayout(btn_wrapper)

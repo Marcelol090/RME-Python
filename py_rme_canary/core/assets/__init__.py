@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from py_rme_canary.core.assets.appearances_dat import (
-    AppearanceFlags,
     AppearanceFlagLight,
     AppearanceFlagMarket,
+    AppearanceFlags,
     AppearanceIndex,
     AppearancesDatError,
     load_appearances_dat,

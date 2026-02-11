@@ -23,9 +23,8 @@ import logging
 import time
 import traceback
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum, auto
-from dataclasses import replace
 from io import StringIO
 from typing import TYPE_CHECKING, Any
 
@@ -756,7 +755,8 @@ class ScriptEngine:
         result = ScriptResult()
 
         try:
-            exec(compile(script, "<script>", "exec"), script_globals)
+            # Executing user script in restricted environment (B102 suppressed: sandbox design)
+            exec(compile(script, "<script>", "exec"), script_globals)  # nosec B102
 
             result.status = ScriptStatus.SUCCESS
             result.return_value = script_globals.get("result")

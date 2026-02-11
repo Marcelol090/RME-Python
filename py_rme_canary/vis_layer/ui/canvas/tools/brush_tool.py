@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor, QMouseEvent, QPainter, QPixmap
+from PyQt6.QtGui import QCursor, QMouseEvent
 
 from py_rme_canary.vis_layer.ui.canvas.tools.abstract_tool import AbstractTool
 

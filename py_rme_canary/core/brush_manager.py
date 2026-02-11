@@ -7,12 +7,12 @@ import contextlib
 import json
 import os
 from dataclasses import asdict, dataclass, field
-from py_rme_canary.core.io.xml.safe import Element, ParseError, safe_etree as ET
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from py_rme_canary.core.io.xml.safe import Element, ParseError
 from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 

@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 
@@ -83,7 +83,7 @@ class QtMapEditorFileMixin:
             return
         logger.info("Opening map: %s", path)
         from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
-        
+
         progress = ModernProgressDialog(
             title="Opening Map",
             label_text="Detecting map format...",
@@ -684,7 +684,8 @@ class QtMapEditorFileMixin:
             return
 
         try:
-            from PyQt6.QtGui import QImage, QPainter as QP2, QColor as QC2
+            from PyQt6.QtGui import QColor as QC2
+            from PyQt6.QtGui import QImage
 
             header = self.map.header
             w = int(header.width)

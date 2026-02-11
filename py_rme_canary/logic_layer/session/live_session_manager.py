@@ -182,8 +182,8 @@ class LiveSessionManager:
         Returns:
             True if the initial connection succeeded.
         """
-        from py_rme_canary.core.protocols.live_client import LiveClient, ReconnectConfig
         from py_rme_canary.core.protocols.cursor_broadcaster import CursorManager
+        from py_rme_canary.core.protocols.live_client import LiveClient, ReconnectConfig
 
         with self._lock:
             if self.is_active:
@@ -246,8 +246,8 @@ class LiveSessionManager:
         Returns:
             True if the server started successfully.
         """
-        from py_rme_canary.core.protocols.live_server import LiveServer
         from py_rme_canary.core.protocols.cursor_broadcaster import CursorManager
+        from py_rme_canary.core.protocols.live_server import LiveServer
 
         with self._lock:
             if self._server is not None:

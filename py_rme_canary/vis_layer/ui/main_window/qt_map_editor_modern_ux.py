@@ -23,7 +23,6 @@ from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.core.data.position import Position
 from py_rme_canary.logic_layer.clipboard import ClipboardManager
 from py_rme_canary.vis_layer.ui.dialogs.command_palette import CommandPalette
-from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
 from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
 from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import AboutDialog, MapPropertiesDialog
@@ -37,6 +36,7 @@ from py_rme_canary.vis_layer.ui.docks.modern_properties_panel import ModernPrope
 from py_rme_canary.vis_layer.ui.menus.context_menus import TileContextMenu
 from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay
 from py_rme_canary.vis_layer.ui.overlays.paste_preview import PastePreviewOverlay, SelectionOverlay
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
 from py_rme_canary.vis_layer.ui.utils.recent_files import RecentFilesManager, build_recent_files_menu
 

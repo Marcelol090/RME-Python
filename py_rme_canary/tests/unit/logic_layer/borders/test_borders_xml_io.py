@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -17,7 +16,6 @@ from py_rme_canary.logic_layer.borders.borders_xml_io import (
     import_borders_into_manager,
     parse_borders_xml,
 )
-
 
 # --- Edge mapping tests ---
 

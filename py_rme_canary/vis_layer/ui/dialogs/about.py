@@ -70,18 +70,18 @@ class AboutDialog(ModernDialog):
         self.credits_box.setObjectName("CreditsBox")
         credits_layout = QVBoxLayout(self.credits_box)
         credits_layout.setContentsMargins(12, 24, 12, 12)
-        
+
         # Simple scrollable list for credits
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setStyleSheet("background: transparent;")
-        
+
         credits_content = QWidget()
         credits_content.setStyleSheet("background: transparent;")
         vbox = QVBoxLayout(credits_content)
         vbox.setSpacing(4)
-        
+
         contributors = [
             "Google Deepmind - AI Architecture",
             "User - Lead Developer",
@@ -90,17 +90,17 @@ class AboutDialog(ModernDialog):
             "Open Tibia Community",
             "Canary Project Team",
         ]
-        
+
         for name in contributors:
             lbl = QLabel(name)
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setStyleSheet(f"color: {c['text']['primary']}; font-size: 12px;")
             vbox.addWidget(lbl)
-            
+
         vbox.addStretch()
         scroll.setWidget(credits_content)
         credits_layout.addWidget(scroll)
-        
+
         layout.addWidget(self.credits_box)
         layout.addStretch()
 
@@ -108,7 +108,7 @@ class AboutDialog(ModernDialog):
         tm = get_theme_manager()
         c = tm.tokens["color"]
         r = tm.tokens["radius"]
-        
+
         self.setStyleSheet(f"""
             QLabel#AboutTitle {{
                 color: {c["brand"]["primary"]};
@@ -155,7 +155,7 @@ class AboutDialog(ModernDialog):
              # Clear default spacer/buttons if needed, but ModernDialog adds them
              # We'll just add ours, layout is HBox
              pass
-        
+
         self.add_spacer_to_footer()
         self.add_button("Visit GitHub", role="secondary", callback=lambda: None) # Placeholder
         self.add_button("Close", callback=self.accept, role="primary")

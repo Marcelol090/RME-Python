@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QAction, QCursor
 from PyQt6.QtWidgets import QMenu, QWidget

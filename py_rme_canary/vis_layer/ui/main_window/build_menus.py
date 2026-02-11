@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtGui import QAction
-
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 if TYPE_CHECKING:
