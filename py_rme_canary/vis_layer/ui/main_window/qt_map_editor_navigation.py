@@ -16,6 +16,26 @@ logger = logging.getLogger(__name__)
 
 
 class QtMapEditorNavigationMixin:
+    def _sync_selection_depth_actions(
+        self: QtMapEditor, mode: SelectionDepthMode | str | None = None
+    ) -> None:
+        current = self.session.get_selection_depth_mode() if mode is None else SelectionDepthMode.from_value(mode)
+        mapping = {
+            SelectionDepthMode.COMPENSATE: "act_selection_depth_compensate",
+            SelectionDepthMode.CURRENT: "act_selection_depth_current",
+            SelectionDepthMode.LOWER: "act_selection_depth_lower",
+            SelectionDepthMode.VISIBLE: "act_selection_depth_visible",
+        }
+        for depth_mode, attr in mapping.items():
+            if hasattr(self, attr):
+                act = getattr(self, attr)
+                try:
+                    act.blockSignals(True)
+                    act.setChecked(current == depth_mode)
+                    act.blockSignals(False)
+                except Exception as e:
+                    logger.warning("Error updating selection depth action %s: %s", attr, e)
+
     def center_view_on(self: QtMapEditor, x: int, y: int, z: int, *, push_history: bool = True) -> None:
         """Center viewport on a given tile (used by GoTo and Minimap)."""
 
@@ -202,19 +222,4 @@ class QtMapEditorNavigationMixin:
 
     def _set_selection_depth_mode(self: QtMapEditor, mode: SelectionDepthMode | str) -> None:
         self.session.set_selection_depth_mode(mode)
-        current = self.session.get_selection_depth_mode()
-        mapping = {
-            SelectionDepthMode.COMPENSATE: "act_selection_depth_compensate",
-            SelectionDepthMode.CURRENT: "act_selection_depth_current",
-            SelectionDepthMode.LOWER: "act_selection_depth_lower",
-            SelectionDepthMode.VISIBLE: "act_selection_depth_visible",
-        }
-        for depth_mode, attr in mapping.items():
-            if hasattr(self, attr):
-                act = getattr(self, attr)
-                try:
-                    act.blockSignals(True)
-                    act.setChecked(current == depth_mode)
-                    act.blockSignals(False)
-                except Exception as e:
-                    logger.warning("Error updating selection depth action %s: %s", attr, e)
+        self._sync_selection_depth_actions()

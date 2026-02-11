@@ -402,3 +402,11 @@
   - `vis_layer/ui/docks/modern_palette_dock.py`
 - Regression update:
   - `tests/ui/test_toolbar_menu_sync.py` expanded with exclusive checked-state assertions.
+
+## Incremental Update (2026-02-11 - Phase 15)
+- Selection depth `select` menu hardening (`Selection > Selection Mode`):
+  - Added centralized `_sync_selection_depth_actions(...)` in navigation mixin.
+  - `build_actions` now delegates initial checked-state sync to the helper instead of local `if/elif` branching.
+  - `_set_selection_depth_mode(...)` now reuses the same sync helper after session mode changes.
+- Regression update:
+  - `tests/ui/test_toolbar_menu_sync.py` expanded with depth-mode exclusivity and programmatic sync assertions.

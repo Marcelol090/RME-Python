@@ -889,11 +889,4 @@ def build_actions(editor: QtMapEditor) -> None:
         depth_mode = editor.session.get_selection_depth_mode()
     except Exception:
         depth_mode = SelectionDepthMode.COMPENSATE
-    if depth_mode == SelectionDepthMode.COMPENSATE:
-        editor.act_selection_depth_compensate.setChecked(True)
-    elif depth_mode == SelectionDepthMode.CURRENT:
-        editor.act_selection_depth_current.setChecked(True)
-    elif depth_mode == SelectionDepthMode.LOWER:
-        editor.act_selection_depth_lower.setChecked(True)
-    elif depth_mode == SelectionDepthMode.VISIBLE:
-        editor.act_selection_depth_visible.setChecked(True)
+    editor._sync_selection_depth_actions(depth_mode)

@@ -907,3 +907,42 @@ Aplicada refatoração de `select menus` no `Window > Palette` para alinhar comp
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **4 passed**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **bloqueado por import transitivo em runtime Python 3.10** (`sprite_cache.py` usa sintaxe Python 3.12)
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 120` -> **pipeline concluído** com relatório consolidado e artefatos Jules
+
+---
+
+## Sessão 21 (2026-02-11): Selection Depth Menu Sync Refactor
+
+### Resumo
+
+Refatoração aplicada no submenu `Selection > Selection Mode` para remover duplicação de estado checked entre pontos de entrada diferentes (bootstrap de ações e troca de modo em runtime), mantendo comportamento legacy de seleção exclusiva.
+
+### Referências Externas Consultadas (fetch/context7)
+
+- Context7 / PyQt6 (`/websites/riverbankcomputing_static_pyqt6`):
+  - `QActionGroup` exclusivo para múltiplas ações checkáveis.
+  - sincronização de checked-state orientada por estado de domínio.
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py`
+  - Added `_sync_selection_depth_actions(...)` para centralizar checked-state do depth mode.
+  - `_set_selection_depth_mode(...)` agora delega atualização visual ao novo helper.
+
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - Removida lógica duplicada `if/elif` de depth-mode e substituída por `editor._sync_selection_depth_actions(depth_mode)`.
+
+- `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+  - Added `test_selection_depth_actions_are_exclusive_and_follow_mode`.
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 15)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **4 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **bloqueado por import transitivo em runtime Python 3.10** (`sprite_cache.py` usa sintaxe Python 3.12)
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --timeout 180` -> **bloqueado na etapa Bandit** (sem progresso neste runtime)
+- `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 180` -> **pipeline concluído** com artefatos Jules
+- `python3 py_rme_canary/scripts/jules_runner.py --project-root . check --source sources/github/Marcelol090/RME-Python` -> **status=ok**

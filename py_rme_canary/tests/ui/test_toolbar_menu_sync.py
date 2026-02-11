@@ -2,6 +2,7 @@ import pytest
 
 pytest.importorskip("PyQt6.QtWidgets")
 
+from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor  # noqa: E402
 
 
@@ -132,3 +133,16 @@ def test_palette_actions_are_exclusive_and_follow_selected_palette(editor, qtbot
     assert editor.palettes.current_palette_name == "terrain"
     assert editor.act_palette_terrain.isChecked() is True
     assert editor.act_palette_item.isChecked() is False
+
+
+def test_selection_depth_actions_are_exclusive_and_follow_mode(editor, qtbot):
+    editor.act_selection_depth_current.trigger()
+    qtbot.wait(10)
+    assert editor.session.get_selection_depth_mode() == SelectionDepthMode.CURRENT
+    assert editor.act_selection_depth_current.isChecked() is True
+    assert editor.act_selection_depth_compensate.isChecked() is False
+
+    editor._set_selection_depth_mode(SelectionDepthMode.VISIBLE)
+    qtbot.wait(10)
+    assert editor.act_selection_depth_visible.isChecked() is True
+    assert editor.act_selection_depth_current.isChecked() is False
