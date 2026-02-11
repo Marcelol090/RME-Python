@@ -1278,3 +1278,30 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 
 ### Validação
 - `ruff check` + `py_compile` nos módulos alterados: **OK**
+
+---
+
+## Sessão 2026-02-11: Copy Position format now follows Preferences
+
+### Problema
+- A opção de formato em `PreferencesDialog` (`copy_position_format`) não era respeitada pela ação de menu/atalho `Copy Position`.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_edit.py`
+  - adicionado `format_position_for_copy(...)` com 5 formatos:
+    - 0: `{x = X, y = Y, z = Z}` (legacy default)
+    - 1: `{"x":X,"y":Y,"z":Z}`
+    - 2: `X, Y, Z`
+    - 3: `(X, Y, Z)`
+    - 4: `Position(X, Y, Z)`
+  - `_copy_position_to_clipboard` agora lê `UserSettings.get_copy_position_format()` e aplica o helper.
+
+### Testes
+- Novo arquivo:
+  - `py_rme_canary/tests/unit/vis_layer/ui/main_window/test_qt_map_editor_copy_position_format.py`
+- Cobertura:
+  - todos os formatos válidos + fallback para formato inválido.
+
+### Validação
+- `ruff check` + `py_compile`: **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/main_window/test_qt_map_editor_copy_position_format.py` -> **6 passed**

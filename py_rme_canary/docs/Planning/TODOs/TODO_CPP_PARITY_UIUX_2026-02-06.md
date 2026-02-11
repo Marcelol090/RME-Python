@@ -461,3 +461,11 @@
   - itens modernos (`Indicators`, `Tools`) mantidos após separador para preservar UX atual.
 - Compatibilidade preservada:
   - `act_view_toolbar_brush_settings` mantida como alias para `act_view_toolbar_sizes`.
+
+## Incremental Update (2026-02-11 - Copy Position format sync)
+- Gap identificado entre UX/configuração e ação de menu:
+  - `Preferences > Copy Position Format` existia, mas `_copy_position_to_clipboard` não aplicava o formato escolhido.
+- Implementado em `qt_map_editor_edit.py`:
+  - novo helper `format_position_for_copy(x, y, z, copy_format=...)`;
+  - `_copy_position_to_clipboard` agora usa `UserSettings.get_copy_position_format()` e aplica o formato correto.
+- Default alinhado ao legado: Lua table (`{x = X, y = Y, z = Z}`).

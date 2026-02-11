@@ -10,6 +10,25 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
+def format_position_for_copy(x: int, y: int, z: int, *, copy_format: int) -> str:
+    """Render position in one of the user-configured clipboard formats."""
+    px = int(x)
+    py = int(y)
+    pz = int(z)
+    fmt = int(copy_format)
+
+    if fmt == 1:
+        return f'{{"x":{px},"y":{py},"z":{pz}}}'
+    if fmt == 2:
+        return f"{px}, {py}, {pz}"
+    if fmt == 3:
+        return f"({px}, {py}, {pz})"
+    if fmt == 4:
+        return f"Position({px}, {py}, {pz})"
+    # Legacy default.
+    return f"{{x = {px}, y = {py}, z = {pz}}}"
+
+
 class QtMapEditorEditMixin:
     def _undo(self: QtMapEditor) -> None:
         self.session.undo()
@@ -128,7 +147,10 @@ class QtMapEditorEditMixin:
         x, y = self._last_hover_tile
         z = int(self.viewport.z)
         try:
-            QApplication.clipboard().setText(f"{int(x)} {int(y)} {int(z)}")
-            self.status.showMessage(f"Copied position: {int(x)},{int(y)},{int(z)}")
+            settings = get_user_settings()
+            copy_format = int(settings.get_copy_position_format())
+            text = format_position_for_copy(int(x), int(y), int(z), copy_format=copy_format)
+            QApplication.clipboard().setText(text)
+            self.status.showMessage(f"Copied position: {text}")
         except Exception:
             self.status.showMessage("Copy position: failed")
