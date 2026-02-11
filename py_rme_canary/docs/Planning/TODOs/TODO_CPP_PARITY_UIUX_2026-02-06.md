@@ -410,3 +410,10 @@
   - `_set_selection_depth_mode(...)` now reuses the same sync helper after session mode changes.
 - Regression update:
   - `tests/ui/test_toolbar_menu_sync.py` expanded with depth-mode exclusivity and programmatic sync assertions.
+
+## Incremental Update (2026-02-11 - Phase 16)
+- Mirror axis `select` submenu hardening (`Mirror > Mirror Axis`):
+  - Added explicit exclusive `QActionGroup` for `act_mirror_axis_x` and `act_mirror_axis_y`.
+  - Kept runtime sync in `QtMapEditorMirrorMixin._sync_mirror_actions()` as source of truth.
+- Regression update:
+  - Added `tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` to validate axis exclusivity and invalid-axis fallback.

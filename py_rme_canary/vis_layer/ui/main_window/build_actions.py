@@ -258,6 +258,10 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_mirror_axis_y = QAction("Mirror Axis Y", editor)
     editor.act_mirror_axis_y.setCheckable(True)
     editor.act_mirror_axis_y.triggered.connect(lambda _c=False: mirror_tools.set_axis(editor, "y"))
+    editor.mirror_axis_action_group = QActionGroup(editor)
+    editor.mirror_axis_action_group.setExclusive(True)
+    editor.mirror_axis_action_group.addAction(editor.act_mirror_axis_x)
+    editor.mirror_axis_action_group.addAction(editor.act_mirror_axis_y)
 
     editor.act_mirror_axis_set_from_cursor = QAction("Set Mirror Axis From Cursor", editor)
     editor.act_mirror_axis_set_from_cursor.setShortcut(QKeySequence("Ctrl+Shift+."))

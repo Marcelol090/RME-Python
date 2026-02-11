@@ -946,3 +946,32 @@ Refatoração aplicada no submenu `Selection > Selection Mode` para remover dupl
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --timeout 180` -> **bloqueado na etapa Bandit** (sem progresso neste runtime)
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-security --timeout 180` -> **pipeline concluído** com artefatos Jules
 - `python3 py_rme_canary/scripts/jules_runner.py --project-root . check --source sources/github/Marcelol090/RME-Python` -> **status=ok**
+
+---
+
+## Sessão 22 (2026-02-11): Mirror Axis Select Menu Exclusivity
+
+### Resumo
+
+Refatoração incremental no submenu `Mirror > Mirror Axis` para garantir exclusividade explícita de seleção no nível das ações, alinhando o comportamento com os demais `select menus` já endurecidos (`Palette`, `Selection Mode`).
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - Added `mirror_axis_action_group` (`QActionGroup`) e registro de `act_mirror_axis_x`/`act_mirror_axis_y` com exclusividade.
+
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - Added type declaration `mirror_axis_action_group: QActionGroup`.
+
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` (novo)
+  - cobertura de exclusividade visual via `_set_mirror_axis("y")`.
+  - cobertura de fallback para eixo inválido (default para `x`).
+
+- `py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md`
+  - Added `Incremental Update (2026-02-11 - Phase 16)`.
+
+### Validação
+
+- `ruff check py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` -> **2 passed**

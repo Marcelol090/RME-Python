@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 
 from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QAction, QKeySequence, QPixmap
+from PyQt6.QtGui import QAction, QActionGroup, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDockWidget,
@@ -138,6 +138,7 @@ class QtMapEditor(
     act_mirror_axis_x: QAction
     act_mirror_axis_y: QAction
     act_mirror_axis_set_from_cursor: QAction
+    mirror_axis_action_group: QActionGroup
     act_zoom_in: QAction
     act_zoom_out: QAction
     act_zoom_normal: QAction
