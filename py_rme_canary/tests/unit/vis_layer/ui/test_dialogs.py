@@ -69,7 +69,7 @@ class TestSettingsDialog:
         dialog = SettingsDialog()
 
         # Should have 5 categories (General/Editor/Graphics/Interface/Client Version)
-        assert dialog.category_list.count() == 5
+        assert dialog._nav_list.count() == 5
 
     def test_category_navigation(self, app):
         """Test navigating between categories."""
@@ -78,9 +78,9 @@ class TestSettingsDialog:
         dialog = SettingsDialog()
 
         # Select each category
-        for i in range(dialog.category_list.count()):
-            dialog.category_list.setCurrentRow(i)
-            assert dialog.stack.currentIndex() == i
+        for i in range(dialog._nav_list.count()):
+            dialog._nav_list.setCurrentRow(i)
+            assert dialog._stack.currentIndex() == i
 
 
 class TestGlobalSearchDialog:
