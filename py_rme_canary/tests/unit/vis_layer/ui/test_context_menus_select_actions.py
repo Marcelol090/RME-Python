@@ -247,6 +247,43 @@ def test_tile_context_menu_shows_legacy_select_actions_when_callbacks_exist(
     assert "Select House" in labels
 
 
+def test_tile_context_menu_keeps_legacy_order_select_before_properties_and_browse(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(menus_module, "ContextMenuBuilder", _FakeBuilder)
+    callbacks = {
+        "copy": lambda: None,
+        "cut": lambda: None,
+        "paste": lambda: None,
+        "delete": lambda: None,
+        "select_all": lambda: None,
+        "deselect": lambda: None,
+        "properties": lambda: None,
+        "browse_tile": lambda: None,
+        "select_raw": lambda: None,
+        "set_waypoint": lambda: None,
+        "delete_waypoint": lambda: None,
+        "has_waypoint": lambda: False,
+        "set_monster_spawn": lambda: None,
+        "set_npc_spawn": lambda: None,
+        "delete_spawn": lambda: None,
+        "assign_house": lambda: None,
+        "copy_position": lambda: None,
+        "goto": lambda: None,
+    }
+
+    menu = menus_module.TileContextMenu(None)
+    menu.set_callbacks(callbacks)
+    menu.show_for_tile(tile=Tile(x=1, y=2, z=7, items=[Item(id=100)]), has_selection=False)
+
+    builder = _FakeBuilder.last
+    assert builder is not None
+    labels = [entry[1] for entry in builder.actions if entry[0] == "action"]
+
+    assert labels.index("Select RAW") < labels.index("Properties...")
+    assert labels.index("Properties...") < labels.index("Browse Field")
+
+
 def test_tile_context_menu_select_actions_honor_capability_gates(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

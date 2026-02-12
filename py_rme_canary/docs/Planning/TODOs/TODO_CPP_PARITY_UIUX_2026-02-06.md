@@ -581,3 +581,9 @@
 ## Incremental Update (2026-02-11 - TileContextMenu browse capability gate)
 - `TileContextMenu` passou a aplicar `can_browse_tile` (quando presente) para `Browse Field`.
 - Mantido requisito de contexto (`has_selection` ou tile com itens/ground), agora combinado com capability gate para consistência com menu unificado.
+
+## Incremental Update (2026-02-11 - Tile popup ordering parity)
+- Ajustada a ordem no `TileContextMenu` para aproximar o legado:
+  - ações `Select ...` vêm antes de `Properties...` e `Browse Field`.
+  - `Browse Field` permanece no fechamento do bloco de tile.
+- Objetivo: manter consistência visual/mental model com `map_popup_menu.cpp`.

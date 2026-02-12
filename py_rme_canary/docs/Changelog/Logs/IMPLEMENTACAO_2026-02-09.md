@@ -1651,3 +1651,27 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **11 passed**
+
+---
+
+## Sessão 2026-02-11: TileContextMenu ordering parity (select -> properties -> browse)
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - bloco de seleção contextual (`Select ...`) precede inspeção/propriedades;
+  - `Browse Field` aparece no fechamento do popup de tile.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - reorganizada ordem do bloco `if tile:` em `TileContextMenu.show_for_tile(...)`:
+    - primeiro ações `Select ...` (quando disponíveis),
+    - depois `Properties...`,
+    - e por fim `Browse Field`.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - novo `test_tile_context_menu_keeps_legacy_order_select_before_properties_and_browse`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **12 passed**
