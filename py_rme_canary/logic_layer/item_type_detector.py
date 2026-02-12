@@ -63,6 +63,12 @@ ROTATABLE_SEQUENCES = {
     2053: [2050, 2051, 2052, 2053],
 }
 
+# Optimized lookup for rotation (item_id -> next_id)
+ROTATION_NEXT_MAP = {}
+for _seq in {tuple(s) for s in ROTATABLE_SEQUENCES.values()}:
+    for _i, _item_id in enumerate(_seq):
+        ROTATION_NEXT_MAP[_item_id] = _seq[(_i + 1) % len(_seq)]
+
 
 class ItemTypeDetector:
     """Detector for item types and smart actions."""
@@ -172,16 +178,8 @@ class ItemTypeDetector:
         Returns:
             Next rotation ID, or None if not rotatable
         """
-        item_id = int(item.id)
-
-        if item_id not in ROTATABLE_SEQUENCES:
-            return None
-
-        sequence = ROTATABLE_SEQUENCES[item_id]
-        current_index = sequence.index(item_id)
-        next_index = (current_index + 1) % len(sequence)
-
-        return sequence[next_index]
+        # Optimized O(1) lookup
+        return ROTATION_NEXT_MAP.get(int(item.id))
 
     @staticmethod
     def is_teleport(item: Item) -> bool:
