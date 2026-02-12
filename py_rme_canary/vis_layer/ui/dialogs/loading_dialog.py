@@ -6,9 +6,9 @@ A frameless, themed dialog with logo and progress bar for file operations.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QLabel, QProgressBar, QVBoxLayout, QWidget, QGraphicsDropShadowEffect
-from PyQt6.QtGui import QPixmap, QColor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QLabel, QProgressBar, QWidget
 
 from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
@@ -19,7 +19,12 @@ class ModernLoadingDialog(ModernDialog):
     Dialog showing a loading state with logo and progress bar.
     """
 
-    def __init__(self, parent: QWidget | None = None, title: str = "Loading...", message: str = "Please wait...") -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        title: str = "Loading...",
+        message: str = "Please wait..."
+    ) -> None:
         super().__init__(parent, title)
 
         # Override setup to remove header buttons (modal behavior)
