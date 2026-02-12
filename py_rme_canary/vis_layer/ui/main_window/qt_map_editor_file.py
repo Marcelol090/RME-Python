@@ -29,7 +29,6 @@ from py_rme_canary.logic_layer.map_format_conversion import (
     apply_map_format_version,
 )
 from py_rme_canary.vis_layer.ui.dialogs.loading_dialog import ModernLoadingDialog
-from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
