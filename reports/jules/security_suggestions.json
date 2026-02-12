@@ -1,7 +1,7 @@
 {
   "version": 1,
   "category": "security",
-  "generated_at": "2026-02-09T12:00:00Z",
+  "generated_at": "2026-02-11T12:00:00Z",
   "task": "security-scan-and-fix",
   "implemented": [
     {
@@ -28,6 +28,15 @@
         "py_rme_canary/logic_layer/script_engine.py"
       ],
       "evidence": "Code review confirmed AST visitor blocks eval, exec, open, and dangerous attributes"
+    },
+    {
+      "id": "SEC-004",
+      "summary": "Fixed authentication bypass vulnerability where unauthenticated clients could send messages and updates.",
+      "files": [
+        "py_rme_canary/core/protocols/live_server.py",
+        "py_rme_canary/core/protocols/live_peer.py"
+      ],
+      "evidence": "Verified with reproduction test case in py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py"
     }
   ],
   "suggested_next": [

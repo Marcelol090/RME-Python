@@ -195,11 +195,17 @@ class LiveServer:
                 return
             peer.set_name(str(name))
             peer.set_password(str(password))
+            peer.is_authenticated = True
             client_id = int(peer.client_id)
             peer.send_packet(PacketType.LOGIN_SUCCESS, client_id.to_bytes(4, "little", signed=False))
             # Broadcast updated client list
             self.broadcast_client_list()
             log.info(f"Client {name} logged in (id={client_id})")
+            return
+
+        if peer is None or not peer.is_authenticated:
+            log.warning(f"Unauthenticated packet {packet_type}")
+            self._disconnect_client(client)
             return
 
         if packet_type == PacketType.CURSOR_UPDATE:
