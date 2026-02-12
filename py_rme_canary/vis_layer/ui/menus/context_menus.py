@@ -132,7 +132,19 @@ class TileContextMenu:
                 builder.add_separator()
 
             # Properties
-            builder.add_action("Properties...", cb("properties"))
+            has_tile_payload = bool(
+                tile.ground is not None
+                or (tile.items and len(tile.items) > 0)
+                or (getattr(tile, "monsters", None) or [])
+                or getattr(tile, "npc", None) is not None
+                or getattr(tile, "spawn_monster", None) is not None
+                or getattr(tile, "spawn_npc", None) is not None
+            )
+            builder.add_action(
+                "Properties...",
+                cb("properties"),
+                enabled=bool(has_tile_payload and _action_enabled("properties")),
+            )
 
             # Legacy parity label uses "Browse Field"
             has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)

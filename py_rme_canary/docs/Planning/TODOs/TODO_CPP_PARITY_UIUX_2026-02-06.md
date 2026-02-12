@@ -587,3 +587,7 @@
   - ações `Select ...` vêm antes de `Properties...` e `Browse Field`.
   - `Browse Field` permanece no fechamento do bloco de tile.
 - Objetivo: manter consistência visual/mental model com `map_popup_menu.cpp`.
+
+## Incremental Update (2026-02-11 - TileContextMenu properties gating)
+- `Properties...` no `TileContextMenu` agora respeita contexto real de tile (ground/item/creature/spawn) antes de habilitar.
+- Ação continua visível, mas desabilitada em tile vazio para paridade com o fluxo legado.

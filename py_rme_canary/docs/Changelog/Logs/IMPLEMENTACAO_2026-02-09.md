@@ -1675,3 +1675,28 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **12 passed**
+
+---
+
+## Sessão 2026-02-11: TileContextMenu `Properties...` context gating
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - ação de propriedades no contexto de tile é condicionada à existência de conteúdo contextual (ground/creature/spawn).
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `Properties...` agora é habilitada somente quando o tile possui payload contextual:
+    - `ground` ou `items`, ou
+    - `monsters`/`npc`, ou
+    - `spawn_monster`/`spawn_npc`.
+  - Mantém o gate de capability via `can_properties` quando fornecido.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - adicionado `test_tile_context_menu_disables_properties_on_empty_tile`.
+  - adicionado `test_tile_context_menu_enables_properties_when_tile_has_payload`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **14 passed**
