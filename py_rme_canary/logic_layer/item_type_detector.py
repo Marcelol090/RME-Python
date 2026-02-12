@@ -54,6 +54,10 @@ DOOR_PAIRS = {
     # Add more door pairs as needed
 }
 
+# Optimized lookup structures for doors
+OPEN_DOOR_IDS = set(DOOR_PAIRS.values())
+REVERSE_DOOR_PAIRS = {v: k for k, v in DOOR_PAIRS.items()}
+
 # Rotatable items (ID sequences)
 ROTATABLE_SEQUENCES = {
     # Torch: 2050 -> 2051 -> 2052 -> 2053 -> 2050
@@ -146,12 +150,8 @@ class ItemTypeDetector:
         if item_id in DOOR_PAIRS:
             return DOOR_PAIRS[item_id]
 
-        # Check if it's an open door (reverse lookup)
-        for closed_id, open_id in DOOR_PAIRS.items():
-            if item_id == open_id:
-                return closed_id
-
-        return None
+        # Check if it's an open door (optimized reverse lookup)
+        return REVERSE_DOOR_PAIRS.get(item_id)
 
     @staticmethod
     def is_door_open(item: Item) -> bool:
@@ -163,9 +163,8 @@ class ItemTypeDetector:
         Returns:
             True if door is open
         """
-        item_id = int(item.id)
-        # If ID is in values of DOOR_PAIRS, it's open
-        return item_id in DOOR_PAIRS.values()
+        # Optimized O(1) membership check
+        return int(item.id) in OPEN_DOOR_IDS
 
     @staticmethod
     def is_rotatable(item: Item) -> bool:
