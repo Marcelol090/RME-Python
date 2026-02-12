@@ -123,6 +123,55 @@ LIGHT_THEME: ThemeTokens = {
     }
 }
 
+# Design Tokens - Dracula Theme (Vampire Dark)
+DRACULA_THEME: ThemeTokens = {
+    "color": {
+        "brand": {
+            "primary": "#BD93F9",  # Purple
+            "secondary": "#FF79C6",  # Pink
+            "active": "#8BE9FD",  # Cyan
+        },
+        "surface": {
+            "primary": "#282A36",  # Background
+            "secondary": "#44475A",  # Selection/Current Line
+            "tertiary": "#6272A4",  # Comment
+            "elevated": "#44475A",  # Popups/Menus (Same as secondary for Dracula usually)
+            "overlay": "rgba(40, 42, 54, 0.9)",
+        },
+        "text": {
+            "primary": "#F8F8F2",  # Foreground
+            "secondary": "#BD93F9",  # Purple (Secondary Text)
+            "tertiary": "#6272A4",  # Comment
+            "disabled": "#6272A4",
+        },
+        "border": {
+            "default": "#6272A4",
+            "strong": "#BD93F9",
+            "interactive": "#FF79C6",
+        },
+        "state": {
+            "hover": "#44475A",
+            "active": "#BD93F9",
+            "error": "#FF5555",  # Red
+        }
+    },
+    "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48,
+    },
+    "radius": {
+        "sm": 4,
+        "md": 8,
+        "lg": 12,
+        "xl": 16,
+        "round": 9999,
+    }
+}
+
 # Design Tokens - Neon Theme (Cyberpunk/High Contrast)
 NEON_THEME: ThemeTokens = {
     "color": {
@@ -176,6 +225,7 @@ NEON_THEME: ThemeTokens = {
 THEME_TOKENS: dict[str, ThemeTokens] = {
     "dark": DARK_THEME,
     "light": LIGHT_THEME,
+    "dracula": DRACULA_THEME,
     "neon": NEON_THEME,
 }
 
@@ -204,8 +254,11 @@ class ThemeManager:
         return THEME_TOKENS[self._current_theme]
 
     def toggle_theme(self) -> None:
-        """Toggle between dark and light themes."""
-        self._current_theme = "light" if self._current_theme == "dark" else "dark"
+        """Cycle through themes."""
+        themes = list(THEME_TOKENS.keys())
+        current_idx = themes.index(self._current_theme)
+        next_idx = (current_idx + 1) % len(themes)
+        self._current_theme = themes[next_idx]
         self.apply_theme()
 
     def set_theme(self, theme_name: str) -> None:
@@ -239,7 +292,7 @@ QWidget {{
     font-family: 'Segoe UI', 'Inter', sans-serif;
     font-size: 13px;
     selection-background-color: {c["state"]["active"]};
-    selection-color: {c["surface"]["primary"]};
+    selection-color: {c["text"]["primary"]}; /* Ensure text readable on selection */
     outline: none;
 }}
 
@@ -256,8 +309,8 @@ QPushButton {{
 
 QPushButton:hover {{
     background-color: {c["state"]["hover"]};
-    color: {c["surface"]["primary"]}; /* High contrast on hover */
-    border-color: {c["state"]["hover"]};
+    border-color: {c["border"]["interactive"]};
+    /* transform: translateY(-1px);  Not supported in Qt QSS directly but emulated via margin if needed */
 }}
 
 QPushButton:pressed {{
@@ -269,7 +322,7 @@ QPushButton:pressed {{
 QPushButton:checked {{
     background-color: {c["brand"]["primary"]};
     border-color: {c["brand"]["primary"]};
-    color: {c["text"]["primary"]};
+    color: {c["text"]["primary"]}; /* Usually white or dark depending on theme, but primary text is safe */
 }}
 
 QPushButton:disabled {{
@@ -278,7 +331,7 @@ QPushButton:disabled {{
     color: {c["text"]["disabled"]};
 }}
 
-/* ==================== Tool Buttons (Glassmorphism) ==================== */
+/* ==================== Tool Buttons (Glassmorphism & Antigravity) ==================== */
 QToolButton {{
     background-color: transparent;
     border: 1px solid transparent;
@@ -287,14 +340,14 @@ QToolButton {{
 }}
 
 QToolButton:hover {{
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: {c["state"]["hover"]};
     border-color: {c["border"]["default"]};
 }}
 
 QToolButton:checked {{
-    background-color: {c["brand"]["primary"]};
-    border: 1px solid {c["brand"]["primary"]};
-    color: white;
+    background-color: {c["brand"]["secondary"]}; /* Use secondary brand color for checked state */
+    border: 1px solid {c["brand"]["secondary"]};
+    color: {c["text"]["primary"]};
 }}
 
 QToolButton:pressed {{
@@ -347,7 +400,7 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 QToolTip {{
     background-color: {c["surface"]["elevated"]};
     color: {c["text"]["primary"]};
-    border: 1px solid {c["border"]["strong"]};
+    border: 1px solid {c["brand"]["primary"]}; /* Brand color border for tooltip */
     border-radius: {r["sm"]}px;
     padding: {s["xs"]}px {s["sm"]}px;
     font-weight: 500;
@@ -362,11 +415,11 @@ QMenuBar {{
 QMenuBar::item {{
     padding: 8px 12px;
     background: transparent;
+    border-radius: {r["sm"]}px;
 }}
 
 QMenuBar::item:selected {{
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: {r["sm"]}px;
+    background: {c["state"]["hover"]};
 }}
 
 QMenu {{
@@ -397,14 +450,16 @@ QMenu::separator {{
 QDockWidget {{
     titlebar-close-icon: url(:/icons/close.svg);
     titlebar-normal-icon: url(:/icons/float.svg);
+    border: 1px solid {c["border"]["default"]};
 }}
 
 QDockWidget::title {{
-    background-color: {c["surface"]["primary"]};
+    background-color: {c["surface"]["secondary"]};
     padding: 8px;
-    border-bottom: 1px solid {c["surface"]["secondary"]};
+    border-bottom: 1px solid {c["border"]["default"]};
     font-weight: 600;
     color: {c["text"]["secondary"]};
+    text-align: center;
 }}
 
 /* ==================== Tab Widgets (Modern) ==================== */
@@ -416,21 +471,24 @@ QTabWidget::pane {{
 }}
 
 QTabBar::tab {{
-    background-color: {c["surface"]["primary"]};
+    background-color: {c["surface"]["secondary"]}; /* Secondary surface for inactive tabs */
     color: {c["text"]["tertiary"]};
     padding: 8px 16px;
     border-bottom: 2px solid transparent;
     font-weight: 600;
     margin-right: 4px;
+    border-top-left-radius: {r["sm"]}px;
+    border-top-right-radius: {r["sm"]}px;
 }}
 
 QTabBar::tab:selected {{
+    background-color: {c["surface"]["primary"]};
     color: {c["text"]["primary"]};
     border-bottom: 2px solid {c["brand"]["primary"]};
 }}
 
 QTabBar::tab:hover:!selected {{
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: {c["state"]["hover"]};
     color: {c["text"]["secondary"]};
 }}
 
@@ -449,18 +507,41 @@ QGroupBox::title {{
     subcontrol-position: top left;
     left: 12px;
     padding: 0 4px;
+    background-color: {c["surface"]["primary"]}; /* Match background to hide border behind title */
 }}
 
 /* ==================== Process Bar ==================== */
 QProgressBar {{
     border: none;
     background-color: {c["surface"]["secondary"]};
-    border-radius: {r["sm"]}px;
+    border-radius: {r["md"]}px; /* Increased radius */
     text-align: center;
+    color: {c["text"]["primary"]};
 }}
 
 QProgressBar::chunk {{
     background-color: {c["brand"]["primary"]};
+    border-radius: {r["md"]}px;
+}}
+
+/* ==================== Views (Lists, Tables, Trees) ==================== */
+QAbstractItemView {{
+    background-color: {c["surface"]["secondary"]};
+    alternate-background-color: {c["surface"]["tertiary"]};
+    border: 1px solid {c["border"]["default"]};
+    border-radius: {r["md"]}px;
+    selection-background-color: {c["state"]["active"]};
+    selection-color: {c["text"]["primary"]};
+}}
+
+QAbstractItemView::item:hover {{
+    background-color: {c["state"]["hover"]};
+    border-radius: {r["sm"]}px;
+}}
+
+QAbstractItemView::item:selected {{
+    background-color: {c["state"]["active"]};
+    border: 1px solid {c["brand"]["primary"]};
     border-radius: {r["sm"]}px;
 }}
 """
