@@ -31,6 +31,7 @@ class LivePeer(LiveSocket):
     cursor_x: int = 0
     cursor_y: int = 0
     cursor_z: int = 0
+    is_authenticated: bool = False
 
     def __init__(
         self,
@@ -47,6 +48,7 @@ class LivePeer(LiveSocket):
         self.cursor_x = 0
         self.cursor_y = 0
         self.cursor_z = 0
+        self.is_authenticated = False
 
     def get_color(self) -> tuple[int, int, int]:
         """Get assigned color for this peer based on client_id."""

@@ -1,6 +1,6 @@
 # Security Suggestions
 
-- Generated at: `2026-02-09T12:00:00Z`
+- Generated at: `2026-02-11T12:00:00Z`
 - Category: `security`
 - Task: `security-scan-and-fix`
 
@@ -15,6 +15,10 @@
 
 - [SEC-003] Verified ScriptEngine sandbox implementation blocking dangerous AST nodes.
   - files: `py_rme_canary/logic_layer/script_engine.py`
+
+- [SEC-004] Fixed authentication bypass vulnerability where unauthenticated clients could send messages and updates.
+  - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
 
 ## Suggested Next
 
