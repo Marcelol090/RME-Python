@@ -22,7 +22,9 @@ def test_loading_dialog_instantiation(qapp):
     dialog = ModernLoadingDialog(title="Test Load", message="Testing...")
     assert dialog.windowTitle() == "Test Load"
     assert dialog.message_label.text() == "Testing..."
-    assert dialog.progress.value() == 0 # Indeterminate initially set to range 0-0 but value 0
+    # Indeterminate progress bar (min=0, max=0) returns -1 for value() in some Qt versions/styles
+    assert dialog.progress.minimum() == 0
+    assert dialog.progress.maximum() == 0
     assert dialog.logo_label.text() == "CANARY STUDIO"
 
 def test_loading_dialog_updates(qapp):
