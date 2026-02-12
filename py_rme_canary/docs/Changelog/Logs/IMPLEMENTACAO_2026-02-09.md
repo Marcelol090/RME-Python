@@ -1584,3 +1584,28 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` nos arquivos alterados -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **8 passed**
+
+---
+
+## Sessão 2026-02-11: TileContextMenu select-actions parity sync
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - popup de tile expõe bloco `Select ...` conforme capacidade/contexto.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `TileContextMenu.show_for_tile(...)` agora renderiza ações `Select ...` quando callbacks estão disponíveis:
+    - `Select Creature`
+    - `Select Spawn`
+    - `Select RAW`
+    - `Select Wallbrush`
+    - `Select Groundbrush`
+    - `Select Collection`
+    - `Select House`
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - novo teste `test_tile_context_menu_shows_legacy_select_actions_when_callbacks_exist`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **9 passed**

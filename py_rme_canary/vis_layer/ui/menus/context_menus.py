@@ -95,6 +95,26 @@ class TileContextMenu:
             has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)
             builder.add_action("Browse Field", cb("browse_tile"), enabled=bool(has_selection or has_items))
 
+            # Legacy select actions when supported by callbacks.
+            if cb("select_creature") or cb("select_spawn") or cb("select_raw") or cb("select_wall") or cb(
+                "select_ground"
+            ) or cb("select_collection") or cb("select_house"):
+                builder.add_separator()
+                if cb("select_creature"):
+                    builder.add_action("Select Creature", cb("select_creature"))
+                if cb("select_spawn"):
+                    builder.add_action("Select Spawn", cb("select_spawn"))
+                if cb("select_raw"):
+                    builder.add_action("Select RAW", cb("select_raw"))
+                if cb("select_wall"):
+                    builder.add_action("Select Wallbrush", cb("select_wall"))
+                if cb("select_ground"):
+                    builder.add_action("Select Groundbrush", cb("select_ground"))
+                if cb("select_collection"):
+                    builder.add_action("Select Collection", cb("select_collection"))
+                if cb("select_house"):
+                    builder.add_action("Select House", cb("select_house"))
+
             builder.add_separator()
 
             # Waypoint
