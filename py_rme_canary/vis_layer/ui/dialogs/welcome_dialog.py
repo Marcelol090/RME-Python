@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
@@ -155,7 +156,7 @@ class WelcomeDialog(QDialog):
 
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setWindowTitle("Welcome")
+        self.setWindowTitle("Noct Map Editor")
         self.setMinimumSize(780, 520)
         self.setModal(True)
 
@@ -213,7 +214,13 @@ class WelcomeDialog(QDialog):
         side_layout.setSpacing(6)
 
         # Brand
-        brand = QLabel("Canary Studio")
+        brand_row = QHBoxLayout()
+        brand_icon = QLabel()
+        brand_icon.setPixmap(load_icon("logo_axolotl").pixmap(24, 24))
+        brand_icon.setStyleSheet("background: transparent;")
+        brand_row.addWidget(brand_icon)
+
+        brand = QLabel("Noct Map Editor")
         brand.setStyleSheet(
             f"""
             font-size: 22px; font-weight: 800;
@@ -221,9 +228,11 @@ class WelcomeDialog(QDialog):
             background: transparent;
         """
         )
-        side_layout.addWidget(brand)
+        brand_row.addWidget(brand)
+        brand_row.addStretch()
+        side_layout.addLayout(brand_row)
 
-        tagline = QLabel("Map Editor for Open Tibia")
+        tagline = QLabel("Powered by Axolotl Engine")
         tagline.setStyleSheet(f"font-size: 12px; color: {c['text']['secondary']}; background: transparent;")
         side_layout.addWidget(tagline)
 

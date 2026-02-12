@@ -5,7 +5,7 @@ Based on ui_instructions.md - PyQt6 UI/UX Development Instructions.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from PyQt6.QtWidgets import QApplication
 
@@ -26,6 +26,22 @@ class ThemeTokens(TypedDict):
     color: ThemeColors
     spacing: dict[str, int]
     radius: dict[str, int]
+    typography: NotRequired[dict[str, str]]
+    ux: NotRequired[dict[str, str]]
+
+
+class EditorThemeProfile(TypedDict):
+    """UI/UX behavior profile coupled to each visual theme."""
+
+    logo: str
+    app_name: str
+    component_style: str
+    tools_style: str
+    brush_size: int
+    brush_shape: str
+    brush_variation: int
+    palette_large_icons: bool
+    cursor_style: str
 
 
 # Design Tokens - Antigravity Theme (Deep Glassmorphism)
@@ -75,6 +91,8 @@ DARK_THEME: ThemeTokens = {
         "xl": 24,
         "round": 9999,
     },
+    "typography": {"font_primary": "Inter, 'Segoe UI', sans-serif", "font_mono": "'JetBrains Mono', monospace"},
+    "ux": {"name": "Antigravity Dark", "component_style": "glass"},
 }
 
 # Design Tokens - Premium Light Theme (Nord Light Inspired)
@@ -124,6 +142,8 @@ LIGHT_THEME: ThemeTokens = {
         "xl": 16,
         "round": 9999,
     },
+    "typography": {"font_primary": "Inter, 'Segoe UI', sans-serif", "font_mono": "'JetBrains Mono', monospace"},
+    "ux": {"name": "Premium Light", "component_style": "clean"},
 }
 
 # Design Tokens - Neon Theme (Cyberpunk/High Contrast)
@@ -173,6 +193,83 @@ NEON_THEME: ThemeTokens = {
         "xl": 12,
         "round": 9999,
     },
+    "typography": {"font_primary": "Rajdhani, 'Segoe UI', sans-serif", "font_mono": "'JetBrains Mono', monospace"},
+    "ux": {"name": "Neon", "component_style": "cyber"},
+}
+
+# Noct Theme 1 — Modern Green Glass
+NOCT_GREEN_GLASS_THEME: ThemeTokens = {
+    "color": {
+        "brand": {"primary": "#3EEA8D", "secondary": "#2AD979", "active": "#7DFFB8"},
+        "surface": {
+            "primary": "rgba(6, 28, 18, 0.90)",
+            "secondary": "rgba(10, 40, 24, 0.76)",
+            "tertiary": "rgba(62, 234, 141, 0.14)",
+            "elevated": "rgba(10, 34, 22, 0.96)",
+            "overlay": "rgba(0, 0, 0, 0.6)",
+        },
+        "text": {"primary": "#E8FFF3", "secondary": "#A7D9BF", "tertiary": "#6BA086", "disabled": "#3E6A57"},
+        "border": {
+            "default": "rgba(62, 234, 141, 0.22)",
+            "strong": "rgba(62, 234, 141, 0.45)",
+            "interactive": "#3EEA8D",
+        },
+        "state": {"hover": "rgba(62, 234, 141, 0.16)", "active": "rgba(62, 234, 141, 0.32)", "error": "#FF5F7A"},
+    },
+    "spacing": {"xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "xxl": 48},
+    "radius": {"sm": 8, "md": 12, "lg": 18, "xl": 28, "round": 9999},
+    "typography": {"font_primary": "Sora, Inter, sans-serif", "font_mono": "'JetBrains Mono', monospace"},
+    "ux": {"name": "Noct Green Glass", "component_style": "glassmorphism"},
+}
+
+# Noct Theme 2 — 8-bit Glass
+NOCT_8BIT_GLASS_THEME: ThemeTokens = {
+    "color": {
+        "brand": {"primary": "#19F5B8", "secondary": "#00D4FF", "active": "#C676FF"},
+        "surface": {
+            "primary": "rgba(8, 18, 58, 0.95)",
+            "secondary": "rgba(20, 35, 86, 0.86)",
+            "tertiary": "rgba(25, 245, 184, 0.10)",
+            "elevated": "rgba(11, 20, 66, 0.98)",
+            "overlay": "rgba(0, 0, 0, 0.65)",
+        },
+        "text": {"primary": "#D9F8FF", "secondary": "#8AB5D6", "tertiary": "#5A7CA1", "disabled": "#3B5579"},
+        "border": {
+            "default": "rgba(25, 245, 184, 0.35)",
+            "strong": "rgba(0, 212, 255, 0.55)",
+            "interactive": "#19F5B8",
+        },
+        "state": {"hover": "rgba(0, 212, 255, 0.16)", "active": "rgba(198, 118, 255, 0.22)", "error": "#FF4F9A"},
+    },
+    "spacing": {"xs": 4, "sm": 8, "md": 14, "lg": 22, "xl": 28, "xxl": 40},
+    "radius": {"sm": 2, "md": 3, "lg": 4, "xl": 6, "round": 9999},
+    "typography": {"font_primary": "'Press Start 2P', VT323, monospace", "font_mono": "VT323, monospace"},
+    "ux": {"name": "Noct 8-bit Glass", "component_style": "pixel"},
+}
+
+# Noct Theme 3 — Fluid / Liquid Glass
+NOCT_LIQUID_GLASS_THEME: ThemeTokens = {
+    "color": {
+        "brand": {"primary": "#48F2D4", "secondary": "#7BE7FF", "active": "#9BFFE9"},
+        "surface": {
+            "primary": "rgba(6, 20, 34, 0.86)",
+            "secondary": "rgba(12, 35, 54, 0.72)",
+            "tertiary": "rgba(123, 231, 255, 0.16)",
+            "elevated": "rgba(10, 28, 44, 0.94)",
+            "overlay": "rgba(2, 8, 14, 0.58)",
+        },
+        "text": {"primary": "#E9FDFF", "secondary": "#A9DCE5", "tertiary": "#6EA0AD", "disabled": "#456772"},
+        "border": {
+            "default": "rgba(123, 231, 255, 0.24)",
+            "strong": "rgba(72, 242, 212, 0.42)",
+            "interactive": "#48F2D4",
+        },
+        "state": {"hover": "rgba(123, 231, 255, 0.18)", "active": "rgba(72, 242, 212, 0.28)", "error": "#FF647F"},
+    },
+    "spacing": {"xs": 4, "sm": 9, "md": 16, "lg": 24, "xl": 32, "xxl": 48},
+    "radius": {"sm": 10, "md": 16, "lg": 24, "xl": 34, "round": 9999},
+    "typography": {"font_primary": "Manrope, Inter, sans-serif", "font_mono": "'JetBrains Mono', monospace"},
+    "ux": {"name": "Noct Liquid Glass", "component_style": "liquid"},
 }
 
 # Theme registry
@@ -180,6 +277,56 @@ THEME_TOKENS: dict[str, ThemeTokens] = {
     "dark": DARK_THEME,
     "light": LIGHT_THEME,
     "neon": NEON_THEME,
+    "noct_green_glass": NOCT_GREEN_GLASS_THEME,
+    "noct_8bit_glass": NOCT_8BIT_GLASS_THEME,
+    "noct_liquid_glass": NOCT_LIQUID_GLASS_THEME,
+}
+
+THEME_PROFILES: dict[str, EditorThemeProfile] = {
+    "dark": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "glass",
+        "tools_style": "standard",
+        "brush_size": 2,
+        "brush_shape": "circle",
+        "brush_variation": 25,
+        "palette_large_icons": False,
+        "cursor_style": "ring",
+    },
+    "noct_green_glass": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "green_glass",
+        "tools_style": "soft_glow",
+        "brush_size": 2,
+        "brush_shape": "circle",
+        "brush_variation": 35,
+        "palette_large_icons": True,
+        "cursor_style": "neon_ring",
+    },
+    "noct_8bit_glass": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "pixel_glass",
+        "tools_style": "pixel_panel",
+        "brush_size": 1,
+        "brush_shape": "square",
+        "brush_variation": 0,
+        "palette_large_icons": False,
+        "cursor_style": "pixel_cross",
+    },
+    "noct_liquid_glass": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "liquid_glass",
+        "tools_style": "fluid_capsule",
+        "brush_size": 3,
+        "brush_shape": "circle",
+        "brush_variation": 55,
+        "palette_large_icons": True,
+        "cursor_style": "liquid_blob",
+    },
 }
 
 
@@ -189,7 +336,7 @@ class ThemeManager:
     """
 
     _instance: ThemeManager | None = None
-    _current_theme: str = "dark"
+    _current_theme: str = "noct_green_glass"
 
     def __new__(cls) -> ThemeManager:
         if cls._instance is None:
@@ -205,6 +352,14 @@ class ThemeManager:
     def tokens(self) -> ThemeTokens:
         """Return current theme tokens."""
         return THEME_TOKENS[self._current_theme]
+
+    @property
+    def profile(self) -> EditorThemeProfile:
+        """Return editor profile linked to current theme."""
+        return THEME_PROFILES.get(self._current_theme, THEME_PROFILES["dark"])
+
+    def list_themes(self) -> list[str]:
+        return list(THEME_TOKENS.keys())
 
     def toggle_theme(self) -> None:
         """Toggle between dark and light themes."""
@@ -233,13 +388,17 @@ class ThemeManager:
         c = tokens["color"]
         s = tokens["spacing"]
         r = tokens["radius"]
+        t = tokens.get("typography", {})
+        font_primary = t.get("font_primary", "'Segoe UI', 'Inter', sans-serif")
+        is_pixel_theme = self._current_theme == "noct_8bit_glass"
+        button_border_width = 2 if is_pixel_theme else 1
 
         return f"""
 /* ==================== Global ==================== */
 QWidget {{
     background-color: {c["surface"]["primary"]};
     color: {c["text"]["primary"]};
-    font-family: 'Segoe UI', 'Inter', sans-serif;
+    font-family: {font_primary};
     font-size: 13px;
     selection-background-color: {c["state"]["active"]};
     selection-color: {c["surface"]["primary"]};
@@ -250,7 +409,7 @@ QWidget {{
 QPushButton {{
     background-color: {c["surface"]["secondary"]};
     color: {c["text"]["primary"]};
-    border: 1px solid {c["border"]["default"]};
+    border: {button_border_width}px solid {c["border"]["default"]};
     border-radius: {r["md"]}px;
     padding: {s["sm"]}px {s["md"]}px;
     min-height: 32px;
@@ -284,7 +443,7 @@ QPushButton:disabled {{
 /* ==================== Tool Buttons (Glassmorphism) ==================== */
 QToolButton {{
     background-color: transparent;
-    border: 1px solid transparent;
+    border: {button_border_width}px solid transparent;
     border-radius: {r["md"]}px;
     padding: 6px;
 }}
@@ -308,7 +467,7 @@ QToolButton:pressed {{
 QLineEdit, QSpinBox, QComboBox {{
     background-color: {c["surface"]["secondary"]};
     color: {c["text"]["primary"]};
-    border: 1px solid {c["surface"]["tertiary"]};
+    border: {button_border_width}px solid {c["surface"]["tertiary"]};
     border-radius: {r["md"]}px;
     padding: {s["sm"]}px;
     min-height: 32px;
@@ -381,7 +540,7 @@ QMenuBar::item:pressed {{
 
 QMenu {{
     background-color: {c["surface"]["elevated"]};
-    border: 1px solid {c["border"]["default"]};
+    border: {button_border_width}px solid {c["border"]["default"]};
     border-radius: {r["md"]}px;
     padding: {s["xs"]}px;
 }}
@@ -534,7 +693,7 @@ QComboBox QAbstractItemView {{
 
 /* ==================== Group Boxes ==================== */
 QGroupBox {{
-    border: 1px solid {c["border"]["default"]};
+    border: {button_border_width}px solid {c["border"]["default"]};
     border-radius: {r["lg"]}px;
     margin-top: 12px;
     padding-top: 16px;

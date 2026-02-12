@@ -14,13 +14,14 @@ from PyQt6.QtWidgets import (
 )
 
 from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 
 class AboutDialog(ModernDialog):
     """
     Modern About Dialog with Antigravity styling.
-    
+
     Features:
     - Centered glass layout
     - Brand gradient typography
@@ -28,7 +29,7 @@ class AboutDialog(ModernDialog):
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent, title="About")
+        super().__init__(parent, title="About Noct Map Editor")
         self.setFixedSize(500, 420)
         self._setup_content()
         self._setup_footer()
@@ -44,20 +45,25 @@ class AboutDialog(ModernDialog):
         layout.setContentsMargins(40, 40, 40, 0)
 
         # 1. Logo / Title Section
-        self.title_lbl = QLabel("Py RME Canary")
+        self.title_lbl = QLabel("Noct Map Editor")
         self.title_lbl.setObjectName("AboutTitle")
         self.title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.title_lbl)
 
-        self.version_lbl = QLabel("Version 1.0.0 (Canary)")
+        logo = QLabel()
+        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo.setPixmap(load_icon("logo_axolotl").pixmap(42, 42))
+        layout.addWidget(logo)
+
+        self.version_lbl = QLabel("Version 1.0.0 (Axolotl Engine)")
         self.version_lbl.setObjectName("AboutVersion")
         self.version_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.version_lbl)
 
         # 2. Description
         desc_text = (
-            "A modern, premium Map Editor for Open Tibia Servers.\n"
-            "Built with Python, PyQt6, and the Antigravity Design System."
+            "A modern, premium Noct Map Editor for Open Tibia Servers.\n"
+            "Built with Python, PyQt6, and the Axolotl visual system."
         )
         self.desc_lbl = QLabel(desc_text)
         self.desc_lbl.setObjectName("AboutDesc")
@@ -116,19 +122,19 @@ class AboutDialog(ModernDialog):
                 font-weight: 800;
                 letter-spacing: 1px;
             }}
-            
+
             QLabel#AboutVersion {{
                 color: {c["text"]["tertiary"]};
                 font-size: 13px;
                 font-weight: 500;
             }}
-            
+
             QLabel#AboutDesc {{
                 color: {c["text"]["secondary"]};
                 font-size: 14px;
                 line-height: 1.4;
             }}
-            
+
             QGroupBox#CreditsBox {{
                 border: 1px solid {c["surface"]["tertiary"]};
                 border-radius: {r["lg"]}px;
@@ -139,7 +145,7 @@ class AboutDialog(ModernDialog):
                 text-transform: uppercase;
                 color: {c["text"]["tertiary"]};
             }}
-            
+
             QGroupBox#CreditsBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top center;
@@ -152,11 +158,11 @@ class AboutDialog(ModernDialog):
         # Centered Close Button
         footer_layout = self.footer_container.layout()
         if footer_layout:
-             # Clear default spacer/buttons if needed, but ModernDialog adds them
-             # We'll just add ours, layout is HBox
-             pass
+            # Clear default spacer/buttons if needed, but ModernDialog adds them
+            # We'll just add ours, layout is HBox
+            pass
 
         self.add_spacer_to_footer()
-        self.add_button("Visit GitHub", role="secondary", callback=lambda: None) # Placeholder
+        self.add_button("Visit GitHub", role="secondary", callback=lambda: None)  # Placeholder
         self.add_button("Close", callback=self.accept, role="primary")
         self.add_spacer_to_footer()

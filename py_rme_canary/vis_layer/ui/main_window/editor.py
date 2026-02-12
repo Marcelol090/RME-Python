@@ -315,7 +315,8 @@ class QtMapEditor(
     def __init__(self) -> None:
         super().__init__()
 
-        self.setWindowTitle("py_rme_canary (PyQt6) – Map Editor")
+        self.setWindowTitle("Noct Map Editor")
+        self.setWindowIcon(load_icon("logo_axolotl"))
         self.resize(1280, 860)
 
         self.brush_mgr = BrushManager.from_json_file(os.path.join("data", "brushes.json"))

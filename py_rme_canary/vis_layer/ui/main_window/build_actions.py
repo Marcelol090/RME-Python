@@ -392,6 +392,31 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_toggle_dark_mode.setShortcut(QKeySequence("Ctrl+Shift+D"))
     editor.act_toggle_dark_mode.toggled.connect(lambda v: window_tools.toggle_dark_mode(editor, v))
 
+    # Theme presets (Noct Map Editor)
+    editor.act_theme_noct_green_glass = QAction("Noct Green Glass", editor)
+    editor.act_theme_noct_green_glass.setCheckable(True)
+    editor.act_theme_noct_green_glass.triggered.connect(
+        lambda _c=False: window_tools.set_theme(editor, "noct_green_glass")
+    )
+
+    editor.act_theme_noct_8bit_glass = QAction("Noct 8-bit Glass", editor)
+    editor.act_theme_noct_8bit_glass.setCheckable(True)
+    editor.act_theme_noct_8bit_glass.triggered.connect(
+        lambda _c=False: window_tools.set_theme(editor, "noct_8bit_glass")
+    )
+
+    editor.act_theme_noct_liquid_glass = QAction("Noct Liquid Glass", editor)
+    editor.act_theme_noct_liquid_glass.setCheckable(True)
+    editor.act_theme_noct_liquid_glass.triggered.connect(
+        lambda _c=False: window_tools.set_theme(editor, "noct_liquid_glass")
+    )
+
+    editor.theme_group = QActionGroup(editor)
+    editor.theme_group.setExclusive(True)
+    editor.theme_group.addAction(editor.act_theme_noct_green_glass)
+    editor.theme_group.addAction(editor.act_theme_noct_8bit_glass)
+    editor.theme_group.addAction(editor.act_theme_noct_liquid_glass)
+
     editor.act_only_show_modified = QAction("Only show Modified", editor)
     editor.act_only_show_modified.setCheckable(True)
     editor.act_only_show_modified.setShortcut(QKeySequence("Ctrl+M"))

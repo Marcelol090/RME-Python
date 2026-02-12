@@ -13,6 +13,7 @@
 - Jules linear scheduler workflow: `py_rme_canary/docs/Reference/Guides/jules_linear_scheduler_workflow.md`
 - Rust acceleration bridge: `py_rme_canary/docs/Reference/Guides/rust_acceleration_bridge.md`
 - Release channel updates: `py_rme_canary/docs/Reference/Guides/release_update_channels_guide.md`
+- UIxWidget branch policy: `py_rme_canary/docs/Reference/Guides/UIXWIDGET_BRANCH_POLICY.md`
 
 ## Engineering Direction
 
@@ -20,6 +21,12 @@
 2. Move only profiled CPU-bound loops to Rust through narrow interfaces.
 3. Maintain deterministic behavior with and without optional accelerators.
 4. Enforce checksum-first release manifests and rollback metadata.
+
+## Branch Focus Policy
+
+- `UixWidget`: only UI/UX, Widget and Render-facing work.
+- `development`: receives stable tested batches from `UixWidget`.
+- `main`: receives approved merges from `development`.
 
 ## Quality Workflow
 

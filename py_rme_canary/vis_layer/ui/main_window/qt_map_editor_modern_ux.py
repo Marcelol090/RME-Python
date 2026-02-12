@@ -97,6 +97,8 @@ class QtMapEditorModernUXMixin:
         self._setup_clipboard()
         self._setup_recent_files()
         self._setup_modern_actions()
+        if hasattr(self, "_apply_editor_theme_profile"):
+            self._apply_editor_theme_profile()
 
         self._modern_ux_initialized = True
         logger.info("Modern UX fully initialized")

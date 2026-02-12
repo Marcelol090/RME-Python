@@ -1806,3 +1806,61 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `./.venv/bin/pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **15 passed**
 - `./.venv/bin/pytest -q -s py_rme_canary/tests/unit/logic_layer/test_selection_modes.py` -> **15 passed**
 - `PYTHON_BIN=.venv/bin/python bash py_rme_canary/quality-pipeline/quality_lf.sh --verbose` -> **concluído (dry-run), com alerts de ferramentas opcionais ausentes e erros de tipagem preexistentes no mypy fora deste escopo**
+
+---
+
+## Sessão 2026-02-12: Noct Theme Suite (3 estilos) + perfil UI/UX por tema
+
+### Objetivo
+- Implementar três temas completos do editor com identidade `Noct Map Editor` e logo axolotl:
+  - `Noct Green Glass`
+  - `Noct 8-bit Glass`
+  - `Noct Liquid Glass`
+- Cada tema com impacto em:
+  - componentes UI/UX,
+  - tools/painéis,
+  - brush defaults,
+  - cursor visual.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/theme/__init__.py`
+  - adicionados 3 token sets Noct (`noct_green_glass`, `noct_8bit_glass`, `noct_liquid_glass`);
+  - adicionado `THEME_PROFILES` com perfil de UX por tema (brush size/shape/variation, palette icons, cursor style, branding);
+  - `ThemeManager` passou a expor `profile` e aplicar tipografia/theme-specific borders.
+- `py_rme_canary/vis_layer/ui/theme/colors.py`
+  - helper de cores migrou para resolução dinâmica via tema ativo (não mais fixo em `ModernTheme`).
+- `py_rme_canary/vis_layer/ui/theme/integration.py`
+  - `apply_modern_theme` agora aplica tema ativo via `ThemeManager`.
+- `py_rme_canary/vis_layer/ui/overlays/brush_cursor.py`
+  - cursor agora lê profile do tema e muda visual para estilos (`neon_ring`, `pixel_cross`, `liquid_blob`).
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - adicionadas ações checkáveis exclusivas:
+    - `act_theme_noct_green_glass`
+    - `act_theme_noct_8bit_glass`
+    - `act_theme_noct_liquid_glass`
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - adicionado submenu `Window > Themes`.
+- `py_rme_canary/vis_layer/ui/main_window/menubar/window/tools.py`
+  - novo dispatcher `set_theme(...)`.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - novas rotas:
+    - `_set_editor_theme(theme_name)`
+    - `_apply_editor_theme_profile()`
+  - tema agora aplica também brush/tool profile e sincroniza estados das ações de tema.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_modern_ux.py`
+  - aplica profile de tema após setup de overlays/actions.
+- Branding:
+  - `py_rme_canary/vis_layer/ui/main_window/editor.py` -> título/ícone da janela para Noct.
+  - `py_rme_canary/vis_layer/ui/dialogs/welcome_dialog.py` -> marca `Noct Map Editor` + tagline `Powered by Axolotl Engine`.
+  - `py_rme_canary/vis_layer/ui/dialogs/about.py` -> título/descrição alinhados ao Noct.
+  - `py_rme_canary/vis_layer/ui/resources/icons/logo_axolotl.svg` -> novo asset de logo.
+
+### Testes
+- `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+  - `test_window_menu_exposes_noct_theme_presets`
+  - `test_theme_switch_updates_exclusive_actions`
+
+### Validação
+- `ruff check` nos arquivos alterados -> **OK**
+- `python -m py_compile` nos arquivos alterados -> **OK**
+- `pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**

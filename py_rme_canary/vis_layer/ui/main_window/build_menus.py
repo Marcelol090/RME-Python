@@ -281,6 +281,11 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_window.addAction(editor.act_palette_large_icons)
     if hasattr(editor, "act_toggle_dark_mode"):
         m_window.addAction(editor.act_toggle_dark_mode)
+    if hasattr(editor, "act_theme_noct_green_glass"):
+        m_theme = m_window.addMenu("Themes")
+        m_theme.addAction(editor.act_theme_noct_green_glass)
+        m_theme.addAction(editor.act_theme_noct_8bit_glass)
+        m_theme.addAction(editor.act_theme_noct_liquid_glass)
 
     # ---- Mirror Menu (PyRME extension) ----
     m_mirror = mb.addMenu(load_icon("menu_mirror"), "Mirror")
