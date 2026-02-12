@@ -1700,3 +1700,25 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **14 passed**
+
+---
+
+## Sessão 2026-02-11: TileContextMenu `Copy Position` selection gating
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - `Copy Position` é habilitado por `anything_selected`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `Copy Position (x, y, z)` no `TileContextMenu` agora exige seleção ativa (`has_selection=True`).
+  - Também respeita `can_copy_position` quando callback de gate existir.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - adicionado `test_tile_context_menu_disables_copy_position_without_selection`.
+  - adicionado `test_tile_context_menu_enables_copy_position_with_selection`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **16 passed**

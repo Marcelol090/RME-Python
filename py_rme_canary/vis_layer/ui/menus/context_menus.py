@@ -193,7 +193,11 @@ class TileContextMenu:
         # Navigation
         if tile:
             pos = f"({tile.x}, {tile.y}, {tile.z})"
-            builder.add_action(f"Copy Position {pos}", cb("copy_position"))
+            builder.add_action(
+                f"Copy Position {pos}",
+                cb("copy_position"),
+                enabled=bool(has_selection and _action_enabled("copy_position")),
+            )
 
         builder.add_action("Go To Position...", cb("goto"))
 

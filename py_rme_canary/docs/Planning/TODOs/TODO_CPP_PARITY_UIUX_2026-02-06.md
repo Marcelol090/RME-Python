@@ -591,3 +591,7 @@
 ## Incremental Update (2026-02-11 - TileContextMenu properties gating)
 - `Properties...` no `TileContextMenu` agora respeita contexto real de tile (ground/item/creature/spawn) antes de habilitar.
 - Ação continua visível, mas desabilitada em tile vazio para paridade com o fluxo legado.
+
+## Incremental Update (2026-02-11 - TileContextMenu copy-position gating)
+- `Copy Position` no `TileContextMenu` agora segue o legado: habilita apenas quando há seleção ativa.
+- Mantido capability gate (`can_copy_position`) quando fornecido.
