@@ -599,3 +599,7 @@
 ## Incremental Update (2026-02-11 - TileContextMenu edit-action selection gating)
 - `Copy`, `Cut` e `Delete` no topo do `TileContextMenu` agora seguem estritamente o estado de seleção (`has_selection`), como no legado C++.
 - `Paste` permanece condicionado a `can_paste` + capability gate.
+
+## Incremental Update (2026-02-11 - TileContextMenu replace-tiles parity)
+- Adicionada ação `Replace tiles...` no `TileContextMenu` clássico quando há seleção ativa, alinhando com legado e com menu unificado.
+- `qt_map_editor_modern_ux._setup_context_menus()` agora injeta callbacks `selection_replace_tiles` e `can_selection_replace_tiles` para esse fluxo.

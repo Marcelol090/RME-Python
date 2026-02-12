@@ -1747,3 +1747,27 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **18 passed**
+
+---
+
+## Sessão 2026-02-11: `Replace tiles...` parity in TileContextMenu classic flow
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - `Replace tiles...` é oferecido quando há seleção ativa.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `TileContextMenu` agora mostra `Replace tiles...` quando `has_selection` e `can_selection_replace_tiles` permitem.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_modern_ux.py`
+  - adicionados callbacks no setup de context menu:
+    - `selection_replace_tiles` -> `_replace_items_on_selection()`
+    - `can_selection_replace_tiles` -> `session.has_selection()`
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - adicionado `test_tile_context_menu_shows_replace_tiles_with_selection`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **19 passed**

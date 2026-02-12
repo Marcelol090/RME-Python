@@ -200,6 +200,42 @@ def test_tile_context_menu_enables_copy_cut_delete_with_selection(monkeypatch: p
     assert states["Paste"] is True
 
 
+def test_tile_context_menu_shows_replace_tiles_with_selection(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(menus_module, "ContextMenuBuilder", _FakeBuilder)
+    callbacks = {
+        "copy": lambda: None,
+        "cut": lambda: None,
+        "paste": lambda: None,
+        "can_paste": lambda: True,
+        "delete": lambda: None,
+        "selection_replace_tiles": lambda: None,
+        "can_selection_replace_tiles": lambda: True,
+        "select_all": lambda: None,
+        "deselect": lambda: None,
+        "properties": lambda: None,
+        "browse_tile": lambda: None,
+        "set_waypoint": lambda: None,
+        "delete_waypoint": lambda: None,
+        "has_waypoint": lambda: False,
+        "set_monster_spawn": lambda: None,
+        "set_npc_spawn": lambda: None,
+        "delete_spawn": lambda: None,
+        "assign_house": lambda: None,
+        "copy_position": lambda: None,
+        "goto": lambda: None,
+    }
+
+    menu = menus_module.TileContextMenu(None)
+    menu.set_callbacks(callbacks)
+    menu.show_for_tile(tile=Tile(x=1, y=2, z=7, items=[Item(id=100)]), has_selection=True)
+
+    builder = _FakeBuilder.last
+    assert builder is not None
+    replace_entries = [entry for entry in builder.actions if entry[0] == "action" and entry[1] == "Replace tiles..."]
+    assert len(replace_entries) == 1
+    assert replace_entries[0][2] is True
+
+
 def test_tile_context_menu_enables_browse_field_with_selection_even_without_items(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

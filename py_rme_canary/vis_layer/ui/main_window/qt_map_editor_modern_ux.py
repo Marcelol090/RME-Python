@@ -142,6 +142,8 @@ class QtMapEditorModernUXMixin:
                 "paste": lambda: self._do_paste(),
                 "delete": lambda: self._do_delete(),
                 "can_paste": lambda: self.clipboard.can_paste() if self.clipboard else False,
+                "selection_replace_tiles": lambda: self._replace_items_on_selection(),
+                "can_selection_replace_tiles": lambda: self.session.has_selection() if hasattr(self, "session") else False,
                 "select_all": lambda: self._do_select_all(),
                 "deselect": lambda: self._do_deselect(),
                 "properties": lambda: self._show_tile_properties(),

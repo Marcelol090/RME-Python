@@ -91,6 +91,8 @@ class TileContextMenu:
             enabled=bool(can_paste and _action_enabled("paste")),
         )
         builder.add_action("Delete", cb("delete"), "Del", enabled=bool(has_selection and _action_enabled("delete")))
+        if has_selection and _action_enabled("selection_replace_tiles"):
+            builder.add_action("Replace tiles...", cb("selection_replace_tiles"), enabled=True)
 
         builder.add_separator()
 
