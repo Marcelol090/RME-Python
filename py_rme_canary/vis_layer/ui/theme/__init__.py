@@ -175,11 +175,62 @@ NEON_THEME: ThemeTokens = {
     },
 }
 
+
+# Design Tokens - Noct Theme (Axolotl / Deep Sea / Glassmorphism)
+NOCT_THEME: ThemeTokens = {
+    "color": {
+        "brand": {
+            "primary": "#2DD4BF",  # Teal 400 (Axolotl Teal)
+            "secondary": "#14B8A6",  # Teal 500
+            "active": "#5EEAD4",  # Teal 300
+        },
+        "surface": {
+            "primary": "rgba(15, 23, 42, 0.9)",  # Slate 900 Glass
+            "secondary": "rgba(30, 41, 59, 0.7)",  # Slate 800 Glass
+            "tertiary": "rgba(51, 65, 85, 0.4)",  # Slate 700 Glass
+            "elevated": "rgba(15, 23, 42, 0.98)",  # Nearly opaque
+            "overlay": "rgba(15, 23, 42, 0.8)",  # Dark overlay
+        },
+        "text": {
+            "primary": "#F1F5F9",  # Slate 100
+            "secondary": "#94A3B8",  # Slate 400
+            "tertiary": "#64748B",  # Slate 500
+            "disabled": "#475569",  # Slate 600
+        },
+        "border": {
+            "default": "rgba(45, 212, 191, 0.2)",  # Teal glow
+            "strong": "rgba(45, 212, 191, 0.5)",
+            "interactive": "#2DD4BF",
+        },
+        "state": {
+            "hover": "rgba(45, 212, 191, 0.15)",
+            "active": "rgba(45, 212, 191, 0.25)",
+            "error": "#F43F5E",  # Rose 500
+        },
+    },
+    "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48,
+    },
+    "radius": {
+        "sm": 4,
+        "md": 8,
+        "lg": 12,
+        "xl": 16,
+        "round": 9999,
+    },
+}
+
 # Theme registry
 THEME_TOKENS: dict[str, ThemeTokens] = {
     "dark": DARK_THEME,
     "light": LIGHT_THEME,
     "neon": NEON_THEME,
+    "noct": NOCT_THEME,
 }
 
 
@@ -189,7 +240,7 @@ class ThemeManager:
     """
 
     _instance: ThemeManager | None = None
-    _current_theme: str = "dark"
+    _current_theme: str = "noct"
 
     def __new__(cls) -> ThemeManager:
         if cls._instance is None:
