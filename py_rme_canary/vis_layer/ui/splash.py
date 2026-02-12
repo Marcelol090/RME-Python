@@ -16,6 +16,8 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QApplication, QSplashScreen, QWidget
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 _SPLASH_WIDTH = 520
 _SPLASH_HEIGHT = 320
 
@@ -28,33 +30,44 @@ def _create_splash_pixmap() -> QPixmap:
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+    tm = get_theme_manager()
+    c = tm.tokens["color"]
+    # Fallback to hardcoded if tokens fail or are missing (safety)
+    primary_surface = c["surface"].get("primary", "#0F172A")
+    secondary_surface = c["surface"].get("secondary", "#1E293B")
+    accent_color = c["brand"].get("primary", "#2DD4BF")
+    text_color = c["text"].get("primary", "#F1F5F9")
+    sub_text_color = c["text"].get("secondary", "#94A3B8")
+
     # Background gradient
     grad = QLinearGradient(0, 0, 0, _SPLASH_HEIGHT)
-    grad.setColorAt(0.0, QColor(30, 30, 46))
-    grad.setColorAt(0.5, QColor(24, 24, 37))
-    grad.setColorAt(1.0, QColor(17, 17, 27))
+    grad.setColorAt(0.0, QColor(secondary_surface))
+    grad.setColorAt(0.5, QColor(primary_surface))
+    grad.setColorAt(1.0, QColor(c["surface"].get("elevated", "#020617")))
+
     painter.setBrush(grad)
     painter.setPen(Qt.PenStyle.NoPen)
     painter.drawRoundedRect(0, 0, _SPLASH_WIDTH, _SPLASH_HEIGHT, 16, 16)
 
-    # Accent line
+    # Accent line (Teal/Green gradient for Noct theme)
     accent_grad = QLinearGradient(0, 0, _SPLASH_WIDTH, 0)
-    accent_grad.setColorAt(0.0, QColor(137, 180, 250))   # blue
-    accent_grad.setColorAt(0.5, QColor(166, 227, 161))   # green
-    accent_grad.setColorAt(1.0, QColor(249, 226, 175))   # yellow
+    accent_grad.setColorAt(0.0, QColor(accent_color))
+    accent_grad.setColorAt(0.5, QColor(c["brand"].get("secondary", "#14B8A6")))
+    accent_grad.setColorAt(1.0, QColor(c["brand"].get("active", "#5EEAD4")))
+
     painter.setBrush(accent_grad)
     painter.drawRect(0, _SPLASH_HEIGHT - 4, _SPLASH_WIDTH, 4)
 
     # Title
     title_font = QFont("Segoe UI", 22, QFont.Weight.Bold)
     painter.setFont(title_font)
-    painter.setPen(QColor(205, 214, 244))
+    painter.setPen(QColor(text_color))
     painter.drawText(40, 80, "Canary Map Editor")
 
     # Subtitle
     sub_font = QFont("Segoe UI", 11)
     painter.setFont(sub_font)
-    painter.setPen(QColor(148, 163, 198))
+    painter.setPen(QColor(sub_text_color))
 
     try:
         from py_rme_canary.core.version import get_build_info
@@ -66,11 +79,22 @@ def _create_splash_pixmap() -> QPixmap:
         version_text = ""
     painter.drawText(42, 106, version_text)
 
-    # Decorative Canary icon (simple shape)
+    # Decorative Canary icon (simple shape) - using accent color with transparency
     painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(QColor(249, 226, 175, 40))
+
+    # Parse accent color to get RGBA for transparency
+    base_accent = QColor(accent_color)
+
+    # Outer circle
+    outer_color = QColor(base_accent)
+    outer_color.setAlpha(40)
+    painter.setBrush(outer_color)
     painter.drawEllipse(380, 40, 100, 100)
-    painter.setBrush(QColor(249, 226, 175, 20))
+
+    # Inner circle
+    inner_color = QColor(base_accent)
+    inner_color.setAlpha(20)
+    painter.setBrush(inner_color)
     painter.drawEllipse(360, 60, 140, 140)
 
     painter.end()
@@ -103,10 +127,14 @@ class StartupSplash(QSplashScreen):
         self._phase = text
         self._progress = progress
         self._total = total
+
+        tm = get_theme_manager()
+        accent = tm.tokens["color"]["brand"]["primary"]
+
         self.showMessage(
             self._format_message(),
             int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft),
-            QColor(166, 227, 161),
+            QColor(accent),
         )
         app = QApplication.instance()
         if app is not None:
