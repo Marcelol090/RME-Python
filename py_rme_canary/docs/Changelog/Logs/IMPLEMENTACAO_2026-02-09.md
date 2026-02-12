@@ -1609,3 +1609,24 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` nos arquivos alterados -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **9 passed**
+
+---
+
+## Sessão 2026-02-11: TileContextMenu capability gating parity
+
+### Referência Legacy/Paridade interna
+- Menu unificado (`ItemContextMenu`) já aplicava `can_*` para ações `Select ...`.
+- `TileContextMenu` ainda não aplicava esse gating, causando divergência entre fluxos de popup.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - adicionado helper local `_action_enabled(...)` em `show_for_tile(...)`.
+  - ações `Select Creature/Spawn/RAW/Wallbrush/Groundbrush/Collection/House` agora respeitam `can_*` quando disponível.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - novo `test_tile_context_menu_select_actions_honor_capability_gates`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **10 passed**

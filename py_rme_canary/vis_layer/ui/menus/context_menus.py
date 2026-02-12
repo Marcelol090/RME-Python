@@ -67,6 +67,16 @@ class TileContextMenu:
         self._tile = tile
 
         cb = self._callbacks.get
+        def _action_enabled(key: str, default: bool = True) -> bool:
+            if cb(key) is None:
+                return False
+            gate = cb(f"can_{key}")
+            if gate is None:
+                return bool(default)
+            try:
+                return bool(gate())
+            except Exception:
+                return bool(default)
 
         builder = ContextMenuBuilder(self._parent)
 
@@ -101,19 +111,31 @@ class TileContextMenu:
             ) or cb("select_collection") or cb("select_house"):
                 builder.add_separator()
                 if cb("select_creature"):
-                    builder.add_action("Select Creature", cb("select_creature"))
+                    builder.add_action(
+                        "Select Creature",
+                        cb("select_creature"),
+                        enabled=_action_enabled("select_creature"),
+                    )
                 if cb("select_spawn"):
-                    builder.add_action("Select Spawn", cb("select_spawn"))
+                    builder.add_action("Select Spawn", cb("select_spawn"), enabled=_action_enabled("select_spawn"))
                 if cb("select_raw"):
-                    builder.add_action("Select RAW", cb("select_raw"))
+                    builder.add_action("Select RAW", cb("select_raw"), enabled=_action_enabled("select_raw"))
                 if cb("select_wall"):
-                    builder.add_action("Select Wallbrush", cb("select_wall"))
+                    builder.add_action("Select Wallbrush", cb("select_wall"), enabled=_action_enabled("select_wall"))
                 if cb("select_ground"):
-                    builder.add_action("Select Groundbrush", cb("select_ground"))
+                    builder.add_action(
+                        "Select Groundbrush",
+                        cb("select_ground"),
+                        enabled=_action_enabled("select_ground"),
+                    )
                 if cb("select_collection"):
-                    builder.add_action("Select Collection", cb("select_collection"))
+                    builder.add_action(
+                        "Select Collection",
+                        cb("select_collection"),
+                        enabled=_action_enabled("select_collection"),
+                    )
                 if cb("select_house"):
-                    builder.add_action("Select House", cb("select_house"))
+                    builder.add_action("Select House", cb("select_house"), enabled=_action_enabled("select_house"))
 
             builder.add_separator()
 

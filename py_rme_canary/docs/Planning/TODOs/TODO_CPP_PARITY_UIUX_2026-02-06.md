@@ -573,3 +573,7 @@
 - Sincronizado `TileContextMenu` com o menu unificado para exibir ações legadas `Select ...` quando callbacks existem:
   - `Select Creature`, `Select Spawn`, `Select RAW`, `Select Wallbrush`, `Select Groundbrush`, `Select Collection`, `Select House`.
 - Objetivo: remover divergência de UX entre fluxos de popup de tile.
+
+## Incremental Update (2026-02-11 - TileContextMenu capability gates)
+- `TileContextMenu` passou a respeitar `can_*` para ações `Select ...`, alinhando com o comportamento do menu unificado.
+- Exemplo coberto: `can_select_wall=False` mantém a ação visível porém desabilitada (paridade de UX de capacidade).
