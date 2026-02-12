@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 import json
 import logging
 import os
@@ -215,6 +216,7 @@ def npc_name_for_virtual_id(server_id: int) -> str | None:
     return id_to_name.get(int(sid))
 
 
+@lru_cache(maxsize=1024)
 def _virtual_brush_for_id(server_id: int) -> BrushDefinition | None:
     sid = int(server_id)
 
