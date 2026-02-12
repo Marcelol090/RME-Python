@@ -6,7 +6,7 @@ and other smart context menu logic.
 
 import pytest
 
-from py_rme_canary.core.data.item import Item
+from py_rme_canary.core.data.item import Item, Position
 from py_rme_canary.logic_layer.item_type_detector import (
     DOOR_PAIRS,
     ROTATABLE_SEQUENCES,
@@ -137,10 +137,18 @@ class TestTeleportDetection:
         if not hasattr(ItemTypeDetector, "get_teleport_destination"):
             pytest.skip("get_teleport_destination not implemented")
 
-        Item(id=1387)
-        # TODO: Set teleport data with destination
-        # dest = ItemTypeDetector.get_teleport_destination(teleport)
-        # assert dest == (x, y, z)
+        teleport = Item(id=1387, destination=Position(x=100, y=200, z=7))
+        dest = ItemTypeDetector.get_teleport_destination(teleport)
+        assert dest == (100, 200, 7)
+
+    def test_get_teleport_destination_none(self):
+        """Test that get_teleport_destination returns None when no destination is set."""
+        if not hasattr(ItemTypeDetector, "get_teleport_destination"):
+            pytest.skip("get_teleport_destination not implemented")
+
+        teleport = Item(id=1387, destination=None)
+        dest = ItemTypeDetector.get_teleport_destination(teleport)
+        assert dest is None
 
 
 class TestHelperMethods:
