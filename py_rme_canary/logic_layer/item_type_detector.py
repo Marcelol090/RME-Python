@@ -54,10 +54,6 @@ DOOR_PAIRS = {
     # Add more door pairs as needed
 }
 
-# Optimized lookup structures for doors
-OPEN_DOOR_IDS = set(DOOR_PAIRS.values())
-REVERSE_DOOR_PAIRS = {v: k for k, v in DOOR_PAIRS.items()}
-
 # Rotatable items (ID sequences)
 ROTATABLE_SEQUENCES = {
     # Torch: 2050 -> 2051 -> 2052 -> 2053 -> 2050
