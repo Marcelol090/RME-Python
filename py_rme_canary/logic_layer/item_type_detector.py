@@ -69,6 +69,17 @@ for _seq in {tuple(s) for s in ROTATABLE_SEQUENCES.values()}:
     for _i, _item_id in enumerate(_seq):
         ROTATION_NEXT_MAP[_item_id] = _seq[(_i + 1) % len(_seq)]
 
+# Category to brush name mapping
+CATEGORY_BRUSH_NAMES = {
+    ItemCategory.WALL: "wall",
+    ItemCategory.CARPET: "carpet",
+    ItemCategory.DOOR: "door",
+    ItemCategory.TABLE: "table",
+    ItemCategory.CHAIR: "chair",
+    ItemCategory.CONTAINER: "container",
+    ItemCategory.TELEPORT: "teleport",
+}
+
 
 class ItemTypeDetector:
     """Detector for item types and smart actions."""
@@ -135,12 +146,8 @@ class ItemTypeDetector:
         if item_id in DOOR_PAIRS:
             return DOOR_PAIRS[item_id]
 
-        # Check if it's an open door (reverse lookup)
-        for closed_id, open_id in DOOR_PAIRS.items():
-            if item_id == open_id:
-                return closed_id
-
-        return None
+        # Check if it's an open door (optimized reverse lookup)
+        return REVERSE_DOOR_PAIRS.get(item_id)
 
     @staticmethod
     def is_door_open(item: Item) -> bool:
@@ -152,9 +159,8 @@ class ItemTypeDetector:
         Returns:
             True if door is open
         """
-        item_id = int(item.id)
-        # If ID is in values of DOOR_PAIRS, it's open
-        return item_id in DOOR_PAIRS.values()
+        # Optimized O(1) membership check
+        return int(item.id) in OPEN_DOOR_IDS
 
     @staticmethod
     def is_rotatable(item: Item) -> bool:
@@ -222,16 +228,7 @@ class ItemTypeDetector:
         Returns:
             Human-readable brush name
         """
-        names = {
-            ItemCategory.WALL: "wall",
-            ItemCategory.CARPET: "carpet",
-            ItemCategory.DOOR: "door",
-            ItemCategory.TABLE: "table",
-            ItemCategory.CHAIR: "chair",
-            ItemCategory.CONTAINER: "container",
-            ItemCategory.TELEPORT: "teleport",
-        }
-        return names.get(category, "item")
+        return CATEGORY_BRUSH_NAMES.get(category, "item")
 
     @staticmethod
     def can_select_brush(item_or_category: Item | ItemCategory) -> bool:
