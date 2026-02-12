@@ -162,9 +162,11 @@ class QtMapEditorToolbarsMixin:
 
         def _sync_toggle(source: QAction, target: QAction) -> None:
             def _apply(checked: bool) -> None:
-                target.blockSignals(True)
-                target.setChecked(bool(checked))
-                target.blockSignals(False)
+                checked_bool = bool(checked)
+                if target.isChecked() == checked_bool:
+                    return
+                # Keep QAction side-effects (backend flag updates) active.
+                target.setChecked(checked_bool)
 
             source.toggled.connect(_apply)
 

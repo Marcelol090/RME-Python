@@ -465,8 +465,8 @@ QMenu::icon {{
 
 /* ==================== Dock Widgets (Glass Title) ==================== */
 QDockWidget {{
-    titlebar-close-icon: url(:/icons/close.svg);
-    titlebar-normal-icon: url(:/icons/float.svg);
+    titlebar-close-icon: none;
+    titlebar-normal-icon: none;
     font-weight: 700;
     color: {c["text"]["secondary"]};
 }}

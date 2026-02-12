@@ -34,6 +34,13 @@ class QtMapEditorBrushesMixin:
         if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_size"):
             self.brush_toolbar.set_size(self.brush_size)
 
+        # Keep menu actions aligned with backend state source-of-truth.
+        with contextlib.suppress(Exception):
+            if hasattr(self, "act_brush_size_decrease"):
+                self.act_brush_size_decrease.setEnabled(int(self.brush_size) > 1)
+            if hasattr(self, "act_brush_size_increase"):
+                self.act_brush_size_increase.setEnabled(int(self.brush_size) < 11)
+
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
         with contextlib.suppress(Exception):
@@ -99,6 +106,16 @@ class QtMapEditorBrushesMixin:
 
         if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_shape"):
             self.brush_toolbar.set_shape(shape)
+
+        with contextlib.suppress(Exception):
+            if hasattr(self, "act_brush_shape_square"):
+                self.act_brush_shape_square.blockSignals(True)
+                self.act_brush_shape_square.setChecked(shape == "square")
+                self.act_brush_shape_square.blockSignals(False)
+            if hasattr(self, "act_brush_shape_circle"):
+                self.act_brush_shape_circle.blockSignals(True)
+                self.act_brush_shape_circle.setChecked(shape == "circle")
+                self.act_brush_shape_circle.blockSignals(False)
 
     def _set_z(self: QtMapEditor, z: int) -> None:
         self.viewport.z = int(z)

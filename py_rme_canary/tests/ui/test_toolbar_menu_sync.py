@@ -65,6 +65,19 @@ def test_window_menu_exposes_tool_options(editor):
     assert "Tool Options" in window_action_texts
 
 
+def test_window_menu_exposes_brush_actions(editor):
+    menubar_actions = editor.menuBar().actions()
+    window_menu = next((action.menu() for action in menubar_actions if action.text() == "Window"), None)
+    assert window_menu is not None
+    brush_menu = next((action.menu() for action in window_menu.actions() if action.text() == "Brush"), None)
+    assert brush_menu is not None
+    labels = {action.text() for action in brush_menu.actions() if action.text()}
+    assert "Brush Size -" in labels
+    assert "Brush Size +" in labels
+    assert "Brush Shape: Square" in labels
+    assert "Brush Shape: Circle" in labels
+
+
 def test_tool_options_action_shows_palette_dock(editor, qtbot):
     editor.dock_palette.hide()
     qtbot.wait(5)

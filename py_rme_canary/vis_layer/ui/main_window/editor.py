@@ -567,8 +567,18 @@ class QtMapEditor(
         self._live_timer.timeout.connect(self._poll_live_events)
         self._live_timer.start()
 
+        # Continuous UI/backend contract verification (with Rust-accelerated signature diff)
+        self._ui_backend_contract_signature: int = 0
+        self._ui_backend_contract_last_repairs_key: str = ""
+        self._ui_backend_contract_last_repairs_signature: int = 0
+        self._ui_backend_contract_timer = QTimer(self)
+        self._ui_backend_contract_timer.setInterval(600)
+        self._ui_backend_contract_timer.timeout.connect(self._verify_ui_backend_contract)
+        self._ui_backend_contract_timer.start()
+
         self._update_brush_label()
         self.apply_ui_state_to_session()
+        self._verify_ui_backend_contract()
         self.act_ghost_higher_floors.setChecked(bool(self.ghost_higher_floors))
         self.act_show_client_box.setChecked(bool(self.show_client_box))
         self.act_show_client_ids.setChecked(bool(self.show_client_ids))

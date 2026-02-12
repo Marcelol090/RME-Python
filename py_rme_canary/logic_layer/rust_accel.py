@@ -281,3 +281,38 @@ def assemble_png_idat(
             except Exception:
                 pass
     return _python_assemble_png_idat(image_data, width, height)
+
+
+# ---------------------------------------------------------------------------
+# 5. Tile position deduplication (render hot path)
+# ---------------------------------------------------------------------------
+
+def _python_dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    seen: set[tuple[int, int, int]] = set()
+    out: list[tuple[int, int, int]] = []
+    for px, py, pz in positions:
+        key = (int(px), int(py), int(pz))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+    return out
+
+
+def dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Deduplicate (x,y,z) positions preserving order; uses Rust backend when available."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "dedupe_positions_3d", None)
+        if fn is not None:
+            try:
+                result = fn(positions)
+                if isinstance(result, list):
+                    out: list[tuple[int, int, int]] = []
+                    for item in result:
+                        if isinstance(item, (tuple, list)) and len(item) == 3:
+                            out.append((int(item[0]), int(item[1]), int(item[2])))
+                    return out
+            except Exception:
+                pass
+    return _python_dedupe_positions_3d(positions)

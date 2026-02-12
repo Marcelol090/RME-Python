@@ -13,6 +13,7 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
+from py_rme_canary.logic_layer.rust_accel import dedupe_positions_3d
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
 from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
@@ -222,15 +223,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             return
 
         def _dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-            seen: set[tuple[int, int, int]] = set()
-            out: list[tuple[int, int, int]] = []
-            for px, py, pz in positions:
-                key = (int(px), int(py), int(pz))
-                if key in seen:
-                    continue
-                seen.add(key)
-                out.append(key)
-            return out
+            return dedupe_positions_3d(positions)
 
         def _union_with_mirror(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
             if not getattr(editor, "mirror_enabled", False) or not editor.has_mirror_axis():

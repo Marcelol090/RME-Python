@@ -1806,3 +1806,311 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `./.venv/bin/pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **15 passed**
 - `./.venv/bin/pytest -q -s py_rme_canary/tests/unit/logic_layer/test_selection_modes.py` -> **15 passed**
 - `PYTHON_BIN=.venv/bin/python bash py_rme_canary/quality-pipeline/quality_lf.sh --verbose` -> **concluído (dry-run), com alerts de ferramentas opcionais ausentes e erros de tipagem preexistentes no mypy fora deste escopo**
+
+---
+
+## Sessão 2026-02-12: Noct Theme Suite (3 estilos) + perfil UI/UX por tema
+
+### Objetivo
+- Implementar três temas completos do editor com identidade `Noct Map Editor` e logo axolotl:
+  - `Noct Green Glass`
+  - `Noct 8-bit Glass`
+  - `Noct Liquid Glass`
+- Cada tema com impacto em:
+  - componentes UI/UX,
+  - tools/painéis,
+  - brush defaults,
+  - cursor visual.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/theme/__init__.py`
+  - adicionados 3 token sets Noct (`noct_green_glass`, `noct_8bit_glass`, `noct_liquid_glass`);
+  - adicionado `THEME_PROFILES` com perfil de UX por tema (brush size/shape/variation, palette icons, cursor style, branding);
+  - `ThemeManager` passou a expor `profile` e aplicar tipografia/theme-specific borders.
+- `py_rme_canary/vis_layer/ui/theme/colors.py`
+  - helper de cores migrou para resolução dinâmica via tema ativo (não mais fixo em `ModernTheme`).
+- `py_rme_canary/vis_layer/ui/theme/integration.py`
+  - `apply_modern_theme` agora aplica tema ativo via `ThemeManager`.
+- `py_rme_canary/vis_layer/ui/overlays/brush_cursor.py`
+  - cursor agora lê profile do tema e muda visual para estilos (`neon_ring`, `pixel_cross`, `liquid_blob`).
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - adicionadas ações checkáveis exclusivas:
+    - `act_theme_noct_green_glass`
+    - `act_theme_noct_8bit_glass`
+    - `act_theme_noct_liquid_glass`
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - adicionado submenu `Window > Themes`.
+- `py_rme_canary/vis_layer/ui/main_window/menubar/window/tools.py`
+  - novo dispatcher `set_theme(...)`.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - novas rotas:
+    - `_set_editor_theme(theme_name)`
+    - `_apply_editor_theme_profile()`
+  - tema agora aplica também brush/tool profile e sincroniza estados das ações de tema.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_modern_ux.py`
+  - aplica profile de tema após setup de overlays/actions.
+- Branding:
+  - `py_rme_canary/vis_layer/ui/main_window/editor.py` -> título/ícone da janela para Noct.
+  - `py_rme_canary/vis_layer/ui/dialogs/welcome_dialog.py` -> marca `Noct Map Editor` + tagline `Powered by Axolotl Engine`.
+  - `py_rme_canary/vis_layer/ui/dialogs/about.py` -> título/descrição alinhados ao Noct.
+  - `py_rme_canary/vis_layer/ui/resources/icons/logo_axolotl.svg` -> novo asset de logo.
+
+### Testes
+- `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+  - `test_window_menu_exposes_noct_theme_presets`
+  - `test_theme_switch_updates_exclusive_actions`
+
+### Validação
+- `ruff check` nos arquivos alterados -> **OK**
+- `python -m py_compile` nos arquivos alterados -> **OK**
+- `pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**
+
+---
+
+## Sessão 2026-02-12: Verificação de contrato Front↔Back (auto-repair) + otimização com Rust hash
+
+### Objetivo
+- Reforçar integração e controle de consistência entre camada UI (front) e sessão/estado (backend).
+- Evitar drift silencioso de estados checkáveis e opções de brush/theme.
+- Minimizar custo de verificação contínua com short-circuit por assinatura.
+
+### Implementação
+- Novo módulo:
+  - `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+  - função principal: `verify_and_repair_ui_backend_contract(editor, last_signature=...)`
+- Checks/repairs cobertos:
+  - `act_automagic` ↔ `automagic_cb`
+  - ações de Selection Depth ↔ `session.get_selection_depth_mode()`
+  - ações de temas Noct ↔ `ThemeManager.current_theme`
+  - `editor.brush_size` ↔ `session.brush_size`
+- Otimização:
+  - assinatura do snapshot de estado via `logic_layer.rust_accel.fnv1a_64` (Rust backend quando disponível; fallback Python automático).
+  - verificação retorna imediatamente quando assinatura não mudou.
+- Integração em runtime:
+  - `editor.py` inicializa timer de contrato (`600ms`) e aplica uma verificação inicial no startup.
+  - `qt_map_editor_session.py` adiciona `_verify_ui_backend_contract()` com status feedback em auto-repair.
+
+### Testes
+- Novo arquivo:
+  - `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+- Cenários:
+  - repara mismatch de automagic e sincroniza brush size com sessão;
+  - força alinhamento de ações de Selection Depth ao modo backend;
+  - valida short-circuit por assinatura (sem retrabalho quando estado não mudou).
+
+### Validação
+- `ruff check` nos arquivos alterados -> **OK**
+- `python -m py_compile` nos arquivos alterados -> **OK**
+- `pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **OK**
+- `pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**
+
+---
+
+## Sessão 2026-02-12: UI↔Backend Contract (fase 2) + hardening de render sync
+
+### Objetivo
+- Aumentar robustez da integração front/back para ações checkáveis de View/Show.
+- Garantir propagação imediata das correções para o renderer.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+  - criada constante `VIEW_FLAG_ACTION_PAIRS` com cobertura ampliada de flags visuais.
+  - snapshot assinado (FNV-1a Rust) passou a incluir toda a matriz de View/Show monitorada.
+  - fluxo de auto-repair:
+    - re-sincroniza `QAction` com flags backend para todos os pares definidos;
+    - chama `drawing_options_coordinator.sync_from_editor()` quando houver reparo;
+    - chama `canvas.update()` quando houver reparo.
+- `py_rme_canary/vis_layer/ui/theme/__init__.py`
+  - removidas dependências de recursos de ícone inexistentes no titlebar dos docks:
+    - `titlebar-close-icon: none`
+    - `titlebar-normal-icon: none`
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+  - adicionados stubs de coordinator/canvas;
+  - novo cenário validando sync de flags extras (`show_grid`, `show_preview`, `show_wall_hooks`);
+  - valida chamada única de `sync_from_editor()` e `canvas.update()` em auto-repair.
+
+### Validação
+- `ruff check py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py py_rme_canary/vis_layer/ui/theme/__init__.py py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py py_rme_canary/vis_layer/ui/theme/__init__.py py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **4 passed**
+
+---
+
+## Sessão 2026-02-12: UI contract feedback dedup (UX anti-spam)
+
+### Objetivo
+- Evitar spam de status bar quando o mesmo auto-repair é detectado repetidamente pelo timer de contrato.
+- Manter feedback útil, mas estável e legível para o usuário.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - novo estado `self._ui_backend_contract_last_repairs_key` inicializado no startup.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_verify_ui_backend_contract()` agora:
+    - limpa chave de dedup quando não há repairs;
+    - normaliza/sort/unique dos repairs;
+    - não repete `status.showMessage(...)` se a mesma chave já foi exibida;
+    - resume preview em até 4 itens (`(+N)` para restantes).
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py`
+  - `test_verify_contract_status_is_deduplicated`
+  - `test_verify_contract_status_resets_after_clean_cycle`
+
+### Validação
+- `ruff check` nos arquivos alterados -> **OK**
+- `python -m py_compile` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` -> **6 passed**
+
+---
+
+## Sessão 2026-02-12: Rust-backed dedup signature + normalized repairs
+
+### Objetivo
+- Reduzir custo e ambiguidade da deduplicação de mensagens de auto-repair.
+- Tornar saída do verificador determinística para testes e UX previsível.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - adicionado `self._ui_backend_contract_last_repairs_signature: int = 0`.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_verify_ui_backend_contract()` agora calcula hash Rust (`fnv1a_64`) da chave de repairs;
+  - dedup considera assinatura + chave textual;
+  - ciclo limpo zera assinatura/key de dedup.
+- `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+  - retorno `repairs` normalizado com `sorted(set(...))` antes de devolver ao chamador.
+- Testes:
+  - `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py`
+  - `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+
+### Validação
+- `ruff check` nos arquivos alterados -> **OK**
+- `python -m py_compile` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` -> **6 passed**
+- `./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**
+
+---
+
+## Sessão 2026-02-12: Fix de integração toolbar/menu (indicators) após hardening de contrato
+
+### Problema observado
+- Regressão no teste UI `test_indicator_actions_are_bidirectionally_synced`:
+  - marcar `act_tb_hooks` não atualizava de forma efetiva `act_show_wall_hooks` + flag backend.
+
+### Causa
+- Em `qt_map_editor_toolbars.py`, o bridge `_sync_toggle` usava `blockSignals(True)` ao propagar check state.
+- Isso impedia side-effects do target (handlers de toggle que atualizam flags backend), gerando inconsistência front/back.
+
+### Correção
+- `_sync_toggle` agora:
+  - aplica guard de idempotência (`if target.isChecked() == checked: return`);
+  - propaga com `target.setChecked(...)` sem bloquear sinais.
+- Arquivo: `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py`.
+
+### Validação
+- `ruff check` + `py_compile` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` -> **6 passed**
+- `./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**
+
+---
+
+## Sessão 2026-02-12: Prioridade de mensagens operacionais vs auto-repair
+
+### Objetivo
+- Melhorar UX da status bar para não ocultar mensagens de operação do usuário com avisos periódicos do contrato UI/back.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_verify_ui_backend_contract()` agora consulta `status.currentMessage()`;
+  - se houver mensagem ativa não iniciada por `UI contract auto-repair:`, o aviso de contrato é adiado.
+- Mantido comportamento existente:
+  - deduplicação por assinatura Rust (`fnv1a_64`) e chave normalizada de repairs.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py`
+  - adiciona `currentMessage()` no stub de status;
+  - novo teste `test_verify_contract_does_not_override_operational_status`.
+
+### Validação
+- `ruff check` + `py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **7 passed**
+
+---
+
+## Sessão 2026-02-12: Paridade de ações espelhadas (toolbar/menu) no contrato UI/back
+
+### Objetivo
+- Eliminar drift visual entre toggles de indicator na toolbar e no menu quando eventos assíncronos alteram estado.
+
+### Implementação
+- `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+  - adicionada matriz `MIRRORED_ACTION_PAIRS` para indicators toolbar/menu;
+  - snapshot de assinatura agora inclui estados desses pares;
+  - auto-repair sincroniza toolbar actions para o estado canônico do menu/backend.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+  - novo teste `test_ui_backend_contract_syncs_toolbar_menu_mirrors`.
+
+### Validação
+- `ruff check` + `py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` -> **8 passed**
+- `./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**
+
+---
+
+## Sessão 2026-02-12: Jules via request GET + prompt detalhado UI/UX (UixWidget)
+
+### Ações executadas
+- Conectividade/API:
+  - `python3 py_rme_canary/scripts/jules_runner.py --project-root . check --source sources/github/Marcelol090/RME-Python` -> **ok**
+- Sessões:
+  - `list-sessions` retornou sessões existentes (30).
+- Request de sugestões:
+  - `generate-suggestions` executado com branch `UixWidget`, task detalhada e `--fetch-web-updates` (GET de refs Jules);
+  - sessão evidenciada no contrato: `sessions/9800557048120968367`.
+- Prompt detalhado adicional:
+  - `send-stitch-prompt sessions/9800557048120968367 ...` enviado com exigência explícita de MCP `Stitch + Render + Context7` e foco no contrato front/back da branch.
+- GET de acompanhamento:
+  - `session-status` e `list_session_activities` executados para buscar respostas/sugestões mais recentes.
+
+### Resultado observado
+- Até o momento da coleta, a atividade disponível via GET continha mensagens `userMessaged`; não havia bloco novo de `suggested_next` retornado pelo agente.
+- Artefatos registrados em `.quality_reports/` e `reports/jules/` para auditoria e re-poll posterior.
+
+---
+
+## Sessão 2026-02-12: Implementação do plano P1/P2/P3 (Brush + Render + Menu parity)
+
+### Escopo executado
+- **P1** Front-back contract (brush):
+  - `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+    - reforço para sincronizar `BrushToolbar` (`_size`, `_shape`, `_automagic`) com estado canônico de editor/session/actions.
+- **P2** Render optimization (Rust-backed dedupe):
+  - `py_rme_canary/logic_layer/rust_accel.py`
+    - nova API `dedupe_positions_3d(...)` (Rust opcional + fallback Python estável).
+  - `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+    - `_dedupe_positions(...)` do footprint migrado para `dedupe_positions_3d(...)`.
+- **P3** Toolbar-menu parity para brush:
+  - `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+    - novas ações de menu para brush size/shape.
+  - `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+    - novo submenu `Window > Brush`.
+  - `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py`
+    - sync adicional das ações ao aplicar `_set_brush_size/_set_brush_shape`.
+
+### Testes
+- Novo arquivo:
+  - `py_rme_canary/tests/ui/test_brush_sync.py`
+    - valida sync backend -> toolbar e menu actions -> backend+toolbar.
+- Expansões:
+  - `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+    - valida exposição do submenu `Window > Brush`.
+  - `py_rme_canary/tests/unit/logic_layer/test_rust_accel.py`
+    - casos para `dedupe_positions_3d` (fallback e backend path).
+  - `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+    - caso para sync de `BrushToolbar` via contrato.
+
+### Validação executada
+- `ruff check ...` nos arquivos alterados -> **OK**
+- `python3 -m py_compile ...` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` -> **34 passed**
+- `./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py py_rme_canary/tests/ui/test_brush_sync.py` -> **22 passed**
