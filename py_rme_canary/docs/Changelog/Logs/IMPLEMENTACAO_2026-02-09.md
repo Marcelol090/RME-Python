@@ -1630,3 +1630,24 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **10 passed**
+
+---
+
+## Sessão 2026-02-11: TileContextMenu `Browse Field` capability gating
+
+### Referência de paridade interna
+- `ItemContextMenu` já aplica `can_*` em ações contextuais; `TileContextMenu` estava sem o gate para `Browse Field`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `Browse Field` agora exige:
+    - contexto válido (`has_selection` ou tile com ground/items), e
+    - capability `can_browse_tile` quando callback de gate existir.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - novo `test_tile_context_menu_disables_browse_field_when_capability_gate_is_false`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **11 passed**

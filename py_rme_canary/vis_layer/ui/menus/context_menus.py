@@ -103,7 +103,12 @@ class TileContextMenu:
 
             # Legacy parity label uses "Browse Field"
             has_items = tile.ground is not None or (tile.items and len(tile.items) > 0)
-            builder.add_action("Browse Field", cb("browse_tile"), enabled=bool(has_selection or has_items))
+            can_browse = _action_enabled("browse_tile")
+            builder.add_action(
+                "Browse Field",
+                cb("browse_tile"),
+                enabled=bool((has_selection or has_items) and can_browse),
+            )
 
             # Legacy select actions when supported by callbacks.
             if cb("select_creature") or cb("select_spawn") or cb("select_raw") or cb("select_wall") or cb(

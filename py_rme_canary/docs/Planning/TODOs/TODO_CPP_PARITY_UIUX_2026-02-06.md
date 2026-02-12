@@ -577,3 +577,7 @@
 ## Incremental Update (2026-02-11 - TileContextMenu capability gates)
 - `TileContextMenu` passou a respeitar `can_*` para ações `Select ...`, alinhando com o comportamento do menu unificado.
 - Exemplo coberto: `can_select_wall=False` mantém a ação visível porém desabilitada (paridade de UX de capacidade).
+
+## Incremental Update (2026-02-11 - TileContextMenu browse capability gate)
+- `TileContextMenu` passou a aplicar `can_browse_tile` (quando presente) para `Browse Field`.
+- Mantido requisito de contexto (`has_selection` ou tile com itens/ground), agora combinado com capability gate para consistência com menu unificado.
