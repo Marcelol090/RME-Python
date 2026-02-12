@@ -563,3 +563,8 @@
     - `Select Collection`
 - Backend (`ContextMenuActionHandlers.get_tile_context_callbacks`) passou a expor callbacks dessas ações com detecção de brush por contexto do tile (top item/ground + brush manager).
 - Mantido comportamento de `Select Creature/Spawn/House` já existente.
+
+## Incremental Update (2026-02-11 - TileContextMenu browse gating parity)
+- Ajustado `TileContextMenu.show_for_tile(...)` para habilitar `Browse Field` quando há seleção ativa **mesmo sem itens/ground** no tile.
+- Alinhamento com o comportamento legado baseado em `anything_selected`.
+- Cobertura adicionada em `tests/unit/vis_layer/ui/test_context_menus_select_actions.py`.

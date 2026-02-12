@@ -128,6 +128,41 @@ def test_tile_context_menu_uses_browse_field_label(monkeypatch: pytest.MonkeyPat
     assert "Browse Field" in labels
 
 
+def test_tile_context_menu_enables_browse_field_with_selection_even_without_items(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(menus_module, "ContextMenuBuilder", _FakeBuilder)
+    callbacks = {
+        "copy": lambda: None,
+        "cut": lambda: None,
+        "paste": lambda: None,
+        "delete": lambda: None,
+        "select_all": lambda: None,
+        "deselect": lambda: None,
+        "properties": lambda: None,
+        "browse_tile": lambda: None,
+        "set_waypoint": lambda: None,
+        "delete_waypoint": lambda: None,
+        "has_waypoint": lambda: False,
+        "set_monster_spawn": lambda: None,
+        "set_npc_spawn": lambda: None,
+        "delete_spawn": lambda: None,
+        "assign_house": lambda: None,
+        "copy_position": lambda: None,
+        "goto": lambda: None,
+    }
+
+    menu = menus_module.TileContextMenu(None)
+    menu.set_callbacks(callbacks)
+    menu.show_for_tile(tile=Tile(x=1, y=2, z=7, ground=None, items=[]), has_selection=True)
+
+    builder = _FakeBuilder.last
+    assert builder is not None
+    browse_entries = [entry for entry in builder.actions if entry[0] == "action" and entry[1] == "Browse Field"]
+    assert len(browse_entries) == 1
+    assert browse_entries[0][2] is True
+
+
 def test_item_context_menu_disables_top_copy_position_without_selection(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(menus_module, "ContextMenuBuilder", _FakeBuilder)
     callbacks = _base_callbacks()

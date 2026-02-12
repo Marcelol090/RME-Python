@@ -1562,3 +1562,25 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `python3 -m py_compile` nos 4 arquivos alterados -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **7 passed**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py` -> bloqueado por baseline de ambiente Python 3.10 em `py_rme_canary/logic_layer/sprite_cache.py:55` (`class LRUCache[T]:`, sintaxe 3.12+).
+
+---
+
+## Sessão 2026-02-11: TileContextMenu `Browse Field` gating parity
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - `Browse Field` habilitado por `anything_selected` no contexto de popup.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `TileContextMenu.show_for_tile(...)` agora habilita `Browse Field` quando:
+    - há seleção ativa (`has_selection=True`), ou
+    - o tile possui ground/items.
+
+### Testes
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+  - novo teste `test_tile_context_menu_enables_browse_field_with_selection_even_without_items`.
+
+### Validação
+- `ruff check` + `python3 -m py_compile` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **8 passed**
