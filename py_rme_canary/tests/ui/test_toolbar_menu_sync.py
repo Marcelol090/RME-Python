@@ -85,10 +85,15 @@ def test_view_menu_exposes_show_client_ids(editor):
 
 def test_legacy_view_show_labels_are_aligned(editor):
     assert editor.act_show_all_floors.text() == "Show all Floors"
+    assert editor.act_show_as_minimap.text() == "Show as Minimap"
+    assert editor.act_only_show_colors.text() == "Only show Colors"
+    assert editor.act_only_show_modified.text() == "Only show Modified"
     assert editor.act_show_grid.text() == "Show grid"
     assert editor.act_show_tooltips.text() == "Show tooltips"
     assert editor.act_show_light_strength.text() == "Show Light Strength"
     assert editor.act_show_technical_items.text() == "Show Technical Items"
+    assert editor.act_show_monsters.text() == "Show creatures"
+    assert editor.act_show_monsters_spawns.text() == "Show spawns"
     assert editor.act_highlight_items.text() == "Highlight Items"
     assert editor.act_highlight_locked_doors.text() == "Highlight Locked Doors"
     assert editor.act_show_wall_hooks.text() == "Show Wall Hooks"

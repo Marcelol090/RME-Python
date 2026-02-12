@@ -337,12 +337,12 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_highlight_items.setShortcut(QKeySequence("V"))
     editor.act_highlight_items.toggled.connect(lambda v: window_tools.set_view_flag(editor, "highlight_items", v))
 
-    editor.act_show_monsters = QAction("Show monsters", editor)
+    editor.act_show_monsters = QAction("Show creatures", editor)
     editor.act_show_monsters.setCheckable(True)
     editor.act_show_monsters.setShortcut(QKeySequence("F"))
     editor.act_show_monsters.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_monsters", v))
 
-    editor.act_show_monsters_spawns = QAction("Show monsters spawns", editor)
+    editor.act_show_monsters_spawns = QAction("Show spawns", editor)
     editor.act_show_monsters_spawns.setCheckable(True)
     editor.act_show_monsters_spawns.setShortcut(QKeySequence("S"))
     editor.act_show_monsters_spawns.toggled.connect(
@@ -376,12 +376,12 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_show_special.setShortcut(QKeySequence("E"))
     editor.act_show_special.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_special", v))
 
-    editor.act_show_as_minimap = QAction(load_icon("action_minimap"), "Show as minimap", editor)
+    editor.act_show_as_minimap = QAction(load_icon("action_minimap"), "Show as Minimap", editor)
     editor.act_show_as_minimap.setCheckable(True)
     editor.act_show_as_minimap.setShortcut(QKeySequence("Shift+E"))
     editor.act_show_as_minimap.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_as_minimap", v))
 
-    editor.act_only_show_colors = QAction("Only show colors", editor)
+    editor.act_only_show_colors = QAction("Only show Colors", editor)
     editor.act_only_show_colors.setCheckable(True)
     editor.act_only_show_colors.setShortcut(QKeySequence("Ctrl+E"))
     editor.act_only_show_colors.toggled.connect(lambda v: window_tools.set_view_flag(editor, "only_show_colors", v))
@@ -392,7 +392,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_toggle_dark_mode.setShortcut(QKeySequence("Ctrl+Shift+D"))
     editor.act_toggle_dark_mode.toggled.connect(lambda v: window_tools.toggle_dark_mode(editor, v))
 
-    editor.act_only_show_modified = QAction("Only show modified", editor)
+    editor.act_only_show_modified = QAction("Only show Modified", editor)
     editor.act_only_show_modified.setCheckable(True)
     editor.act_only_show_modified.setShortcut(QKeySequence("Ctrl+M"))
     editor.act_only_show_modified.toggled.connect(lambda v: window_tools.set_view_flag(editor, "only_show_modified", v))

@@ -544,3 +544,12 @@
   - `Highlight Locked Doors`
   - `Show Wall Hooks`
 - Escopo: somente labels/UX textual; sem alteração de handlers ou regras de negócio.
+
+## Incremental Update (2026-02-11 - View/Show labels parity phase 2)
+- Fechado bloco adicional de labels legados em `build_actions.py`:
+  - `Show as Minimap`
+  - `Only show Colors`
+  - `Only show Modified`
+  - `Show creatures`
+  - `Show spawns`
+- Escopo intencional: apenas paridade textual/UI, sem alterar os handlers já conectados ao backend.

@@ -1508,3 +1508,27 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **ERRO de coleta por baseline existente**:
   - `py_rme_canary/logic_layer/sprite_cache.py:55` usa sintaxe `class LRUCache[T]:` (Python 3.12), incompatível com o ambiente atual Python 3.10.
+
+---
+
+## Sessão 2026-02-11: View/Show label parity phase 2
+
+### Referência Legacy
+- `remeres-map-editor-redux/data/menubar.xml` (itens de `View` e `Show`).
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - labels alinhados para:
+    - `Show as Minimap`
+    - `Only show Colors`
+    - `Only show Modified`
+    - `Show creatures`
+    - `Show spawns`
+- `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+  - expansão do teste `test_legacy_view_show_labels_are_aligned` para cobrir os novos labels.
+
+### Validação
+- `ruff check py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **ERRO de baseline do ambiente**:
+  - `py_rme_canary/logic_layer/sprite_cache.py:55` (`class LRUCache[T]:`) exige Python 3.12+, enquanto o ambiente atual está em Python 3.10.
