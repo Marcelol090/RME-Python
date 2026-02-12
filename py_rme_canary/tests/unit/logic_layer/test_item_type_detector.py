@@ -125,36 +125,26 @@ class TestRotatableItems:
 class TestTeleportDetection:
     """Test teleport-specific methods."""
 
-    @pytest.mark.skipif(not hasattr(ItemTypeDetector, "is_teleport"), reason="is_teleport not implemented")
     def test_is_teleport_positive(self):
         """Test teleport detection returns True for teleport ID."""
         teleport = Item(id=1387)  # Common teleport ID
         assert ItemTypeDetector.is_teleport(teleport) is True
 
-    @pytest.mark.skipif(
-        not hasattr(ItemTypeDetector, "get_teleport_destination"), reason="get_teleport_destination not implemented"
-    )
     def test_get_teleport_destination_with_data(self):
         """Test extracting teleport destination from item data."""
         teleport = Item(id=1387, destination=Position(x=100, y=200, z=7))
         dest = ItemTypeDetector.get_teleport_destination(teleport)
         assert dest == (100, 200, 7)
 
-    @pytest.mark.skipif(
-        not hasattr(ItemTypeDetector, "get_teleport_destination"), reason="get_teleport_destination not implemented"
-    )
     def test_get_teleport_destination_none(self):
         """Test that get_teleport_destination returns None when no destination is set."""
         teleport = Item(id=1387, destination=None)
         dest = ItemTypeDetector.get_teleport_destination(teleport)
         assert dest is None
 
-    @pytest.mark.skipif(
-        not hasattr(ItemTypeDetector, "get_teleport_destination"), reason="get_teleport_destination not implemented"
-    )
     def test_get_teleport_destination_non_teleport(self):
-        """Test that get_teleport_destination returns None for non-teleport items."""
-        item = Item(id=1050)  # Wall
+        """Test that get_teleport_destination returns None for non-teleport items even with destination."""
+        item = Item(id=1050, destination=Position(x=100, y=200, z=7))  # Wall with destination
         dest = ItemTypeDetector.get_teleport_destination(item)
         assert dest is None
 
