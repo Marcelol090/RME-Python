@@ -173,6 +173,10 @@ def test_item_context_menu_tile_mode_shows_legacy_select_actions(monkeypatch: py
         {
             "select_creature": lambda: None,
             "select_spawn": lambda: None,
+            "select_raw": lambda: None,
+            "select_wall": lambda: None,
+            "select_ground": lambda: None,
+            "select_collection": lambda: None,
             "select_house": lambda: None,
             "properties": lambda: None,
             "browse_tile": lambda: None,
@@ -188,7 +192,16 @@ def test_item_context_menu_tile_mode_shows_legacy_select_actions(monkeypatch: py
     labels = [entry[1] for entry in builder.actions if entry[0] == "action"]
     assert "Select Creature" in labels
     assert "Select Spawn" in labels
+    assert "Select RAW" in labels
+    assert "Select Wallbrush" in labels
+    assert "Select Groundbrush" in labels
+    assert "Select Collection" in labels
     assert "Select House" in labels
+
+    assert labels.index("Select Spawn") < labels.index("Select RAW")
+    assert labels.index("Select RAW") < labels.index("Select Wallbrush")
+    assert labels.index("Select Wallbrush") < labels.index("Select Groundbrush")
+    assert labels.index("Select Groundbrush") < labels.index("Select Collection")
 
 
 def test_item_context_menu_tile_mode_enables_browse_field_with_selection_even_without_items(

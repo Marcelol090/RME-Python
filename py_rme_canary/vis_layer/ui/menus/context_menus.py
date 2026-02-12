@@ -235,6 +235,14 @@ class ItemContextMenu:
                 builder.add_action("Select Creature", cb("select_creature"), enabled=True)
             if _action_enabled("select_spawn"):
                 builder.add_action("Select Spawn", cb("select_spawn"), enabled=True)
+            if _action_enabled("select_raw"):
+                builder.add_action("Select RAW", cb("select_raw"), enabled=True)
+            if _action_enabled("select_wall"):
+                builder.add_action("Select Wallbrush", cb("select_wall"), enabled=True)
+            if _action_enabled("select_ground"):
+                builder.add_action("Select Groundbrush", cb("select_ground"), enabled=True)
+            if _action_enabled("select_collection"):
+                builder.add_action("Select Collection", cb("select_collection"), enabled=True)
             if _action_enabled("select_house"):
                 builder.add_action("Select House", cb("select_house"), enabled=True)
             if tile is not None:

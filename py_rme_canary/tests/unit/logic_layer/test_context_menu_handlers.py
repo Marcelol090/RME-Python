@@ -272,6 +272,27 @@ def test_tile_context_callbacks_include_selection_operations(app) -> None:
     assert "selection_replace_tiles" in callbacks
 
 
+def test_tile_context_callbacks_include_legacy_select_brush_keys(app) -> None:
+    editor = _DummyEditor()
+    session = _DummySession(
+        _DummyBrushManager(
+            {
+                301: (301, "ground"),
+                4500: (3000, "wall"),
+            }
+        )
+    )
+    handlers = ContextMenuActionHandlers(editor_session=session, canvas=_DummyCanvas(editor))
+    tile = Tile(x=3, y=4, z=7, ground=Item(id=301), items=[Item(id=4500)])
+
+    callbacks = handlers.get_tile_context_callbacks(tile=tile, position=(3, 4, 7))
+
+    assert "select_raw" in callbacks
+    assert "select_wall" in callbacks
+    assert "select_ground" in callbacks
+    assert "select_collection" in callbacks
+
+
 def test_selection_callbacks_delegate_to_editor_methods(app) -> None:
     editor = _DummyEditor()
     handlers = ContextMenuActionHandlers(canvas=_DummyCanvas(editor))

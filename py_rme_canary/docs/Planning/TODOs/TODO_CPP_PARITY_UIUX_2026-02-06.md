@@ -553,3 +553,13 @@
   - `Show creatures`
   - `Show spawns`
 - Escopo intencional: apenas paridade textual/UI, sem alterar os handlers já conectados ao backend.
+
+## Incremental Update (2026-02-11 - Tile popup select parity phase 3)
+- Fechada lacuna de paridade no popup de tile sem item selecionado (`ItemContextMenu` ramo `item is None`):
+  - adicionadas ações legadas quando disponíveis:
+    - `Select RAW`
+    - `Select Wallbrush`
+    - `Select Groundbrush`
+    - `Select Collection`
+- Backend (`ContextMenuActionHandlers.get_tile_context_callbacks`) passou a expor callbacks dessas ações com detecção de brush por contexto do tile (top item/ground + brush manager).
+- Mantido comportamento de `Select Creature/Spawn/House` já existente.

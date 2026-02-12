@@ -1232,6 +1232,37 @@ class ContextMenuActionHandlers:
             "properties": lambda: self.open_tile_properties(tile, position),
         }
         if tile is not None:
+            top_item: Item | None = None
+            top_first = self._tile_items_top_first(tile)
+            if top_first:
+                top_item = top_first[0]
+            elif getattr(tile, "ground", None) is not None:
+                top_item = getattr(tile, "ground", None)
+
+            if top_item is not None:
+                callbacks["select_raw"] = lambda item=top_item: self.select_raw_brush(item)
+
+                if self._has_brush_type(tile=tile, item=top_item, wanted_types={"wall"}):
+                    callbacks["select_wall"] = lambda item=top_item: self.select_wall_brush(item=item, tile=tile)
+
+                if self._has_brush_type(
+                    tile=tile,
+                    item=top_item,
+                    wanted_types={"ground", "terrain"},
+                    include_ground=True,
+                ):
+                    callbacks["select_ground"] = lambda item=top_item: self.select_ground_brush(item=item, tile=tile)
+
+                if self._has_brush_type(
+                    tile=tile,
+                    item=top_item,
+                    wanted_types={"wall", "table", "carpet", "doodad", "door", "ground", "terrain"},
+                    include_ground=True,
+                ):
+                    callbacks["select_collection"] = (
+                        lambda item=top_item: self.select_collection_brush(item=item, tile=tile)
+                    )
+
             has_creature = bool((getattr(tile, "monsters", []) or []) or getattr(tile, "npc", None) is not None)
             if has_creature:
                 callbacks["select_creature"] = lambda: self.select_creature_brush(tile=tile)

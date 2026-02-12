@@ -1532,3 +1532,33 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **ERRO de baseline do ambiente**:
   - `py_rme_canary/logic_layer/sprite_cache.py:55` (`class LRUCache[T]:`) exige Python 3.12+, enquanto o ambiente atual está em Python 3.10.
+
+---
+
+## Sessão 2026-02-11: Tile popup select parity phase 3 (legacy `map_popup_menu.cpp`)
+
+### Referência Legacy
+- `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - em contexto de tile sem item selecionado, o popup mantém opções `Select RAW/Wallbrush/Groundbrush/Collection` quando o tile suporta.
+
+### Implementação no Python
+- `py_rme_canary/logic_layer/context_menu_handlers.py`
+  - `get_tile_context_callbacks(...)` agora inclui callbacks condicionais para:
+    - `select_raw`
+    - `select_wall`
+    - `select_ground`
+    - `select_collection`
+  - Resolução baseada no contexto do tile (top item ou ground) + tipos de brush resolvidos por `brush_manager`.
+- `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - no ramo de tile sem item (`item is None`), adicionadas as ações legadas acima na ordem esperada do popup.
+- Testes:
+  - `py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py`
+    - adicionado `test_tile_context_callbacks_include_legacy_select_brush_keys`.
+  - `py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py`
+    - ampliado `test_item_context_menu_tile_mode_shows_legacy_select_actions` para cobrir presença/ordem de `Select RAW/Wallbrush/Groundbrush/Collection`.
+
+### Validação
+- `ruff check` nos 4 arquivos alterados -> **OK**
+- `python3 -m py_compile` nos 4 arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **7 passed**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/logic_layer/test_context_menu_handlers.py` -> bloqueado por baseline de ambiente Python 3.10 em `py_rme_canary/logic_layer/sprite_cache.py:55` (`class LRUCache[T]:`, sintaxe 3.12+).
