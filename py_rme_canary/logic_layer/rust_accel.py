@@ -281,3 +281,35 @@ def assemble_png_idat(
             except Exception:
                 pass
     return _python_assemble_png_idat(image_data, width, height)
+
+
+# ---------------------------------------------------------------------------
+# 5. Position Deduplication (NEW)
+# ---------------------------------------------------------------------------
+
+def _python_dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Pure Python position deduplication (order-preserving)."""
+    seen: set[tuple[int, int, int]] = set()
+    out: list[tuple[int, int, int]] = []
+    for px, py, pz in positions:
+        key = (int(px), int(py), int(pz))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+    return out
+
+
+def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Deduplicate positions — uses Rust backend when available."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "dedupe_positions", None)
+        if fn is not None:
+            try:
+                result = fn(positions)
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+    return _python_dedupe_positions(positions)

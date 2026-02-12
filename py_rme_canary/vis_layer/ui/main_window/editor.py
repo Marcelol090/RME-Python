@@ -340,6 +340,7 @@ class QtMapEditor(
 
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+        self.session.on_brush_size_changed = self._on_session_brush_size_changed
 
         self.viewport = Viewport()
         self.current_path: str | None = None

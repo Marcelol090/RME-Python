@@ -74,6 +74,19 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_edit.addAction(editor.act_replace_items)
     m_edit.addSeparator()
 
+    # Brush submenu
+    m_brush = m_edit.addMenu("Brush")
+    if hasattr(editor, "act_brush_size_inc"):
+        m_brush.addAction(editor.act_brush_size_inc)
+    if hasattr(editor, "act_brush_size_dec"):
+        m_brush.addAction(editor.act_brush_size_dec)
+    m_brush.addSeparator()
+    if hasattr(editor, "act_brush_variation_next"):
+        m_brush.addAction(editor.act_brush_variation_next)
+    if hasattr(editor, "act_brush_variation_prev"):
+        m_brush.addAction(editor.act_brush_variation_prev)
+    m_brush.addSeparator()
+
     # Border Options submenu (C++ Edit > Border Options)
     m_border = m_edit.addMenu("Border Options")
     m_border.addAction(editor.act_automagic)

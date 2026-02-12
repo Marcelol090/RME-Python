@@ -22,9 +22,13 @@ class QtMapEditorBrushesMixin:
         self._update_brush_label()
 
     def _set_brush_size(self: QtMapEditor, size: int) -> None:
-        self.brush_size = max(0, int(size))
+        val = max(0, int(size))
+        if self.brush_size == val:
+            return
+        self.brush_size = val
         with contextlib.suppress(Exception):
-            self.session.brush_size = int(self.brush_size)
+            if hasattr(self, "session") and self.session.brush_size != val:
+                self.session.brush_size = int(val)
 
         if hasattr(self, "size_spin") and isinstance(self.size_spin, QSpinBox):
             self.size_spin.blockSignals(True)
@@ -42,6 +46,16 @@ class QtMapEditorBrushesMixin:
             self.variation_spin.blockSignals(True)
             self.variation_spin.setValue(int(self.brush_variation))
             self.variation_spin.blockSignals(False)
+
+    def _cycle_brush_size(self: QtMapEditor, delta: int) -> None:
+        """Cycle brush size by delta (e.g. +1 or -1), clamped to 0..15."""
+        delta = int(delta)
+        cur = int(getattr(self, "brush_size", 0) or 0)
+        # Assuming max size 15 for now (legacy limit often higher but UI spinbox checks needed)
+        # BrushToolbar buttons are 1, 3, 5, 7, 9.
+        # Let's allow step 1.
+        nxt = max(0, min(15, cur + delta))
+        self._set_brush_size(nxt)
 
     def _cycle_brush_variation(self: QtMapEditor, delta: int) -> None:
         delta = int(delta)
@@ -128,3 +142,8 @@ class QtMapEditorBrushesMixin:
         if sid is None:
             return
         self._set_selected_brush_id(int(sid))
+
+    def _on_session_brush_size_changed(self: QtMapEditor, size: int) -> None:
+        """Callback from EditorSession when brush size changes externally."""
+        if int(self.brush_size) != int(size):
+            self._set_brush_size(int(size))
