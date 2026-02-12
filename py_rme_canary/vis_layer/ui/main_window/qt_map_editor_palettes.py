@@ -11,7 +11,10 @@ class QtMapEditorPalettesMixin:
     # ---------- Palette docks (legacy Window palettes, modernized UI) ----------
 
     def _sync_palette_selection_actions(self: QtMapEditor, palette_key: str | None = None) -> None:
-        key = str(palette_key or getattr(self.palettes, "current_palette_name", "")).strip().lower()
+        palettes = getattr(self, "palettes", None)
+        if palettes is None:
+            return
+        key = str(palette_key or getattr(palettes, "current_palette_name", "")).strip().lower()
         action_by_key = {
             "terrain": "act_palette_terrain",
             "doodad": "act_palette_doodad",

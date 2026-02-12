@@ -14,6 +14,8 @@ Layer: vis_layer (PyQt6 UI)
 
 from __future__ import annotations
 
+import contextlib
+
 import csv
 import logging
 from dataclasses import dataclass, field
@@ -38,6 +40,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -140,32 +144,36 @@ class SearchResultsTableWidget(QTableWidget):
         self.doubleClicked.connect(self._on_double_click)
 
         # Styling
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self.setStyleSheet(
-            """
-            QTableWidget {
-                background: #1A1A2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                gridline-color: #2A2A3E;
-            }
-            QTableWidget::item {
-                color: #E5E5E7;
+            f"""
+            QTableWidget {{
+                background: {c["surface"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
+                gridline-color: {c["surface"]["secondary"]};
+            }}
+            QTableWidget::item {{
+                color: {c["text"]["primary"]};
                 padding: 4px 8px;
-            }
-            QTableWidget::item:selected {
-                background: #8B5CF6;
-            }
-            QTableWidget::item:hover {
-                background: #2A2A3E;
-            }
-            QHeaderView::section {
-                background: #2A2A3E;
-                color: #E5E5E7;
+            }}
+            QTableWidget::item:selected {{
+                background: {c["brand"]["primary"]};
+            }}
+            QTableWidget::item:hover {{
+                background: {c["surface"]["secondary"]};
+            }}
+            QHeaderView::section {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["primary"]};
                 padding: 6px;
                 border: none;
-                border-right: 1px solid #363650;
-                border-bottom: 1px solid #363650;
-            }
+                border-right: 1px solid {c["border"]["default"]};
+                border-bottom: 1px solid {c["border"]["default"]};
+            }}
         """
         )
 
@@ -259,6 +267,8 @@ class SearchResultsTableWidget(QTableWidget):
         elif action == copy_pos_action:
             text = "\n".join(f"{r.x}, {r.y}, {r.z}" for r in selected)
             QApplication.clipboard().setText(text)
+        elif action == select_all_action:
+            pass  # TODO: implement select-all-on-map
 
 
 class SearchResultsDock(QDockWidget):
@@ -334,50 +344,52 @@ class SearchResultsDock(QDockWidget):
 
         # Status bar
         self.status_label = QLabel("No results")
-        self.status_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+        tm = get_theme_manager()
+        c_ = tm.tokens["color"]
+        self.status_label.setStyleSheet(f"color: {c_['text']['tertiary']}; font-size: 11px;")
         layout.addWidget(self.status_label)
 
         self.setWidget(container)
 
     def _apply_style(self) -> None:
-        """Apply dark theme styling."""
+        """Apply themed styling using design tokens."""
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self.setStyleSheet(
-            """
-            QDockWidget {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
-            QDockWidget::title {
-                background: #2A2A3E;
-                padding: 8px;
-            }
-            QComboBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QDockWidget {{
+                background: {c["surface"]["primary"]};
+                color: {c["text"]["primary"]};
+            }}
+            QComboBox {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 4px 8px;
-            }
-            QComboBox::drop-down {
+            }}
+            QComboBox::drop-down {{
                 border: none;
-            }
-            QLineEdit {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            }}
+            QLineEdit {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 4px 8px;
-            }
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
+            }}
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
                 border: none;
-                border-radius: 4px;
+                border-radius: {r["sm"]}px;
                 padding: 6px 12px;
-            }
-            QPushButton:hover {
-                background: #8B5CF6;
-            }
+            }}
+            QPushButton:hover {{
+                background: {c["brand"]["primary"]};
+            }}
         """
         )
 
@@ -455,10 +467,8 @@ class SearchResultsDock(QDockWidget):
 
         # Also try to navigate editor directly
         if self.editor is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self.editor.center_on_position(x, y, z)
-            except Exception:
-                pass
 
     def _export_results(self) -> None:
         """Export current results to CSV file."""

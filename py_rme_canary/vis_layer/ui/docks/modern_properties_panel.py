@@ -31,6 +31,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.houses import House
     from py_rme_canary.core.data.item import Item
@@ -188,7 +190,8 @@ class ModernPropertiesPanel(QDockWidget):
         # Image Preview
         self.item_preview = QLabel()
         self.item_preview.setFixedSize(32, 32)
-        self.item_preview.setStyleSheet("background: #2A2A3E; border-radius: 4px;")
+        # Styled in _apply_style via objectName
+        self.item_preview.setObjectName("itemPreview")
         layout.addRow("Preview:", self.item_preview)
 
         # Client ID (read-only)
@@ -328,83 +331,90 @@ class ModernPropertiesPanel(QDockWidget):
         return widget
 
     def _apply_style(self) -> None:
-        """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            ModernPropertiesPanel {
-                background: #1E1E2E;
-            }
+        """Apply modern styling using theme tokens."""
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            #propertiesHeader {
-                color: #E5E5E7;
+        self.setStyleSheet(
+            f"""
+            ModernPropertiesPanel {{
+                background: {c["surface"]["primary"]};
+            }}
+
+            #propertiesHeader {{
+                color: {c["text"]["primary"]};
                 font-size: 14px;
                 font-weight: 600;
                 padding: 8px 0;
-            }
+            }}
 
-            #monoLabel {
+            #monoLabel {{
                 font-family: 'JetBrains Mono', 'Consolas', monospace;
-                color: #8B5CF6;
-            }
+                color: {c["brand"]["primary"]};
+            }}
 
-            QGroupBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+            #itemPreview {{
+                background: {c["surface"]["secondary"]};
+                border-radius: {r["sm"]}px;
+            }}
+
+            QGroupBox {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 margin-top: 16px;
                 padding-top: 8px;
                 font-weight: 600;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QGroupBox::title {
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 8px;
-                color: #A1A1AA;
-            }
+                color: {c["text"]["secondary"]};
+            }}
 
-            #primaryButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #8B5CF6, stop:1 #7C3AED);
-                color: white;
+            #primaryButton {{
+                background: {c["brand"]["primary"]};
+                color: {c["text"]["primary"]};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r["md"]}px;
+                padding: 8px 16px;
+                font-weight: 600;
+                min-width: 80px;
+            }}
+
+            #primaryButton:hover {{
+                background: {c["brand"]["secondary"]};
+            }}
+
+            #primaryButton:disabled {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["disabled"]};
+            }}
+
+            #secondaryButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 padding: 8px 16px;
                 font-weight: 500;
                 min-width: 80px;
-            }
+            }}
 
-            #primaryButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #A78BFA, stop:1 #8B5CF6);
-            }
+            #secondaryButton:hover {{
+                background: {c["state"]["hover"]};
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            #primaryButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
-
-            #secondaryButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: 500;
-                min-width: 80px;
-            }
-
-            #secondaryButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
-
-            #secondaryButton:disabled {
-                background: #2A2A3E;
-                color: #52525B;
-                border-color: #363650;
-            }
+            #secondaryButton:disabled {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["disabled"]};
+                border-color: {c["surface"]["tertiary"]};
+            }}
         """
         )
 

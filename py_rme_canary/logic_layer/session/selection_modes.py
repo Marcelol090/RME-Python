@@ -6,10 +6,10 @@ Implements COMPENSATE, CURRENT, LOWER, VISIBLE modes.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class SelectionDepthMode(str, Enum):
+class SelectionDepthMode(StrEnum):
     """Determines which Z layers are included in selection.
 
     Reference: Legacy C++ Config::COMPENSATED_SELECT and related settings.
@@ -27,6 +27,17 @@ class SelectionDepthMode(str, Enum):
     CURRENT = "current"
     LOWER = "lower"
     VISIBLE = "visible"
+
+    @classmethod
+    def from_value(cls, value: SelectionDepthMode | str) -> SelectionDepthMode:
+        """Normalize arbitrary value into a SelectionDepthMode enum."""
+        if isinstance(value, cls):
+            return value
+        normalized = str(value or "").strip().lower()
+        for mode in cls:
+            if str(mode.value) == normalized:
+                return mode
+        return cls.COMPENSATE
 
 
 def get_floors_for_selection(

@@ -92,6 +92,14 @@ class QtMapEditorToolbarsMixin:
         editor.shape_square = QCheckBox(editor)
         editor.shape_circle = QCheckBox(editor)
         editor.automagic_cb = QCheckBox(editor)
+        editor.automagic_cb.toggled.connect(lambda b: editor.act_automagic.setChecked(bool(b)))
+        editor.act_automagic.toggled.connect(
+            lambda b: (
+                editor.automagic_cb.blockSignals(True),
+                editor.automagic_cb.setChecked(bool(b)),
+                editor.automagic_cb.blockSignals(False),
+            )
+        )
         editor.variation_spin = QSpinBox(editor)
         editor.thickness_cb = QCheckBox(editor)
         editor.thickness_spin = QSpinBox(editor)
@@ -248,7 +256,7 @@ class QtMapEditorToolbarsMixin:
         """Handle modern tool selector changes."""
         if tool_id == "pointer":
             # Select/Move logic
-            editor.act_selection_mode.setChecked(False) # Usually pointer is just navigation/single select
+            editor.act_selection_mode.setChecked(False)  # Usually pointer is just navigation/single select
             editor.fill_armed = False
             editor.paste_armed = False
         elif tool_id == "pencil":

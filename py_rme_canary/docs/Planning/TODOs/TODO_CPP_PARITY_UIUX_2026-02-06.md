@@ -603,3 +603,12 @@
 ## Incremental Update (2026-02-11 - TileContextMenu replace-tiles parity)
 - Adicionada ação `Replace tiles...` no `TileContextMenu` clássico quando há seleção ativa, alinhando com legado e com menu unificado.
 - `qt_map_editor_modern_ux._setup_context_menus()` agora injeta callbacks `selection_replace_tiles` e `can_selection_replace_tiles` para esse fluxo.
+
+## Incremental Update (2026-02-12 - Automagic action/checkbox sync parity + Python 3.12 hardening)
+- Corrigida paridade de sincronização bidirecional entre `act_automagic` e `automagic_cb` em `qt_map_editor_toolbars.py`:
+  - `automagic_cb -> act_automagic`
+  - `act_automagic -> automagic_cb` com `blockSignals` para evitar loop.
+- Ajustado `SelectionDepthMode` para baseline Python 3.12:
+  - migração para `StrEnum`;
+  - adição/ajuste de parser resiliente `from_value(...)`.
+- Objetivo: eliminar regressões de UI state-sync em menus/select controls e consolidar compatibilidade py312 no fluxo de editor.

@@ -21,6 +21,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Painted shape icons for consistency
 # ---------------------------------------------------------------------------
+
 
 def _shape_icon(shape: str, size: int = 18, checked: bool = False) -> QIcon:
     """Draw shape icon — square or circle."""
@@ -173,69 +176,69 @@ class ModernToolOptionsWidget(QWidget):
         layout.addStretch()
 
     def _apply_style(self) -> None:
-        self.setStyleSheet("""
-            #header {
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
+        self.setStyleSheet(
+            f"""
+            #header {{
                 font-weight: 700;
-                color: rgba(161, 161, 170, 0.6);
+                color: {c["text"]["disabled"]};
                 font-size: 10px;
                 letter-spacing: 1.5px;
-            }
-            #sectionLabel {
-                color: rgba(200, 200, 210, 0.8);
+            }}
+            #sectionLabel {{
+                color: {c["text"]["secondary"]};
                 font-size: 12px;
                 font-weight: 600;
-            }
-            #valueLabel {
-                color: #A78BFA;
+            }}
+            #valueLabel {{
+                color: {c["brand"]["secondary"]};
                 font-family: 'JetBrains Mono', 'Consolas', monospace;
                 font-weight: bold;
                 font-size: 13px;
-            }
-            QPushButton#shapeBtn {
-                background: rgba(19, 19, 29, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 8px;
+            }}
+            QPushButton#shapeBtn {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 padding: 4px 16px;
-                color: rgba(200, 200, 210, 0.8);
+                color: {c["text"]["secondary"]};
                 font-size: 12px;
                 font-weight: 600;
-            }
-            QPushButton#shapeBtn:checked {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(139, 92, 246, 0.3), stop:1 rgba(124, 58, 237, 0.25));
-                color: white;
-                border: 1px solid rgba(139, 92, 246, 0.45);
-            }
-            QPushButton#shapeBtn:hover:!checked {
-                border-color: rgba(139, 92, 246, 0.3);
-                background: rgba(139, 92, 246, 0.08);
-            }
-            #ToolSlider::groove:horizontal {
-                background: rgba(54, 54, 80, 0.4);
+            }}
+            QPushButton#shapeBtn:checked {{
+                background: {c["brand"]["primary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["brand"]["primary"]};
+            }}
+            QPushButton#shapeBtn:hover:!checked {{
+                border-color: {c["brand"]["primary"]};
+                background: {c["state"]["hover"]};
+            }}
+            #ToolSlider::groove:horizontal {{
+                background: {c["surface"]["tertiary"]};
                 height: 4px;
                 border-radius: 2px;
-            }
-            #ToolSlider::handle:horizontal {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
-                    fx:0.5, fy:0.3,
-                    stop:0 #A78BFA, stop:1 #8B5CF6);
-                border: 2px solid rgba(124, 58, 237, 0.7);
+            }}
+            #ToolSlider::handle:horizontal {{
+                background: {c["brand"]["primary"]};
+                border: 2px solid {c["brand"]["secondary"]};
                 width: 14px;
                 height: 14px;
                 margin: -6px 0;
                 border-radius: 8px;
-            }
-            #ToolSlider::handle:horizontal:hover {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
-                    fx:0.5, fy:0.3,
-                    stop:0 #C4B5FD, stop:1 #A78BFA);
-            }
-            #ToolSlider::sub-page:horizontal {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #7C3AED, stop:1 #8B5CF6);
+            }}
+            #ToolSlider::handle:horizontal:hover {{
+                background: {c["brand"]["secondary"]};
+            }}
+            #ToolSlider::sub-page:horizontal {{
+                background: {c["brand"]["primary"]};
                 border-radius: 2px;
-            }
-        """)
+            }}
+        """
+        )
 
     def set_brush_type(self, brush_type: str) -> None:
         """Update visibility based on brush type."""

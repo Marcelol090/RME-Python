@@ -1771,3 +1771,38 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 ### Validação
 - `ruff check` + `python3 -m py_compile` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menus_select_actions.py` -> **19 passed**
+
+---
+
+## Sessão 2026-02-12: Python 3.12 baseline + Automagic sync parity
+
+### Escopo
+- Consolidar execução local em Python 3.12 no ambiente Linux/WSL (`.venv`).
+- Fechar regressão de sincronização no menu/toolbar para opção `Border Automagic`.
+
+### Implementação no Python
+- `py_rme_canary/quality-pipeline/quality.sh`
+  - default de `PYTHON_BIN` ajustado para priorizar `python3.12` com fallback seguro (`python3`, `python`).
+- `py_rme_canary/quality-pipeline/quality_lf.sh`
+  - mesma estratégia de resolução de Python, garantindo alinhamento do pipeline de qualidade com py312.
+- `py_rme_canary/logic_layer/session/selection_modes.py`
+  - enum migrado para `StrEnum` (compatível com baseline py312);
+  - parser `SelectionDepthMode.from_value(...)` reforçado para normalizar entradas textuais sem quebrar fluxo de UI.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py`
+  - guard adicional para evitar erro de atributo em sync de palettes durante inicialização parcial.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py`
+  - sincronização bidirecional entre `automagic_cb` e `act_automagic` com bloqueio de sinais no retorno para evitar loop de eventos.
+
+### Resultado
+- Corrigida falha de regressão em `test_automagic_action_and_checkbox_stay_synced`.
+- Fluxo de toolbar/menu de automagic voltou a refletir o estado corretamente nos dois sentidos.
+- Pipeline `quality_lf` passou a detectar/interpreter py312 corretamente.
+- Cobertura adicional para parser de seleção em `tests/unit/logic_layer/test_selection_modes.py` (`from_value` com normalização/fallback).
+
+### Validação
+- `./.venv/bin/python --version` -> **Python 3.12.12**
+- `./.venv/bin/ruff check py_rme_canary/logic_layer/session/selection_modes.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py` -> **OK**
+- `./.venv/bin/python -m py_compile py_rme_canary/logic_layer/session/selection_modes.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_palettes.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py` -> **OK**
+- `./.venv/bin/pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **15 passed**
+- `./.venv/bin/pytest -q -s py_rme_canary/tests/unit/logic_layer/test_selection_modes.py` -> **15 passed**
+- `PYTHON_BIN=.venv/bin/python bash py_rme_canary/quality-pipeline/quality_lf.sh --verbose` -> **concluído (dry-run), com alerts de ferramentas opcionais ausentes e erros de tipagem preexistentes no mypy fora deste escopo**

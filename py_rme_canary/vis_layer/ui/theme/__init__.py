@@ -12,14 +12,17 @@ from PyQt6.QtWidgets import QApplication
 
 class ThemeColors(TypedDict):
     """Color tokens structure."""
+
     brand: dict[str, str]
     surface: dict[str, str]
     text: dict[str, str]
     border: dict[str, str]
     state: dict[str, str]
 
+
 class ThemeTokens(TypedDict):
     """Type definition for theme tokens."""
+
     color: ThemeColors
     spacing: dict[str, int]
     radius: dict[str, int]
@@ -55,7 +58,7 @@ DARK_THEME: ThemeTokens = {
             "hover": "rgba(139, 92, 246, 0.12)",
             "active": "rgba(139, 92, 246, 0.25)",
             "error": "#EF4444",  # Red 500
-        }
+        },
     },
     "spacing": {
         "xs": 4,
@@ -71,7 +74,7 @@ DARK_THEME: ThemeTokens = {
         "lg": 16,
         "xl": 24,
         "round": 9999,
-    }
+    },
 }
 
 # Design Tokens - Premium Light Theme (Nord Light Inspired)
@@ -104,7 +107,7 @@ LIGHT_THEME: ThemeTokens = {
             "hover": "#81A1C1",
             "active": "#88C0D0",
             "error": "#BF616A",
-        }
+        },
     },
     "spacing": {
         "xs": 4,
@@ -120,7 +123,7 @@ LIGHT_THEME: ThemeTokens = {
         "lg": 12,
         "xl": 16,
         "round": 9999,
-    }
+    },
 }
 
 # Design Tokens - Neon Theme (Cyberpunk/High Contrast)
@@ -153,7 +156,7 @@ NEON_THEME: ThemeTokens = {
             "hover": "rgba(6, 182, 212, 0.15)",
             "active": "rgba(6, 182, 212, 0.3)",
             "error": "#FF0055",  # Neon Red
-        }
+        },
     },
     "spacing": {
         "xs": 4,
@@ -169,7 +172,7 @@ NEON_THEME: ThemeTokens = {
         "lg": 8,
         "xl": 12,
         "round": 9999,
-    }
+    },
 }
 
 # Theme registry
@@ -353,20 +356,27 @@ QToolTip {{
     font-weight: 500;
 }}
 
-/* ==================== Menus (Elevated) ==================== */
+/* ==================== Menus (Elevated Glass) ==================== */
 QMenuBar {{
     background-color: {c["surface"]["primary"]};
     border-bottom: 1px solid {c["surface"]["secondary"]};
+    spacing: 2px;
 }}
 
 QMenuBar::item {{
-    padding: 8px 12px;
+    padding: 8px 14px;
     background: transparent;
+    border-radius: {r["sm"]}px;
 }}
 
 QMenuBar::item:selected {{
     background: rgba(255, 255, 255, 0.1);
     border-radius: {r["sm"]}px;
+}}
+
+QMenuBar::item:pressed {{
+    background: {c["brand"]["primary"]};
+    color: {c["text"]["primary"]};
 }}
 
 QMenu {{
@@ -377,9 +387,10 @@ QMenu {{
 }}
 
 QMenu::item {{
-    padding: 6px 24px 6px 12px;
+    padding: 8px 28px 8px 14px;
     border-radius: {r["sm"]}px;
-    margin: 2px;
+    margin: 2px 4px;
+    font-weight: 500;
 }}
 
 QMenu::item:selected {{
@@ -387,51 +398,138 @@ QMenu::item:selected {{
     color: {c["text"]["primary"]};
 }}
 
+QMenu::item:disabled {{
+    color: {c["text"]["disabled"]};
+}}
+
 QMenu::separator {{
     height: 1px;
     background: {c["border"]["default"]};
-    margin: 4px;
+    margin: 4px 8px;
 }}
 
-/* ==================== Dock Widgets (Clean) ==================== */
+QMenu::icon {{
+    padding-left: 8px;
+}}
+
+/* ==================== Dock Widgets (Glass Title) ==================== */
 QDockWidget {{
     titlebar-close-icon: url(:/icons/close.svg);
     titlebar-normal-icon: url(:/icons/float.svg);
-}}
-
-QDockWidget::title {{
-    background-color: {c["surface"]["primary"]};
-    padding: 8px;
-    border-bottom: 1px solid {c["surface"]["secondary"]};
-    font-weight: 600;
+    font-weight: 700;
     color: {c["text"]["secondary"]};
 }}
 
-/* ==================== Tab Widgets (Modern) ==================== */
+QDockWidget::title {{
+    background-color: {c["surface"]["secondary"]};
+    padding: 10px 12px;
+    border-bottom: 1px solid {c["border"]["default"]};
+    font-weight: 700;
+    color: {c["text"]["secondary"]};
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}}
+
+QDockWidget::close-button, QDockWidget::float-button {{
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: {r["sm"]}px;
+}}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {{
+    background: rgba(255, 255, 255, 0.1);
+}}
+
+/* ==================== Splitter Handle ==================== */
+QSplitter::handle {{
+    background: {c["border"]["default"]};
+    height: 3px;
+    margin: 2px 24px;
+    border-radius: 1px;
+}}
+
+QSplitter::handle:hover {{
+    background: {c["brand"]["primary"]};
+}}
+
+QSplitter::handle:horizontal {{
+    width: 3px;
+    height: auto;
+    margin: 24px 2px;
+}}
+
+/* ==================== Tab Widgets (Polished) ==================== */
 QTabWidget::pane {{
     background-color: {c["surface"]["primary"]};
     border: 1px solid {c["surface"]["secondary"]};
     border-radius: {r["md"]}px;
-    top: -1px; /* Overlap header border */
+    top: -1px;
 }}
 
 QTabBar::tab {{
-    background-color: {c["surface"]["primary"]};
+    background-color: transparent;
     color: {c["text"]["tertiary"]};
-    padding: 8px 16px;
+    padding: 10px 16px;
     border-bottom: 2px solid transparent;
     font-weight: 600;
-    margin-right: 4px;
+    margin-right: 2px;
 }}
 
 QTabBar::tab:selected {{
     color: {c["text"]["primary"]};
     border-bottom: 2px solid {c["brand"]["primary"]};
+    background-color: rgba(255, 255, 255, 0.03);
 }}
 
 QTabBar::tab:hover:!selected {{
     background-color: rgba(255, 255, 255, 0.05);
     color: {c["text"]["secondary"]};
+    border-bottom: 2px solid {c["border"]["default"]};
+}}
+
+/* ==================== Checkboxes (Themed) ==================== */
+QCheckBox {{
+    spacing: 8px;
+    color: {c["text"]["primary"]};
+}}
+
+QCheckBox::indicator {{
+    width: 18px;
+    height: 18px;
+    border-radius: {r["sm"]}px;
+    border: 2px solid {c["border"]["default"]};
+    background: {c["surface"]["secondary"]};
+}}
+
+QCheckBox::indicator:checked {{
+    background: {c["brand"]["primary"]};
+    border-color: {c["brand"]["primary"]};
+}}
+
+QCheckBox::indicator:hover {{
+    border-color: {c["brand"]["secondary"]};
+}}
+
+/* ==================== ComboBox Dropdown (Polished) ==================== */
+QComboBox::drop-down {{
+    border: none;
+    padding-right: 8px;
+}}
+
+QComboBox::down-arrow {{
+    width: 12px;
+    height: 12px;
+}}
+
+QComboBox QAbstractItemView {{
+    background-color: {c["surface"]["elevated"]};
+    border: 1px solid {c["border"]["default"]};
+    border-radius: {r["md"]}px;
+    padding: 4px;
+    selection-background-color: {c["brand"]["primary"]};
+    selection-color: {c["text"]["primary"]};
+    outline: none;
 }}
 
 /* ==================== Group Boxes ==================== */
@@ -451,17 +549,67 @@ QGroupBox::title {{
     padding: 0 4px;
 }}
 
-/* ==================== Process Bar ==================== */
+/* ==================== Progress Bar ==================== */
 QProgressBar {{
     border: none;
     background-color: {c["surface"]["secondary"]};
     border-radius: {r["sm"]}px;
     text-align: center;
+    min-height: 8px;
 }}
 
 QProgressBar::chunk {{
     background-color: {c["brand"]["primary"]};
     border-radius: {r["sm"]}px;
+}}
+
+/* ==================== Horizontal Scroll Bar ==================== */
+QScrollBar:horizontal {{
+    background: {c["surface"]["primary"]};
+    height: 10px;
+    margin: 0;
+}}
+
+QScrollBar::handle:horizontal {{
+    background: {c["surface"]["tertiary"]};
+    border-radius: 5px;
+    min-width: 30px;
+    margin: 2px;
+}}
+
+QScrollBar::handle:horizontal:hover {{
+    background: {c["brand"]["primary"]};
+}}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+    width: 0;
+}}
+
+/* ==================== Header View (Tables) ==================== */
+QHeaderView::section {{
+    background-color: {c["surface"]["secondary"]};
+    color: {c["text"]["secondary"]};
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid {c["border"]["default"]};
+    font-weight: 600;
+}}
+
+QHeaderView::section:hover {{
+    background-color: {c["state"]["hover"]};
+    color: {c["text"]["primary"]};
+}}
+
+/* ==================== Status Bar ==================== */
+QStatusBar {{
+    background-color: {c["surface"]["secondary"]};
+    border-top: 1px solid {c["border"]["default"]};
+    color: {c["text"]["secondary"]};
+    font-size: 12px;
+}}
+
+QStatusBar::item {{
+    border: none;
 }}
 """
 

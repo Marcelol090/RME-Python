@@ -37,12 +37,14 @@
 - [x] Rectangular Selection → `vis_layer/ui/canvas/`
 - [x] Lasso/Freehand Selection → `logic_layer/lasso_selection.py`
 - [x] Floor Selection Modes → `logic_layer/drawing_options.py`
+- [x] Gem Button (Mode Toggle) → Selection/Drawing mode switch (Spacebar) via `selection_mode` in `vis_layer/ui/main_window/build_actions.py`
 
 ### Import/Export
 
 - [x] Lua Monster Import (Revscript) → `core/io/lua_creature_import.py`
 - [x] Minimap PNG Export → `logic_layer/minimap_png_exporter.py`
 - [x] Minimap OTMM Export → `logic_layer/minimap_exporter.py`
+- [x] Import Map (Merge) → `logic_layer/operations/map_import.py` + `vis_layer/ui/main_window/import_map_dialog.py` (merges external OTBM into current coordinate space)
 
 ### Replace Features
 
@@ -58,7 +60,7 @@
 
 - [x] Transactional Brush Base → `logic_layer/transactional_brush.py`
 - [x] Raw Brush → `logic_layer/raw_brush.py`
-- [x] Eraser Brush → `logic_layer/eraser_brush.py`
+- [x] Eraser Brush → `logic_layer/eraser_brush.py` (EraserMode flags: ITEMS/GROUND/MONSTERS/NPCS/SPAWNS, matches C++ left-click=top item, right-click=ground behavior)
 - [x] Fill Tool → `logic_layer/fill_tool.py`
 
 ### Terrain Brushes
@@ -67,6 +69,7 @@
 - [x] Auto Border System → `logic_layer/borders/`
 - [x] Door Brush → `logic_layer/door_brush.py`
 - [x] Optional Border Brush → `logic_layer/optional_border_brush.py`
+- [x] Doodad Brush → Supports "One-click" and "Spray" modes with configurable thickness/variation via `doodad_thickness_enabled` / `doodad_thickness_level` in `vis_layer/ui/main_window/qt_map_editor_brushes.py`
 
 ### Entity Brushes
 
@@ -101,6 +104,9 @@
 - [x] Map Diff → `logic_layer/map_diff.py`
 - [x] UID Validator → `logic_layer/uid_validator.py`
 - [x] Teleport Manager → `logic_layer/teleport_manager.py`
+- [x] Magic Wand (Borderize) → Re-calculates borders for clicked area or selection; C++ name "Magic Wand" aliased as `tool_automagic` icon in `icon_pack.py`, wired to `borderize_selection` / `borderize_map` actions
+- [x] Browse Field (Tile Inspector) → Context menu inspection of tile stack via `vis_layer/ui/menus/context_menus.py`
+- [x] Go To Town → Jump to defined Town Temple position, integrated in Navigate menu
 
 ### Rendering & Performance
 
@@ -125,7 +131,7 @@
 - [x] Generate Map action → `build_actions.py` + `menubar/file/tools.py` + `qt_map_editor_file.py` (routes to template-based new map flow)
 - [x] Close Map action (Ctrl+Q) → checks unsaved changes, resets to blank 256×256 map
 - [x] Export Minimap → `menubar/file/tools.py` + `qt_map_editor_file.py` (PNG/BMP export of current floor)
-- [x] Borderize Map → `build_actions.py` + `qt_map_editor_session.py` + `logic_layer/session/editor.py::borderize_map()`
+- [x] Borderize Map (a.k.a. "Magic Wand") → `build_actions.py` + `qt_map_editor_session.py` + `logic_layer/session/editor.py::borderize_map()`
 - [x] Randomize Map → `build_actions.py` + `menubar/edit/tools.py`
 - [x] Find Everything (map/selection) → `find_item.py::open_find_everything()` (combines unique+action+container+writeable)
 - [x] Find Item on Selection → `open_find_dialog(selection_only=True)` filter added
@@ -163,6 +169,27 @@
 
 - [x] Script Engine → `logic_layer/script_engine.py` (26KB)
 
+### Interaction & Navigation (Legacy C++ Parity)
+
+- [x] Gem Button (Selection/Drawing Mode Toggle) → Spacebar shortcut; `selection_mode` state tracked in `vis_layer/ui/main_window/build_actions.py`, `qt_map_editor_toolbars.py`, and canvas widgets. Toggles between Selection Mode (marquee select, move, inspect) and Drawing Mode (brush placement).
+- [x] Scroll/Zoom Logic → Scrolling zooms towards view center (not cursor); `Ctrl+G` (Go to Position) compensates for Z-layer offset to center tile visually. Implemented in `vis_layer/ui/canvas/widget.py` and `vis_layer/renderer/opengl_canvas.py`.
+- [x] Tool Options Dynamic Adaptation → `modern_tool_options.py` adapts per palette tab:
+  - *Terrain/Collection:* Tools (Brush/Circle/Square) + Size slider
+  - *Doodad:* Thickness (Variation) + Size slider
+  - *Others (Item/RAW/House):* Size slider only
+  - Via `_visibility_by_palette` dict in `ModernToolOptionsWidget`
+- [x] Import Map (Merge) → `File → Import → Import Map` merges external OTBM into current coordinate space via paste operation. `logic_layer/operations/map_import.py` + `vis_layer/ui/main_window/import_map_dialog.py`.
+
+### Live Collaboration Details (Legacy C++ Parity)
+
+- [x] Live Host Server → Password + port configuration via `core/protocols/live_server.py`
+- [x] Live Join Server → IP/Port connection via `core/net/live_client.py`
+- [x] Live Chat/Log → Real-time chat interface in Live Log panel
+- [x] Cursor Broadcasting → See other users' mouse positions via `core/protocols/cursor_broadcaster.py`
+- [x] State Synchronization → Initial map sync + real-time tile change sync
+- [ ] Ban List Management → User management (kick/ban) from hosted session — *not yet implemented*
+- [ ] Close Server Graceful Shutdown → Graceful disconnect of all connected clients — *partial*
+
 ---
 
 ## Legacy RME Parity Matrix
@@ -189,6 +216,16 @@
 | Item Rendering on Canvas |     ✅      |       ✅        |      ✅       |
 | Editor/Edit/Selection    |     ✅      |       ✅        |      ✅       |
 | About Dialog (F1)        |     ✅      |       ✅        |      ✅       |
+| Gem Button (Mode Toggle) |     ✅      |       ✅        |      ✅       |
+| Import Map (Merge)       |     ✅      |       ✅        |      ✅       |
+| Browse Field (Inspector) |     ✅      |       ✅        |      ✅       |
+| Go To Town Navigation    |     ✅      |       ✅        |      ✅       |
+| Magic Wand (Borderize)   |     ✅      |       ✅        |      ✅       |
+| Eraser L/R Click Logic   |     ✅      |       ✅        |      ✅       |
+| Doodad Modes (Spray/1-click)|  ✅      |       ✅        |      ✅       |
+| Tool Options Per-Palette |     ✅      |       ✅        |      ✅       |
+| Scroll/Zoom Center Logic |     ✅      |       ✅        |      ✅       |
+| Live Ban List            |     ✅      |       ✅        |      ⏳       |
 
 **Legend:** ✅ = Supported | ❌ = Not Supported | ⏳ = Planned
 
@@ -2870,6 +2907,6 @@ All systems work together to provide a powerful, flexible map editing experience
 
 ---
 
-**Document Version:** 1.1
-**Last Updated:** 2026-02-10
+**Document Version:** 1.2
+**Last Updated:** 2026-02-11
 **Target Audience:** RME developers, contributors, and advanced users
