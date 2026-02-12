@@ -595,3 +595,7 @@
 ## Incremental Update (2026-02-11 - TileContextMenu copy-position gating)
 - `Copy Position` no `TileContextMenu` agora segue o legado: habilita apenas quando há seleção ativa.
 - Mantido capability gate (`can_copy_position`) quando fornecido.
+
+## Incremental Update (2026-02-11 - TileContextMenu edit-action selection gating)
+- `Copy`, `Cut` e `Delete` no topo do `TileContextMenu` agora seguem estritamente o estado de seleção (`has_selection`), como no legado C++.
+- `Paste` permanece condicionado a `can_paste` + capability gate.

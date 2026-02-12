@@ -81,10 +81,16 @@ class TileContextMenu:
         builder = ContextMenuBuilder(self._parent)
 
         # Edit actions
-        builder.add_action("Copy", cb("copy"), "Ctrl+C")
-        builder.add_action("Cut", cb("cut"), "Ctrl+X")
-        builder.add_action("Paste", cb("paste"), "Ctrl+V", enabled=bool(cb("can_paste") and cb("can_paste")()))
-        builder.add_action("Delete", cb("delete"), "Del", enabled=has_selection or tile is not None)
+        can_paste = bool(cb("can_paste") and cb("can_paste")())
+        builder.add_action("Copy", cb("copy"), "Ctrl+C", enabled=bool(has_selection and _action_enabled("copy")))
+        builder.add_action("Cut", cb("cut"), "Ctrl+X", enabled=bool(has_selection and _action_enabled("cut")))
+        builder.add_action(
+            "Paste",
+            cb("paste"),
+            "Ctrl+V",
+            enabled=bool(can_paste and _action_enabled("paste")),
+        )
+        builder.add_action("Delete", cb("delete"), "Del", enabled=bool(has_selection and _action_enabled("delete")))
 
         builder.add_separator()
 
