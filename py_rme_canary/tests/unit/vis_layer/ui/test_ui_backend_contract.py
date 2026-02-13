@@ -6,14 +6,21 @@ from py_rme_canary.vis_layer.ui.main_window.ui_backend_contract import verify_an
 
 
 class _Action:
-    def __init__(self, checked: bool = False) -> None:
+    def __init__(self, checked: bool = False, enabled: bool = True) -> None:
         self._checked = bool(checked)
+        self._enabled = bool(enabled)
 
     def isChecked(self) -> bool:  # noqa: N802
         return bool(self._checked)
 
     def setChecked(self, value: bool) -> None:  # noqa: N802
         self._checked = bool(value)
+
+    def isEnabled(self) -> bool:  # noqa: N802
+        return bool(self._enabled)
+
+    def setEnabled(self, value: bool) -> None:  # noqa: N802
+        self._enabled = bool(value)
 
     def blockSignals(self, _value: bool) -> None:  # noqa: N802
         return
@@ -106,6 +113,12 @@ class _EditorStub:
         self.show_avoidables = False
         self.act_show_avoidables = _Action(False)
         self.act_tb_avoidables = _Action(False)
+        self.act_brush_shape_square = _Action(True)
+        self.act_brush_shape_circle = _Action(False)
+        self.act_brush_size_decrease = _Action(False, enabled=True)
+        self.act_brush_size_increase = _Action(False, enabled=True)
+        self.selection_mode = False
+        self.act_selection_mode = _Action(False)
 
         self.apply_calls = 0
 
@@ -195,3 +208,42 @@ def test_ui_backend_contract_syncs_brush_toolbar_with_backend_state() -> None:
     assert editor.brush_toolbar._size == 7
     assert editor.brush_toolbar._shape == "circle"
     assert editor.brush_toolbar._automagic is True
+
+
+def test_ui_backend_contract_syncs_brush_shape_actions() -> None:
+    editor = _EditorStub()
+    editor.brush_shape = "circle"
+    editor.act_brush_shape_square.setChecked(True)
+    editor.act_brush_shape_circle.setChecked(False)
+
+    repairs, _ = verify_and_repair_ui_backend_contract(editor, last_signature=0)
+
+    assert "brush_shape_square_action_sync" in repairs
+    assert "brush_shape_circle_action_sync" in repairs
+    assert editor.act_brush_shape_square.isChecked() is False
+    assert editor.act_brush_shape_circle.isChecked() is True
+
+
+def test_ui_backend_contract_syncs_brush_size_action_enablement() -> None:
+    editor = _EditorStub()
+    editor.brush_size = 1
+    editor.act_brush_size_decrease.setEnabled(True)
+    editor.act_brush_size_increase.setEnabled(False)
+
+    repairs, _ = verify_and_repair_ui_backend_contract(editor, last_signature=0)
+
+    assert "brush_size_decrease_action_sync" in repairs
+    assert "brush_size_increase_action_sync" in repairs
+    assert editor.act_brush_size_decrease.isEnabled() is False
+    assert editor.act_brush_size_increase.isEnabled() is True
+
+
+def test_ui_backend_contract_syncs_selection_mode_action() -> None:
+    editor = _EditorStub()
+    editor.selection_mode = True
+    editor.act_selection_mode.setChecked(False)
+
+    repairs, _ = verify_and_repair_ui_backend_contract(editor, last_signature=0)
+
+    assert "selection_mode_action_sync" in repairs
+    assert editor.act_selection_mode.isChecked() is True

@@ -16,7 +16,6 @@ from py_rme_canary.logic_layer.mirroring import union_with_mirrored
 from py_rme_canary.logic_layer.rust_accel import dedupe_positions_3d
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
-from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
 from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay, BrushPreviewOverlay
 
 # Try importing OpenGL support
@@ -239,7 +238,10 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             )
 
         border_positions: list[tuple[int, int, int]] = []
-        for dx, dy in iter_brush_border_offsets(editor.brush_size, editor.brush_shape):
+        border_offsets = (
+            editor._brush_border_offsets() if hasattr(editor, "_brush_border_offsets") else ()
+        )
+        for dx, dy in border_offsets:
             tx = int(x + dx)
             ty = int(y + dy)
             if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
@@ -249,7 +251,8 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             editor.session.mark_autoborder_position(x=int(tx), y=int(ty), z=int(z))
 
         draw_positions: list[tuple[int, int, int]] = []
-        for dx, dy in iter_brush_offsets(editor.brush_size, editor.brush_shape):
+        draw_offsets = editor._brush_offsets() if hasattr(editor, "_brush_offsets") else ()
+        for dx, dy in draw_offsets:
             tx = int(x + dx)
             ty = int(y + dy)
             if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
@@ -816,7 +819,8 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self._brush_cursor_overlay.set_visible(True)
 
         preview_tiles: list[QRect] = []
-        for dx, dy in iter_brush_offsets(brush_size, str(getattr(editor, "brush_shape", "square"))):
+        offsets = editor._brush_offsets() if hasattr(editor, "_brush_offsets") else ()
+        for dx, dy in offsets:
             tx = int(x + dx)
             ty = int(y + dy)
             if not (x0 <= tx < x1 and y0 <= ty < y1):

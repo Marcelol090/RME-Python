@@ -234,6 +234,9 @@ class QtMapEditorSessionMixin:
             self._set_brush_shape(str(profile.get("brush_shape", "square")))
             self._set_brush_variation(int(profile.get("brush_variation", 0)))
             self._toggle_palette_large_icons(bool(profile.get("palette_large_icons", False)))
+            if hasattr(self, "brush_toolbar") and self.brush_toolbar is not None:
+                with contextlib.suppress(Exception):
+                    self.brush_toolbar.refresh_theme()
         except Exception:
             pass
 

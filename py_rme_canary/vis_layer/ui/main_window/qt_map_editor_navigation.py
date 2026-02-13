@@ -199,6 +199,10 @@ class QtMapEditorNavigationMixin:
                 with contextlib.suppress(Exception):
                     self.canvas.cancel_lasso()
         self.session.cancel_box_selection()
+        # Cancel any pending pointer gesture in canvas to avoid stuck paint/select states.
+        if hasattr(self, "canvas") and self.canvas is not None:
+            with contextlib.suppress(Exception):
+                self.canvas.cancel_interaction()
         self.canvas.update()
         self._update_action_enabled_states()
 

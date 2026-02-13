@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 
 from py_rme_canary.vis_layer.ui.icons import tool_icons
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     pass
@@ -178,38 +179,44 @@ class BrushToolbar(QFrame):
         layout.addStretch()
 
     def _apply_style(self) -> None:
-        """Antigravity styling."""
+        """Apply toolbar style from active theme tokens."""
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
         self.setStyleSheet(
-            """
-            BrushToolbar {
-                background: rgba(16, 16, 24, 0.85);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 12px;
-            }
+            f"""
+            BrushToolbar {{
+                background: {c["surface"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["lg"]}px;
+            }}
 
-            QPushButton {
-                background: rgba(19, 19, 29, 0.6);
-                color: rgba(161, 161, 170, 0.8);
+            QPushButton {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["secondary"]};
                 border: 1px solid transparent;
-                border-radius: 8px;
+                border-radius: {r["md"]}px;
                 font-size: 12px;
                 font-weight: 700;
-            }
+            }}
 
-            QPushButton:hover {
-                background: rgba(139, 92, 246, 0.12);
-                border-color: rgba(139, 92, 246, 0.2);
-                color: #E5E5E7;
-            }
+            QPushButton:hover {{
+                background: {c["state"]["hover"]};
+                border-color: {c["border"]["interactive"]};
+                color: {c["text"]["primary"]};
+            }}
 
-            QPushButton:checked {
+            QPushButton:checked {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(139, 92, 246, 0.35), stop:1 rgba(124, 58, 237, 0.3));
-                border: 1px solid rgba(139, 92, 246, 0.45);
-                color: white;
-            }
+                    stop:0 {c["state"]["active"]}, stop:1 {c["brand"]["primary"]});
+                border: 1px solid {c["border"]["interactive"]};
+                color: {c["text"]["primary"]};
+            }}
         """
         )
+
+    def refresh_theme(self) -> None:
+        self._apply_style()
 
     def _on_size_clicked(self, size: int) -> None:
         """Handle size button click."""

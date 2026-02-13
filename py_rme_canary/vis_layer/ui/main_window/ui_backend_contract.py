@@ -67,6 +67,30 @@ def _set_action_checked(obj: object | None, value: bool) -> None:
             block(False)
 
 
+def _action_enabled(obj: object | None) -> bool:
+    if obj is None:
+        return False
+    try:
+        fn = getattr(obj, "isEnabled", None)
+        return bool(fn()) if callable(fn) else False
+    except Exception:
+        return False
+
+
+def _set_action_enabled(obj: object | None, value: bool) -> None:
+    if obj is None:
+        return
+    with contextlib.suppress(Exception):
+        block = getattr(obj, "blockSignals", None)
+        if callable(block):
+            block(True)
+        setter = getattr(obj, "setEnabled", None)
+        if callable(setter):
+            setter(bool(value))
+        if callable(block):
+            block(False)
+
+
 def _call0(fn: Callable[[], Any] | None, default: Any = None) -> Any:
     if fn is None:
         return default
@@ -117,10 +141,17 @@ def _snapshot_string(editor: object) -> str:
     parts.append(f"bs:{brush_size}")
     session_brush = int(getattr(session, "brush_size", 0) or 0) if session is not None else 0
     parts.append(f"sbs:{session_brush}")
+    parts.append(f"bsh:{str(getattr(editor, 'brush_shape', 'square') or 'square')}")
     brush_toolbar = getattr(editor, "brush_toolbar", None)
     parts.append(f"tbs:{int(getattr(brush_toolbar, '_size', 0) or 0)}")
     parts.append(f"tsh:{str(getattr(brush_toolbar, '_shape', ''))}")
     parts.append(f"ta:{int(bool(getattr(brush_toolbar, '_automagic', False)))}")
+    parts.append(f"absd:{int(_action_enabled(getattr(editor, 'act_brush_size_decrease', None)))}")
+    parts.append(f"absi:{int(_action_enabled(getattr(editor, 'act_brush_size_increase', None)))}")
+    parts.append(f"abss:{int(_action_checked(getattr(editor, 'act_brush_shape_square', None)))}")
+    parts.append(f"absc:{int(_action_checked(getattr(editor, 'act_brush_shape_circle', None)))}")
+    parts.append(f"sm:{int(bool(getattr(editor, 'selection_mode', False)))}")
+    parts.append(f"asm:{int(_action_checked(getattr(editor, 'act_selection_mode', None)))}")
 
     # View flags <-> actions
     for flag_name, action_name in VIEW_FLAG_ACTION_PAIRS:
@@ -213,6 +244,37 @@ def verify_and_repair_ui_backend_contract(editor: object, *, last_signature: int
             with contextlib.suppress(Exception):
                 brush_toolbar.set_automagic(bool(action_state))
             repairs.append("brush_toolbar_automagic_sync")
+
+    # 4c) Brush actions must reflect canonical brush state
+    shape = str(getattr(editor, "brush_shape", "square") or "square")
+    if shape not in ("square", "circle"):
+        shape = "square"
+    square_action = getattr(editor, "act_brush_shape_square", None)
+    circle_action = getattr(editor, "act_brush_shape_circle", None)
+    if square_action is not None and _action_checked(square_action) != bool(shape == "square"):
+        _set_action_checked(square_action, bool(shape == "square"))
+        repairs.append("brush_shape_square_action_sync")
+    if circle_action is not None and _action_checked(circle_action) != bool(shape == "circle"):
+        _set_action_checked(circle_action, bool(shape == "circle"))
+        repairs.append("brush_shape_circle_action_sync")
+
+    dec_action = getattr(editor, "act_brush_size_decrease", None)
+    inc_action = getattr(editor, "act_brush_size_increase", None)
+    dec_should_enable = bool(brush_size > 1)
+    inc_should_enable = bool(brush_size < 11)
+    if dec_action is not None and _action_enabled(dec_action) != dec_should_enable:
+        _set_action_enabled(dec_action, dec_should_enable)
+        repairs.append("brush_size_decrease_action_sync")
+    if inc_action is not None and _action_enabled(inc_action) != inc_should_enable:
+        _set_action_enabled(inc_action, inc_should_enable)
+        repairs.append("brush_size_increase_action_sync")
+
+    # 4d) Selection mode action must mirror canonical editor state
+    selection_mode = bool(getattr(editor, "selection_mode", False))
+    act_selection_mode = getattr(editor, "act_selection_mode", None)
+    if act_selection_mode is not None and _action_checked(act_selection_mode) != selection_mode:
+        _set_action_checked(act_selection_mode, selection_mode)
+        repairs.append("selection_mode_action_sync")
 
     # 5) Refresh cursor profile after theme sync
     cursor_overlay = getattr(editor, "brush_cursor_overlay", None)

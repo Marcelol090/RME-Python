@@ -728,3 +728,59 @@
   - `tests/ui/test_toolbar_menu_sync.py` (submenu Brush no Window)
   - `tests/unit/logic_layer/test_rust_accel.py` (dedupe_positions_3d)
   - `tests/unit/vis_layer/ui/test_ui_backend_contract.py` (brush toolbar sync)
+
+## Incremental Update (2026-02-12 - Brush contract hardening + fallback canvas Rust dedupe)
+- Continuação da paridade UI/UX com reforço de integração backend:
+  - `vis_layer/ui/canvas/widget.py` passou a usar `rust_accel.dedupe_positions_3d(...)` no caminho de pintura do canvas fallback (`QPainter`), alinhando com o hot path do OpenGL.
+  - `ui_backend_contract.py` expandiu validação/correção para ações de brush:
+    - `act_brush_shape_square` / `act_brush_shape_circle` (checked state).
+    - `act_brush_size_decrease` / `act_brush_size_increase` (enabled state conforme limites 1..11).
+- Cobertura ampliada:
+  - `tests/unit/vis_layer/ui/test_ui_backend_contract.py`:
+    - `test_ui_backend_contract_syncs_brush_shape_actions`
+    - `test_ui_backend_contract_syncs_brush_size_action_enablement`
+  - `tests/ui/test_brush_sync.py`:
+    - `test_brush_size_actions_follow_bounds`
+- Validação da rodada:
+  - `ruff check` nos arquivos alterados: **OK**.
+  - `python3 -m py_compile` nos arquivos alterados: **OK**.
+  - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> `8 passed`.
+  - `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_brush_sync.py` -> `5 passed` (com warning de depreciação do `pytest-qt` e warning de plugin Qt `wayland` no teardown).
+
+## Incremental Update (2026-02-12 - Selection mode contract + brush offset cache + toolbar theme tokens)
+- Implementado contrato determinístico de `selection_mode` para evitar estados "stuck":
+  - `qt_map_editor_navigation.py::_toggle_selection_mode()` agora também chama `canvas.cancel_interaction()` ao alternar modo.
+  - Garante cancelamento de gestos pendentes de paint/selection no canvas ao mudar o modo de interação.
+- Otimização de render em brush footprint:
+  - `qt_map_editor_brushes.py` ganhou cache de offsets (`_brush_offsets_cache`, `_brush_border_offsets_cache`) com refresh em `_set_brush_size/_set_brush_shape`.
+  - `opengl_canvas.py` e `ui/canvas/widget.py` passaram a consumir offsets cacheados do editor em vez de recalcular geradores por evento.
+- Padronização visual do `BrushToolbar` com tema:
+  - `brush_toolbar.py` agora usa `ThemeManager.tokens` (surface/text/border/state/radius) em vez de RGBA hardcoded.
+  - `qt_map_editor_session.py::_apply_editor_theme_profile()` passou a chamar `brush_toolbar.refresh_theme()` após troca de tema.
+- Cobertura de testes:
+  - Novo: `tests/ui/test_mode_contract.py`
+    - `test_selection_mode_action_trigger_updates_editor_state`
+    - `test_selection_mode_toggle_cancels_pending_canvas_paint_gesture`
+  - Expandido: `tests/ui/test_brush_sync.py`
+    - `test_brush_offset_cache_updates_with_size_and_shape`
+- Validação da rodada:
+  - `ruff check` (arquivos alterados): **OK**
+  - `python3 -m py_compile` (arquivos alterados): **OK**
+  - `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_mode_contract.py` -> `2 passed`
+  - `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_brush_sync.py` -> `6 passed`
+
+## Incremental Update (2026-02-12 - Contract parity selection_mode + deterministic UI waits)
+- Reforço adicional do contrato front/back no verificador central:
+  - `ui_backend_contract.py` agora inclui `selection_mode` + `act_selection_mode` no snapshot.
+  - Auto-repair adiciona sincronização de `act_selection_mode` com o estado canônico de `editor.selection_mode`.
+- Ajuste micro de performance no cache de brush offsets:
+  - `qt_map_editor_brushes.py::_brush_offsets/_brush_border_offsets` agora retornam cache direto (sem cópia `tuple(...)` por chamada).
+- Testes UI mais determinísticos (Context7/pytest-qt aligned):
+  - `test_mode_contract.py` e `test_brush_sync.py` migrados de `waitForWindowShown` para `qtbot.waitExposed(...)`.
+- Cobertura:
+  - `tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+    - `test_ui_backend_contract_syncs_selection_mode_action`
+- Validação:
+  - `ruff check` + `py_compile` -> **OK**
+  - `.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> `9 passed`
+  - `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_mode_contract.py py_rme_canary/tests/ui/test_brush_sync.py` -> `8 passed`

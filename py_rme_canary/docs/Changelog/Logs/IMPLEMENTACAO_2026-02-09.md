@@ -261,6 +261,143 @@ Status: Full project mypy --strict clean + Rust acceleration expanded — all te
 
 ---
 
+## Sessão Incremental (2026-02-12): UI/UX Contract Hardening + Rust Dedupe no Canvas Fallback
+
+### Objetivo
+
+Reforçar a consistência UI↔backend para controles de brush (shape/size actions) e alinhar performance
+de deduplicação também no canvas fallback (`QPainter`) usando bridge Rust quando disponível.
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/canvas/widget.py`
+  - `_dedupe_positions(...)` agora delega para `dedupe_positions_3d(...)` em `rust_accel`.
+- `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+  - Novos helpers de action enabled state (`_action_enabled`, `_set_action_enabled`).
+  - Snapshot do contrato expandido para:
+    - `brush_shape`,
+    - checked das actions de shape,
+    - enabled das actions de size.
+  - Auto-repair expandido para:
+    - sincronizar `act_brush_shape_square/circle` com `editor.brush_shape`,
+    - sincronizar enablement de `act_brush_size_decrease/increase` conforme limites 1..11.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+  - `_Action` ganhou `isEnabled/setEnabled`.
+  - Novos testes:
+    - `test_ui_backend_contract_syncs_brush_shape_actions`
+    - `test_ui_backend_contract_syncs_brush_size_action_enablement`
+- `py_rme_canary/tests/ui/test_brush_sync.py`
+  - Novo teste:
+    - `test_brush_size_actions_follow_bounds`
+
+### Validação Executada
+
+- `ruff check` (arquivos alterados) -> **OK**
+- `python3 -m py_compile` (arquivos alterados) -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **8 passed**
+- `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_brush_sync.py` -> **5 passed**
+
+### Observações de Ambiente
+
+- Execução de testes com `python3` do sistema (3.10) falha por `StrEnum` ausente; suíte validada com Python 3.12 do `.venv`.
+- Em teardown dos testes Qt há warning do plugin Wayland (`Could not load ... wayland`), sem impacto no resultado (testes passam).
+
+---
+
+## Sessão Incremental (2026-02-12): Selection Mode Contract + Brush Offset Cache + Toolbar Theme Tokens
+
+### Resumo
+
+Aplicadas três melhorias de paridade/estabilidade sugeridas para a branch `UIxWidget`:
+1. contrato de `selection_mode` com cancelamento de gestos pendentes;
+2. cache de offsets de brush no editor para reduzir recomputação no render;
+3. `BrushToolbar` migrado para tokens do `ThemeManager` (sem RGBA hardcoded).
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py`
+  - `_toggle_selection_mode()` agora chama `canvas.cancel_interaction()` para eliminar estado intermediário de gesto em troca de modo.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py`
+  - Novos helpers:
+    - `_refresh_brush_offset_cache()`
+    - `_brush_offsets()`
+    - `_brush_border_offsets()`
+  - Cache atualizado automaticamente em `_set_brush_size()` e `_set_brush_shape()`.
+- `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+  - `paint_footprint` e preview usam offsets cacheados do editor.
+- `py_rme_canary/vis_layer/ui/canvas/widget.py`
+  - Caminho fallback (`QPainter`) também usa offsets cacheados do editor.
+- `py_rme_canary/vis_layer/ui/widgets/brush_toolbar.py`
+  - `_apply_style()` refatorado para `ThemeManager.tokens`.
+  - Novo `refresh_theme()` para reaplicar estilo dinamicamente.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_apply_editor_theme_profile()` agora chama `brush_toolbar.refresh_theme()`.
+- `py_rme_canary/tests/ui/test_mode_contract.py` (novo)
+- `py_rme_canary/tests/ui/test_brush_sync.py` (expandido)
+
+### Testes
+
+- Novo arquivo de contrato:
+  - `test_selection_mode_action_trigger_updates_editor_state`
+  - `test_selection_mode_toggle_cancels_pending_canvas_paint_gesture`
+- Novo teste de cache:
+  - `test_brush_offset_cache_updates_with_size_and_shape`
+
+### Validação
+
+- `ruff check` nos arquivos alterados: **OK**
+- `python3 -m py_compile` nos arquivos alterados: **OK**
+- `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_mode_contract.py` -> **2 passed**
+- `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_brush_sync.py` -> **6 passed**
+
+### Observações
+
+- Warnings conhecidos no ambiente de testes Qt:
+  - `pytest-qt` depreciação de `waitForWindowShown`;
+  - mensagem de plugin Wayland no teardown.
+- Sem regressão funcional observada nas suítes executadas.
+
+---
+
+## Sessão Incremental (2026-02-12): SelectionMode Contract Parity + Deterministic Qt Waits
+
+### Resumo
+
+Rodada de endurecimento da verificação UI↔backend com foco em `selection_mode` e precisão dos testes UI.
+
+### Implementações
+
+- `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+  - Snapshot do contrato expandido com:
+    - `selection_mode` canônico;
+    - `act_selection_mode` checked state.
+  - Auto-repair expandido:
+    - `selection_mode_action_sync` para alinhar QAction com backend/editor state.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py`
+  - Micro-otimização no hot path de offsets:
+    - retornos de cache sem realocação via `tuple(...)`.
+- `py_rme_canary/tests/ui/test_mode_contract.py`
+- `py_rme_canary/tests/ui/test_brush_sync.py`
+  - Migração de `qtbot.waitForWindowShown(...)` para `with qtbot.waitExposed(...): window.show()`.
+  - Reduz warning/depreciação e melhora determinismo.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py`
+  - Novo teste: `test_ui_backend_contract_syncs_selection_mode_action`.
+
+### Validação
+
+- `ruff check` -> **OK**
+- `python3 -m py_compile` -> **OK**
+- `.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py` -> **9 passed**
+- `.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_mode_contract.py py_rme_canary/tests/ui/test_brush_sync.py` -> **8 passed**
+
+### MCP/Workflow
+
+- Context7 consultado para padrão atualizado de testes Qt (`waitExposed` em vez de `waitForWindowShown`).
+- Figma MCP atualizado com matriz de verificação UIxWidget:
+  - https://www.figma.com/online-whiteboard/create-diagram/5baaaf46-758a-4071-8b75-d3c8fae8edf4?utm_source=other&utm_content=edit_in_figjam&oai_id=&request_id=8a1d4e96-cfcd-445c-b3da-2b71cdc9d0f8
+
+---
+
 ## Sessão 5 (2026-02-10): Legacy Popup/Brush Selection Parity
 
 ### Resumo

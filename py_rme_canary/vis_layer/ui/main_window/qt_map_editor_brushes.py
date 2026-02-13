@@ -6,12 +6,33 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QCheckBox, QSpinBox
 
+from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
+
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
 class QtMapEditorBrushesMixin:
     # ---------- brush controls ----------
+    def _refresh_brush_offset_cache(self: QtMapEditor) -> None:
+        size = max(1, int(getattr(self, "brush_size", 1) or 1))
+        shape = str(getattr(self, "brush_shape", "square") or "square")
+        self._brush_offsets_cache = tuple(iter_brush_offsets(size, shape))
+        self._brush_border_offsets_cache = tuple(iter_brush_border_offsets(size, shape))
+
+    def _brush_offsets(self: QtMapEditor) -> tuple[tuple[int, int], ...]:
+        cached = getattr(self, "_brush_offsets_cache", None)
+        if not cached:
+            self._refresh_brush_offset_cache()
+            cached = getattr(self, "_brush_offsets_cache", ())
+        return cached
+
+    def _brush_border_offsets(self: QtMapEditor) -> tuple[tuple[int, int], ...]:
+        cached = getattr(self, "_brush_border_offsets_cache", None)
+        if not cached:
+            self._refresh_brush_offset_cache()
+            cached = getattr(self, "_brush_border_offsets_cache", ())
+        return cached
 
     def _set_selected_brush_id(self: QtMapEditor, sid: int) -> None:
         sid = int(sid)
@@ -40,6 +61,7 @@ class QtMapEditorBrushesMixin:
                 self.act_brush_size_decrease.setEnabled(int(self.brush_size) > 1)
             if hasattr(self, "act_brush_size_increase"):
                 self.act_brush_size_increase.setEnabled(int(self.brush_size) < 11)
+        self._refresh_brush_offset_cache()
 
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
@@ -116,6 +138,7 @@ class QtMapEditorBrushesMixin:
                 self.act_brush_shape_circle.blockSignals(True)
                 self.act_brush_shape_circle.setChecked(shape == "circle")
                 self.act_brush_shape_circle.blockSignals(False)
+        self._refresh_brush_offset_cache()
 
     def _set_z(self: QtMapEditor, z: int) -> None:
         self.viewport.z = int(z)
