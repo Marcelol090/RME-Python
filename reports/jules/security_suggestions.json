@@ -1,9 +1,25 @@
 {
   "version": 1,
   "category": "security",
-  "generated_at": "2026-02-11T12:00:00Z",
+  "generated_at": "2026-02-12T16:45:00Z",
   "task": "security-scan-and-fix",
   "implemented": [
+    {
+      "id": "SEC-005",
+      "summary": "Fixed DoS vulnerability in LiveSocket where unlimited payload size could lead to OOM attacks.",
+      "files": [
+        "py_rme_canary/core/protocols/live_socket.py"
+      ],
+      "evidence": "Verified with reproduction test case in py_rme_canary/tests/unit/core/protocols/test_live_socket_security.py"
+    },
+    {
+      "id": "SEC-006",
+      "summary": "Fixed regression in ItemTypeDetector where door lookups were failing due to missing definitions.",
+      "files": [
+        "py_rme_canary/logic_layer/item_type_detector.py"
+      ],
+      "evidence": "Verified with existing unit tests in py_rme_canary/tests/unit/logic_layer/test_item_type_detector.py"
+    },
     {
       "id": "SEC-001",
       "summary": "Fixed timing attack vulnerability in LiveServer password comparison using secrets.compare_digest.",

@@ -54,6 +54,9 @@ DOOR_PAIRS = {
     # Add more door pairs as needed
 }
 
+REVERSE_DOOR_PAIRS = {v: k for k, v in DOOR_PAIRS.items()}
+OPEN_DOOR_IDS = set(DOOR_PAIRS.values())
+
 # Rotatable items (ID sequences)
 ROTATABLE_SEQUENCES = {
     # Torch: 2050 -> 2051 -> 2052 -> 2053 -> 2050
