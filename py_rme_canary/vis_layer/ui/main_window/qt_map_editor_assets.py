@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox, QProgressDialog
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 
+from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
 from py_rme_canary.core.assets.appearances_dat import AppearancesDatError, load_appearances_dat
 from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
 from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteError
@@ -132,12 +133,15 @@ class QtMapEditorAssetsMixin:
         self._load_client_data_stack(config, source="interactive_loader")
 
     def _load_client_data_stack(self: QtMapEditor, config: ClientDataLoadConfig, *, source: str) -> None:
-        progress = QProgressDialog("Preparing client data load...", "Cancel", 0, 5, self)
-        progress.setWindowTitle("Load Client Data")
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setAutoClose(True)
-        progress.setMinimumDuration(0)
-        progress.setValue(0)
+        progress = ModernProgressDialog(
+            title="LOAD CLIENT DATA",
+            label_text="PREPARING...",
+            minimum=0,
+            maximum=5,
+            parent=self
+        )
+        progress.show()
+        QApplication.processEvents()
 
         def advance(step: int, message: str) -> None:
             progress.setLabelText(message)

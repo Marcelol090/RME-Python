@@ -1,11 +1,41 @@
 from __future__ import annotations
 
+import sys
 from types import SimpleNamespace
+from unittest.mock import MagicMock
+
+# Mock PyQt6 if not present to allow logic verification in headless env
+try:
+    import PyQt6
+except ImportError:
+    mock_qt = MagicMock()
+    sys.modules["PyQt6"] = mock_qt
+    sys.modules["PyQt6.QtWidgets"] = mock_qt
+    sys.modules["PyQt6.QtCore"] = mock_qt
+    sys.modules["PyQt6.QtGui"] = mock_qt
+
+    # Define dummy base classes for inheritance
+    class QWidget:
+        def setWindowTitle(self, t): pass
+        def setWindowModality(self, m): pass
+        def show(self): pass
+        def close(self): pass
+    class QDialog(QWidget):
+        def exec(self): return 1
+    class QMainWindow(QWidget): pass
+
+    mock_qt.QWidget = QWidget
+    mock_qt.QDialog = QDialog
+    mock_qt.QMainWindow = QMainWindow
+
+    # Mock specific enums or flags if accessed directly
+    mock_qt.Qt.WindowType.FramelessWindowHint = 0
+    mock_qt.Qt.WindowType.WindowStaysOnTopHint = 0
+    mock_qt.Qt.AlignmentFlag.AlignCenter = 0
 
 import pytest
 
-pytest.importorskip("PyQt6")
-
+# Now we can safely import the modules under test
 from py_rme_canary.core.config.client_profiles import ClientProfile
 from py_rme_canary.vis_layer.ui.dialogs.client_data_loader_dialog import ClientDataLoadConfig
 from py_rme_canary.vis_layer.ui.main_window import qt_map_editor_assets as assets_module
@@ -14,12 +44,14 @@ from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets import QtMapEdi
 
 @pytest.fixture
 def app():
-    from PyQt6.QtWidgets import QApplication
-
-    instance = QApplication.instance()
-    if instance is None:
-        instance = QApplication([])
-    return instance
+    # If using real PyQt, get instance. If mocked, return dummy.
+    if "PyQt6" in sys.modules and not isinstance(sys.modules["PyQt6"], MagicMock):
+        from PyQt6.QtWidgets import QApplication
+        instance = QApplication.instance()
+        if instance is None:
+            instance = QApplication([])
+        return instance
+    return MagicMock()
 
 
 class _FakeSettings:
@@ -83,6 +115,9 @@ class _FakeProgress:
         self.closed = False
         self.__class__.created.append(self)
 
+    def show(self) -> None:
+        return None
+
     def setWindowTitle(self, *_args) -> None:
         return None
 
@@ -132,7 +167,7 @@ def test_load_client_data_stack_appends_saved_profile_to_summary(app, monkeypatc
         preferred_kind="legacy",
     )
 
-    monkeypatch.setattr(assets_module, "QProgressDialog", _FakeProgress)
+    monkeypatch.setattr(assets_module, "ModernProgressDialog", _FakeProgress)
     monkeypatch.setattr(assets_module, "get_user_settings", lambda: settings)
     monkeypatch.setattr(assets_module, "detect_asset_profile", lambda *_a, **_k: profile)
     monkeypatch.setattr(editor, "_maybe_save_loaded_client_profile", lambda **_k: saved_profile)
@@ -160,7 +195,7 @@ def test_load_client_data_stack_appends_saved_profile_to_summary(app, monkeypatc
 
     progress = _FakeProgress.created[-1]
     assert progress.closed
-    assert progress.values == [0, 1, 2, 3, 4, 5]
+    assert progress.values == [1, 2, 3, 4, 5]
     assert "Loading item definitions (items.otb / items.xml)..." in progress.labels
 
 
@@ -181,7 +216,7 @@ def test_load_client_data_stack_uses_explicit_definition_paths_when_provided(app
     )
     profile = SimpleNamespace(kind="legacy", assets_dir="C:/clients/1098", root="C:/clients/1098")
 
-    monkeypatch.setattr(assets_module, "QProgressDialog", _FakeProgress)
+    monkeypatch.setattr(assets_module, "ModernProgressDialog", _FakeProgress)
     monkeypatch.setattr(assets_module, "get_user_settings", lambda: settings)
     monkeypatch.setattr(assets_module, "detect_asset_profile", lambda *_a, **_k: profile)
     monkeypatch.setattr(editor, "_maybe_save_loaded_client_profile", lambda **_k: None)
