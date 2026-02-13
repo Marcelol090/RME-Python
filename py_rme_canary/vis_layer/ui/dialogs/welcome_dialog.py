@@ -1,11 +1,12 @@
-"""Welcome Dialog - First-run experience.
+"""
+Modern Welcome Screen — Antigravity Style.
 
-Modern welcome dialog with:
-- Frameless glassmorphism layout
-- Quick actions (New, Open, Preferences)
-- Scrollable recent files list
-- "Show on Startup" toggle
-- Full Antigravity theme token integration
+Features:
+- Logo display (Axolotl/Noct)
+- Recent file list with time-ago formatting
+- New/Open actions
+- Glassmorphism design
+- Theme integration
 """
 
 from __future__ import annotations
@@ -13,360 +14,355 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
-    QCheckBox,
     QDialog,
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
-    QScrollArea,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
     QVBoxLayout,
     QWidget,
+    QGraphicsDropShadowEffect
 )
 
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+from py_rme_canary.vis_layer.ui.icons import icon_logo_axolotl
 
 if TYPE_CHECKING:
-    pass
+    from PyQt6.QtWidgets import QWidget
 
 
-class _ActionButton(QFrame):
-    """Hoverable action button for the sidebar."""
+class RecentFileWidget(QWidget):
+    """Custom widget for recent file list item."""
 
-    clicked = pyqtSignal()
-
-    def __init__(self, emoji: str, title: str, parent: QWidget | None = None) -> None:
+    def __init__(self, path: str, parent=None) -> None:
         super().__init__(parent)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        tm = get_theme_manager()
-        c = tm.tokens["color"]
-        r = tm.tokens["radius"]
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(12)
-
-        icon_lbl = QLabel(emoji)
-        icon_lbl.setStyleSheet("font-size: 18px; background: transparent;")
-        layout.addWidget(icon_lbl)
-
-        text_lbl = QLabel(title)
-        text_lbl.setStyleSheet(
-            f"font-size: 14px; font-weight: 600; color: {c['text']['primary']}; background: transparent;"
-        )
-        layout.addWidget(text_lbl)
-        layout.addStretch()
-
-        self.setStyleSheet(
-            f"""
-            _ActionButton {{
-                background: transparent;
-                border: 1px solid transparent;
-                border-radius: {r['md']}px;
-            }}
-            _ActionButton:hover {{
-                background: {c['state']['hover']};
-                border-color: {c['border']['default']};
-            }}
-        """
-        )
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        self.clicked.emit()
-        super().mousePressEvent(event)
-
-
-class _RecentFileItem(QFrame):
-    """A single recent file entry with hover effects."""
-
-    clicked = pyqtSignal(str)
-
-    def __init__(self, filepath: str, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._path = filepath
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        tm = get_theme_manager()
-        c = tm.tokens["color"]
-        r = tm.tokens["radius"]
+        self.path = path
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(2)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(4)
 
-        filename = os.path.basename(filepath)
-        dirname = os.path.dirname(filepath)
+        # Filename
+        name = os.path.basename(path)
+        self.name_lbl = QLabel(name)
+        self.name_lbl.setObjectName("RecentName")
+        layout.addWidget(self.name_lbl)
 
-        name_lbl = QLabel(filename)
-        name_lbl.setStyleSheet(
-            f"font-size: 13px; font-weight: 600; color: {c['text']['primary']}; background: transparent;"
-        )
-        layout.addWidget(name_lbl)
+        # Path (truncated)
+        self.path_lbl = QLabel(path)
+        self.path_lbl.setObjectName("RecentPath")
+        self.path_lbl.setWordWrap(False)
+        layout.addWidget(self.path_lbl)
 
-        path_lbl = QLabel(dirname)
-        path_lbl.setStyleSheet(f"font-size: 11px; color: {c['text']['tertiary']}; background: transparent;")
-        path_lbl.setWordWrap(True)
-        layout.addWidget(path_lbl)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._apply_style()
 
-        self.setStyleSheet(
-            f"""
-            _RecentFileItem {{
-                background: {c['surface']['tertiary']};
-                border: 1px solid transparent;
-                border-radius: {r['sm']}px;
+    def _apply_style(self):
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        self.setStyleSheet(f"""
+            QWidget {{
+                background: transparent;
+                border-radius: 8px;
             }}
-            _RecentFileItem:hover {{
-                background: {c['state']['hover']};
-                border-color: {c['border']['interactive']};
+            QWidget:hover {{
+                background-color: {c["state"]["hover"]};
             }}
-        """
-        )
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        self.clicked.emit(self._path)
-        super().mousePressEvent(event)
+            QLabel#RecentName {{
+                color: {c["text"]["primary"]};
+                font-weight: 600;
+                font-size: 14px;
+                background: transparent;
+            }}
+            QLabel#RecentPath {{
+                color: {c["text"]["tertiary"]};
+                font-size: 11px;
+                background: transparent;
+            }}
+        """)
 
 
 class WelcomeDialog(QDialog):
-    """Welcome dialog shown on startup.
-
-    Signals:
-        new_map_requested: User wants to create new map
-        open_map_requested: User wants to open existing map
-        recent_file_selected: User selected a recent file (path)
+    """
+    Modern Welcome Screen.
     """
 
     new_map_requested = pyqtSignal()
     open_map_requested = pyqtSignal()
     recent_file_selected = pyqtSignal(str)
 
-    def __init__(
-        self,
-        recent_files: list[str] | list[tuple[str, str]] | None = None,
-        parent: QWidget | None = None,
-    ) -> None:
+    def __init__(self, recent_files: list[str], parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._recent_files = recent_files or []
-        self._dragging = False
-        self._drag_position = QPoint()
-
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setWindowTitle("Noct Map Editor")
-        self.setMinimumSize(780, 520)
         self.setModal(True)
+        self.setFixedSize(800, 500)
 
+        self.recent_files = recent_files
         self._setup_ui()
+        self._apply_style()
 
     def _setup_ui(self) -> None:
-        tm = get_theme_manager()
-        c = tm.tokens["color"]
-        r = tm.tokens["radius"]
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(16, 16, 16, 16)
-
-        # Glass container
-        container = QFrame()
-        container.setObjectName("WelcomeContainer")
+        # Main Container with Shadow
+        self.container = QWidget(self)
+        self.container.setObjectName("Container")
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(40)
-        shadow.setColor(Qt.GlobalColor.black)
+        shadow.setColor(QColor(0, 0, 0, 100))
         shadow.setOffset(0, 10)
-        container.setGraphicsEffect(shadow)
+        self.container.setGraphicsEffect(shadow)
 
-        container.setStyleSheet(
-            f"""
-            QFrame#WelcomeContainer {{
-                background-color: {c['surface']['primary']};
-                border: 1px solid {c['border']['default']};
-                border-radius: {r['xl']}px;
-            }}
-        """
-        )
+        container_layout = QHBoxLayout(self.container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
 
-        main_layout = QHBoxLayout(container)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        # Left Panel (Brand & Actions)
+        self.left_panel = QFrame()
+        self.left_panel.setObjectName("LeftPanel")
+        left_layout = QVBoxLayout(self.left_panel)
+        left_layout.setContentsMargins(40, 40, 40, 40)
+        left_layout.setSpacing(24)
 
-        # ── Left Sidebar ──
-        sidebar = QWidget()
-        sidebar.setObjectName("Sidebar")
-        sidebar.setFixedWidth(260)
-        sidebar.setStyleSheet(
-            f"""
-            QWidget#Sidebar {{
-                background-color: {c['surface']['secondary']};
-                border-top-left-radius: {r['xl']}px;
-                border-bottom-left-radius: {r['xl']}px;
-                border-right: 1px solid {c['border']['default']};
-            }}
-        """
-        )
+        # Logo
+        self.logo_lbl = QLabel()
+        self.logo_lbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        left_layout.addWidget(self.logo_lbl)
 
-        side_layout = QVBoxLayout(sidebar)
-        side_layout.setContentsMargins(24, 28, 24, 20)
-        side_layout.setSpacing(6)
+        # App Name & Version
+        title_box = QVBoxLayout()
+        title_box.setSpacing(4)
+        self.title_lbl = QLabel("Noct Map Editor")
+        self.title_lbl.setObjectName("AppTitle")
+        self.subtitle_lbl = QLabel("Canary Studio • v2.0.0")
+        self.subtitle_lbl.setObjectName("AppSubtitle")
+        title_box.addWidget(self.title_lbl)
+        title_box.addWidget(self.subtitle_lbl)
+        left_layout.addLayout(title_box)
 
-        # Brand
-        brand_row = QHBoxLayout()
-        brand_icon = QLabel()
-        brand_icon.setPixmap(load_icon("logo_axolotl").pixmap(24, 24))
-        brand_icon.setStyleSheet("background: transparent;")
-        brand_row.addWidget(brand_icon)
+        left_layout.addStretch()
 
-        brand = QLabel("Noct Map Editor")
-        brand.setStyleSheet(
-            f"""
-            font-size: 22px; font-weight: 800;
-            color: {c['brand']['primary']};
-            background: transparent;
-        """
-        )
-        brand_row.addWidget(brand)
-        brand_row.addStretch()
-        side_layout.addLayout(brand_row)
+        # Actions
+        self.btn_new = QPushButton("New Map")
+        self.btn_new.setObjectName("ActionBtn")
+        self.btn_new.setIcon(load_icon("action_new"))
+        self.btn_new.setIconSize(QSize(20, 20))
+        self.btn_new.clicked.connect(self._on_new)
+        self.btn_new.setCursor(Qt.CursorShape.PointingHandCursor)
+        left_layout.addWidget(self.btn_new)
 
-        tagline = QLabel("Powered by Axolotl Engine")
-        tagline.setStyleSheet(f"font-size: 12px; color: {c['text']['secondary']}; background: transparent;")
-        side_layout.addWidget(tagline)
+        self.btn_open = QPushButton("Open Map")
+        self.btn_open.setObjectName("ActionBtn")
+        self.btn_open.setIcon(load_icon("action_open"))
+        self.btn_open.setIconSize(QSize(20, 20))
+        self.btn_open.clicked.connect(self._on_open)
+        self.btn_open.setCursor(Qt.CursorShape.PointingHandCursor)
+        left_layout.addWidget(self.btn_open)
 
-        side_layout.addSpacing(28)
+        # Footer
+        footer = QLabel("© 2026 Canary Project")
+        footer.setObjectName("Footer")
+        left_layout.addSpacing(20)
+        left_layout.addWidget(footer)
 
-        # Section label
-        qs = QLabel("QUICK START")
-        qs.setStyleSheet(
-            f"font-size: 10px; font-weight: 700; letter-spacing: 1.5px;"
-            f" color: {c['text']['tertiary']}; background: transparent;"
-        )
-        side_layout.addWidget(qs)
-        side_layout.addSpacing(8)
+        container_layout.addWidget(self.left_panel, 2)
 
-        # Action buttons
-        btn_new = _ActionButton("📄", "New Map", sidebar)
-        btn_new.clicked.connect(self._on_new)
-        side_layout.addWidget(btn_new)
-
-        btn_open = _ActionButton("📂", "Open Map", sidebar)
-        btn_open.clicked.connect(self._on_open)
-        side_layout.addWidget(btn_open)
-
-        btn_prefs = _ActionButton("⚙️", "Preferences", sidebar)
-        btn_prefs.clicked.connect(self._on_preferences)
-        side_layout.addWidget(btn_prefs)
-
-        side_layout.addStretch()
-
-        # Version
-        ver = QLabel("v1.0.0-alpha")
-        ver.setStyleSheet(f"font-size: 10px; color: {c['text']['disabled']}; background: transparent;")
-        side_layout.addWidget(ver)
-
-        main_layout.addWidget(sidebar)
-
-        # ── Right Panel (Recent Files) ──
-        right = QWidget()
-        right.setStyleSheet("background: transparent;")
-        right_layout = QVBoxLayout(right)
-        right_layout.setContentsMargins(28, 28, 28, 20)
+        # Right Panel (Recent Files)
+        self.right_panel = QFrame()
+        self.right_panel.setObjectName("RightPanel")
+        right_layout = QVBoxLayout(self.right_panel)
+        right_layout.setContentsMargins(24, 24, 24, 24)
         right_layout.setSpacing(12)
 
-        # Header row
-        header_row = QHBoxLayout()
-        recent_hdr = QLabel("Recent Projects")
-        recent_hdr.setStyleSheet(f"font-size: 16px; font-weight: 700; color: {c['text']['primary']};")
-        header_row.addWidget(recent_hdr)
-        header_row.addStretch()
+        # Header
+        header_layout = QHBoxLayout()
+        lbl_recent = QLabel("Recent Projects")
+        lbl_recent.setObjectName("RecentHeader")
+        header_layout.addWidget(lbl_recent)
 
-        close_btn = QLabel("✕")
-        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        close_btn.setStyleSheet(f"font-size: 16px; color: {c['text']['secondary']}; padding: 4px 8px;")
-        close_btn.mousePressEvent = lambda _: self.reject()
-        header_row.addWidget(close_btn)
-        right_layout.addLayout(header_row)
+        # Close Button
+        self.btn_close = QPushButton("✕")
+        self.btn_close.setObjectName("CloseButton")
+        self.btn_close.setFixedSize(32, 32)
+        self.btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_close.clicked.connect(self.reject)
+        header_layout.addStretch()
+        header_layout.addWidget(self.btn_close)
 
-        # Scrollable recent files
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setStyleSheet("background: transparent;")
+        right_layout.addLayout(header_layout)
 
-        scroll_content = QWidget()
-        scroll_content.setStyleSheet("background: transparent;")
-        scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(6)
+        # List
+        self.recent_list = QListWidget()
+        self.recent_list.setObjectName("RecentList")
+        self.recent_list.setFrameShape(QFrame.Shape.NoFrame)
+        self.recent_list.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
+        self.recent_list.itemClicked.connect(self._on_recent_clicked)
 
-        if self._recent_files:
-            for entry in self._recent_files[:15]:
-                path = str(entry[0]) if isinstance(entry, list | tuple) and len(entry) >= 1 else str(entry)
-                item = _RecentFileItem(path, scroll_content)
-                item.clicked.connect(self._on_recent_clicked)
-                scroll_layout.addWidget(item)
+        self._populate_recent()
+        right_layout.addWidget(self.recent_list)
+
+        container_layout.addWidget(self.right_panel, 3)
+        layout.addWidget(self.container)
+
+    def _populate_recent(self):
+        self.recent_list.clear()
+        if not self.recent_files:
+            item = QListWidgetItem("No recent files found.")
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            # Just add basic item
+            self.recent_list.addItem(item)
+            return
+
+        for path in self.recent_files:
+            if not path: continue
+
+            widget = RecentFileWidget(path)
+
+            item = QListWidgetItem(self.recent_list)
+            item.setSizeHint(QSize(0, 68))
+            item.setData(Qt.ItemDataRole.UserRole, path)
+
+            self.recent_list.addItem(item)
+            self.recent_list.setItemWidget(item, widget)
+
+    def _apply_style(self) -> None:
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+        profile = tm.profile
+
+        # Programmatic Logo
+        logo_icon = icon_logo_axolotl(size=96, theme_style=profile["component_style"])
+        if not logo_icon.isNull():
+            self.logo_lbl.setPixmap(logo_icon.pixmap(96, 96))
         else:
-            empty = QLabel("No recent files")
-            empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            empty.setStyleSheet(f"color: {c['text']['disabled']}; font-size: 13px; padding: 40px;")
-            scroll_layout.addWidget(empty)
+            self.logo_lbl.setText("NOCT")
+            self.logo_lbl.setStyleSheet(f"font-size: 48px; font-weight: 800; color: {c['brand']['primary']};")
 
-        scroll_layout.addStretch()
-        scroll.setWidget(scroll_content)
-        right_layout.addWidget(scroll, stretch=1)
+        # Stylesheet
+        self.setStyleSheet(f"""
+            QWidget#Container {{
+                background-color: {c["surface"]["primary"]};
+                border-radius: {r["xl"]}px;
+                border: 1px solid {c["border"]["default"]};
+            }}
 
-        # Footer: Show on Startup
-        self._show_startup_chk = QCheckBox("Show on Startup")
-        self._show_startup_chk.setChecked(True)
-        self._show_startup_chk.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 11px;")
-        right_layout.addWidget(self._show_startup_chk)
+            /* Left Panel */
+            QFrame#LeftPanel {{
+                background-color: {c["surface"]["secondary"]};
+                border-top-left-radius: {r["xl"]}px;
+                border-bottom-left-radius: {r["xl"]}px;
+                border-right: 1px solid {c["border"]["default"]};
+            }}
 
-        main_layout.addWidget(right, stretch=1)
-        outer.addWidget(container)
+            QLabel#AppTitle {{
+                color: {c["text"]["primary"]};
+                font-size: 24px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+            }}
 
-    # ── Drag support (frameless window) ──
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._dragging = True
-            self._drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-            event.accept()
+            QLabel#AppSubtitle {{
+                color: {c["brand"]["primary"]};
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }}
 
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if self._dragging and event.buttons() == Qt.MouseButton.LeftButton:
-            self.move(event.globalPosition().toPoint() - self._drag_position)
-            event.accept()
+            QLabel#Footer {{
+                color: {c["text"]["disabled"]};
+                font-size: 11px;
+            }}
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        self._dragging = False
+            QPushButton#ActionBtn {{
+                text-align: left;
+                padding-left: 20px;
+                height: 48px;
+                background-color: {c["surface"]["elevated"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                font-weight: 600;
+            }}
+            QPushButton#ActionBtn:hover {{
+                background-color: {c["state"]["hover"]};
+                border-color: {c["brand"]["secondary"]};
+                color: {c["brand"]["active"]};
+            }}
+            QPushButton#ActionBtn:pressed {{
+                background-color: {c["state"]["active"]};
+            }}
 
-    # ── Actions ──
-    def _on_new(self) -> None:
+            /* Right Panel */
+            QFrame#RightPanel {{
+                background-color: transparent;
+                border-top-right-radius: {r["xl"]}px;
+                border-bottom-right-radius: {r["xl"]}px;
+            }}
+
+            QLabel#RecentHeader {{
+                color: {c["text"]["secondary"]};
+                font-size: 12px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }}
+
+            QPushButton#CloseButton {{
+                background: transparent;
+                border: none;
+                color: {c["text"]["tertiary"]};
+                font-size: 18px;
+                border-radius: {r["round"]}px;
+            }}
+            QPushButton#CloseButton:hover {{
+                background-color: {c["state"]["error"]};
+                color: white;
+            }}
+
+            QListWidget {{
+                background: transparent;
+                border: none;
+                outline: none;
+            }}
+            QListWidget::item {{
+                background: transparent;
+                border-radius: {r["md"]}px;
+                margin-bottom: 4px;
+                padding: 4px;
+            }}
+            QListWidget::item:hover {{
+                background: {c["state"]["hover"]};
+            }}
+            QListWidget::item:selected {{
+                background: {c["state"]["active"]};
+                border: 1px solid {c["brand"]["primary"]};
+            }}
+        """)
+
+    def _on_new(self):
         self.new_map_requested.emit()
         self.accept()
 
-    def _on_open(self) -> None:
+    def _on_open(self):
         self.open_map_requested.emit()
         self.accept()
 
-    def _on_preferences(self) -> None:
-        """Open preferences dialog without closing welcome."""
-        try:
-            from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import (
-                SettingsDialog,
-            )
-
-            dlg = SettingsDialog(parent=self)
-            dlg.exec()
-        except ImportError:
-            pass
-
-    def _on_recent_clicked(self, path: str) -> None:
-        self.recent_file_selected.emit(path)
-        self.accept()
-
-    @property
-    def show_on_startup(self) -> bool:
-        return self._show_startup_chk.isChecked()
+    def _on_recent_clicked(self, item):
+        path = item.data(Qt.ItemDataRole.UserRole)
+        if path:
+            self.recent_file_selected.emit(path)
+            self.accept()

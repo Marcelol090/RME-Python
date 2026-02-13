@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar, ToolSelector
+from py_rme_canary.vis_layer.ui.widgets.activity_bar import ActivityBar
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -17,6 +18,60 @@ if TYPE_CHECKING:
 class QtMapEditorToolbarsMixin:
     def _build_menus_and_toolbars(self) -> None:
         editor = cast("QtMapEditor", self)
+
+        # ---- Activity Bar (Antigravity Sidebar) ----
+        editor.activity_bar = ActivityBar(editor)
+        editor.addToolBar(Qt.ToolBarArea.LeftToolBarArea, editor.activity_bar)
+
+        # Configure Activity Bar
+        def _toggle_dock(dock, visible):
+            if dock:
+                dock.setVisible(visible)
+                if visible:
+                    dock.raise_()
+
+        # Explore (Assets/Palette)
+        editor.activity_bar.add_activity(
+            "explore", "explore", "Assets & Palette",
+            lambda c: _toggle_dock(getattr(editor, "palettes", None), c)
+        )
+
+        # Search (Global Search)
+        # For dialogs, we might just toggle visibility or open.
+        # Since GlobalSearch is non-modal, we can treat it like a view.
+        # But here we'll just open it and reset the button if closed?
+        # For now, simplistic toggle if we had a dock.
+        # Given it's a dialog, let's make it trigger the action.
+        def _toggle_search(c):
+            if c:
+                editor.show_global_search()
+                # Auto-uncheck after opening since it's a separate window?
+                # Or keep checked if we track window state?
+                # For "Activity Bar" feel, search usually opens a side panel.
+                # Use command palette as fallback for now.
+
+        editor.activity_bar.add_activity(
+            "search", "search", "Global Search",
+            _toggle_search
+        )
+
+        # Friends
+        editor.activity_bar.add_activity(
+            "friends", "friends", "Friends & Social",
+            lambda c: _toggle_dock(getattr(editor, "dock_friends", None), c)
+        )
+
+        # Settings (Bottom)
+        editor.activity_bar.add_activity(
+            "settings", "settings", "Settings",
+            lambda c: editor.show_settings_dialog() if c else None,
+            bottom=True
+        )
+
+        # Initial State
+        editor.activity_bar.set_active("explore", True)
+
+
         # Menus live in ui/main_window/build_menus.py
         build_menus_and_toolbars(editor)
 
