@@ -9,11 +9,12 @@ from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from py_rme_canary.logic_layer.lasso_selection import get_lasso_tool
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
+from py_rme_canary.logic_layer.rust_accel import dedupe_positions_3d
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
 from py_rme_canary.vis_layer.ui.canvas.tools.manager import ToolManager
 
-from ..helpers import iter_brush_border_offsets, iter_brush_offsets, qcolor_from_id
+from ..helpers import qcolor_from_id
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -188,15 +189,7 @@ class MapCanvasWidget(QWidget):
             return
 
         def _dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-            seen: set[tuple[int, int, int]] = set()
-            out: list[tuple[int, int, int]] = []
-            for px, py, pz in positions:
-                key = (int(px), int(py), int(pz))
-                if key in seen:
-                    continue
-                seen.add(key)
-                out.append(key)
-            return out
+            return dedupe_positions_3d(positions)
 
         def _union_with_mirror(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
             if not getattr(editor, "mirror_enabled", False) or not editor.has_mirror_axis():
@@ -213,7 +206,10 @@ class MapCanvasWidget(QWidget):
 
         # Mark legacy `tilestoborder` ring.
         border_positions: list[tuple[int, int, int]] = []
-        for dx, dy in iter_brush_border_offsets(editor.brush_size, editor.brush_shape):
+        border_offsets = (
+            editor._brush_border_offsets() if hasattr(editor, "_brush_border_offsets") else ()
+        )
+        for dx, dy in border_offsets:
             tx = int(x + dx)
             ty = int(y + dy)
             if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
@@ -223,7 +219,8 @@ class MapCanvasWidget(QWidget):
             editor.session.mark_autoborder_position(x=int(tx), y=int(ty), z=int(z))
 
         draw_positions: list[tuple[int, int, int]] = []
-        for dx, dy in iter_brush_offsets(editor.brush_size, editor.brush_shape):
+        draw_offsets = editor._brush_offsets() if hasattr(editor, "_brush_offsets") else ()
+        for dx, dy in draw_offsets:
             tx = int(x + dx)
             ty = int(y + dy)
             if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:

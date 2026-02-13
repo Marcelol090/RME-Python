@@ -2,6 +2,7 @@ import pytest
 
 pytest.importorskip("PyQt6.QtWidgets")
 
+from py_rme_canary.tests.ui._editor_test_utils import show_editor_window, stabilize_editor_for_headless_tests
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
@@ -18,9 +19,9 @@ def editor(qapp, qtbot):
     print(f"DEBUG: Thread: {threading.current_thread().name}")
 
     window = QtMapEditor()
+    stabilize_editor_for_headless_tests(window)
     qtbot.addWidget(window)
-    window.show()
-    qtbot.waitForWindowShown(window)
+    show_editor_window(qtbot, window)
     return window
 
 

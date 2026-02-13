@@ -6,12 +6,33 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QCheckBox, QSpinBox
 
+from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
+
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
 class QtMapEditorBrushesMixin:
     # ---------- brush controls ----------
+    def _refresh_brush_offset_cache(self: QtMapEditor) -> None:
+        size = max(1, int(getattr(self, "brush_size", 1) or 1))
+        shape = str(getattr(self, "brush_shape", "square") or "square")
+        self._brush_offsets_cache = tuple(iter_brush_offsets(size, shape))
+        self._brush_border_offsets_cache = tuple(iter_brush_border_offsets(size, shape))
+
+    def _brush_offsets(self: QtMapEditor) -> tuple[tuple[int, int], ...]:
+        cached = getattr(self, "_brush_offsets_cache", None)
+        if not cached:
+            self._refresh_brush_offset_cache()
+            cached = getattr(self, "_brush_offsets_cache", ())
+        return cached
+
+    def _brush_border_offsets(self: QtMapEditor) -> tuple[tuple[int, int], ...]:
+        cached = getattr(self, "_brush_border_offsets_cache", None)
+        if not cached:
+            self._refresh_brush_offset_cache()
+            cached = getattr(self, "_brush_border_offsets_cache", ())
+        return cached
 
     def _set_selected_brush_id(self: QtMapEditor, sid: int) -> None:
         sid = int(sid)
@@ -22,9 +43,13 @@ class QtMapEditorBrushesMixin:
         self._update_brush_label()
 
     def _set_brush_size(self: QtMapEditor, size: int) -> None:
-        self.brush_size = max(0, int(size))
+        val = max(0, int(size))
+        if self.brush_size == val:
+            return
+        self.brush_size = val
         with contextlib.suppress(Exception):
-            self.session.brush_size = int(self.brush_size)
+            if hasattr(self, "session") and self.session.brush_size != val:
+                self.session.brush_size = int(val)
 
         if hasattr(self, "size_spin") and isinstance(self.size_spin, QSpinBox):
             self.size_spin.blockSignals(True)
@@ -34,6 +59,14 @@ class QtMapEditorBrushesMixin:
         if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_size"):
             self.brush_toolbar.set_size(self.brush_size)
 
+        # Keep menu actions aligned with backend state source-of-truth.
+        with contextlib.suppress(Exception):
+            if hasattr(self, "act_brush_size_decrease"):
+                self.act_brush_size_decrease.setEnabled(int(self.brush_size) > 1)
+            if hasattr(self, "act_brush_size_increase"):
+                self.act_brush_size_increase.setEnabled(int(self.brush_size) < 11)
+        self._refresh_brush_offset_cache()
+
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
         with contextlib.suppress(Exception):
@@ -42,6 +75,16 @@ class QtMapEditorBrushesMixin:
             self.variation_spin.blockSignals(True)
             self.variation_spin.setValue(int(self.brush_variation))
             self.variation_spin.blockSignals(False)
+
+    def _cycle_brush_size(self: QtMapEditor, delta: int) -> None:
+        """Cycle brush size by delta (e.g. +1 or -1), clamped to 0..15."""
+        delta = int(delta)
+        cur = int(getattr(self, "brush_size", 0) or 0)
+        # Assuming max size 15 for now (legacy limit often higher but UI spinbox checks needed)
+        # BrushToolbar buttons are 1, 3, 5, 7, 9.
+        # Let's allow step 1.
+        nxt = max(0, min(15, cur + delta))
+        self._set_brush_size(nxt)
 
     def _cycle_brush_variation(self: QtMapEditor, delta: int) -> None:
         delta = int(delta)
@@ -100,6 +143,17 @@ class QtMapEditorBrushesMixin:
         if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_shape"):
             self.brush_toolbar.set_shape(shape)
 
+        with contextlib.suppress(Exception):
+            if hasattr(self, "act_brush_shape_square"):
+                self.act_brush_shape_square.blockSignals(True)
+                self.act_brush_shape_square.setChecked(shape == "square")
+                self.act_brush_shape_square.blockSignals(False)
+            if hasattr(self, "act_brush_shape_circle"):
+                self.act_brush_shape_circle.blockSignals(True)
+                self.act_brush_shape_circle.setChecked(shape == "circle")
+                self.act_brush_shape_circle.blockSignals(False)
+        self._refresh_brush_offset_cache()
+
     def _set_z(self: QtMapEditor, z: int) -> None:
         self.viewport.z = int(z)
         if hasattr(self, "z_spin") and isinstance(self.z_spin, QSpinBox):
@@ -128,3 +182,8 @@ class QtMapEditorBrushesMixin:
         if sid is None:
             return
         self._set_selected_brush_id(int(sid))
+
+    def _on_session_brush_size_changed(self: QtMapEditor, size: int) -> None:
+        """Callback from EditorSession when brush size changes externally."""
+        if int(self.brush_size) != int(size):
+            self._set_brush_size(int(size))

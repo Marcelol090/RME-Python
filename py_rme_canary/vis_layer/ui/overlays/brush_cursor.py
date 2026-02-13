@@ -20,7 +20,7 @@ from PyQt6.QtCore import (
     QTimer,
     pyqtProperty,
 )
-from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt6.QtGui import QBrush, QColor, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QWidget
 
 if TYPE_CHECKING:
@@ -52,11 +52,8 @@ class BrushCursorOverlay(QWidget):
         self._position = QPoint(0, 0)
 
         # Colors
-        from py_rme_canary.vis_layer.ui.theme.colors import get_theme_color
-
-        self._primary_color = get_theme_color("primary", 180)  # Purple
-        self._secondary_color = get_theme_color("primary", 60)  # Lighter purple
-        self._preview_color = get_theme_color("primary", 40)  # Fill preview
+        self._cursor_style = "ring"
+        self._refresh_theme_colors()
 
         # Setup
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
@@ -78,6 +75,20 @@ class BrushCursorOverlay(QWidget):
         self._shape_anim = QPropertyAnimation(self, b"shapeProgress")
         self._shape_anim.setDuration(150)
         self._shape_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+    def _refresh_theme_colors(self) -> None:
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+        from py_rme_canary.vis_layer.ui.theme.colors import get_theme_color
+
+        profile = get_theme_manager().profile
+        self._cursor_style = str(profile.get("cursor_style", "ring"))
+        self._primary_color = get_theme_color("primary", 200)
+        self._secondary_color = get_theme_color("secondary", 100)
+        self._preview_color = get_theme_color("primary", 48)
+
+    def refresh_theme_profile(self) -> None:
+        self._refresh_theme_colors()
+        self.update()
 
     @pyqtProperty(float)
     def animRadius(self) -> float:
@@ -158,7 +169,7 @@ class BrushCursorOverlay(QWidget):
             return
 
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, self._cursor_style != "pixel_cross")
 
         center = QPointF(self.width() / 2, self.height() / 2)
         radius = float(self._radius)
@@ -179,7 +190,7 @@ class BrushCursorOverlay(QWidget):
         ring_color.setAlphaF(ring_color.alphaF() * pulse_opacity)
 
         pen = QPen(ring_color)
-        pen.setWidth(2)
+        pen.setWidth(3 if self._cursor_style == "liquid_blob" else 2)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
@@ -189,14 +200,14 @@ class BrushCursorOverlay(QWidget):
         dash_color = QColor(self._secondary_color)
         dash_pen = QPen(dash_color)
         dash_pen.setWidth(1)
-        dash_pen.setStyle(Qt.PenStyle.DashLine)
+        dash_pen.setStyle(Qt.PenStyle.DotLine if self._cursor_style == "pixel_cross" else Qt.PenStyle.DashLine)
         dash_pen.setDashOffset(self._pulse_phase * 10)  # Rotating dashes
         painter.setPen(dash_pen)
 
         self._draw_shape(painter, center, radius - 4)
 
         # Draw center crosshair
-        crosshair_size = 8
+        crosshair_size = 10 if self._cursor_style == "pixel_cross" else 8
         center_color = QColor(self._primary_color)
         center_color.setAlpha(200)
         painter.setPen(QPen(center_color, 2))
@@ -251,6 +262,7 @@ class BrushPreviewOverlay(QWidget):
         self._tiles: list[QRect] = []  # Tiles to preview
         self._preview_color = QColor(139, 92, 246, 60)
         self._border_color = QColor(139, 92, 246, 120)
+        self._preview_pixmap: QPixmap | None = None
 
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -263,6 +275,16 @@ class BrushPreviewOverlay(QWidget):
     def clear_preview(self) -> None:
         """Clear the preview."""
         self._tiles.clear()
+        self._preview_pixmap = None
+        self.update()
+
+    def set_preview_sprite(self, pixmap: QPixmap | None) -> None:
+        """Set the sprite preview pixmap drawn on preview tiles."""
+        if pixmap is None or pixmap.isNull():
+            self._preview_pixmap = None
+            self.update()
+            return
+        self._preview_pixmap = QPixmap(pixmap)
         self.update()
 
     def paintEvent(self, event: object) -> None:
@@ -279,3 +301,10 @@ class BrushPreviewOverlay(QWidget):
 
         for rect in self._tiles:
             painter.drawRect(rect)
+
+        if self._preview_pixmap is not None and not self._preview_pixmap.isNull():
+            painter.save()
+            painter.setOpacity(0.72)
+            for rect in self._tiles:
+                painter.drawPixmap(rect, self._preview_pixmap)
+            painter.restore()

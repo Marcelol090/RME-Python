@@ -62,6 +62,10 @@ def toggle_dark_mode(editor, value: bool) -> None:
     editor._toggle_dark_mode(bool(value))
 
 
+def set_theme(editor, theme_name: str) -> None:
+    editor._set_editor_theme(str(theme_name))
+
+
 def toggle_live_log_dock(editor, value: bool) -> None:
     editor._toggle_live_log_dock(bool(value))
 

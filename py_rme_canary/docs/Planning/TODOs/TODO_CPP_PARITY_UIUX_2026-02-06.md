@@ -612,3 +612,19 @@
   - migração para `StrEnum`;
   - adição/ajuste de parser resiliente `from_value(...)`.
 - Objetivo: eliminar regressões de UI state-sync em menus/select controls e consolidar compatibilidade py312 no fluxo de editor.
+
+## Incremental Update (2026-02-12 - Noct Theme Suite v1)
+- Implementada suíte de 3 temas para o editor com branding `Noct Map Editor` + logo axolotl:
+  - `Noct Green Glass` (glassmorphism moderno em verde)
+  - `Noct 8-bit Glass` (glass + estética pixel/8-bit)
+  - `Noct Liquid Glass` (fluid/liquid glass)
+- Tema agora injeta não só cor/QSS, mas perfil de UX por tema:
+  - estilo de componentes/tools,
+  - perfil de brush (size/shape/variation),
+  - estilo de cursor (ring/pixel/liquid),
+  - preferência de ícones grandes na palette.
+- Integração de menu:
+  - `Window > Themes` com ações exclusivas para os 3 presets Noct.
+- Atualização de branding:
+  - título principal da app para `Noct Map Editor`;
+  - Welcome/About alinhados com naming e axolotl.

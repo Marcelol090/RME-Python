@@ -49,6 +49,95 @@ def _grad(y0: float, y1: float, c0: QColor, c1: QColor) -> QLinearGradient:
 
 
 # ---------------------------------------------------------------------------
+#  Logos (Programmatic Axolotl)
+# ---------------------------------------------------------------------------
+
+def icon_logo_axolotl(size: int = 64, theme_style: str = "green_glass") -> QIcon:
+    """Draws an abstract Axolotl / Noct logo programmatically."""
+    px, p = _canvas(size)
+    s = float(size)
+
+    # Theme colors
+    if theme_style == "pixel_glass":
+        # 8-bit style: Simple geometric blocky look (simulated with paths)
+        c_primary = QColor("#19F5B8")
+        c_secondary = QColor("#00D4FF")
+
+        # Head (Blocky)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(c_primary)
+        p.drawRect(int(s * 0.25), int(s * 0.25), int(s * 0.5), int(s * 0.4))
+
+        # Gills (Blocky)
+        p.setBrush(c_secondary)
+        p.drawRect(int(s * 0.15), int(s * 0.3), int(s * 0.1), int(s * 0.1))
+        p.drawRect(int(s * 0.15), int(s * 0.45), int(s * 0.1), int(s * 0.1))
+        p.drawRect(int(s * 0.75), int(s * 0.3), int(s * 0.1), int(s * 0.1))
+        p.drawRect(int(s * 0.75), int(s * 0.45), int(s * 0.1), int(s * 0.1))
+
+        # Eyes
+        p.setBrush(QColor("#000000"))
+        p.drawRect(int(s * 0.35), int(s * 0.35), int(s * 0.08), int(s * 0.08))
+        p.drawRect(int(s * 0.57), int(s * 0.35), int(s * 0.08), int(s * 0.08))
+
+    elif theme_style == "liquid_glass":
+        # Liquid style: Soft, rounded, gradients
+        g = QRadialGradient(s*0.5, s*0.5, s*0.5)
+        g.setColorAt(0, QColor("#48F2D4"))
+        g.setColorAt(1, QColor("#7BE7FF"))
+
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(g))
+
+        # Head (Rounded)
+        p.drawEllipse(QRectF(s * 0.2, s * 0.2, s * 0.6, s * 0.5))
+
+        # Gills (Soft blobs)
+        p.setBrush(QColor(123, 231, 255, 180))
+        p.drawEllipse(QRectF(s * 0.1, s * 0.3, s * 0.15, s * 0.15))
+        p.drawEllipse(QRectF(s * 0.75, s * 0.3, s * 0.15, s * 0.15))
+
+        # Eyes
+        p.setBrush(QColor(6, 20, 34, 200))
+        p.drawEllipse(QRectF(s * 0.35, s * 0.35, s * 0.08, s * 0.08))
+        p.drawEllipse(QRectF(s * 0.57, s * 0.35, s * 0.08, s * 0.08))
+
+    else: # green_glass / default
+        # Modern geometric
+        c_primary = QColor("#3EEA8D")
+        c_secondary = QColor("#2AD979")
+
+        # Head path
+        path = QPainterPath()
+        path.moveTo(s*0.3, s*0.3)
+        path.cubicTo(s*0.3, s*0.1, s*0.7, s*0.1, s*0.7, s*0.3) # Top curve
+        path.cubicTo(s*0.8, s*0.5, s*0.8, s*0.6, s*0.7, s*0.7) # Side
+        path.cubicTo(s*0.5, s*0.8, s*0.5, s*0.8, s*0.3, s*0.7) # Chin
+        path.cubicTo(s*0.2, s*0.6, s*0.2, s*0.5, s*0.3, s*0.3) # Side
+
+        p.setPen(QPen(c_secondary, 2))
+        p.setBrush(c_primary)
+        p.drawPath(path)
+
+        # Gills
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(62, 234, 141, 150))
+        # Left
+        p.drawEllipse(QRectF(s * 0.15, s * 0.35, s * 0.1, s * 0.1))
+        p.drawEllipse(QRectF(s * 0.18, s * 0.48, s * 0.1, s * 0.1))
+        # Right
+        p.drawEllipse(QRectF(s * 0.75, s * 0.35, s * 0.1, s * 0.1))
+        p.drawEllipse(QRectF(s * 0.72, s * 0.48, s * 0.1, s * 0.1))
+
+        # Eyes
+        p.setBrush(QColor("#061C12"))
+        p.drawEllipse(QRectF(s * 0.38, s * 0.4, s * 0.06, s * 0.06))
+        p.drawEllipse(QRectF(s * 0.56, s * 0.4, s * 0.06, s * 0.06))
+
+    return _done(px, p)
+
+
+# ---------------------------------------------------------------------------
 #  Palette tab icons — Antigravity style with gradients
 # ---------------------------------------------------------------------------
 
@@ -333,6 +422,72 @@ def icon_search(size: int = 20) -> QIcon:
     return _done(px, p)
 
 
+def icon_settings(size: int = 20) -> QIcon:
+    """Gear — settings."""
+    px, p = _canvas(size)
+    s = float(size)
+    cx, cy = s / 2, s / 2
+
+    # Outer ring
+    p.setPen(QPen(QColor(161, 161, 170, 180), 1.5))
+    p.setBrush(Qt.BrushStyle.NoBrush)
+    p.drawEllipse(QRectF(cx - s * 0.3, cy - s * 0.3, s * 0.6, s * 0.6))
+
+    # Cogs (simplified as ticks)
+    p.setPen(QPen(QColor(161, 161, 170, 180), 2.0))
+    for i in range(8):
+        angle = i * (math.pi / 4)
+        x1 = cx + math.cos(angle) * s * 0.28
+        y1 = cy + math.sin(angle) * s * 0.28
+        x2 = cx + math.cos(angle) * s * 0.42
+        y2 = cy + math.sin(angle) * s * 0.42
+        p.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+
+    # Inner dot
+    p.setPen(Qt.PenStyle.NoPen)
+    p.setBrush(QColor(161, 161, 170, 180))
+    p.drawEllipse(QRectF(cx - s * 0.1, cy - s * 0.1, s * 0.2, s * 0.2))
+
+    return _done(px, p)
+
+
+def icon_users(size: int = 20) -> QIcon:
+    """Two people — friends/users."""
+    px, p = _canvas(size)
+    s = float(size)
+
+    # Back person (faded)
+    g_back = _grad(0, s, QColor(100, 100, 110), QColor(80, 80, 90))
+    p.setPen(Qt.PenStyle.NoPen)
+    p.setBrush(QBrush(g_back))
+
+    # Head
+    p.drawEllipse(QRectF(s * 0.55, s * 0.2, s * 0.2, s * 0.2))
+    # Body
+    path_back = QPainterPath()
+    path_back.moveTo(s * 0.65, s * 0.45)
+    path_back.cubicTo(s * 0.85, s * 0.45, s * 0.85, s * 0.7, s * 0.85, s * 0.7)
+    path_back.lineTo(s * 0.45, s * 0.7)
+    path_back.cubicTo(s * 0.45, s * 0.7, s * 0.45, s * 0.45, s * 0.65, s * 0.45)
+    p.drawPath(path_back)
+
+    # Front person
+    g_front = _grad(0, s, QColor(129, 199, 132), QColor(46, 125, 50))
+    p.setBrush(QBrush(g_front))
+
+    # Head
+    p.drawEllipse(QRectF(s * 0.3, s * 0.3, s * 0.24, s * 0.24))
+    # Body
+    path_front = QPainterPath()
+    path_front.moveTo(s * 0.42, s * 0.58)
+    path_front.cubicTo(s * 0.15, s * 0.58, s * 0.15, s * 0.88, s * 0.15, s * 0.88)
+    path_front.lineTo(s * 0.69, s * 0.88)
+    path_front.cubicTo(s * 0.69, s * 0.88, s * 0.69, s * 0.58, s * 0.42, s * 0.58)
+    p.drawPath(path_front)
+
+    return _done(px, p)
+
+
 def icon_brush_size(size: int = 16) -> QIcon:
     """Diamond — brush size header."""
     px, p = _canvas(size)
@@ -545,4 +700,15 @@ def tool_icons(size: int = 22) -> dict[str, QIcon]:
         "fill": icon_fill(size),
         "select": icon_select(size),
         "picker": icon_picker(size),
+    }
+
+
+@lru_cache(maxsize=1)
+def activity_icons(size: int = 28) -> dict[str, QIcon]:
+    """Return dict mapping activity_id -> QIcon."""
+    return {
+        "explore": icon_terrain(size),
+        "friends": icon_users(size),
+        "search": icon_search(size),
+        "settings": icon_settings(size),
     }

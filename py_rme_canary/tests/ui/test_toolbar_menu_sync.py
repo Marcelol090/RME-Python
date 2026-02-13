@@ -3,15 +3,16 @@ import pytest
 pytest.importorskip("PyQt6.QtWidgets")
 
 from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
+from py_rme_canary.tests.ui._editor_test_utils import show_editor_window, stabilize_editor_for_headless_tests
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor  # noqa: E402
 
 
 @pytest.fixture
 def editor(qapp, qtbot):
     window = QtMapEditor()
+    stabilize_editor_for_headless_tests(window)
     qtbot.addWidget(window)
-    window.show()
-    qtbot.waitForWindowShown(window)
+    show_editor_window(qtbot, window)
     return window
 
 
@@ -63,6 +64,19 @@ def test_window_menu_exposes_tool_options(editor):
     assert window_menu is not None
     window_action_texts = {action.text() for action in window_menu.actions() if action.text()}
     assert "Tool Options" in window_action_texts
+
+
+def test_window_menu_exposes_brush_actions(editor):
+    menubar_actions = editor.menuBar().actions()
+    window_menu = next((action.menu() for action in menubar_actions if action.text() == "Window"), None)
+    assert window_menu is not None
+    brush_menu = next((action.menu() for action in window_menu.actions() if action.text() == "Brush"), None)
+    assert brush_menu is not None
+    labels = {action.text() for action in brush_menu.actions() if action.text()}
+    assert "Brush Size -" in labels
+    assert "Brush Size +" in labels
+    assert "Brush Shape: Square" in labels
+    assert "Brush Shape: Circle" in labels
 
 
 def test_tool_options_action_shows_palette_dock(editor, qtbot):
@@ -180,3 +194,27 @@ def test_selection_depth_actions_are_exclusive_and_follow_mode(editor, qtbot):
     qtbot.wait(10)
     assert editor.act_selection_depth_visible.isChecked() is True
     assert editor.act_selection_depth_current.isChecked() is False
+
+
+def test_window_menu_exposes_noct_theme_presets(editor):
+    menubar_actions = editor.menuBar().actions()
+    window_menu = next((action.menu() for action in menubar_actions if action.text() == "Window"), None)
+    assert window_menu is not None
+    themes_menu = next((action.menu() for action in window_menu.actions() if action.text() == "Themes"), None)
+    assert themes_menu is not None
+    labels = {action.text() for action in themes_menu.actions() if action.text()}
+    assert "Noct Green Glass" in labels
+    assert "Noct 8-bit Glass" in labels
+    assert "Noct Liquid Glass" in labels
+
+
+def test_theme_switch_updates_exclusive_actions(editor, qtbot):
+    editor.act_theme_noct_8bit_glass.trigger()
+    qtbot.wait(10)
+    assert editor.act_theme_noct_8bit_glass.isChecked() is True
+    assert editor.act_theme_noct_green_glass.isChecked() is False
+
+    editor.act_theme_noct_liquid_glass.trigger()
+    qtbot.wait(10)
+    assert editor.act_theme_noct_liquid_glass.isChecked() is True
+    assert editor.act_theme_noct_8bit_glass.isChecked() is False

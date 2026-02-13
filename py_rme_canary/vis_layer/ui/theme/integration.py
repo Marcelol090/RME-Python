@@ -31,10 +31,9 @@ def apply_modern_theme(app: QApplication) -> bool:
         apply_modern_theme(app)
     """
     try:
-        from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
-        stylesheet = ModernTheme.get_stylesheet()
-        app.setStyleSheet(stylesheet)
+        get_theme_manager().apply_theme()
 
         logger.info("Modern theme applied successfully")
         return True

@@ -214,7 +214,22 @@ class EditorSession:
 
     # UI-controlled brush size (radius). Kept Qt-free so non-tile tools (e.g.
     # spawn-area tools) can respect the current size.
-    brush_size: int = 0
+    _brush_size: int = field(default=0, init=False, repr=False)
+
+    # Callback for brush size changes (to notify UI).
+    on_brush_size_changed: Callable[[int], None] | None = field(default=None, init=False, repr=False)
+
+    @property
+    def brush_size(self) -> int:
+        return self._brush_size
+
+    @brush_size.setter
+    def brush_size(self, value: int) -> None:
+        val = int(value)
+        if self._brush_size != val:
+            self._brush_size = val
+            if self.on_brush_size_changed:
+                self.on_brush_size_changed(val)
 
     # Legacy-inspired: brush variation index.
     # MVP: used as a deterministic selector for brushes with `randomize_ids`.
