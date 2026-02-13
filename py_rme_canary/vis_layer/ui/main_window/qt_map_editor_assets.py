@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox, QProgressDialog
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 
+from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
 from py_rme_canary.core.assets.appearances_dat import AppearancesDatError, load_appearances_dat
 from py_rme_canary.core.assets.asset_profile import AssetProfileError, detect_asset_profile
 from py_rme_canary.core.assets.legacy_dat_spr import LegacySpriteError
@@ -132,12 +133,15 @@ class QtMapEditorAssetsMixin:
         self._load_client_data_stack(config, source="interactive_loader")
 
     def _load_client_data_stack(self: QtMapEditor, config: ClientDataLoadConfig, *, source: str) -> None:
-        progress = QProgressDialog("Preparing client data load...", "Cancel", 0, 5, self)
-        progress.setWindowTitle("Load Client Data")
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setAutoClose(True)
-        progress.setMinimumDuration(0)
-        progress.setValue(0)
+        progress = ModernProgressDialog(
+            title="LOAD CLIENT DATA",
+            label_text="PREPARING...",
+            minimum=0,
+            maximum=5,
+            parent=self
+        )
+        progress.show()
+        QApplication.processEvents()
 
         def advance(step: int, message: str) -> None:
             progress.setLabelText(message)
@@ -730,26 +734,20 @@ class QtMapEditorAssetsMixin:
         return self.sprite_assets is not None
 
     def _update_status_capabilities(self: QtMapEditor, *, prefix: str = "") -> None:
-        assets = "ON" if self.sprite_assets is not None else "OFF"
-        mapping = "ON" if self.id_mapper is not None else "OFF"
-        appearances = "ON" if self.appearance_assets is not None else "OFF"
-        sprite = "ON" if self._sprite_render_enabled() else "OFF"
-        profile = getattr(self, "asset_profile", None)
-        profile_kind = str(getattr(profile, "kind", "none"))
-        engine = str(self.engine or "unknown")
-        cv = int(self.client_version or 0)
-        otbm_version = 0
-        try:
-            if getattr(self, "map", None) is not None:
-                otbm_version = int(getattr(self.map.header, "otbm_version", 0))
-        except Exception:
-            otbm_version = 0
-        cap = (
-            f"engine={engine} client={cv} otbm={otbm_version} | profile={profile_kind} assets={assets} "
-            f"appearances={appearances} mapping={mapping} sprite={sprite}"
-        )
-        msg = f"{prefix} | {cap}" if prefix else cap
-        self.status.showMessage(msg)
+        if prefix and hasattr(self.status, "showMessage"):
+            self.status.showMessage(prefix)
+
+        # Update specific indicators if available
+        # This assumes self.status is ModernStatusBar which has map_info etc.
+        # But this mixin is used by Editor which now has ModernStatusBar.
+        # We can try/except or check hasattr.
+        if hasattr(self.status, "map_info"):
+            try:
+                width = int(getattr(self.map.header, "width", 0))
+                height = int(getattr(self.map.header, "height", 0))
+                self.status.map_info.set_map_info(width, height)
+            except Exception:
+                pass
 
     def _load_appearances_dat(self: QtMapEditor) -> None:
         profile = getattr(self, "asset_profile", None)

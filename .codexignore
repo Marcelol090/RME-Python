@@ -1,0 +1,22 @@
+# UixWidget scope guard for Codex context
+# Keep Codex focused on UI/UX, Widgets and Rendering only.
+*
+
+# Keep this file and core Codex docs visible
+!.codexignore
+!codex/
+!codex/**
+
+# UI/UX + Widget + Render implementation scope
+!py_rme_canary/vis_layer/
+!py_rme_canary/vis_layer/**
+!py_rme_canary/tests/ui/
+!py_rme_canary/tests/ui/**
+!py_rme_canary/tests/unit/vis_layer/
+!py_rme_canary/tests/unit/vis_layer/**
+
+# Scope tracking docs
+!py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md
+!py_rme_canary/docs/Changelog/Logs/IMPLEMENTACAO_2026-02-09.md
+!py_rme_canary/docs/Reference/Guides/UIXWIDGET_BRANCH_POLICY.md
+!codex/guides/uixwidget_scope.md

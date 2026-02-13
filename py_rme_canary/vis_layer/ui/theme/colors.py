@@ -4,25 +4,25 @@ from __future__ import annotations
 
 from PyQt6.QtGui import QColor
 
-from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
-# Base colors map
-BASE = {
-    "bg_primary": ModernTheme.colors.background,
-    "bg_secondary": ModernTheme.colors.surface,
-    "accent": ModernTheme.colors.primary,
-    "text_primary": ModernTheme.colors.text_primary,
-    "text_secondary": ModernTheme.colors.text_secondary,
-    "border": ModernTheme.colors.border,
-}
 
-# Semantic colors map
-SEMANTIC = {
-    "success": ModernTheme.colors.success,
-    "warning": ModernTheme.colors.warning,
-    "error": ModernTheme.colors.error,
-    "info": ModernTheme.colors.info,
-}
+def _resolve_theme_color(name: str) -> str:
+    tm = get_theme_manager()
+    color = tm.tokens["color"]
+    aliases: dict[str, str] = {
+        "primary": color["brand"]["primary"],
+        "secondary": color["brand"]["secondary"],
+        "background": color["surface"]["primary"],
+        "surface": color["surface"]["secondary"],
+        "surface_variant": color["surface"]["tertiary"],
+        "text_primary": color["text"]["primary"],
+        "text_secondary": color["text"]["secondary"],
+        "text_disabled": color["text"]["disabled"],
+        "border": color["border"]["default"],
+        "error": color["state"]["error"],
+    }
+    return aliases.get(name, color["brand"]["primary"])
 
 
 def get_qcolor(hex_color: str, alpha: int = 255) -> QColor:
@@ -50,7 +50,7 @@ def get_theme_color(name: str, alpha: int = 255) -> QColor:
     Returns:
         QColor object
     """
-    color_str = getattr(ModernTheme.colors, name, "#000000")
+    color_str = _resolve_theme_color(name)
     # Handle rgba strings if present (though ModernTheme mostly uses hex)
     if color_str.startswith("rgba"):
         # Parser for rgba(r, g, b, a) or rgba(r, g, b, a_float)
@@ -61,10 +61,7 @@ def get_theme_color(name: str, alpha: int = 255) -> QColor:
             b = int(parts[2].strip())
             a_val = parts[3].strip()
             # Handle float alpha (0.0-1.0) or int alpha (0-255)
-            if "." in a_val:
-                a = int(float(a_val) * 255)
-            else:
-                a = int(a_val)
+            a = int(float(a_val) * 255) if "." in a_val else int(a_val)
             return QColor(r, g, b, a)
         except (ValueError, IndexError, AttributeError):
             # Fallback

@@ -50,6 +50,7 @@ The Agent must follow this strict linear lifecycle for every complex task:
 *   **[knowledge_retrieval.md](guides/knowledge_retrieval.md)**: RAG & Search.
 *   **[tool_usage.md](guides/tool_usage.md)**: MCP Tool protocols.
 *   **[extending_codex.md](guides/extending_codex.md)**: **[NEW]** How to create Skills & Rules.
+*   **[uixwidget_scope.md](guides/uixwidget_scope.md)**: Branch scope contract for `UixWidget` (UI/UX + Widget + Render only).
 
 ## ⚙️ Python + Rust Acceleration
 
@@ -63,3 +64,12 @@ Project strategy is PyQt6-first with selective Rust acceleration:
 Current acceleration boundary:
 - Python adapter: `py_rme_canary/logic_layer/rust_accel.py`
 - Rust module: `py_rme_canary/rust/py_rme_canary_rust/`
+
+## Branch Governance
+
+- `UixWidget` must stay scoped to UI/UX, Widgets, and Render-facing behavior.
+- Promotion path:
+  - `UixWidget` -> `development` -> `main`
+- Detailed policy:
+  - `codex/guides/uixwidget_scope.md`
+  - `py_rme_canary/docs/Reference/Guides/UIXWIDGET_BRANCH_POLICY.md`

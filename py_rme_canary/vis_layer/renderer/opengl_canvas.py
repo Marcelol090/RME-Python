@@ -224,7 +224,6 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
         def _dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
             return dedupe_positions_3d(positions)
-
         def _union_with_mirror(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
             if not getattr(editor, "mirror_enabled", False) or not editor.has_mirror_axis():
                 return _dedupe_positions(positions)
