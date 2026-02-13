@@ -1864,3 +1864,302 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `ruff check` nos arquivos alterados -> **OK**
 - `python -m py_compile` nos arquivos alterados -> **OK**
 - `pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed**
+
+---
+
+## Sessão 2026-02-13: E2E determinístico de assets (`spr/dat/appearances`) + contrato UI/backend
+
+### Objetivo
+- Validar com testes reais (sem falso positivo) se o pipeline de assets e UI está funcional:
+  - carga de `appearances.dat`,
+  - carga legada `Tibia.dat`/`Tibia.spr`,
+  - renderização de sprites no grid/canvas,
+  - pintura via cursor/click,
+  - comportamento de select menu.
+
+### Pesquisa e base técnica
+- Referências consultadas para E2E/assíncrono robusto:
+  - `Context7` (`/pytest-dev/pytest-qt`, `/websites/doc_qt_io_qtforpython-6`) para estratégias de espera determinística e redução de flake.
+  - `Linear MCP` (documentação de fluxo) para checklist de qualidade por sessão.
+
+### Correções de integração encontradas e aplicadas
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_toolbars.py`
+  - corrigido `NameError` por import ausente de `QWidget` no toolbar separator.
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - implementado `_verify_ui_backend_contract()` (faltava no runtime);
+  - integrado `verify_and_repair_ui_backend_contract` e deduplicação de logs de reparo.
+- `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+  - fallback explícito para `QWidget` em ambiente `offscreen/minimal` para reduzir instabilidade de OpenGL em testes headless.
+
+### Novos testes E2E/contrato
+- `py_rme_canary/tests/ui/test_assets_e2e_contract.py`
+  - `test_modern_assets_load_appearances_index`
+  - `test_legacy_dat_spr_load_resolves_sprite_pixmap`
+  - `test_canvas_click_paints_tile_and_sprite_lookup_renders`
+  - `test_find_entity_item_select_menu_updates_query_mode`
+
+### Validação
+- Qualidade estática:
+  - `ruff check` (arquivos alterados) -> **OK**
+  - `python3 -m py_compile` (arquivos alterados) -> **OK**
+- Testes funcionais com Python 3.12 (`.venv/bin/python`):
+  - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s [suite de assets/ui]`
+  - **44 passed** em **50.49s**
+
+### Observações de ambiente
+- O erro de coleta inicial não era bug funcional do fluxo de assets: era execução com `python3` global 3.10 (incompatível com `StrEnum` e `typing.NotRequired`).
+- Execução correta em baseline do projeto (`.venv/bin/python` 3.12.12).
+
+---
+
+## Sessão 2026-02-13: Smoke E2E com assets reais (`spr/dat/appearances/items.xml/items.otb`)
+
+### Objetivo
+- Validar com dados reais de cliente e bases legacy se o pipeline está funcional para:
+  - `spr/dat/appearances`;
+  - `items.xml/items.otb`;
+  - render de sprites no backend de grid;
+  - contrato de select menu no diálogo de busca.
+
+### Fontes de assets validadas
+- Modern client real:
+  - `/mnt/c/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/shadowborn/15.11 Shadowborn/15.11 localhost`
+- Legacy client real:
+  - `/mnt/c/Users/Marcelo Henrique/Desktop/PROJETOS TIBIA/PROJETOS TIBIA/Arcana/clienterme`
+- Definitions real (legacy/redux):
+  - `/mnt/c/Users/Marcelo Henrique/Desktop/projec_rme/remeres-map-editor-redux/data/1330/items.otb`
+  - `/mnt/c/Users/Marcelo Henrique/Desktop/projec_rme/remeres-map-editor-redux/data/1330/items.xml`
+  - `/mnt/c/Users/Marcelo Henrique/Desktop/projec_rme/Remeres-map-editor-linux-4.0.0/data/items/items.xml`
+
+### Implementação
+- Novo arquivo de teste:
+  - `py_rme_canary/tests/ui/test_real_assets_e2e_smoke.py`
+- Cobertura adicionada:
+  - `test_real_shadowborn_modern_profile_loads_appearances_and_sprite`
+    - detecta perfil modern, carrega `appearances.dat`, extrai sprite real.
+  - `test_real_arcana_legacy_profile_renders_sprite_in_grid_backend`
+    - detecta perfil legacy, carrega `Tibia.dat/.spr`, renderiza sprite real no backend QPainter e valida pixel não-transparente.
+  - `test_real_items_otb_items_xml_and_select_menu_contract`
+    - carrega `items.otb` + `items.xml`, faz merge de mapper,
+    - valida parse XML-only,
+    - valida contrato do select menu (`Server ID`/`Client ID`) no `FindEntityDialog`.
+
+### MCPs e referência técnica
+- `Context7` usado para diretrizes anti-falso-positivo e E2E determinístico.
+- `Figma MCP` consultado para regras de uso de ferramentas/prompt para UI/UX.
+- `Linear MCP` consultado para documentação operacional (sem guidance técnico específico de Qt E2E).
+- Observação: **MCP Playwright não está configurado neste ambiente** (não listado entre servidores MCP disponíveis).
+
+### Validação
+- `ruff check py_rme_canary/tests/ui/test_real_assets_e2e_smoke.py` -> **OK**
+- `.venv/bin/python -m py_compile py_rme_canary/tests/ui/test_real_assets_e2e_smoke.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_real_assets_e2e_smoke.py` -> **3 passed**
+- Regressão ampla de assets/UI relacionados:
+  - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s [suite assets/ui]` -> **49 passed**
+
+---
+
+## Sessão 2026-02-13: Configuração Playwright MCP + smoke automatizado
+
+### Objetivo
+- Validar e corrigir `~/.codex/config.toml` para uso do Playwright MCP.
+- Executar smoke MCP real e registrar evidências.
+
+### Ajustes de ambiente/config
+- `~/.codex/config.toml`
+  - `playwright` ajustado para endpoint HTTP local recomendado para ambiente headless:
+    - `url = "http://localhost:8931/mcp"`
+- Node local instalado em usuário (sem sudo):
+  - `~/.local/bin/node` / `~/.local/bin/npm` / `~/.local/bin/npx`
+  - versão validada: Node `v20.20.0`
+- Pacotes MCP locais:
+  - `@playwright/mcp`
+  - `@modelcontextprotocol/sdk`
+
+### Script novo
+- `py_rme_canary/scripts/playwright_mcp_smoke.js`
+  - conecta no MCP (`PLAYWRIGHT_MCP_URL`), lista ferramentas, executa:
+    - `browser_navigate`
+    - `browser_snapshot`
+    - `browser_take_screenshot`
+    - `browser_close`
+  - gera relatório em `.quality_reports/playwright_mcp_smoke_report.json`.
+
+### Execução e resultado
+- Conexão MCP validada via SDK: **22 tools** disponíveis.
+- Smoke executado: **falha funcional esperada por dependências do Chromium ausentes**.
+- Evidência:
+  - `.quality_reports/playwright_mcp_smoke_report.json`
+  - erro retornado pelo MCP: `Missing system dependencies required to run browser chromium`.
+
+### Próxima ação obrigatória no host
+- Rodar no sistema com sudo:
+  - `sudo /home/marcelo/.local/playwright-mcp/node_modules/.bin/playwright install-deps chromium`
+- Após isso, rerun:
+  - `/home/marcelo/.local/bin/node py_rme_canary/scripts/playwright_mcp_smoke.js`
+
+---
+
+## Sessão 2026-02-13: Estabilização de testes UI headless + paridade Brush/Theme + validação Playwright MCP
+
+### Features/planning revisado antes de implementar
+- Revisado: `py_rme_canary/docs/Planning/Features.md` (foco em paridade UI/UX, menus e integração backend/UI).
+
+### Correções implementadas
+- Headless/test stability (sem falso positivo):
+  - Novo utilitário: `py_rme_canary/tests/ui/_editor_test_utils.py`
+    - `stabilize_editor_for_headless_tests(...)` para interromper timers contínuos durante testes (`_live_timer`, `_ui_backend_contract_timer`, timers do canvas e timers filhos).
+    - `show_editor_window(...)` para exibição determinística em ambiente `offscreen`.
+  - Fixtures UI atualizadas para usar utilitário:
+    - `py_rme_canary/tests/ui/test_toolbar_menu_sync.py`
+    - `py_rme_canary/tests/ui/test_mode_contract.py`
+    - `py_rme_canary/tests/ui/test_brush_sync.py`
+    - `py_rme_canary/tests/ui/test_smoke.py`
+    - `py_rme_canary/tests/ui/test_assets_e2e_contract.py`
+
+- Bloqueio modal em testes resolvido:
+  - `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_modern_ux.py`
+  - `init_modern_ux()` agora não agenda `show_welcome_dialog` quando rodando em `offscreen/minimal` ou sob `pytest` (`PYTEST_CURRENT_TEST`), evitando deadlock em CI/headless.
+
+- Paridade Brush menu/actions + contrato backend/UI:
+  - `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+    - `Brush Size` renomeado para labels de paridade: `Brush Size +` / `Brush Size -`.
+    - Adicionados aliases compatíveis: `act_brush_size_increase` / `act_brush_size_decrease`.
+    - Adicionadas ações de forma: `act_brush_shape_square` / `act_brush_shape_circle` (com grupo exclusivo).
+  - `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+    - Adicionado submenu `Brush` no menu `Window` com size +/- e shape square/circle.
+    - Menu `Edit > Brush` também passa a expor shape actions.
+
+- Paridade de tema Noct com ThemeManager canônico:
+  - `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+    - Ações Noct mapeadas para temas válidos: `glass_morphism`, `glass_8bit`, `liquid_glass`.
+  - `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+    - Sync de ações de tema ajustado para chaves canônicas.
+  - `py_rme_canary/vis_layer/ui/main_window/ui_backend_contract.py`
+    - Verificação/repair de tema ajustada para chaves canônicas.
+
+### Validação executada
+- Lint/compile dos arquivos alterados:
+  - `./.venv/bin/ruff check [arquivos alterados]` -> **OK**
+  - `./.venv/bin/python -m py_compile [arquivos alterados]` -> **OK**
+
+- Suíte UI/contrato (assets + menus + seleção + brush sync):
+  - `QT_QPA_PLATFORM=offscreen PYTHONPATH=. ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_assets_e2e_contract.py py_rme_canary/tests/ui/test_real_assets_e2e_smoke.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py py_rme_canary/tests/ui/test_mode_contract.py py_rme_canary/tests/ui/test_brush_sync.py -rA`
+  - **33 passed** em **73.38s**
+
+- Playwright MCP smoke (infra E2E web) revalidado:
+  - Servidor MCP levantado em `http://localhost:8931/mcp`.
+  - `py_rme_canary/scripts/playwright_mcp_smoke.js` executado com sucesso.
+  - Resultado: **ok: true**, **toolsCount: 22**.
+  - Evidências:
+    - `.quality_reports/playwright_mcp_smoke_report.json`
+    - `.quality_reports/playwright_mcp_example_smoke.png`
+
+### Resultado
+- Fluxo de testes UI ficou executável e determinístico em headless.
+- Contratos de integração backend/frontend para brush size/shape e menu parity estão consistentes.
+- Tema Noct e estado de ações de tema voltaram a ficar sincronizados com o backend de tema.
+
+---
+
+## Sessão 2026-02-13: Cobertura completa de Select Menu + Sidebar + Cursor Sprite (sem falso positivo)
+
+### Objetivo
+- Verificar de ponta a ponta se:
+  - ações do `Selection` menu estão conectadas ao backend correto;
+  - sidebar de paletas seleciona brush e sincroniza com session/backend;
+  - preview do cursor/canvas mostra sprite correto do asset clicado;
+  - render final no canvas mantém paridade visual do fluxo legado.
+
+### Implementações
+- `py_rme_canary/vis_layer/ui/overlays/brush_cursor.py`
+  - `BrushPreviewOverlay` passou a suportar sprite preview explícito:
+    - novo estado `_preview_pixmap`;
+    - novo método `set_preview_sprite(...)`;
+    - `clear_preview()` limpa tiles + sprite;
+    - `paintEvent()` desenha pixmap com opacidade no footprint.
+
+- `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+  - `_update_brush_preview(...)` agora resolve brush selecionado e injeta sprite no overlay:
+    - usa `session._gestures.active_brush_id` com fallback em `brush_id_entry`;
+    - resolve pixmap via `_sprite_pixmap_for_server_id(...)`;
+    - aplica com `set_preview_sprite(...)`.
+
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - Corrigida sobreposição indevida de ações após `build_actions(self)`:
+    - `act_replace_items`, `act_replace_items_on_selection` e `act_remove_item_on_selection`
+      agora só são criadas se não existirem.
+  - Isso remove conflito de handlers antigos/modais que quebrava o contrato do menu `Selection`.
+
+- `py_rme_canary/tests/ui/test_select_menu_sidebar_cursor_contract.py`
+  - Novo teste de contrato com 3 cenários:
+    - dispatch das ações do `Selection` menu para handlers esperados;
+    - seleção de brush na sidebar e sync para UI + backend/session;
+    - preview do cursor com sprite real + pintura no mapa + verificação de render.
+  - Ajustado para evitar falso negativo por ausência de assets locais:
+    - varre múltiplas paletas até encontrar brush selecionável real.
+
+### Validação executada
+- `./.venv/bin/ruff check py_rme_canary/vis_layer/ui/overlays/brush_cursor.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/ui/test_select_menu_sidebar_cursor_contract.py` -> **OK**
+- `./.venv/bin/python -m py_compile py_rme_canary/vis_layer/ui/overlays/brush_cursor.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/tests/ui/test_select_menu_sidebar_cursor_contract.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen ./.venv/bin/pytest -q -s py_rme_canary/tests/ui/test_select_menu_sidebar_cursor_contract.py` -> **3 passed**
+- `QT_QPA_PLATFORM=offscreen ./.venv/bin/pytest -q -s py_rme_canary/tests/ui/test_select_menu_sidebar_cursor_contract.py py_rme_canary/tests/ui/test_assets_e2e_contract.py py_rme_canary/tests/ui/test_real_assets_e2e_smoke.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py py_rme_canary/tests/ui/test_mode_contract.py py_rme_canary/tests/ui/test_brush_sync.py` -> **36 passed**
+
+---
+
+## Sessão 2026-02-13: Cobertura Playwright MCP reforçada + gate de release (quality/jules)
+
+### Context7 aplicado (referência recente)
+- Biblioteca consultada: `/microsoft/playwright` (Context7).
+- Diretrizes aplicadas no desenho da suíte MCP:
+  - assertions e validações de estado explícitas;
+  - waits determinísticos por estado textual (evitando sleeps arbitrários);
+  - verificação de fluxos críticos (dialog/tab/upload) com pós-condição obrigatória.
+
+### Melhorias de cobertura MCP Playwright
+- Arquivo: `py_rme_canary/scripts/playwright_mcp_full_suite.js`
+- Mudanças:
+  - adicionada extração/parse de JSON de `browser_evaluate` (`parseResultJson`).
+  - adicionados passos de validação explícita (`validationStep`) para reduzir falso positivo.
+  - confirm dialog coberto em ambos os caminhos:
+    - dismiss (`accept: false`) -> `confirm-dismissed`
+    - accept (`accept: true`) -> `confirm-accepted`
+  - fluxo multi-tab via botão da própria página:
+    - abre tab, seleciona nova tab, valida conteúdo, fecha e retorna.
+  - validação de upload:
+    - confirma `files.length == 1`, nome esperado e tamanho > 0.
+  - validação estrutural de payload final (`title/result/mode`) via `browser_evaluate`.
+  - cobertura adicional de console (`debug` + `error`) mantendo artefatos.
+  - tratamento tolerante para warning não-fatal do `browser_install`.
+
+### Execução da suíte MCP (sem falso positivo)
+- `playwright_mcp_full_suite.js` executado com servidor MCP local em headless e `--executable-path` apontando para Chromium instalado no cache Playwright.
+- Resultado final:
+  - `ok: true`
+  - `toolsAvailable: 22`
+  - `toolsCalled: 22`
+  - `toolsMissingCoverage: 0`
+  - `failedSteps: 0`
+- Artefatos:
+  - `.quality_reports/playwright_mcp_full_suite_report.json`
+  - `.quality_reports/playwright_mcp_full_suite/*`
+
+- Smoke MCP também revalidado:
+  - `.quality_reports/playwright_mcp_smoke_report.json` -> `ok: true`, `toolsCount: 22`
+  - screenshot: `.quality_reports/playwright_mcp_example_smoke.png`
+
+### Quality gate em modo verbose
+- Comando:
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --verbose`
+- Resultado:
+  - pipeline concluído com sucesso (modo dry-run do script),
+  - Ruff OK, Radon OK, comparação de símbolos OK,
+  - relatórios consolidados atualizados em `.quality_reports/`.
+
+### Jules acionado
+- Conectividade:
+  - `python3 py_rme_canary/scripts/jules_runner.py --project-root . check --source sources/github/Marcelol090/RME-Python --branch UixWidget`
+  - status: `ok`
+- Sugestões:
+  - `python3 py_rme_canary/scripts/jules_runner.py --project-root . generate-suggestions --source sources/github/Marcelol090/RME-Python --branch UixWidget --task uiux_playwright_release --category tests --quality-report .quality_reports/playwright_mcp_full_suite_report.json --output-dir reports/jules --report-dir .quality_reports --strict`
+  - saída: `reports/jules/suggestions.json`

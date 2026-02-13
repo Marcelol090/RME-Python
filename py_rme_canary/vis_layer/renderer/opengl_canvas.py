@@ -5,7 +5,9 @@ Uses QOpenGLWidget for hardware-accelerated rendering.
 
 from __future__ import annotations
 
+import contextlib
 import logging
+import os
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import QElapsedTimer, QPoint, QRect, QSize, Qt, QTimer
@@ -14,12 +16,20 @@ from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
+from py_rme_canary.vis_layer.renderer.opengl_backend import OpenGLRenderBackend, OpenGLResources
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
 from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
 from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay, BrushPreviewOverlay
 
-# Try importing OpenGL support
+# Try importing OpenGL support.
+# In headless/offscreen test environments, forcing QWidget avoids noisy failures
+# from QOpenGLWidget backends that are importable but not actually usable.
+_qt_platform = str(os.getenv("QT_QPA_PLATFORM", "") or "").strip().lower()
+_force_software_canvas = _qt_platform in {"offscreen", "minimal"}
+
 try:
+    if _force_software_canvas:
+        raise RuntimeError("Software canvas forced for offscreen/minimal platform")
     from PyQt6.QtGui import QSurfaceFormat
     from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 
@@ -27,10 +37,6 @@ try:
 except Exception:
     OPENGL_AVAILABLE = False
     QOpenGLWidget = QWidget  # Fallback to regular widget
-
-import contextlib
-
-from .opengl_backend import OpenGLRenderBackend, OpenGLResources
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -825,6 +831,17 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
 
         if preview_tiles:
             self._brush_preview_overlay.set_preview_tiles(preview_tiles)
+            selected_sid = 0
+            with contextlib.suppress(Exception):
+                selected_sid = int(editor.session._gestures.active_brush_id)
+            if selected_sid <= 0:
+                with contextlib.suppress(Exception):
+                    selected_sid = int(editor.brush_id_entry.value())
+            preview_sprite = None
+            if selected_sid > 0 and hasattr(editor, "_sprite_pixmap_for_server_id"):
+                with contextlib.suppress(Exception):
+                    preview_sprite = editor._sprite_pixmap_for_server_id(int(selected_sid), tile_px=int(tile_px))
+            self._brush_preview_overlay.set_preview_sprite(preview_sprite)
             self._brush_preview_overlay.show()
         else:
             self._brush_preview_overlay.clear_preview()

@@ -205,9 +205,9 @@ def verify_and_repair_ui_backend_contract(editor: object, *, last_signature: int
     except Exception:
         current_theme = ""
     theme_actions = (
-        ("act_theme_noct_green_glass", "noct_green_glass"),
-        ("act_theme_noct_8bit_glass", "noct_8bit_glass"),
-        ("act_theme_noct_liquid_glass", "noct_liquid_glass"),
+        ("act_theme_noct_green_glass", "glass_morphism"),
+        ("act_theme_noct_8bit_glass", "glass_8bit"),
+        ("act_theme_noct_liquid_glass", "liquid_glass"),
     )
     for action_name, theme_name in theme_actions:
         _set_action_checked(getattr(editor, action_name, None), bool(current_theme == theme_name))

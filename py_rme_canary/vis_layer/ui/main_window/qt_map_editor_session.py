@@ -243,9 +243,9 @@ class QtMapEditorSessionMixin:
 
         # Keep theme actions in sync
         action_theme_pairs = (
-            ("act_theme_noct_green_glass", "noct_green_glass"),
-            ("act_theme_noct_8bit_glass", "noct_8bit_glass"),
-            ("act_theme_noct_liquid_glass", "noct_liquid_glass"),
+            ("act_theme_noct_green_glass", "glass_morphism"),
+            ("act_theme_noct_8bit_glass", "glass_8bit"),
+            ("act_theme_noct_liquid_glass", "liquid_glass"),
         )
         for action_name, theme_name in action_theme_pairs:
             action = getattr(self, action_name, None)

@@ -3,15 +3,16 @@ import pytest
 pytest.importorskip("PyQt6.QtWidgets")
 
 from py_rme_canary.logic_layer.session.selection_modes import SelectionDepthMode
+from py_rme_canary.tests.ui._editor_test_utils import show_editor_window, stabilize_editor_for_headless_tests
 from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor  # noqa: E402
 
 
 @pytest.fixture
 def editor(qapp, qtbot):
     window = QtMapEditor()
+    stabilize_editor_for_headless_tests(window)
     qtbot.addWidget(window)
-    window.show()
-    qtbot.waitForWindowShown(window)
+    show_editor_window(qtbot, window)
     return window
 
 

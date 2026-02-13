@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
+from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar, QWidget
 
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
-from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar, ToolSelector
 from py_rme_canary.vis_layer.ui.widgets.activity_bar import ActivityBar
+from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar, ToolSelector
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -118,7 +118,7 @@ class QtMapEditorToolbarsMixin:
         editor.addToolBar(Qt.ToolBarArea.TopToolBarArea, editor.tb_brush_quick)
 
         # Quick Access / Favorites
-        from py_rme_canary.vis_layer.ui.widgets.quick_access import QuickAccessBar, FavoriteItem
+        from py_rme_canary.vis_layer.ui.widgets.quick_access import FavoriteItem, QuickAccessBar
         editor.quick_access = QuickAccessBar(editor)
         editor.quick_access.item_selected.connect(lambda i: editor._set_selected_brush_id(i))
         # Add default favorites

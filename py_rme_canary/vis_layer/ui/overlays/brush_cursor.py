@@ -20,7 +20,7 @@ from PyQt6.QtCore import (
     QTimer,
     pyqtProperty,
 )
-from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt6.QtGui import QBrush, QColor, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QWidget
 
 if TYPE_CHECKING:
@@ -262,6 +262,7 @@ class BrushPreviewOverlay(QWidget):
         self._tiles: list[QRect] = []  # Tiles to preview
         self._preview_color = QColor(139, 92, 246, 60)
         self._border_color = QColor(139, 92, 246, 120)
+        self._preview_pixmap: QPixmap | None = None
 
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -274,6 +275,16 @@ class BrushPreviewOverlay(QWidget):
     def clear_preview(self) -> None:
         """Clear the preview."""
         self._tiles.clear()
+        self._preview_pixmap = None
+        self.update()
+
+    def set_preview_sprite(self, pixmap: QPixmap | None) -> None:
+        """Set the sprite preview pixmap drawn on preview tiles."""
+        if pixmap is None or pixmap.isNull():
+            self._preview_pixmap = None
+            self.update()
+            return
+        self._preview_pixmap = QPixmap(pixmap)
         self.update()
 
     def paintEvent(self, event: object) -> None:
@@ -290,3 +301,10 @@ class BrushPreviewOverlay(QWidget):
 
         for rect in self._tiles:
             painter.drawRect(rect)
+
+        if self._preview_pixmap is not None and not self._preview_pixmap.isNull():
+            painter.save()
+            painter.setOpacity(0.72)
+            for rect in self._tiles:
+                painter.drawPixmap(rect, self._preview_pixmap)
+            painter.restore()

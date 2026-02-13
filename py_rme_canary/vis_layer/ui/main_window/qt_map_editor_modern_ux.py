@@ -13,6 +13,7 @@ Integrates all modern UI components, dialogs, and features:
 from __future__ import annotations
 
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QPoint, Qt
@@ -103,8 +104,12 @@ class QtMapEditorModernUXMixin:
         self._modern_ux_initialized = True
         logger.info("Modern UX fully initialized")
 
-        # Show welcome dialog if appropriate
-        if hasattr(self, "current_path") and not self.current_path:
+        # Show welcome dialog if appropriate. Skip in headless/test execution to
+        # avoid modal deadlocks in automated UI pipelines.
+        qt_platform = str(os.getenv("QT_QPA_PLATFORM", "") or "").strip().lower()
+        running_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
+        headless_platform = qt_platform in {"offscreen", "minimal"}
+        if hasattr(self, "current_path") and not self.current_path and not running_pytest and not headless_platform:
             # Delay slightly to ensure window is shown
             from PyQt6.QtCore import QTimer
             QTimer.singleShot(100, self.show_welcome_dialog)
