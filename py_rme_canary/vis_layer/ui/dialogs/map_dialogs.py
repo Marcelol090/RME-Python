@@ -8,10 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QDialog,
-    QDialogButtonBox,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -26,11 +23,14 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
 
-class MapPropertiesDialog(QDialog):
+class MapPropertiesDialog(ModernDialog):
     """Dialog for editing map properties.
 
     Features:
@@ -40,35 +40,32 @@ class MapPropertiesDialog(QDialog):
     """
 
     def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Map Properties")
         self._game_map = game_map
 
-        self.setWindowTitle("Map Properties")
         self.setMinimumSize(500, 400)
-        self.setModal(True)
+        # ModernDialog handles modal and styling.
 
-        self._setup_ui()
-        self._apply_style()
+        self._setup_content()
+        self._setup_footer()
         self._load_values()
 
-    def _setup_ui(self) -> None:
+    def _setup_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        self.content_layout.setSpacing(16)
 
         # Tabs
-        tabs = QTabWidget()
-        tabs.addTab(self._create_general_tab(), "General")
-        tabs.addTab(self._create_files_tab(), "External Files")
-        tabs.addTab(self._create_stats_tab(), "Statistics")
-        layout.addWidget(tabs)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self._create_general_tab(), "General")
+        self.tabs.addTab(self._create_files_tab(), "External Files")
+        self.tabs.addTab(self._create_stats_tab(), "Statistics")
+        self.content_layout.addWidget(self.tabs)
 
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+    def _setup_footer(self) -> None:
+        """Setup dialog footer with buttons."""
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject, role="secondary")
+        self.add_button("Ok", callback=self.accept, role="primary")
 
     def _create_general_tab(self) -> QWidget:
         """Create general settings tab."""
@@ -110,8 +107,11 @@ class MapPropertiesDialog(QDialog):
         layout.addRow(desc_group)
 
         # OTBM version (read-only)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         self.otbm_version = QLabel("—")
-        self.otbm_version.setStyleSheet("color: #A1A1AA;")
+        self.otbm_version.setStyleSheet(f"color: {c['text']['tertiary']};")
         layout.addRow("OTBM Version:", self.otbm_version)
 
         return widget
@@ -186,79 +186,6 @@ class MapPropertiesDialog(QDialog):
 
         return widget
 
-    def _apply_style(self) -> None:
-        """Apply modern dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
-
-            QGroupBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                margin-top: 16px;
-                padding-top: 8px;
-                font-weight: 600;
-            }
-
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 8px;
-                color: #A1A1AA;
-            }
-
-            QLineEdit, QTextEdit, QSpinBox {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                padding: 8px;
-                color: #E5E5E7;
-            }
-
-            QLineEdit:focus, QTextEdit:focus, QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
-
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
-
-            QTabWidget::pane {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-            }
-
-            QTabBar::tab {
-                background: #1E1E2E;
-                color: #A1A1AA;
-                padding: 8px 16px;
-                border: 1px solid #363650;
-                border-bottom: none;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }
-
-            QTabBar::tab:selected {
-                background: #2A2A3E;
-                color: #E5E5E7;
-            }
-        """
-        )
-
     def _load_values(self) -> None:
         """Load values from game map."""
         if not self._game_map:
@@ -297,99 +224,3 @@ class MapPropertiesDialog(QDialog):
             "height": self.height.value(),
             "description": self.description.toPlainText(),
         }
-
-
-class AboutDialog(QDialog):
-    """About dialog with app info, credits, and links."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-
-        self.setWindowTitle("About py_rme_canary")
-        self.setFixedSize(400, 350)
-        self.setModal(True)
-
-        self._setup_ui()
-        self._apply_style()
-
-    def _setup_ui(self) -> None:
-        """Initialize UI."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Logo/Icon placeholder
-        icon = QLabel("RME")
-        icon.setStyleSheet("font-size: 28px; font-weight: 700; color: #8B5CF6;")
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(icon)
-
-        # Title
-        title = QLabel("py_rme_canary")
-        title.setStyleSheet(
-            """
-            font-size: 24px;
-            font-weight: 700;
-            color: #E5E5E7;
-        """
-        )
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
-
-        # Version
-        version = QLabel("Version 1.0.0-alpha")
-        version.setStyleSheet("color: #8B5CF6; font-size: 13px;")
-        version.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(version)
-
-        # Description
-        desc = QLabel("Modern Python port of Remere's Map Editor\nfor Open Tibia servers")
-        desc.setStyleSheet("color: #A1A1AA; font-size: 12px;")
-        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        desc.setWordWrap(True)
-        layout.addWidget(desc)
-
-        layout.addStretch()
-
-        # Credits
-        credits = QLabel("Based on Remere's Map Editor by the RME Team\nPython port: py_rme_canary Team")
-        credits.setStyleSheet("color: #52525B; font-size: 11px;")
-        credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(credits)
-
-        # License
-        license_label = QLabel("Licensed under GPL v3")
-        license_label.setStyleSheet("color: #52525B; font-size: 10px;")
-        license_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(license_label)
-
-        # Close button
-        close_btn = QPushButton("Close")
-        close_btn.setMaximumWidth(100)
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
-
-    def _apply_style(self) -> None:
-        """Apply dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #2A2A3E, stop:1 #1E1E2E);
-            }
-
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 24px;
-                font-weight: 500;
-            }
-
-            QPushButton:hover {
-                background: #A78BFA;
-            }
-        """
-        )

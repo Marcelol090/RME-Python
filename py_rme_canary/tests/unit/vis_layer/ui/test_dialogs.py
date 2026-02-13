@@ -30,6 +30,7 @@ class TestWelcomeDialog:
 
     def test_welcome_dialog_with_recent_files(self, app):
         """Test welcome dialog with recent files."""
+        from PyQt6.QtWidgets import QLabel
         from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
 
         recent = [
@@ -39,7 +40,12 @@ class TestWelcomeDialog:
         dialog = WelcomeDialog(recent_files=recent)
 
         # Should show recent files
-        assert dialog.recent_list.count() == 2
+        labels = dialog.findChildren(QLabel)
+        found_map1 = any("map1.otbm" in lbl.text() for lbl in labels)
+        found_map2 = any("map2.otbm" in lbl.text() for lbl in labels)
+
+        assert found_map1
+        assert found_map2
 
 
 class TestSettingsDialog:
