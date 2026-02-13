@@ -9,7 +9,7 @@ import logging
 from typing import TYPE_CHECKING
 
 # Use the centralized ThemeManager from __init__.py
-from py_rme_canary.vis_layer.ui.theme import get_theme_manager, ThemeManager
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     from PyQt6.QtWidgets import QApplication, QMainWindow
