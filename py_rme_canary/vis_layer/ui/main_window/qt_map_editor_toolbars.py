@@ -61,6 +61,12 @@ class QtMapEditorToolbarsMixin:
             lambda c: _toggle_dock(getattr(editor, "dock_friends", None), c)
         )
 
+        # Layers
+        editor.activity_bar.add_activity(
+            "layers", "tool_select", "Layers",  # Reusing select icon for layers for now
+            lambda c: _toggle_dock(getattr(editor, "dock_layers", None), c)
+        )
+
         # Settings (Bottom)
         editor.activity_bar.add_activity(
             "settings", "settings", "Settings",
@@ -110,6 +116,20 @@ class QtMapEditorToolbarsMixin:
         editor.tb_brush_quick = QToolBar("Brush Settings", editor)
         editor.tb_brush_quick.setMovable(False)
         editor.addToolBar(Qt.ToolBarArea.TopToolBarArea, editor.tb_brush_quick)
+
+        # Quick Access / Favorites
+        from py_rme_canary.vis_layer.ui.widgets.quick_access import QuickAccessBar, FavoriteItem
+        editor.quick_access = QuickAccessBar(editor)
+        editor.quick_access.item_selected.connect(lambda i: editor._set_selected_brush_id(i))
+        # Add default favorites
+        editor.quick_access.add_favorite(FavoriteItem(4405, "Stone Wall"))
+        editor.quick_access.add_favorite(FavoriteItem(4469, "Grass"))
+        editor.tb_brush_quick.addWidget(editor.quick_access)
+
+        # Separator
+        sep = QWidget()
+        sep.setFixedWidth(12)
+        editor.tb_brush_quick.addWidget(sep)
 
         editor.brush_toolbar = BrushToolbar(editor)
         editor.brush_toolbar.size_changed.connect(lambda s: editor._set_brush_size(s))

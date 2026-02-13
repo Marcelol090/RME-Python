@@ -446,7 +446,8 @@ class QtMapEditor(
         self.canvas = OpenGLCanvasWidget(self, editor=self)
         self.setCentralWidget(self.canvas)
 
-        self.status = QStatusBar(self)
+        from py_rme_canary.vis_layer.ui.widgets.status_bar import ModernStatusBar
+        self.status = ModernStatusBar(self)
         self.setStatusBar(self.status)
 
         # Core actions + wiring live in ui/main_window/build_actions.py

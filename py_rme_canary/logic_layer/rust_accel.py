@@ -313,3 +313,25 @@ def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, i
             except Exception:
                 pass
     return _python_dedupe_positions(positions)
+
+
+# ---------------------------------------------------------------------------
+# 6. Rectangle Intersection (NEW)
+# ---------------------------------------------------------------------------
+
+def _python_rect_intersects(r1: tuple[int, int, int, int], r2: tuple[int, int, int, int]) -> bool:
+    """Check if two rectangles intersect (x, y, w, h)."""
+    return not (r1[0] + r1[2] <= r2[0] or r1[0] >= r2[0] + r2[2] or
+                r1[1] + r1[3] <= r2[1] or r1[1] >= r2[1] + r2[3])
+
+def rect_intersects(r1: tuple[int, int, int, int], r2: tuple[int, int, int, int]) -> bool:
+    """Check intersection — uses Rust backend when available."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "rect_intersects", None)
+        if fn is not None:
+            try:
+                return bool(fn(r1, r2))
+            except Exception:
+                pass
+    return _python_rect_intersects(r1, r2)

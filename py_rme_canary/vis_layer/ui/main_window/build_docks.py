@@ -86,3 +86,11 @@ def build_docks(editor: QtMapEditor) -> None:
 
     asset_dock.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_show_preview, v))
     asset_dock.setVisible(bool(getattr(editor, "show_preview", True)))
+
+    # Layer Manager dock
+    from py_rme_canary.vis_layer.ui.docks.layer_dock import ModernLayerDock
+
+    editor.dock_layers = ModernLayerDock(editor, editor)
+    editor.dock_layers.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
+    editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_layers)
+    editor.dock_layers.hide()
