@@ -221,20 +221,11 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         if not (0 <= x < editor.map.header.width and 0 <= y < editor.map.header.height):
             return
 
-        def _dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-            seen: set[tuple[int, int, int]] = set()
-            out: list[tuple[int, int, int]] = []
-            for px, py, pz in positions:
-                key = (int(px), int(py), int(pz))
-                if key in seen:
-                    continue
-                seen.add(key)
-                out.append(key)
-            return out
-
         def _union_with_mirror(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+            from py_rme_canary.logic_layer.rust_accel import dedupe_positions
+
             if not getattr(editor, "mirror_enabled", False) or not editor.has_mirror_axis():
-                return _dedupe_positions(positions)
+                return dedupe_positions(positions)
             axis = str(getattr(editor, "mirror_axis", "x")).lower()
             v = int(editor.get_mirror_axis_value())
             return union_with_mirrored(

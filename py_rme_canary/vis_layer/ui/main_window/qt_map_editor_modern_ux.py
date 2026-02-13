@@ -103,6 +103,12 @@ class QtMapEditorModernUXMixin:
         self._modern_ux_initialized = True
         logger.info("Modern UX fully initialized")
 
+        # Show welcome dialog if appropriate
+        if hasattr(self, "current_path") and not self.current_path:
+            # Delay slightly to ensure window is shown
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(100, self.show_welcome_dialog)
+
     def _apply_modern_theme(self: QtMapEditor) -> None:
         """Apply modern dark theme to the application."""
         try:

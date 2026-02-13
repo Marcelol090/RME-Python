@@ -340,6 +340,7 @@ class QtMapEditor(
 
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+        self.session.on_brush_size_changed = self._on_session_brush_size_changed
 
         self.viewport = Viewport()
         self.current_path: str | None = None
@@ -445,7 +446,8 @@ class QtMapEditor(
         self.canvas = OpenGLCanvasWidget(self, editor=self)
         self.setCentralWidget(self.canvas)
 
-        self.status = QStatusBar(self)
+        from py_rme_canary.vis_layer.ui.widgets.status_bar import ModernStatusBar
+        self.status = ModernStatusBar(self)
         self.setStatusBar(self.status)
 
         # Core actions + wiring live in ui/main_window/build_actions.py

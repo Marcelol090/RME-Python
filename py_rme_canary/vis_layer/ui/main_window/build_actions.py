@@ -366,6 +366,17 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_brush_variation_next.triggered.connect(lambda _c=False: editor._cycle_brush_variation(1))
     editor.addAction(editor.act_brush_variation_next)
 
+    # Brush Size (Legacy parity: [ and ])
+    editor.act_brush_size_inc = QAction("Increase Brush Size", editor)
+    editor.act_brush_size_inc.setShortcut(QKeySequence("]"))
+    editor.act_brush_size_inc.triggered.connect(lambda _c=False: editor._cycle_brush_size(1))
+    editor.addAction(editor.act_brush_size_inc)
+
+    editor.act_brush_size_dec = QAction("Decrease Brush Size", editor)
+    editor.act_brush_size_dec.setShortcut(QKeySequence("["))
+    editor.act_brush_size_dec.triggered.connect(lambda _c=False: editor._cycle_brush_size(-1))
+    editor.addAction(editor.act_brush_size_dec)
+
     editor.act_show_npcs_spawns = QAction("Show npcs spawns", editor)
     editor.act_show_npcs_spawns.setCheckable(True)
     # NOTE: C++ does not assign a hotkey to Show NPC Spawns. U belongs to Highlight Locked Doors.
