@@ -13,9 +13,9 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
-from py_rme_canary.logic_layer.rust_accel import dedupe_positions_3d
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
+from py_rme_canary.vis_layer.ui.helpers import iter_brush_border_offsets, iter_brush_offsets
 from py_rme_canary.vis_layer.ui.overlays.brush_cursor import BrushCursorOverlay, BrushPreviewOverlay
 
 # Try importing OpenGL support
@@ -221,12 +221,11 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         if not (0 <= x < editor.map.header.width and 0 <= y < editor.map.header.height):
             return
 
-        def _dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-            return dedupe_positions_3d(positions)
-
         def _union_with_mirror(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+            from py_rme_canary.logic_layer.rust_accel import dedupe_positions
+
             if not getattr(editor, "mirror_enabled", False) or not editor.has_mirror_axis():
-                return _dedupe_positions(positions)
+                return dedupe_positions(positions)
             axis = str(getattr(editor, "mirror_axis", "x")).lower()
             v = int(editor.get_mirror_axis_value())
             return union_with_mirrored(
@@ -238,10 +237,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             )
 
         border_positions: list[tuple[int, int, int]] = []
-        border_offsets = (
-            editor._brush_border_offsets() if hasattr(editor, "_brush_border_offsets") else ()
-        )
-        for dx, dy in border_offsets:
+        for dx, dy in iter_brush_border_offsets(editor.brush_size, editor.brush_shape):
             tx = int(x + dx)
             ty = int(y + dy)
             if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
@@ -251,8 +247,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
             editor.session.mark_autoborder_position(x=int(tx), y=int(ty), z=int(z))
 
         draw_positions: list[tuple[int, int, int]] = []
-        draw_offsets = editor._brush_offsets() if hasattr(editor, "_brush_offsets") else ()
-        for dx, dy in draw_offsets:
+        for dx, dy in iter_brush_offsets(editor.brush_size, editor.brush_shape):
             tx = int(x + dx)
             ty = int(y + dy)
             if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
@@ -819,8 +814,7 @@ class OpenGLCanvasWidget(QOpenGLWidget if OPENGL_AVAILABLE else QWidget):  # typ
         self._brush_cursor_overlay.set_visible(True)
 
         preview_tiles: list[QRect] = []
-        offsets = editor._brush_offsets() if hasattr(editor, "_brush_offsets") else ()
-        for dx, dy in offsets:
+        for dx, dy in iter_brush_offsets(brush_size, str(getattr(editor, "brush_shape", "square"))):
             tx = int(x + dx)
             ty = int(y + dy)
             if not (x0 <= tx < x1 and y0 <= ty < y1):

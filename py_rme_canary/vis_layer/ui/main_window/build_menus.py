@@ -74,6 +74,19 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_edit.addAction(editor.act_replace_items)
     m_edit.addSeparator()
 
+    # Brush submenu
+    m_brush = m_edit.addMenu("Brush")
+    if hasattr(editor, "act_brush_size_inc"):
+        m_brush.addAction(editor.act_brush_size_inc)
+    if hasattr(editor, "act_brush_size_dec"):
+        m_brush.addAction(editor.act_brush_size_dec)
+    m_brush.addSeparator()
+    if hasattr(editor, "act_brush_variation_next"):
+        m_brush.addAction(editor.act_brush_variation_next)
+    if hasattr(editor, "act_brush_variation_prev"):
+        m_brush.addAction(editor.act_brush_variation_prev)
+    m_brush.addSeparator()
+
     # Border Options submenu (C++ Edit > Border Options)
     m_border = m_edit.addMenu("Border Options")
     m_border.addAction(editor.act_automagic)
@@ -281,16 +294,6 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_window.addAction(editor.act_palette_large_icons)
     if hasattr(editor, "act_toggle_dark_mode"):
         m_window.addAction(editor.act_toggle_dark_mode)
-    m_brush = m_window.addMenu("Brush")
-    if hasattr(editor, "act_brush_size_decrease"):
-        m_brush.addAction(editor.act_brush_size_decrease)
-    if hasattr(editor, "act_brush_size_increase"):
-        m_brush.addAction(editor.act_brush_size_increase)
-    m_brush.addSeparator()
-    if hasattr(editor, "act_brush_shape_square"):
-        m_brush.addAction(editor.act_brush_shape_square)
-    if hasattr(editor, "act_brush_shape_circle"):
-        m_brush.addAction(editor.act_brush_shape_circle)
     if hasattr(editor, "act_theme_noct_green_glass"):
         m_theme = m_window.addMenu("Themes")
         m_theme.addAction(editor.act_theme_noct_green_glass)
