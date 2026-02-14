@@ -1,6 +1,6 @@
 # Security Suggestions
 
-- Generated at: `2026-02-12T16:45:00Z`
+- Generated at: `2026-02-13T10:00:00Z`
 - Category: `security`
 - Task: `security-scan-and-fix`
 
@@ -28,11 +28,12 @@
   - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
   - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
 
+- [SEC-007] Implemented Rate Limiting and Map Request Size Limits for LiveServer to mitigate DoS attacks.
+  - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified with new tests in `py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py`
+
 ## Suggested Next
 
 - [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.
   - rationale: Passwords and map data are currently transmitted in plain text. TLS is required to prevent eavesdropping and MITM attacks.
   - links: https://docs.python.org/3/library/ssl.html
-
-- [HIGH] [SUG-SEC-002] Implement Rate Limiting for LiveServer.
-  - rationale: Lack of rate limiting exposes the server to DoS attacks. Implement token bucket or leaky bucket algorithm per IP.
