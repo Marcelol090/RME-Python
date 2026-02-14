@@ -612,3 +612,137 @@
   - migração para `StrEnum`;
   - adição/ajuste de parser resiliente `from_value(...)`.
 - Objetivo: eliminar regressões de UI state-sync em menus/select controls e consolidar compatibilidade py312 no fluxo de editor.
+
+## Incremental Update (2026-02-13 - Live role gating parity)
+- Auditoria de paridade comparando:
+  - `remeres-map-editor-redux/source/ui/menubar/menubar_action_manager.cpp`
+  - `remeres-map-editor-redux/source/ui/toolbar/standard_toolbar.cpp`
+- Fechado gap no Python para regras de habilitação por papel (host/local/client):
+  - `qt_map_editor_session.py::_update_action_enabled_states()` agora aplica gates de `is_local`, `is_host`, `is_live`, `is_server`.
+  - ações de `File/Search/Map/Live` e ações de seleção no menu passam a seguir a mesma lógica funcional do legado.
+- `EditorSession` ganhou API explícita de estado live para evitar acoplamento com atributos privados:
+  - `is_live_active()`, `is_live_client()`, `is_live_server()`.
+- `live_connect.py` passou a forçar refresh de estados de ação após connect/disconnect/host/stop, evitando UI stale.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py`
+    - novos cenários para `live_client`, `live_server` e modo local.
+  - `tests/unit/vis_layer/ui/test_live_connect_action_refresh.py`
+    - garante refresh de estado após operações de live connect.
+
+## Incremental Update (2026-02-13 - Live close/shutdown + banlist management)
+- Continuação da auditoria de paridade no legacy:
+  - `remeres-map-editor-redux/source/ui/main_frame.cpp` (fluxo de close/disconnect/shutdown)
+  - `remeres-map-editor-redux/source/live/live_server.cpp` (banimento de host)
+- Implementado no Python:
+  - `qt_map_editor_file.py`
+    - novo `_confirm_live_session_close(...)` com prompts de disconnect/shutdown alinhados ao legacy.
+    - `_close_map()` agora exige encerramento da sessão live antes de fechar mapa.
+    - `_close_map()` corrigido para recriar `EditorSession` com assinatura correta (`brush_mgr` + callback), evitando `TypeError`.
+  - `menubar/file/tools.py`
+    - `exit_app()` agora consulta `_confirm_live_session_close(for_app_exit=True)` antes de fechar.
+  - `core/protocols/live_server.py`
+    - API de banlist: `get_banned_hosts()`, `unban_host()`, `clear_banned_hosts()`.
+  - `logic_layer/session/editor.py`
+    - wrappers: `list_live_banned_hosts()`, `unban_live_host()`, `clear_live_banlist()`.
+  - `live_connect.py` + `build_actions.py` + `build_menus.py`
+    - nova ação `Live > Manage Ban List...` para listar/desbanir hosts.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py`
+  - `tests/unit/core/protocols/test_live_server_banlist.py`
+  - `tests/unit/logic_layer/test_editor_live_banlist.py`
+  - `tests/unit/vis_layer/ui/test_live_connect_action_refresh.py` (novo cenário de banlist)
+
+## Incremental Update (2026-02-13 - Window-manager close parity finalization)
+- Fechada a parte restante de graceful shutdown no fechamento por janela (X/Alt+F4):
+  - `QtMapEditor.closeEvent(...)` agora passa pelo fluxo de paridade live.
+  - novo helper testável `qt_map_editor_file.py::_handle_window_close_request(...)`.
+- Evitado prompt duplicado no fluxo `File > Exit`:
+  - `menubar/file/tools.py::exit_app()` seta flag `_live_close_confirmed_for_exit` após confirmação.
+  - `closeEvent` consome essa flag para não reconfirmar imediatamente.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py`
+  - `tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py`
+
+## Incremental Update (2026-02-13 - Brush footprint cache + Rust dedupe in canvas path)
+- Continuação da varredura de paridade/performance (legacy render loop) com foco em custo por mouse-move:
+  - `logic_layer/geometry.py`
+    - novos caches para offsets de brush:
+      - `get_brush_offsets(size, shape)`
+      - `get_brush_border_offsets(size, shape)`
+    - normalização de shape antes da chave de cache para evitar recomputações com aliases inválidos.
+  - `vis_layer/ui/main_window/qt_map_editor_brushes.py`
+    - aquecimento de cache no update de tamanho/shape (`_warm_brush_offsets_cache`).
+  - `vis_layer/ui/canvas/widget.py` e `vis_layer/renderer/opengl_canvas.py`
+    - trocado iterador dinâmico por offsets cacheados no fluxo de pintura/preview.
+    - dedupe local substituído por `rust_accel.dedupe_positions(...)` (com fallback Python estável).
+  - `logic_layer/rust_accel.py`
+    - nova API `dedupe_positions(...)` com caminho Rust opcional e fallback deterministicamente ordenado.
+- Cobertura adicionada/atualizada:
+  - `tests/unit/logic_layer/test_brush_footprint.py`
+    - valida cache e normalização de chave.
+  - `tests/unit/logic_layer/test_rust_accel.py`
+    - valida fallback, uso de backend e fallback em erro para `dedupe_positions`.
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
+    - preservado comportamento de sincronização shape square/circle com stubs UI (duck-typing).
+
+## Incremental Update (2026-02-13 - Selection/Lasso mode UI-backend contract tests)
+- Fechado gap de verificação determinística no modo seleção:
+  - novo `tests/unit/vis_layer/ui/test_mode_contract.py` cobrindo:
+    - `Selection Mode` ligado: sincroniza estado UI (`act_selection_mode`) com backend (`selection_mode`) e cancela gesto ativo;
+    - `Selection Mode` desligado: limpa estado de lasso e cancela box selection;
+    - `Lasso` ligado/desligado: força seleção quando necessário e mantém ações sincronizadas.
+- Objetivo: evitar regressão de estado “stuck tool” entre menu/toolbar e canvas input pipeline.
+
+## Incremental Update (2026-02-13 - Footprint paint fast path when mirror is off)
+- Otimização adicional no caminho quente de pintura (mouse move contínuo):
+  - `vis_layer/ui/canvas/widget.py` e `vis_layer/renderer/opengl_canvas.py`:
+    - quando `mirror_enabled=False`, o fluxo de footprint não cria listas intermediárias e não chama dedupe;
+    - marca `autoborder` e aplica `mouse_move` diretamente a partir dos offsets já cacheados.
+  - quando `mirror_enabled=True`, mantém pipeline seguro:
+    - `dedupe_positions(...)` + `union_with_mirrored(...)`.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py`
+    - `test_map_canvas_paint_footprint_without_mirror_skips_dedupe`
+    - `test_opengl_canvas_paint_footprint_without_mirror_skips_dedupe`
+    - `test_map_canvas_paint_footprint_with_mirror_uses_dedupe_and_union`
+    - `test_opengl_canvas_paint_footprint_with_mirror_uses_dedupe_and_union`
+
+## Incremental Update (2026-02-13 - BrushToolbar theme-token parity)
+- Fechado gap de consistência visual no componente `BrushToolbar`:
+  - `vis_layer/ui/widgets/brush_toolbar.py`
+    - style deixou de usar RGBA hardcoded e passou a ler `ThemeManager.tokens` (`surface/text/border/state/radius`);
+    - separadores verticais agora seguem `border.default`;
+    - ícones de shape (`square/circle`) sincronizados com cores de texto do tema (`text.primary` / `text.secondary`).
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_widgets.py::test_brush_toolbar_uses_theme_tokens_in_stylesheet`
+
+## Incremental Update (2026-02-13 - Selection mode gesture-cancel hardening)
+- Hardening de contrato UI↔canvas ao alternar `Selection Mode` / `Lasso`:
+  - `vis_layer/ui/main_window/qt_map_editor_navigation.py`
+    - `_toggle_selection_mode(...)` agora chama `canvas.cancel_interaction()` antes de `session.cancel_gesture()` ao entrar em seleção;
+    - `_toggle_lasso(...)` faz o mesmo ao forçar entrada em `selection_mode`.
+- Objetivo: evitar estado de interação pendente (`_mouse_down`/arrasto) ao trocar modo no meio de um stroke.
+- Cobertura atualizada:
+  - `tests/unit/vis_layer/ui/test_mode_contract.py`
+    - valida chamada de `cancel_interaction` nos fluxos de toggle relevantes.
+
+## Incremental Update (2026-02-13 - Runtime theme refresh hook for widgets)
+- Fechado gap de atualização de UI em troca de tema durante runtime:
+  - `vis_layer/ui/theme/__init__.py`
+    - `ThemeManager.apply_theme()` agora executa `_refresh_theme_aware_widgets(...)`.
+    - widgets com método `refresh_theme()` recebem callback após `app.setStyleSheet(...)`.
+  - `vis_layer/ui/widgets/brush_toolbar.py`
+    - novo método público `refresh_theme()` para reaplicar estilo/token + ícones.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_theme.py::test_theme_manager_refreshes_theme_aware_widgets`
+
+## Incremental Update (2026-02-14 - Brush offsets hot-cache in render loop)
+- Fechado gap de overhead no loop de pintura contínua:
+  - `QtMapEditor` agora mantém offsets prontos (`_brush_draw_offsets`, `_brush_border_offsets`) atualizados por `_warm_brush_offsets_cache`.
+  - `MapCanvasWidget` e `OpenGLCanvasWidget` passam a consumir o cache local antes de qualquer fallback.
+  - `OpenGLCanvasWidget._update_brush_preview(...)` também usa offsets cacheados.
+- Cobertura adicionada/atualizada:
+  - `tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py`
+    - valida uso do cache sem chamar `get_brush_offsets/get_brush_border_offsets` no caminho sem mirror.
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
+    - valida rebuild de cache ao alternar shape e tamanho.

@@ -1806,3 +1806,329 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `./.venv/bin/pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **15 passed**
 - `./.venv/bin/pytest -q -s py_rme_canary/tests/unit/logic_layer/test_selection_modes.py` -> **15 passed**
 - `PYTHON_BIN=.venv/bin/python bash py_rme_canary/quality-pipeline/quality_lf.sh --verbose` -> **concluído (dry-run), com alerts de ferramentas opcionais ausentes e erros de tipagem preexistentes no mypy fora deste escopo**
+
+---
+
+## Sessão 2026-02-13: Paridade de gating Live (host/local/client) em menus e toolbar
+
+### Referência legacy auditada
+- `remeres-map-editor-redux/source/ui/menubar/menubar_action_manager.cpp`
+- `remeres-map-editor-redux/source/ui/toolbar/standard_toolbar.cpp`
+
+### Implementação no Python
+- `py_rme_canary/logic_layer/session/editor.py`
+  - adicionados helpers de estado live:
+    - `is_live_active()`
+    - `is_live_client()`
+    - `is_live_server()`
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py`
+  - `_update_action_enabled_states()` agora aplica regras de paridade por papel:
+    - `is_host`: save/find/map-remove por host.
+    - `is_local`: close/import/map-cleanup/map-properties por sessão local.
+    - `is_server`: stop/kick/ban.
+    - `is_live`: connect/disconnect.
+  - ações de seleção para busca/substituição agora exigem `has_selection && is_host`, como no legado.
+- `py_rme_canary/vis_layer/ui/main_window/live_connect.py`
+  - refresh imediato de estados de ação após `connect/disconnect/host/stop` para evitar UI desatualizada.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py`
+  - novos cenários para papéis:
+    - `live_client` (bloqueios host/local)
+    - `live_server` (controles de servidor ativos)
+    - `local` (ações locais + host habilitadas)
+- `py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py`
+  - valida refresh de ação após fluxos de `open_connect_dialog`, `open_host_dialog`, `stop_host`, `disconnect_live`.
+
+---
+
+## Sessão 2026-02-13: Live close/shutdown parity + banlist management
+
+### Referência legacy auditada
+- `remeres-map-editor-redux/source/ui/main_frame.cpp`
+  - confirmações de disconnect/shutdown ao fechar mapa/app em sessão live.
+- `remeres-map-editor-redux/source/live/live_server.cpp`
+  - banimento por host e bloqueio de reconexão por endereço.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py`
+  - adicionado `_confirm_live_session_close(for_app_exit: bool)` com prompts de paridade:
+    - `Disconnect` para cliente;
+    - `Shutdown` para host;
+    - fluxo `Must Close Server` ao fechar mapa.
+  - `_close_map()` agora:
+    - exige encerramento live antes de fechar;
+    - recria sessão com assinatura correta (`EditorSession(self.map, self.brush_mgr, on_tiles_changed=...)`);
+    - sincroniza estado de dock live e ações.
+- `py_rme_canary/vis_layer/ui/main_window/menubar/file/tools.py`
+  - `exit_app()` passa a respeitar `_confirm_live_session_close(for_app_exit=True)` antes de fechar janela.
+- `py_rme_canary/core/protocols/live_server.py`
+  - adicionadas APIs de banlist:
+    - `get_banned_hosts()`
+    - `unban_host(host)`
+    - `clear_banned_hosts()`
+- `py_rme_canary/logic_layer/session/editor.py`
+  - wrappers de banlist para UI:
+    - `list_live_banned_hosts()`
+    - `unban_live_host(host)`
+    - `clear_live_banlist()`
+- `py_rme_canary/vis_layer/ui/main_window/live_connect.py`
+  - nova ação `manage_ban_list()` para listar/desbanir host bloqueado.
+- Integração de menu/ações:
+  - `py_rme_canary/vis_layer/ui/main_window/build_actions.py` → `act_live_banlist`
+  - `py_rme_canary/vis_layer/ui/main_window/build_menus.py` → `Live > Manage Ban List...`
+  - `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_session.py` → gating de `act_live_banlist` por `is_server`.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py`
+  - cobre cancelamento e confirmação no fechamento de mapa durante sessão live (cliente/host).
+- `py_rme_canary/tests/unit/core/protocols/test_live_server_banlist.py`
+  - cobre list/unban/clear da banlist no servidor.
+- `py_rme_canary/tests/unit/logic_layer/test_editor_live_banlist.py`
+  - cobre wrappers de banlist da `EditorSession`.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py`
+  - adiciona cenário de `manage_ban_list()` com desbanimento.
+
+---
+
+## Sessão 2026-02-13: Finalização de graceful shutdown no close da janela
+
+### Lacuna identificada
+- O fluxo de `File > Exit` já confirmava live disconnect/shutdown, mas o fechamento via window-manager (`X`/`Alt+F4`) ainda não passava pelo mesmo caminho de confirmação em todos os cenários.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py`
+  - adicionado `_handle_window_close_request(event)`:
+    - valida live close com `_confirm_live_session_close(for_app_exit=True)`;
+    - aplica `event.ignore()` quando usuário cancela;
+    - marca presença Friends como offline apenas quando fechamento é permitido.
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - `QtMapEditor.closeEvent(...)` agora delega para `_handle_window_close_request(...)` antes de chamar `super().closeEvent(event)`.
+- `py_rme_canary/vis_layer/ui/main_window/menubar/file/tools.py`
+  - `exit_app()` marca `_live_close_confirmed_for_exit=True` após confirmação para evitar prompt duplicado ao entrar em `closeEvent`.
+
+### Testes adicionados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py`
+  - cobre:
+    - bloqueio do fechamento quando confirmação live falha;
+    - uso da flag skip para evitar prompt duplo;
+    - caminho aceito com marcação offline.
+- `py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py`
+  - cobre:
+    - cancelamento no `exit_app()` quando confirmação falha;
+    - fechamento + flag de skip quando confirmação passa.
+
+---
+
+## Sessão 2026-02-13: Otimização de footprint de brush (cache) + dedupe com boundary Rust
+
+### Referência legacy auditada
+- `remeres-map-editor-redux/source/map_display.cpp`
+  - cálculo de footprint/border por brush size/shape no fluxo de desenho contínuo.
+- histórico recente de otimizações no redux (rendering/memory batches) para reduzir trabalho por frame/input.
+
+### Implementação no Python
+- `py_rme_canary/logic_layer/geometry.py`
+  - adicionado cache determinístico para offsets:
+    - `get_brush_offsets(size, shape)`
+    - `get_brush_border_offsets(size, shape)`
+  - normalização de shape antes da chave de cache, mantendo compatibilidade com entradas inválidas (`triangle` -> `square`).
+  - `iter_brush_offsets(...)` e `iter_brush_border_offsets(...)` passam a iterar sobre offsets cacheados.
+- `py_rme_canary/logic_layer/rust_accel.py`
+  - adicionada API `dedupe_positions(positions)`:
+    - tenta backend Rust (`dedupe_positions`) quando disponível;
+    - fallback Python estável e ordenado quando backend ausente/falha.
+- `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+  - fluxo de `paint_footprint`/preview atualizado para usar offsets cacheados.
+  - dedupe local substituído por `rust_accel.dedupe_positions(...)`.
+- `py_rme_canary/vis_layer/ui/canvas/widget.py`
+  - mesma atualização de offsets cacheados + dedupe via `rust_accel`.
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py`
+  - adicionado `_warm_brush_offsets_cache()` e acionamento em `_set_brush_size(...)` / `_set_brush_shape(...)`.
+  - sincronização de shape (`square`/`circle`) endurecida com duck-typing para stubs/test doubles (`setChecked`/`blockSignals`), sem regressão no Qt real.
+- `py_rme_canary/vis_layer/ui/helpers.py`
+  - reexports explícitos de helpers de offsets com `__all__`.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py`
+  - novos cenários de cache:
+    - chave idêntica retorna mesma tupla cacheada;
+    - shape inválido normaliza para mesma chave canônica.
+- `py_rme_canary/tests/unit/logic_layer/test_rust_accel.py`
+  - novos cenários de `dedupe_positions`:
+    - fallback Python preserva ordem e remove duplicados;
+    - backend Rust é utilizado quando disponível;
+    - erro de backend retorna fallback seguro.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
+  - validado após ajuste de integração com stubs.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/logic_layer/geometry.py py_rme_canary/vis_layer/ui/helpers.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/logic_layer/rust_accel.py py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/logic_layer/geometry.py py_rme_canary/vis_layer/ui/helpers.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/logic_layer/rust_accel.py py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` -> **102 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-13: Contrato Selection/Lasso (UI action ↔ backend state)
+
+### Lacuna identificada
+- Existia cobertura limitada para validar de forma determinística a sincronização entre:
+  - ação de UI (`act_selection_mode` / `act_lasso_select`);
+  - estado interno (`selection_mode` / `lasso_enabled`);
+  - cancelamento de gestos pendentes no backend/canvas.
+
+### Implementação no Python
+- `py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py` (novo)
+  - `test_toggle_selection_mode_enables_selection_and_cancels_gesture`
+  - `test_toggle_selection_mode_off_clears_lasso_state`
+  - `test_toggle_lasso_enables_selection_mode_and_syncs_action`
+
+### Resultado
+- Fluxo de modo seleção/lasso agora possui cobertura explícita do contrato front-back.
+- Reduz risco de regressão de “ferramenta travada” ao alternar modos durante edição.
+
+### Validação
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py` -> **3 passed, 1 warning**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/core/protocols/test_live_server_banlist.py py_rme_canary/tests/unit/logic_layer/test_editor_live_banlist.py py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py` -> **111 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-13: Fast path de footprint quando mirror está desligado
+
+### Lacuna identificada
+- Mesmo com cache de offsets, o fluxo `_paint_footprint_at` ainda alocava listas intermediárias e passava por dedupe no caminho sem mirror, que é o cenário mais frequente de uso.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/canvas/widget.py`
+  - `_paint_footprint_at(...)` agora tem fast-path:
+    - `mirror_enabled=False`: aplica `mark_autoborder_position` e `mouse_move` diretamente sem listas/dedupe.
+    - `mirror_enabled=True`: mantém fluxo `dedupe_positions(...)` + `union_with_mirrored(...)`.
+- `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+  - mesma otimização no canvas OpenGL para manter paridade de comportamento e performance.
+
+### Testes adicionados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py`
+  - `test_map_canvas_paint_footprint_without_mirror_skips_dedupe`
+  - `test_opengl_canvas_paint_footprint_without_mirror_skips_dedupe`
+  - `test_map_canvas_paint_footprint_with_mirror_uses_dedupe_and_union`
+  - `test_opengl_canvas_paint_footprint_with_mirror_uses_dedupe_and_union`
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py` -> **96 passed, 1 warning**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/core/protocols/test_live_server_banlist.py py_rme_canary/tests/unit/logic_layer/test_editor_live_banlist.py py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **117 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-13: BrushToolbar theme-token integration (UI/UX consistency)
+
+### Lacuna identificada
+- `BrushToolbar` ainda tinha estilo local com cores hardcoded (`rgba(...)`), divergindo do restante da UI que já usa `ThemeManager.tokens`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/widgets/brush_toolbar.py`
+  - `_apply_style()` agora usa tokens do tema ativo:
+    - `color.surface`, `color.text`, `color.border`, `color.state`, `radius`.
+  - separadores internos migrados para `border.default` do tema.
+  - ícones de shape agora usam cores derivadas de `text.primary` / `text.secondary`.
+  - adicionado parser seguro `_parse_qcolor(...)` para fallback quando token inválido.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py`
+  - novo `test_brush_toolbar_uses_theme_tokens_in_stylesheet` com monkeypatch de `get_theme_manager`.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/ui/widgets/brush_toolbar.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **20 passed, 1 warning**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/core/protocols/test_live_server_banlist.py py_rme_canary/tests/unit/logic_layer/test_editor_live_banlist.py py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **137 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-13: Selection/Lasso gesture-cancel hardening
+
+### Lacuna identificada
+- Ao alternar para `Selection Mode`/`Lasso` durante stroke, o canvas podia manter interação pendente até o próximo `mouseRelease`, abrindo margem para estado inconsistente de ferramenta.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py`
+  - `_toggle_selection_mode(...)`:
+    - ao entrar em seleção, executa `canvas.cancel_interaction()` (best effort) antes de `session.cancel_gesture()`.
+  - `_toggle_lasso(...)`:
+    - ao forçar `selection_mode=True`, também executa `canvas.cancel_interaction()` antes de cancelar gesto.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py`
+  - stubs de canvas estendidos com contador `cancel_interaction_calls`.
+  - asserts novos:
+    - toggle para seleção chama `cancel_interaction`;
+    - toggle de lasso que ativa seleção também chama `cancel_interaction`.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **23 passed, 1 warning**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/core/protocols/test_live_server_banlist.py py_rme_canary/tests/unit/logic_layer/test_editor_live_banlist.py py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **137 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-13: Runtime theme refresh hooks (ThemeManager -> BrushToolbar)
+
+### Lacuna identificada
+- Mesmo após tokenização do `BrushToolbar`, a troca de tema em runtime não forçava atualização do componente e dos ícones caso o widget já estivesse aberto.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/theme/__init__.py`
+  - `ThemeManager.apply_theme()` agora invoca `_refresh_theme_aware_widgets(...)` após `app.setStyleSheet(...)`.
+  - `_refresh_theme_aware_widgets(...)` percorre top-level widgets + children e chama `refresh_theme()` quando disponível (best-effort, sem quebrar fluxo).
+- `py_rme_canary/vis_layer/ui/widgets/brush_toolbar.py`
+  - adicionado método `refresh_theme()` que reaplica stylesheet/token e atualiza ícones.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_theme.py`
+  - `test_theme_manager_refreshes_theme_aware_widgets` valida callback `refresh_theme` pelo manager.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py`
+  - mantém validação de uso de tokens no stylesheet do `BrushToolbar`.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/ui/theme/__init__.py py_rme_canary/vis_layer/ui/widgets/brush_toolbar.py py_rme_canary/tests/unit/vis_layer/ui/test_theme.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/widgets/brush_toolbar.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_theme.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **35 passed, 1 warning**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_brush_footprint.py py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/core/protocols/test_live_server_banlist.py py_rme_canary/tests/unit/logic_layer/test_editor_live_banlist.py py_rme_canary/tests/unit/vis_layer/ui/test_live_connect_action_refresh.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py py_rme_canary/tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_mode_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py py_rme_canary/tests/unit/vis_layer/ui/test_theme.py` -> **153 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-14: Brush offset hot-cache no editor e consumo direto nos canvases
+
+### Lacuna identificada
+- Mesmo com cache global via `logic_layer.geometry`, o caminho de paint/preview ainda buscava offsets por função em cada evento de mouse.
+- No cenário de desenho contínuo (drag), isso adicionava overhead evitável em pontos quentes de render/input.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py`
+  - `_warm_brush_offsets_cache()` agora materializa e persiste:
+    - `self._brush_draw_offsets`
+    - `self._brush_border_offsets`
+- `py_rme_canary/vis_layer/ui/main_window/editor.py`
+  - adicionados atributos tipados `_brush_draw_offsets` / `_brush_border_offsets`;
+  - cache inicial aquecido no `__init__` após definir `brush_size`/`brush_shape`.
+- `py_rme_canary/vis_layer/ui/canvas/widget.py`
+  - adicionados helpers `_draw_offsets()` e `_border_offsets()` com prioridade para cache local do editor;
+  - `_paint_footprint_at(...)` atualizado para usar esses helpers em ambos os caminhos (mirror on/off).
+- `py_rme_canary/vis_layer/renderer/opengl_canvas.py`
+  - mesmo padrão de `_draw_offsets()` / `_border_offsets()`;
+  - `_paint_footprint_at(...)` e `_update_brush_preview(...)` migrados para offsets cacheados.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py`
+  - ajustes de stubs para novo contrato (`_draw_offsets/_border_offsets`);
+  - novos cenários:
+    - `test_map_canvas_paint_footprint_uses_cached_offsets_without_lookup`
+    - `test_opengl_canvas_paint_footprint_uses_cached_offsets_without_lookup`
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
+  - valida persistência/rebuild de cache em mudanças de size/shape.
+
+### Validação
+- `./.venv/bin/ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **OK**
+- `./.venv/bin/python -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **13 passed, 1 warning**
+- `QT_QPA_PLATFORM=offscreen ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed, 17 warnings**

@@ -366,6 +366,35 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_brush_variation_next.triggered.connect(lambda _c=False: editor._cycle_brush_variation(1))
     editor.addAction(editor.act_brush_variation_next)
 
+    # Brush actions (Window > Brush)
+    editor.act_brush_size_group = QActionGroup(editor)
+    editor.act_brush_size_group.setExclusive(True)
+    editor.act_brush_size_actions = []
+    for size in (1, 3, 5, 7, 9):
+        act = QAction(str(size), editor)
+        act.setCheckable(True)
+        act.setData(int(size))
+        act.triggered.connect((lambda s: lambda _c=False: editor._set_brush_size(s))(int(size)))
+        if int(getattr(editor, "brush_size", 0)) == int(size):
+            act.setChecked(True)
+        editor.act_brush_size_group.addAction(act)
+        editor.act_brush_size_actions.append(act)
+
+    editor.act_brush_shape_group = QActionGroup(editor)
+    editor.act_brush_shape_group.setExclusive(True)
+    editor.act_brush_shape_square = QAction("Square", editor)
+    editor.act_brush_shape_square.setCheckable(True)
+    editor.act_brush_shape_square.triggered.connect(lambda _c=False: editor._set_brush_shape("square"))
+    editor.act_brush_shape_circle = QAction("Circle", editor)
+    editor.act_brush_shape_circle.setCheckable(True)
+    editor.act_brush_shape_circle.triggered.connect(lambda _c=False: editor._set_brush_shape("circle"))
+    editor.act_brush_shape_group.addAction(editor.act_brush_shape_square)
+    editor.act_brush_shape_group.addAction(editor.act_brush_shape_circle)
+    if str(getattr(editor, "brush_shape", "square")) == "circle":
+        editor.act_brush_shape_circle.setChecked(True)
+    else:
+        editor.act_brush_shape_square.setChecked(True)
+
     editor.act_show_npcs_spawns = QAction("Show npcs spawns", editor)
     editor.act_show_npcs_spawns.setCheckable(True)
     # NOTE: C++ does not assign a hotkey to Show NPC Spawns. U belongs to Highlight Locked Doors.
@@ -846,6 +875,9 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_live_ban = QAction("Ban Client...", editor)
     editor.act_live_ban.triggered.connect(lambda _c=False: live_connect.ban_client(editor))
+
+    editor.act_live_banlist = QAction("Manage Ban List...", editor)
+    editor.act_live_banlist.triggered.connect(lambda _c=False: live_connect.manage_ban_list(editor))
 
     # Apply defaults based on editor state (idempotent)
     editor.act_show_grid.setChecked(bool(getattr(editor, "show_grid", True)))

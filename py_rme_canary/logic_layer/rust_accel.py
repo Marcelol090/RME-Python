@@ -281,3 +281,39 @@ def assemble_png_idat(
             except Exception:
                 pass
     return _python_assemble_png_idat(image_data, width, height)
+
+
+# ---------------------------------------------------------------------------
+# 5. Position deduplication (canvas footprint) (NEW)
+# ---------------------------------------------------------------------------
+
+def _python_dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    seen: set[tuple[int, int, int]] = set()
+    out: list[tuple[int, int, int]] = []
+    for px, py, pz in positions:
+        key = (int(px), int(py), int(pz))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+    return out
+
+
+def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Stable position dedupe with optional Rust backend acceleration."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "dedupe_positions", None)
+        if fn is not None:
+            try:
+                result = fn(positions)
+                if isinstance(result, list):
+                    out: list[tuple[int, int, int]] = []
+                    for entry in result:
+                        if isinstance(entry, (tuple, list)) and len(entry) == 3:
+                            out.append((int(entry[0]), int(entry[1]), int(entry[2])))
+                    if len(out) == len(result):
+                        return out
+            except Exception:
+                pass
+    return _python_dedupe_positions(positions)

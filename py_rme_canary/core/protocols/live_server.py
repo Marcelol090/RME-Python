@@ -5,20 +5,17 @@ Ported from source/live_server.cpp
 """
 
 import logging
-import select
 import secrets
+import select
 import socket
 import threading
 import time
 from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from .live_packets import PacketType, decode_cursor, encode_chat
 from .live_peer import LivePeer
-
-if TYPE_CHECKING:
-    pass
 
 log = logging.getLogger(__name__)
 
@@ -232,11 +229,10 @@ class LiveServer:
             name, password = _decode_login_payload(payload)
 
             # Secure password comparison
-            if self.password:
-                if not secrets.compare_digest(str(password), str(self.password)):
-                    peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
-                    self._disconnect_client(client)
-                    return
+            if self.password and not secrets.compare_digest(str(password), str(self.password)):
+                peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
+                self._disconnect_client(client)
+                return
 
             peer.set_name(str(name))
             peer.set_password(str(password))
@@ -359,3 +355,23 @@ class LiveServer:
                 self._disconnect_client(sock)
                 return True
         return False
+
+    def get_banned_hosts(self) -> list[str]:
+        """Return a stable list of currently banned host addresses."""
+        return sorted(str(host) for host in self._banned_hosts if str(host).strip())
+
+    def unban_host(self, host: str) -> bool:
+        """Remove a host address from ban list."""
+        normalized = str(host or "").strip()
+        if not normalized:
+            return False
+        if normalized not in self._banned_hosts:
+            return False
+        self._banned_hosts.discard(normalized)
+        return True
+
+    def clear_banned_hosts(self) -> int:
+        """Clear all banned hosts and return how many entries were removed."""
+        count = len(self._banned_hosts)
+        self._banned_hosts.clear()
+        return int(count)

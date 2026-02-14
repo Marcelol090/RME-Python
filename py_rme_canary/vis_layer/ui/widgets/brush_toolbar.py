@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 
 from py_rme_canary.vis_layer.ui.icons import tool_icons
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     pass
@@ -33,12 +34,24 @@ if TYPE_CHECKING:
 # Painted icon helpers (no Unicode, no emoji, no external files)
 # ---------------------------------------------------------------------------
 
-def _painted_square_icon(size: int = 20, checked: bool = False) -> QIcon:
+def _parse_qcolor(value: str, *, fallback: QColor) -> QColor:
+    parsed = QColor(value)
+    if not parsed.isValid():
+        return QColor(fallback)
+    return parsed
+
+
+def _painted_square_icon(
+    size: int = 20, checked: bool = False, *, active: QColor | None = None, inactive: QColor | None = None
+) -> QIcon:
     px = QPixmap(size, size)
     px.fill(QColor(0, 0, 0, 0))
     p = QPainter(px)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    color = QColor(255, 255, 255, 200) if checked else QColor(161, 161, 170, 160)
+    active_color = QColor(255, 255, 255, 220) if active is None else QColor(active)
+    inactive_color = QColor(161, 161, 170, 160) if inactive is None else QColor(inactive)
+    color = QColor(active_color) if checked else QColor(inactive_color)
+    color.setAlpha(220 if checked else 190)
     fill = QColor(255, 255, 255, 30) if checked else QColor(161, 161, 170, 15)
     p.setPen(QPen(color, 1.5))
     p.setBrush(QBrush(fill))
@@ -48,12 +61,17 @@ def _painted_square_icon(size: int = 20, checked: bool = False) -> QIcon:
     return QIcon(px)
 
 
-def _painted_circle_icon(size: int = 20, checked: bool = False) -> QIcon:
+def _painted_circle_icon(
+    size: int = 20, checked: bool = False, *, active: QColor | None = None, inactive: QColor | None = None
+) -> QIcon:
     px = QPixmap(size, size)
     px.fill(QColor(0, 0, 0, 0))
     p = QPainter(px)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    color = QColor(255, 255, 255, 200) if checked else QColor(161, 161, 170, 160)
+    active_color = QColor(255, 255, 255, 220) if active is None else QColor(active)
+    inactive_color = QColor(161, 161, 170, 160) if inactive is None else QColor(inactive)
+    color = QColor(active_color) if checked else QColor(inactive_color)
+    color.setAlpha(220 if checked else 190)
     fill = QColor(255, 255, 255, 30) if checked else QColor(161, 161, 170, 15)
     p.setPen(QPen(color, 1.5))
     p.setBrush(QBrush(fill))
@@ -102,6 +120,7 @@ class BrushToolbar(QFrame):
         self._size = 1
         self._shape = "square"
         self._automagic = True
+        self._separators: list[QFrame] = []
 
         self._setup_ui()
         self._apply_style()
@@ -135,7 +154,7 @@ class BrushToolbar(QFrame):
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.Shape.VLine)
         sep1.setFixedWidth(1)
-        sep1.setStyleSheet("background: rgba(255, 255, 255, 0.06);")
+        self._separators.append(sep1)
         layout.addWidget(sep1)
 
         # Shape toggle — custom painted icons
@@ -162,7 +181,7 @@ class BrushToolbar(QFrame):
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.VLine)
         sep2.setFixedWidth(1)
-        sep2.setStyleSheet("background: rgba(255, 255, 255, 0.06);")
+        self._separators.append(sep2)
         layout.addWidget(sep2)
 
         # Automagic toggle
@@ -178,38 +197,56 @@ class BrushToolbar(QFrame):
         layout.addStretch()
 
     def _apply_style(self) -> None:
-        """Antigravity styling."""
-        self.setStyleSheet(
-            """
-            BrushToolbar {
-                background: rgba(16, 16, 24, 0.85);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 12px;
-            }
+        """Apply toolbar style using active theme tokens."""
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QPushButton {
-                background: rgba(19, 19, 29, 0.6);
-                color: rgba(161, 161, 170, 0.8);
+        self.setStyleSheet(
+            f"""
+            BrushToolbar {{
+                background: {c["surface"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["lg"]}px;
+            }}
+
+            QPushButton {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["secondary"]};
                 border: 1px solid transparent;
-                border-radius: 8px;
+                border-radius: {r["md"]}px;
                 font-size: 12px;
                 font-weight: 700;
-            }
+            }}
 
-            QPushButton:hover {
-                background: rgba(139, 92, 246, 0.12);
-                border-color: rgba(139, 92, 246, 0.2);
-                color: #E5E5E7;
-            }
+            QPushButton:hover {{
+                background: {c["state"]["hover"]};
+                border-color: {c["border"]["interactive"]};
+                color: {c["text"]["primary"]};
+            }}
 
-            QPushButton:checked {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(139, 92, 246, 0.35), stop:1 rgba(124, 58, 237, 0.3));
-                border: 1px solid rgba(139, 92, 246, 0.45);
-                color: white;
-            }
+            QPushButton:checked {{
+                background: {c["state"]["active"]};
+                border: 1px solid {c["border"]["interactive"]};
+                color: {c["text"]["primary"]};
+            }}
         """
         )
+        for sep in self._separators:
+            sep.setStyleSheet(f"background: {c['border']['default']};")
+        self._refresh_shape_icons()
+
+    def refresh_theme(self) -> None:
+        """ThemeManager hook for runtime theme switches."""
+        self._apply_style()
+
+    def _refresh_shape_icons(self) -> None:
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        active = _parse_qcolor(c["text"]["primary"], fallback=QColor(255, 255, 255))
+        inactive = _parse_qcolor(c["text"]["secondary"], fallback=QColor(161, 161, 170))
+        self.btn_square.setIcon(_painted_square_icon(18, self._shape == "square", active=active, inactive=inactive))
+        self.btn_circle.setIcon(_painted_circle_icon(18, self._shape == "circle", active=active, inactive=inactive))
 
     def _on_size_clicked(self, size: int) -> None:
         """Handle size button click."""
@@ -222,9 +259,7 @@ class BrushToolbar(QFrame):
         self._shape = shape
         self.btn_square.setChecked(shape == "square")
         self.btn_circle.setChecked(shape == "circle")
-        # Update icons to reflect checked state
-        self.btn_square.setIcon(_painted_square_icon(18, shape == "square"))
-        self.btn_circle.setIcon(_painted_circle_icon(18, shape == "circle"))
+        self._refresh_shape_icons()
         self.shape_changed.emit(shape)
 
     def _on_automagic_clicked(self) -> None:
@@ -245,8 +280,7 @@ class BrushToolbar(QFrame):
         self._shape = shape
         self.btn_square.setChecked(shape == "square")
         self.btn_circle.setChecked(shape == "circle")
-        self.btn_square.setIcon(_painted_square_icon(18, shape == "square"))
-        self.btn_circle.setIcon(_painted_circle_icon(18, shape == "circle"))
+        self._refresh_shape_icons()
 
     def set_automagic(self, enabled: bool) -> None:
         """Set automagic state."""

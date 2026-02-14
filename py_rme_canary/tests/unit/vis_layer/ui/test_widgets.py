@@ -218,6 +218,47 @@ class TestBrushToolbar:
         assert toolbar.btn_square.isChecked()
         assert not toolbar.btn_circle.isChecked()
 
+    def test_brush_toolbar_uses_theme_tokens_in_stylesheet(self, app, monkeypatch):
+        """Toolbar style should read color tokens from ThemeManager."""
+        from types import SimpleNamespace
+
+        from py_rme_canary.vis_layer.ui.widgets import brush_toolbar as brush_toolbar_module
+        from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar
+
+        fake_tokens = {
+            "color": {
+                "surface": {
+                    "primary": "rgba(1, 2, 3, 0.8)",
+                    "secondary": "rgba(4, 5, 6, 0.6)",
+                },
+                "text": {
+                    "primary": "#FAFAFA",
+                    "secondary": "#ABABAB",
+                },
+                "border": {
+                    "default": "rgba(7, 8, 9, 0.5)",
+                    "interactive": "rgba(10, 11, 12, 0.4)",
+                },
+                "state": {
+                    "hover": "rgba(13, 14, 15, 0.3)",
+                    "active": "rgba(16, 17, 18, 0.2)",
+                },
+            },
+            "radius": {"md": 5, "lg": 9},
+        }
+        monkeypatch.setattr(
+            brush_toolbar_module,
+            "get_theme_manager",
+            lambda: SimpleNamespace(tokens=fake_tokens),
+        )
+
+        toolbar = BrushToolbar()
+        style = toolbar.styleSheet()
+        assert "rgba(1, 2, 3, 0.8)" in style
+        assert "rgba(4, 5, 6, 0.6)" in style
+        assert "rgba(7, 8, 9, 0.5)" in style
+        assert "rgba(10, 11, 12, 0.4)" in style
+
 
 class TestUndoRedoPanel:
     """Tests for undo/redo panel."""

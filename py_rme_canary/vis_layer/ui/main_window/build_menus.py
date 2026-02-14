@@ -266,6 +266,18 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_palette.addAction(editor.act_palette_zones)
     m_palette.addAction(editor.act_palette_raw)
 
+    # Brush submenu (UI parity for size/shape controls)
+    if hasattr(editor, "act_brush_size_actions") or hasattr(editor, "act_brush_shape_square"):
+        m_brush = m_window.addMenu("Brush")
+        if hasattr(editor, "act_brush_size_actions"):
+            m_brush_size = m_brush.addMenu("Size")
+            for act in editor.act_brush_size_actions:
+                m_brush_size.addAction(act)
+        if hasattr(editor, "act_brush_shape_square") and hasattr(editor, "act_brush_shape_circle"):
+            m_brush_shape = m_brush.addMenu("Shape")
+            m_brush_shape.addAction(editor.act_brush_shape_square)
+            m_brush_shape.addAction(editor.act_brush_shape_circle)
+
     # Toolbars submenu (C++ Window > Toolbars)
     m_toolbars = m_window.addMenu("Toolbars")
     # toggleViewAction()s added after toolbars are created
@@ -316,12 +328,14 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_live.addAction(editor.act_src_connect)
     if hasattr(editor, "act_src_disconnect"):
         m_live.addAction(editor.act_src_disconnect)
-    if hasattr(editor, "act_live_kick") or hasattr(editor, "act_live_ban"):
+    if hasattr(editor, "act_live_kick") or hasattr(editor, "act_live_ban") or hasattr(editor, "act_live_banlist"):
         m_live.addSeparator()
     if hasattr(editor, "act_live_kick"):
         m_live.addAction(editor.act_live_kick)
     if hasattr(editor, "act_live_ban"):
         m_live.addAction(editor.act_live_ban)
+    if hasattr(editor, "act_live_banlist"):
+        m_live.addAction(editor.act_live_banlist)
 
     # ---- Experimental Menu (C++ parity) ----
     m_experimental = mb.addMenu("Experimental")

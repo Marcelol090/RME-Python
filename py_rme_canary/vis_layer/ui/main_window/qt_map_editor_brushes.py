@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QCheckBox, QSpinBox
 
+from py_rme_canary.vis_layer.ui.helpers import get_brush_border_offsets, get_brush_offsets
+
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
@@ -23,6 +25,7 @@ class QtMapEditorBrushesMixin:
 
     def _set_brush_size(self: QtMapEditor, size: int) -> None:
         self.brush_size = max(0, int(size))
+        self._warm_brush_offsets_cache()
         with contextlib.suppress(Exception):
             self.session.brush_size = int(self.brush_size)
 
@@ -33,6 +36,17 @@ class QtMapEditorBrushesMixin:
 
         if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_size"):
             self.brush_toolbar.set_size(self.brush_size)
+
+        if hasattr(self, "act_brush_size_actions"):
+            for act in getattr(self, "act_brush_size_actions", ()):
+                if not hasattr(act, "setChecked"):
+                    continue
+                if hasattr(act, "blockSignals"):
+                    act.blockSignals(True)
+                act_size = int(act.data()) if hasattr(act, "data") and act.data() is not None else None
+                act.setChecked(act_size == int(self.brush_size))
+                if hasattr(act, "blockSignals"):
+                    act.blockSignals(False)
 
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
@@ -86,19 +100,47 @@ class QtMapEditorBrushesMixin:
         if shape not in ("square", "circle"):
             shape = "square"
         self.brush_shape = shape
+        self._warm_brush_offsets_cache()
 
-        if hasattr(self, "shape_square") and isinstance(self.shape_square, QCheckBox):
-            self.shape_square.blockSignals(True)
+        if hasattr(self, "shape_square") and hasattr(self.shape_square, "setChecked"):
+            if hasattr(self.shape_square, "blockSignals"):
+                self.shape_square.blockSignals(True)
             self.shape_square.setChecked(shape == "square")
-            self.shape_square.blockSignals(False)
+            if hasattr(self.shape_square, "blockSignals"):
+                self.shape_square.blockSignals(False)
 
-        if hasattr(self, "shape_circle") and isinstance(self.shape_circle, QCheckBox):
-            self.shape_circle.blockSignals(True)
+        if hasattr(self, "shape_circle") and hasattr(self.shape_circle, "setChecked"):
+            if hasattr(self.shape_circle, "blockSignals"):
+                self.shape_circle.blockSignals(True)
             self.shape_circle.setChecked(shape == "circle")
-            self.shape_circle.blockSignals(False)
+            if hasattr(self.shape_circle, "blockSignals"):
+                self.shape_circle.blockSignals(False)
 
         if hasattr(self, "brush_toolbar") and hasattr(self.brush_toolbar, "set_shape"):
             self.brush_toolbar.set_shape(shape)
+
+        if hasattr(self, "act_brush_shape_square") and hasattr(self.act_brush_shape_square, "setChecked"):
+            if hasattr(self.act_brush_shape_square, "blockSignals"):
+                self.act_brush_shape_square.blockSignals(True)
+            self.act_brush_shape_square.setChecked(shape == "square")
+            if hasattr(self.act_brush_shape_square, "blockSignals"):
+                self.act_brush_shape_square.blockSignals(False)
+
+        if hasattr(self, "act_brush_shape_circle") and hasattr(self.act_brush_shape_circle, "setChecked"):
+            if hasattr(self.act_brush_shape_circle, "blockSignals"):
+                self.act_brush_shape_circle.blockSignals(True)
+            self.act_brush_shape_circle.setChecked(shape == "circle")
+            if hasattr(self.act_brush_shape_circle, "blockSignals"):
+                self.act_brush_shape_circle.blockSignals(False)
+
+    def _warm_brush_offsets_cache(self: QtMapEditor) -> None:
+        size = int(getattr(self, "brush_size", 0) or 0)
+        shape = str(getattr(self, "brush_shape", "square") or "square")
+        draw_offsets = get_brush_offsets(size, shape)
+        border_offsets = get_brush_border_offsets(size, shape)
+        # Keep a hot copy on editor for render loop access (avoids per-event lookup).
+        self._brush_draw_offsets = draw_offsets
+        self._brush_border_offsets = border_offsets
 
     def _set_z(self: QtMapEditor, z: int) -> None:
         self.viewport.z = int(z)

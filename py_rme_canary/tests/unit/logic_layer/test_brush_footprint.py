@@ -21,7 +21,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from py_rme_canary.logic_layer.geometry import iter_brush_border_offsets, iter_brush_offsets
+from py_rme_canary.logic_layer.geometry import (
+    get_brush_border_offsets,
+    get_brush_offsets,
+    iter_brush_border_offsets,
+    iter_brush_offsets,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -339,3 +344,15 @@ class TestInputHandling:
         unknown = list(iter_brush_offsets(2, "triangle"))
         square = list(iter_brush_offsets(2, "square"))
         assert unknown == square
+
+
+class TestOffsetCaching:
+    def test_get_brush_offsets_returns_cached_tuple_for_same_key(self) -> None:
+        first = get_brush_offsets(3, "circle")
+        second = get_brush_offsets(3, "circle")
+        assert first is second
+
+    def test_get_border_offsets_normalizes_shape_before_cache_key(self) -> None:
+        canonical = get_brush_border_offsets(2, "square")
+        unknown = get_brush_border_offsets(2, "triangle")
+        assert unknown is canonical
