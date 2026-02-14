@@ -1,4 +1,5 @@
 import pytest
+import time
 from unittest.mock import Mock, patch
 from py_rme_canary.core.protocols.live_server import LiveServer
 from py_rme_canary.core.protocols.live_packets import PacketType
@@ -16,6 +17,8 @@ class TestLiveServerAuthBypass:
         mock_peer.client_id = 1
         mock_peer.name = "Attacker"
         mock_peer.is_authenticated = False # Explicitly False
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = time.time()
 
         server.clients[mock_client] = mock_peer
 
@@ -47,6 +50,8 @@ class TestLiveServerAuthBypass:
         mock_peer.client_id = 1
         mock_peer.name = "User"
         mock_peer.is_authenticated = True # Authenticated
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = time.time()
 
         server.clients[mock_client] = mock_peer
 

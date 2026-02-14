@@ -9,6 +9,7 @@ import secrets
 import select
 import socket
 import threading
+import time
 from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any
@@ -20,6 +21,10 @@ if TYPE_CHECKING:
     pass
 
 log = logging.getLogger(__name__)
+
+# Security constants
+MAX_MAP_REQUEST_AREA = 65536  # Max tiles per map request (e.g. 256x256)
+MAX_PACKETS_PER_SECOND = 50   # Max packets/sec per client
 
 
 def _decode_login_payload(payload: bytes) -> tuple[str, str]:
@@ -184,10 +189,23 @@ class LiveServer:
     def _process_packet(self, client: socket.socket, packet_type: int, payload: bytes) -> None:
         """Business logic for handling packets."""
         peer = self.clients.get(client)
+        if peer is None:
+            return
+
+        # Rate limiting logic
+        current_time = time.time()
+        # Reset counter if 1 second has passed
+        if current_time - peer.last_packet_reset > 1.0:
+            peer.packet_count = 0
+            peer.last_packet_reset = current_time
+
+        peer.packet_count += 1
+        if peer.packet_count > MAX_PACKETS_PER_SECOND:
+            log.warning(f"Rate limit exceeded for client {peer.name} ({peer.address})")
+            self._disconnect_client(client)
+            return
 
         if packet_type == PacketType.LOGIN:
-            if peer is None:
-                return
             name, password = _decode_login_payload(payload)
             if self.password and not secrets.compare_digest(str(password), str(self.password)):
                 peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
@@ -203,16 +221,15 @@ class LiveServer:
             log.info(f"Client {name} logged in (id={client_id})")
             return
 
-        if peer is None or not peer.is_authenticated:
+        if not peer.is_authenticated:
             log.warning(f"Unauthenticated packet {packet_type}")
             self._disconnect_client(client)
             return
 
         if packet_type == PacketType.CURSOR_UPDATE:
             # Decode and store cursor, then rebroadcast
-            if peer is not None:
-                client_id, x, y, z = decode_cursor(payload)
-                peer.set_cursor(x, y, z)
+            client_id, x, y, z = decode_cursor(payload)
+            peer.set_cursor(x, y, z)
             self.broadcast(PacketType.CURSOR_UPDATE, payload, exclude=client)
             with self._queue_lock:
                 self._incoming_queue.append((int(packet_type), payload))
@@ -225,14 +242,13 @@ class LiveServer:
             return
 
         if packet_type == PacketType.MESSAGE:
-            if peer is not None:
-                # Re-encode with client info for broadcast
-                text = payload.decode("utf-8", errors="ignore")
-                log.info(f"Chat from {peer.name}: {text}")
-                broadcast_payload = encode_chat(peer.client_id, peer.name, text)
-                self.broadcast(PacketType.MESSAGE, broadcast_payload)
-                with self._queue_lock:
-                    self._incoming_queue.append((int(packet_type), broadcast_payload))
+            # Re-encode with client info for broadcast
+            text = payload.decode("utf-8", errors="ignore")
+            log.info(f"Chat from {peer.name}: {text}")
+            broadcast_payload = encode_chat(peer.client_id, peer.name, text)
+            self.broadcast(PacketType.MESSAGE, broadcast_payload)
+            with self._queue_lock:
+                self._incoming_queue.append((int(packet_type), broadcast_payload))
             return
 
         if packet_type == PacketType.MAP_REQUEST:
@@ -249,6 +265,17 @@ class LiveServer:
             return
 
         x_min, y_min, x_max, y_max, z = decode_map_request(payload)
+
+        # Validate request size
+        width = abs(x_max - x_min) + 1
+        height = abs(y_max - y_min) + 1
+        area = width * height
+
+        if area > MAX_MAP_REQUEST_AREA:
+            log.warning(f"Map request too large from {peer.name}: {area} tiles (max {MAX_MAP_REQUEST_AREA})")
+            # Ignore request or maybe send error? For now, ignore.
+            return
+
         log.info(f"Map request from {peer.name}: ({x_min},{y_min}) to ({x_max},{y_max}) z={z}")
 
         if self._map_provider is None:
