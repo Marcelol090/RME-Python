@@ -64,6 +64,7 @@ class ModernPaletteWidget(QWidget):
     """Brush list widget with icon cards used inside tabs — Antigravity style."""
 
     brush_selected = pyqtSignal(int)
+    brush_hovered = pyqtSignal(int, str)  # (brush_id, brush_name)
 
     def __init__(
         self,
@@ -84,6 +85,7 @@ class ModernPaletteWidget(QWidget):
 
         self.list_widget = QListWidget(self)
         self.list_widget.setObjectName("AssetGrid")
+        self.list_widget.setMouseTracking(True)  # Enable hover tracking
         self.list_widget.setViewMode(QListWidget.ViewMode.IconMode)
         self.list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
         self.list_widget.setUniformItemSizes(True)
@@ -94,6 +96,7 @@ class ModernPaletteWidget(QWidget):
         self.list_widget.setGridSize(QSize(self._icon_px + 24, self._icon_px + 28))
         self.list_widget.itemClicked.connect(self._emit_selected)
         self.list_widget.itemActivated.connect(self._emit_selected)
+        self.list_widget.itemEntered.connect(self._emit_hovered)
         # Enhanced Antigravity styling for the list items
         self.list_widget.setStyleSheet(
             """
@@ -185,3 +188,9 @@ class ModernPaletteWidget(QWidget):
         if value is None:
             return
         self.brush_selected.emit(int(value))
+
+    def _emit_hovered(self, item: QListWidgetItem) -> None:
+        value = item.data(Qt.ItemDataRole.UserRole)
+        if value is None:
+            return
+        self.brush_hovered.emit(int(value), item.text())

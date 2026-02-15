@@ -2,7 +2,7 @@
 import sys
 from unittest.mock import MagicMock
 import pytest
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPushButton
 
 # Mock dependencies
 sys.modules["py_rme_canary.core.data.gamemap"] = MagicMock()
@@ -27,17 +27,25 @@ def test_find_item_dialog_inheritance(qapp):
     assert isinstance(dialog, ModernDialog)
     assert dialog.windowTitle() == "Find Items"
     assert hasattr(dialog, "content_layout")
-    # Verify content layout is not empty (has widgets)
-    assert dialog.content_layout.count() > 0
-    # Verify footer is visible (since we added buttons to it)
-    assert dialog.footer.isVisible()
+
+    # Check footer content instead of visibility
+    footer_buttons = dialog.footer.findChildren(QPushButton)
+    assert len(footer_buttons) >= 2 # Replace All + Close
+
+    # Verify specific buttons
+    texts = [btn.text() for btn in footer_buttons]
+    assert "Replace All..." in texts
+    assert "Close" in texts
 
 def test_map_validator_dialog_inheritance(qapp):
     dialog = MapValidatorDialog(map_data=MagicMock())
     assert isinstance(dialog, ModernDialog)
     assert dialog.windowTitle() == "Map Validator"
-    assert hasattr(dialog, "content_layout")
-    # Verify content layout is not empty
-    assert dialog.content_layout.count() > 0
-    # Verify footer is visible
-    assert dialog.footer.isVisible()
+
+    # Check footer content
+    footer_buttons = dialog.footer.findChildren(QPushButton)
+    assert len(footer_buttons) >= 2 # Validate + Close
+
+    texts = [btn.text() for btn in footer_buttons]
+    assert "Validate" in texts
+    assert "Close" in texts

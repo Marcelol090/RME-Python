@@ -39,23 +39,26 @@ class ActivityButton(QToolButton):
 
         tm = get_theme_manager()
         c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
         # Background on hover/checked
         if self.isChecked() or self.underMouse():
             bg_color = QColor(c["state"]["hover"])
             if self.isChecked():
-                bg_color = QColor(c["surface"]["secondary"])  # Slightly lighter for active
+                bg_color = QColor(c["surface"]["secondary"])
 
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(bg_color)
             # Draw rounded rect slightly smaller than button
-            painter.drawRoundedRect(4, 4, self.width() - 8, self.height() - 8, 8, 8)
+            radius = r.get("md", 12)
+            painter.drawRoundedRect(4, 4, self.width() - 8, self.height() - 8, radius, radius)
 
         # Active Indicator (Left strip)
         if self.isChecked():
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(c["brand"]["primary"]))
-            painter.drawRoundedRect(2, 10, 3, self.height() - 20, 1.5, 1.5)
+            # Modern pill indicator
+            painter.drawRoundedRect(2, 12, 4, self.height() - 24, 2, 2)
 
         # Draw Icon (centered)
         icon = self.icon()

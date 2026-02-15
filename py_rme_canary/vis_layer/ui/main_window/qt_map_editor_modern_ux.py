@@ -210,6 +210,10 @@ class QtMapEditorModernUXMixin:
         """Setup additional modern UI actions in menus."""
         self._setup_modern_dialog_actions()
 
+        # Connect palette hover signal
+        if hasattr(self, "dock_palette") and hasattr(self.dock_palette, "brush_hovered"):
+            self.dock_palette.brush_hovered.connect(self._on_palette_brush_hovered)
+
         # Command Palette Action (Hidden from menus, just shortcut)
         self.act_command_palette = QAction("Command Palette...", self)
         self.act_command_palette.setShortcut(QKeySequence("Ctrl+K"))
@@ -460,6 +464,11 @@ class QtMapEditorModernUXMixin:
     def _show_not_implemented(self: QtMapEditor, feature: str) -> None:
         """Show not implemented message."""
         QMessageBox.information(self, "Not Available", f"{feature} is not available yet.")
+
+    def _on_palette_brush_hovered(self: QtMapEditor, brush_id: int, brush_name: str) -> None:
+        """Handle brush hover from palette."""
+        if hasattr(self, "status"):
+            self.status.showMessage(f"Brush: {brush_name} (ID: {brush_id})")
 
     # Stub methods for context menu callbacks
     def _do_copy(self: QtMapEditor) -> None:
