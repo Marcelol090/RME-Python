@@ -12,6 +12,8 @@ class TestLiveServerSecurity:
         mock_client = Mock()
         mock_peer = Mock()
         mock_peer.client_id = 1
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = 0.0
         server.clients[mock_client] = mock_peer
 
         # Encode login payload: "user\0secret123"
@@ -31,6 +33,8 @@ class TestLiveServerSecurity:
 
         mock_client = Mock()
         mock_peer = Mock()
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = 0.0
         server.clients[mock_client] = mock_peer
 
         # Encode login payload: "user\0wrong"
@@ -50,6 +54,8 @@ class TestLiveServerSecurity:
 
         mock_client = Mock()
         mock_peer = Mock()
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = 0.0
         server.clients[mock_client] = mock_peer
 
         payload = b"user\0wrong"

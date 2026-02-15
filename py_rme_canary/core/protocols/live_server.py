@@ -9,6 +9,7 @@ import secrets
 import select
 import socket
 import threading
+import time
 from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any
@@ -20,6 +21,9 @@ if TYPE_CHECKING:
     pass
 
 log = logging.getLogger(__name__)
+
+# Max packets per second per client to prevent DoS
+MAX_PACKETS_PER_SECOND = 50
 
 
 def _decode_login_payload(payload: bytes) -> tuple[str, str]:
@@ -184,6 +188,19 @@ class LiveServer:
     def _process_packet(self, client: socket.socket, packet_type: int, payload: bytes) -> None:
         """Business logic for handling packets."""
         peer = self.clients.get(client)
+
+        if peer:
+            # Rate limiting
+            current_time = time.time()
+            if current_time - peer.last_packet_reset >= 1.0:
+                peer.packet_count = 0
+                peer.last_packet_reset = current_time
+
+            peer.packet_count += 1
+            if peer.packet_count > MAX_PACKETS_PER_SECOND:
+                log.warning(f"Rate limit exceeded for client {peer.client_id}. Disconnecting.")
+                self._disconnect_client(client)
+                return
 
         if packet_type == PacketType.LOGIN:
             if peer is None:
