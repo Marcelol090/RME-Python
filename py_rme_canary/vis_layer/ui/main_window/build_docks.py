@@ -94,3 +94,11 @@ def build_docks(editor: QtMapEditor) -> None:
     editor.dock_layers.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
     editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_layers)
     editor.dock_layers.hide()
+
+    # Performance Monitor dock
+    from py_rme_canary.vis_layer.ui.docks.performance_dock import PerformanceDock
+
+    editor.dock_performance = PerformanceDock(editor)
+    editor.dock_performance.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.BottomDockWidgetArea)
+    editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_performance)
+    editor.dock_performance.hide()

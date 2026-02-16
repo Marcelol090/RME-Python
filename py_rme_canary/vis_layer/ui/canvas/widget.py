@@ -531,6 +531,16 @@ class MapCanvasWidget(QWidget):
             self._render_pending = False
             QTimer.singleShot(0, self.request_render)
 
+        # Performance Monitoring
+        perf = getattr(self._editor, "dock_performance", None)
+        if perf and perf.isVisible():
+            perf.frame_tick()
+            # Approximate tile count
+            cols = (x1 - x0)
+            rows = (y1 - y0)
+            perf.update_tile_count(cols * rows)
+            perf.update_draw_calls(1 if use_map_drawer else rows) # Rough estimate
+
     def mousePressEvent(self, event):
         editor = self._editor
 
