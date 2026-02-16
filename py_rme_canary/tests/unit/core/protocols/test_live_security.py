@@ -1,12 +1,10 @@
-import socket
-import struct
 import time
 import unittest
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
-from py_rme_canary.core.protocols.live_packets import PacketType, NetworkHeader
-from py_rme_canary.core.protocols.live_server import LiveServer, MAX_MAP_REQUEST_AREA
-from py_rme_canary.core.protocols.live_socket import LiveSocket, MAX_PAYLOAD_SIZE
+from py_rme_canary.core.protocols.live_packets import NetworkHeader, PacketType
+from py_rme_canary.core.protocols.live_server import MAX_PACKETS_PER_SEC, LiveServer
+from py_rme_canary.core.protocols.live_socket import MAX_PAYLOAD_SIZE, LiveSocket
 from py_rme_canary.core.protocols.tile_serializer import encode_map_request
 
 
@@ -23,8 +21,8 @@ class TestLiveSocketSecurity(unittest.TestCase):
         # recv returns header bytes
         mock_sock.recv.side_effect = [header_bytes]
 
-        # Should return None (and log error)
-        with self.assertLogs('py_rme_canary.core.protocols.live_socket', level='ERROR') as cm:
+        # Should return None (and log warning)
+        with self.assertLogs("py_rme_canary.core.protocols.live_socket", level="WARNING") as cm:
             result = ls.recv_packet()
             self.assertIsNone(result)
             self.assertIn("Packet too large", cm.output[0])
@@ -40,12 +38,12 @@ class TestLiveServerSecurity(unittest.TestCase):
 
     def test_rate_limiting(self):
         """Test that clients are disconnected if they exceed rate limit."""
-        # Simulate 101 packets in < 1 second
-        for _ in range(100):
+        # Simulate packets in < 1 second up to configured limit
+        for _ in range(MAX_PACKETS_PER_SEC):
             allowed = self.server._check_rate_limit(self.mock_client_sock)
             self.assertTrue(allowed)
 
-        # 101th packet should be rejected
+        # Next packet should be rejected
         allowed = self.server._check_rate_limit(self.mock_client_sock)
         self.assertFalse(allowed)
 
