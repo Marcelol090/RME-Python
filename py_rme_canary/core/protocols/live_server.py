@@ -5,8 +5,8 @@ Ported from source/live_server.cpp
 """
 
 import logging
-import select
 import secrets
+import select
 import socket
 import threading
 import time
@@ -212,14 +212,21 @@ class LiveServer:
                 self._disconnect_client(client_sock)
                 return
 
-            pkt = peer.recv_packet()
-            if not pkt:
+            packets = peer.process_incoming_data()
+
+            # Check if peer disconnected itself (e.g. EOF or error inside process_incoming_data)
+            if peer.socket is None:
                 self._disconnect_client(client_sock)
                 return
-            packet_type, payload = pkt
-            self._process_packet(client_sock, int(packet_type), payload)
 
-        except Exception:
+            if not packets:
+                return
+
+            for packet_type, payload in packets:
+                self._process_packet(client_sock, int(packet_type), payload)
+
+        except Exception as e:
+            log.error(f"Error handling client data: {e}")
             self._disconnect_client(client_sock)
 
     def _process_packet(self, client: socket.socket, packet_type: int, payload: bytes) -> None:
@@ -230,21 +237,23 @@ class LiveServer:
             if peer is None:
                 return
             name, password = _decode_login_payload(payload)
-
-            # Secure password comparison
-            if self.password:
-                if not secrets.compare_digest(str(password), str(self.password)):
-                    peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
-                    self._disconnect_client(client)
-                    return
-
+            if self.password and not secrets.compare_digest(str(password), str(self.password)):
+                peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
+                self._disconnect_client(client)
+                return
             peer.set_name(str(name))
             peer.set_password(str(password))
+            peer.is_authenticated = True
             client_id = int(peer.client_id)
             peer.send_packet(PacketType.LOGIN_SUCCESS, client_id.to_bytes(4, "little", signed=False))
             # Broadcast updated client list
             self.broadcast_client_list()
             log.info(f"Client {name} logged in (id={client_id})")
+            return
+
+        if peer is None or not peer.is_authenticated:
+            log.warning(f"Unauthenticated packet {packet_type}")
+            self._disconnect_client(client)
             return
 
         if packet_type == PacketType.CURSOR_UPDATE:

@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -427,16 +427,26 @@ class PerformanceMetrics:
     cache_hit_rate: float = 0.0
     memory_mb: float = 0.0
 
-    _frame_times: list[float] = field(default_factory=list)
     _sample_window: int = 60
+    _frame_times: deque[float] = field(init=False)
+    _current_sum: float = field(init=False, default=0.0)
+
+    def __post_init__(self) -> None:
+        self._frame_times = deque(maxlen=self._sample_window)
+        self._current_sum = 0.0
 
     def record_frame(self, frame_time: float) -> None:
         """Record a frame time."""
-        self._frame_times.append(frame_time)
-        if len(self._frame_times) > self._sample_window:
-            self._frame_times.pop(0)
+        if len(self._frame_times) == self._frame_times.maxlen:
+            self._current_sum -= self._frame_times[0]
 
-        self.frame_time_ms = sum(self._frame_times) / len(self._frame_times) * 1000
+        self._frame_times.append(frame_time)
+        self._current_sum += frame_time
+
+        if len(self._frame_times) > 0:
+            self.frame_time_ms = self._current_sum / len(self._frame_times) * 1000
+        else:
+            self.frame_time_ms = 0.0
         if self.frame_time_ms > 0:
             self.fps = 1000 / self.frame_time_ms
 
