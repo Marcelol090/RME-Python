@@ -4,8 +4,10 @@ Modern Progress Dialog for Map Loading.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtGui import QPainter, QPen, QColor, QFont
+from collections.abc import Mapping
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
@@ -16,8 +18,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 
 class CircularProgressBar(QWidget):
@@ -180,61 +182,83 @@ class ModernProgressDialog(QDialog):
 
     def _apply_style(self) -> None:
         tm = get_theme_manager()
-        c = tm.tokens["color"]
-        r = tm.tokens["radius"]
-        profile = tm.profile
+        tokens_obj = getattr(tm, "tokens", {})
+        tokens = tokens_obj if isinstance(tokens_obj, Mapping) else {}
+        color_obj = tokens.get("color", {})
+        radius_obj = tokens.get("radius", {})
+        c = color_obj if isinstance(color_obj, Mapping) else {}
+        r = radius_obj if isinstance(radius_obj, Mapping) else {}
+        profile_obj = getattr(tm, "profile", {})
+        profile = profile_obj if isinstance(profile_obj, Mapping) else {}
+
+        brand = c.get("brand", {}) if isinstance(c.get("brand"), Mapping) else {}
+        surface = c.get("surface", {}) if isinstance(c.get("surface"), Mapping) else {}
+        text = c.get("text", {}) if isinstance(c.get("text"), Mapping) else {}
+        border = c.get("border", {}) if isinstance(c.get("border"), Mapping) else {}
+        state = c.get("state", {}) if isinstance(c.get("state"), Mapping) else {}
+
+        brand_primary = str(brand.get("primary", "#3EEA8D"))
+        surface_primary = str(surface.get("primary", "rgba(6, 28, 18, 0.90)"))
+        surface_tertiary = str(surface.get("tertiary", "rgba(62, 234, 141, 0.14)"))
+        text_primary = str(text.get("primary", "#E8FFF3"))
+        text_secondary = str(text.get("secondary", "#A7D9BF"))
+        border_default = str(border.get("default", "rgba(62, 234, 141, 0.22)"))
+        border_strong = str(border.get("strong", "rgba(62, 234, 141, 0.45)"))
+        state_hover = str(state.get("hover", "rgba(62, 234, 141, 0.16)"))
+        radius_xl = int(r.get("xl", 28))
+        radius_md = int(r.get("md", 12))
 
         # Update Logo based on theme profile
         logo_name = f"logo_{profile.get('logo', 'axolotl')}"
         logo_icon = load_icon(logo_name)
-        if not logo_icon.isNull():
+        if hasattr(logo_icon, "isNull") and not logo_icon.isNull():
             pixmap = logo_icon.pixmap(80, 80)
             self.logo_lbl.setPixmap(pixmap)
         else:
             # Fallback if specific logo not found
-            self.logo_lbl.setText(profile.get('app_name', 'Noct'))
+            self.logo_lbl.setText(str(profile.get("app_name", "Noct")))
 
         # Update Circular Bar Colors
         self.bar.setColors(
-            primary=c["brand"]["primary"],
-            secondary=c["surface"]["tertiary"],
-            text=c["text"]["primary"]
+            primary=brand_primary,
+            secondary=surface_tertiary,
+            text=text_primary,
         )
 
         self.setStyleSheet(f"""
             QWidget#Container {{
-                background-color: {c["surface"]["primary"]};
-                border: 1px solid {c["border"]["default"]};
-                border-radius: {r["xl"]}px;
+                background-color: {surface_primary};
+                border: 1px solid {border_default};
+                border-radius: {radius_xl}px;
             }}
-            
+
             QLabel#Title {{
-                color: {c["brand"]["primary"]};
+                color: {brand_primary};
                 font-size: 14px;
                 font-weight: 700;
                 letter-spacing: 2px;
             }}
-            
+
             QLabel#Status {{
-                color: {c["text"]["secondary"]};
+                color: {text_secondary};
                 font-size: 10px;
                 letter-spacing: 1px;
             }}
-            
+
             QPushButton {{
                 background-color: transparent;
-                border: 1px solid {c["border"]["default"]};
-                color: {c["text"]["secondary"]};
-                border-radius: {r["md"]}px;
+                border: 1px solid {border_default};
+                color: {text_secondary};
+                border-radius: {radius_md}px;
                 padding: 8px 16px;
                 font-size: 12px;
                 font-weight: 600;
             }}
-            
+
             QPushButton:hover {{
-                background-color: {c["state"]["hover"]};
-                color: {c["text"]["primary"]};
-                border-color: {c["border"]["strong"]};
+                background-color: {state_hover};
+                color: {text_primary};
+                border-color: {border_strong};
             }}
         """)
 

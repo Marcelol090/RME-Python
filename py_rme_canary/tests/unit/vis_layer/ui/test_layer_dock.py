@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Mock PyQt6
 try:
-    import PyQt6
+    import PyQt6  # noqa: F401
+    mock_qt = MagicMock(name="pyqt6_runtime")
 except ImportError:
     mock_qt = MagicMock()
     sys.modules["PyQt6"] = mock_qt
@@ -116,11 +117,24 @@ import pytest
 from py_rme_canary.vis_layer.ui.docks.layer_dock import ModernLayerDock
 
 @pytest.fixture
+def app():
+    """Ensure QApplication exists when real PyQt6 is available."""
+    try:
+        from PyQt6.QtWidgets import QApplication
+    except Exception:
+        return None
+
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    return app
+
+@pytest.fixture
 def mock_qt_fixture():
     """Just ensuring mocks are in place."""
     return mock_qt
 
-def test_layer_dock_visibility_updates(mock_qt_fixture):
+def test_layer_dock_visibility_updates(mock_qt_fixture, app):
     """Verify that toggling layers updates editor options."""
     editor = MagicMock()
     editor.drawing_options = MagicMock()
@@ -134,7 +148,7 @@ def test_layer_dock_visibility_updates(mock_qt_fixture):
     assert editor.drawing_options.show_grid is False
     editor.canvas.update.assert_called()
 
-def test_layer_dock_opacity_updates(mock_qt_fixture):
+def test_layer_dock_opacity_updates(mock_qt_fixture, app):
     """Verify opacity change triggers update."""
     editor = MagicMock()
     editor.canvas = MagicMock()

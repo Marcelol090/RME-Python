@@ -107,6 +107,21 @@ except ImportError:
 import pytest
 from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
 
+
+@pytest.fixture
+def app():
+    """Ensure QApplication exists when real PyQt6 is available."""
+    try:
+        from PyQt6.QtWidgets import QApplication
+    except Exception:
+        return None
+
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    return app
+
+
 @pytest.fixture
 def mock_theme_manager():
     with patch("py_rme_canary.vis_layer.ui.dialogs.welcome_dialog.get_theme_manager") as mock:
@@ -125,15 +140,25 @@ def mock_theme_manager():
 
 @patch("py_rme_canary.vis_layer.ui.dialogs.welcome_dialog.load_icon")
 @patch("py_rme_canary.vis_layer.ui.dialogs.welcome_dialog.icon_logo_axolotl")
-def test_welcome_dialog_init(mock_logo_gen, mock_load_icon, mock_theme_manager):
+def test_welcome_dialog_init(mock_logo_gen, mock_load_icon, mock_theme_manager, app):
     """Verify dialog initialization and population."""
     recent_files = ["/path/to/map1.otbm", "/path/to/map2.otbm"]
+    try:
+        from PyQt6.QtGui import QIcon
+
+        mock_load_icon.return_value = QIcon()
+        mock_logo_gen.return_value = QIcon()
+    except Exception:
+        pass
 
     dialog = WelcomeDialog(recent_files)
 
     # Check if list populated
-    # addItem is now a MagicMock via __getattr__ cache
-    assert dialog.recent_list.addItem.call_count == 2
+    add_item = dialog.recent_list.addItem
+    if hasattr(add_item, "call_count"):
+        assert add_item.call_count == 2
+    else:
+        assert dialog.recent_list.count() == 2
 
     # Check if logo logic called
     mock_logo_gen.assert_called_once()
@@ -143,9 +168,20 @@ def test_welcome_dialog_init(mock_logo_gen, mock_load_icon, mock_theme_manager):
     assert hasattr(dialog, "open_map_requested")
 
 @patch("py_rme_canary.vis_layer.ui.dialogs.welcome_dialog.load_icon")
-def test_welcome_dialog_empty_recent(mock_load_icon, mock_theme_manager):
+def test_welcome_dialog_empty_recent(mock_load_icon, mock_theme_manager, app):
     """Verify empty state."""
+    try:
+        from PyQt6.QtGui import QIcon
+
+        mock_load_icon.return_value = QIcon()
+    except Exception:
+        pass
+
     dialog = WelcomeDialog([])
 
     # Should add 1 item (fallback message)
-    assert dialog.recent_list.addItem.call_count == 1
+    add_item = dialog.recent_list.addItem
+    if hasattr(add_item, "call_count"):
+        assert add_item.call_count == 1
+    else:
+        assert dialog.recent_list.count() == 1

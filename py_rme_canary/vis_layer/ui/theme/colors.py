@@ -6,6 +6,24 @@ from PyQt6.QtGui import QColor
 
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
+# Backward-compatible exports consumed by legacy tests/modules.
+BASE: dict[str, str] = {
+    "bg_primary": "#1E1E2E",
+    "bg_secondary": "#2A2A3E",
+    "surface": "#363650",
+    "text_primary": "#E5E5E7",
+    "text_secondary": "#A1A1AA",
+    "accent": "#7C3AED",
+    "border": "#404060",
+}
+
+SEMANTIC: dict[str, str] = {
+    "success": "#3EEA8D",
+    "warning": "#FFB84D",
+    "error": "#FF647F",
+    "info": "#7BE7FF",
+}
+
 
 def _resolve_theme_color(name: str) -> str:
     tm = get_theme_manager()
@@ -22,6 +40,10 @@ def _resolve_theme_color(name: str) -> str:
         "border": color["border"]["default"],
         "error": color["state"]["error"],
     }
+    if name in BASE:
+        return BASE[name]
+    if name in SEMANTIC:
+        return SEMANTIC[name]
     return aliases.get(name, color["brand"]["primary"])
 
 
