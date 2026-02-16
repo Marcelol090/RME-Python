@@ -1,0 +1,205 @@
+You are Jules in long-running asynchronous mode for the PyQt6 map editor repository.
+
+SESSION LOCK (MANDATORY):
+- Continue only in this existing session: sessions/9800557048120968367
+- Never create another session, task thread, or branch plan outside this conversation.
+- Maintain linear continuity from previous decisions and keep implementation scope PR-sized.
+
+Track: uiux
+Schedule slot: uiux-continuation
+Task label: ui-ux-improvements-part-2
+Goal for this slot: Improve modern PyQt6 UI/UX with production-ready interactions, icon consistency, and strict backend integration.
+
+Priority policy:
+1) Resolve pending P0 items first.
+2) Continue P1 items once P0 scope in this slot is covered.
+3) Do not expand into unrelated modules.
+
+Execution policy:
+- Keep edits incremental, reversible, and fully testable.
+- Use repository standards for quality pipeline and deterministic tests.
+- Any UX update must call real backend/session operations (no decorative-only controls).
+- State explicit verification commands and expected outcomes.
+- Mandatory MCP usage in this run: Stitch, Render, Context7.
+- Explicitly mention where each MCP was used in the implementation notes.
+
+Output format (required): return a single JSON fenced block with keys:
+{
+  "plan": [{"id":"P1","summary":"...","files":["..."],"acceptance":"..."}],
+  "implement_first": [{"id":"I1","summary":"...","files":["..."],"verification":"..."}],
+  "tests_to_run": ["pytest ...", "quality_lf.sh ..."],
+  "risks": [{"id":"R1","severity":"LOW|MED|HIGH|CRITICAL","description":"...","mitigation":"..."}]
+}
+
+<track_template>
+## Track Scope: UI/UX Design + Integration (P0 -> P1)
+
+### Goal
+- Deliver modern, interactive PyQt6 UX with backend-integrated actions.
+- Keep iconography consistent, remove decorative-only controls, and ensure every interaction maps to real editor logic.
+
+### Implementation Rules
+- UI changes must preserve existing shortcuts and productivity flows.
+- Use project icon/resources conventions (no emoji-based controls).
+- Connect controls to session/backend operations with explicit state sync.
+
+### Required Validation
+- Validate action wiring (menus/toolbars/context actions -> session operations).
+- Validate selection/map scope behavior for search and editing dialogs.
+- Run relevant UI and unit tests for modified components.
+
+### Acceptance Criteria
+- UI reflects a coherent modern style and consistent interaction model.
+- Controls are functional end-to-end (UI -> backend -> undo/redo).
+- No regressions in map editing fundamentals.
+</track_template>
+
+<repository_rules>
+No repository rules context available.
+</repository_rules>
+
+<skills_context>
+## jules-rendering-pipeline
+- Status: missing skill file at `/app/.agent/skills/jules-rendering-pipeline/SKILL.md`
+
+## jules-uiux-stitch
+## Jules Skill: Stitch UI/UX Integration
+
+### Purpose
+To guide the development of a modern, consistent, and highly interactive UI/UX for the map editor, following the "Stitch" design philosophy.
+
+### Core Principles
+1.  **Modern Aesthetics**: Use the `ThemeManager` (`ModernDialog`, `ThemeTokens`) for consistent styling (Glass, 8-bit, Liquid). Avoid hardcoded styles.
+2.  **High Interactivity**: Prioritize direct manipulation (Drag & Drop), context-sensitive menus, and immediate feedback (hover signals).
+3.  **Backend Integration**: Every UI element must map to a real backend operation. No "dummy" controls.
+4.  **Consistency**: Reuse components (`ModernDialog`, `ActivityBar`, `ModernPaletteWidget`) to maintain a unified look and feel.
+
+### Key Patterns
+- **Dialogs**: Inherit from `ModernDialog`. Use `self.content_layout` and `self.footer`.
+- **Docks**: Use `ModernPaletteDock` and `FriendsSidebar` as templates.
+- **Signals**: Use custom signals (`brush_hovered`, `chat_requested`) for loose coupling between components.
+- **Context Menus**: Use `ContextMenuBuilder` and `ItemContextMenu` for unified right-click behavior.
+
+### Recent Achievements
+- Palette Drag & Drop (`DraggableListWidget`).
+- Interactive Friends Sidebar (`FriendCard` chat/more actions).
+- Minimap Context Menu.
+- `ChatDialog` implementation.
+- Quick Access Context Menu integration.
+
+## jules-rust-memory-management
+- Status: missing skill file at `/app/.agent/skills/jules-rust-memory-management/SKILL.md`
+</skills_context>
+
+<planning_context>
+## py_rme_canary/docs/Planning/TODOs/TODO_CPP_PARITY_UIUX_2026-02-06.md
+# TODO CPP Parity UI/UX - Paridade C++/Lua -> Python (2026-02-06)
+
+## Escopo auditado
+- Referência C++/Lua:
+  - `remeres-map-editor-redux/data/menubar.xml`
+  - `remeres-map-editor-redux/source/ui/main_menubar.cpp`
+  - `remeres-map-editor-redux/source/ui/map_popup_menu.cpp`
+  - `remeres-map-editor-redux/source/ui/menubar/map_actions_handler.cpp`
+  - `remeres-map-editor-redux/source/ui/menubar/search_handler.cpp`
+- Planejamento/visão de produto:
+  - `py_rme_canary/docs/Planning/Features.md`
+- Implementação Python:
+  - `py_rme_canary/vis_layer/ui/main_window/*`
+  - `py_rme_canary/vis_layer/ui/menus/context_menus.py`
+  - `py_rme_canary/logic_layer/*`
+  - `py_rme_canary/core/*`
+
+## Resultado da análise (resumo)
+
+### Implementado (base sólida)
+- OTBM ClientID/ServerID com tradução de IDs em load/save.
+- Lasso/freehand selection integrado no canvas.
+- Import de monsters/NPC via Lua.
+- Conversão de formato de mapa exposta no UI.
+- Highlight visual de posição ao navegar.
+- Infra de cross-version clipboard e sprite hash presente no projeto.
+
+### Parcial / com lacunas de integração
+- Context menu de item exibe opções avançadas, mas canvas conecta somente `set_find`, `set_replace`, `find_all`, `replace_all`.
+- `FindItemDialog` possui flag `selection_only`, mas a busca itera o mapa inteiro.
+- `Border Builder` atual é visualizador (sem edição persistente de regras).
+- `PreferencesDialog` ainda sem persistência completa no `ConfigurationManager`.
+- Export OTMM tem ação no menu, mas não há método `_export_otmm` no editor.
+- Recursos "modern UX" dependentes de `menu_file/menu_edit` não são acionados porque esses atributos não são inicializados no builder atual.
+
+### Au
+...[quality context truncated]...
+xpondo essas ações.
+     - `qt_map_editor_brushes.py` passou a sincronizar essas ações ao aplicar `_set_brush_size/_set_brush_shape`.
+  3. **Otimização de dedupe no render com fallback Rust:**
+     - `rust_accel.py` adicionou `dedupe_positions_3d(...)` com backend Rust opcional e fallback Python.
+     - `opengl_canvas.py` passou a usar `dedupe_positions_3d(...)` no hot path do footprint.
+- Testes adicionados/expandidos:
+  - `tests/ui/test_brush_sync.py` (novo)
+  - `tests/ui/test_toolbar_menu_sync.py` (submenu Brush no Window)
+  - `tests/unit/logic_layer/test_rust_accel.py` (dedupe_positions_3d)
+  - `tests/unit/vis_layer/ui/test_ui_backend_contract.py` (brush toolbar sync)
+
+## py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md
+# TODO Friends + Jules + Workflow (2026-02-06)
+
+## Objetivo
+Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex e estabilizar pipeline/workflows sem perder paridade existente.
+
+## Plano (8 tarefas)
+
+- [x] `TASK-01` Validar P0 de busca/context menu já implementado (`P0-SEARCH-003`, `P0-CONTEXT-004`).
+- [x] `TASK-02` Implementar backend de amizades com persistência SQLite (`users`, `friendships`, `user_presence`).
+- [x] `TASK-03` Implementar serviço de domínio para pedidos, aceites/rejeições, snapshot e presença.
+- [x] `TASK-04` Implementar dock PyQt6 de amigos (status, pedidos pendentes, privacidade, ação de "View Map").
+- [x] `TASK-05` Integrar backend social ao `QtMapEditor` (init, refresh, timer, sync com sessão live).
+- [x] `TASK-06` Refinar prompts Jules com estratégia estruturada orientada a passos lineares.
+- [x] `TASK-07` Otimizar `quality_lf.sh` para cenários de cache pesado e timeout.
+- [x] `TASK-08` Rodar quality, suíte de testes, workflows locais e sincronização final de branches.
+
+## Critérios de aceite
+
+- Dock de amigos funcional no editor com estado online/offline e pedidos pendentes.
+- Mudanças de amizade e presença persistem em banco local.
+- Privacidade (`public`, `friends_only`, `private`) afeta exibição de atividade de mapa.
+- P0 busca/contexto segue verde em testes direcionados.
+
+## Incremental Update (2026-02-11)
+
+- Identificada causa de explosão de sessões no Jules:
+  - `generate-suggestions` criava sessão nova em toda execução sem tentativa de reuso.
+- Planejada e implementada estratégia de pool local para reuso controlado:
+  - pool por `source + branch + task`;
+  - tamanho padrão `2` sessões;
+  - rotação
+...[quality context truncated]...
+abilidade de leitura de atividade:
+  - adicionado `_fetch_activity_with_retry(...)` para reduzir snapshots vazios imediatamente após `send_message`.
+- Adicionado contexto de atualização remota antes de acionar Jules:
+  - `fetch_web_updates_context(...)` busca referências oficiais e injeta em prompts (`build_quality_prompt`, `build_stitch_ui_prompt`, `build_linear_scheduled_prompt`).
+- Prompt contract hardening:
+  - prompts agora exigem uso explícito de MCP stack (`Stitch`, `Render`, `Context7`) e reporte de onde cada MCP foi usado.
+- Observabilidade ampliada:
+  - artefatos `jules_track_sessions_activity.json` e `jules_web_updates.json` passam a registrar execução/insumos.
+</planning_context>
+
+<quality_context>
+No quality report context available.
+</quality_context>
+
+<web_updates_context>
+### https://developers.google.com/jules/api
+Jules API &nbsp;|&nbsp; Google for Developers Skip to main content Jules API / English Deutsch Español Français Indonesia Português – Brasil Русский 中文 – 简体 日本語 한국어 Sign in Home REST Reference Jules API Home REST Reference Home Products Jules API Jules API Stay organized with collections Save and categorize content based on your preferences. Introduction The Jules API lets you programmatically access Jules's capabilities to automate and enhance your software development lifecycle. You can use the API to crea
+...[quality context truncated]...
+roid Chrome Firebase Google Cloud Platform Google AI All products Terms Privacy Manage cookies English Deutsch Español Français Indonesia Português – Brasil Русский 中文 – 简体 日本語 한국어
+
+### https://developers.google.com/jules/api/reference/rest
+Jules API &nbsp;|&nbsp; Google for Developers Skip to main content Jules API / English Deutsch Español Français Indonesia Português – Brasil Русский 中文 – 简体 日本語 한국어 Sign in Home REST Reference Jules API Home REST Reference Overview v1alpha REST Resources sessions Overview approvePlan create get list sendMessage sessions.activities Overview get list sources Overview get list Home Products Jules API REST Reference Jules API Stay organized with collections Save and categorize content based on your preferences.
+...[quality context truncated]...
+roid Chrome Firebase Google Cloud Platform Google AI All products Terms Privacy Manage cookies English Deutsch Español Français Indonesia Português – Brasil Ру
+...[quality context truncated]...
+ontent Navigation Menu Toggle navigation Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Spark Build and deploy intelligent apps GitHub Models Manage and compare prompts MCP Registry New Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code ch
+...[quality context truncated]...
+ub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.
+</web_updates_context>

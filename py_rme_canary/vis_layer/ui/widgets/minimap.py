@@ -317,10 +317,14 @@ class FloorMinimapPanel(QFrame):
     Signals:
         floor_changed: Emits new floor
         position_clicked: Emits (x, y) from minimap click
+        zoom_in_requested: Emits signal to zoom in editor
+        zoom_out_requested: Emits signal to zoom out editor
     """
 
     floor_changed = pyqtSignal(int)
     position_clicked = pyqtSignal(int, int)
+    zoom_in_requested = pyqtSignal()
+    zoom_out_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -380,3 +384,26 @@ class FloorMinimapPanel(QFrame):
     def set_viewport(self, x: int, y: int, width: int, height: int) -> None:
         """Set viewport for minimap."""
         self.minimap.set_viewport(x, y, width, height)
+
+    def contextMenuEvent(self, event: object) -> None:
+        """Show context menu."""
+        from PyQt6.QtWidgets import QMenu
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background: #1E1E2E;
+                border: 1px solid #363650;
+                color: #E5E5E7;
+            }
+            QMenu::item:selected {
+                background: #8B5CF6;
+            }
+        """)
+
+        zoom_in = menu.addAction("Zoom In Editor")
+        zoom_in.triggered.connect(self.zoom_in_requested.emit)
+
+        zoom_out = menu.addAction("Zoom Out Editor")
+        zoom_out.triggered.connect(self.zoom_out_requested.emit)
+
+        menu.exec(event.globalPos())

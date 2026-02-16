@@ -56,8 +56,48 @@ class MapCanvasWidget(QWidget):
         self._hover_tile: tuple[int, int, int] | None = None
         self._hover_stack: list[int] = []
 
+        # Drag & Drop support
+        self.setAcceptDrops(True)
+
     def sizeHint(self):
         return super().sizeHint()
+
+    # ---------- drag & drop ----------
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasFormat("application/x-rme-brush-id"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasFormat("application/x-rme-brush-id"):
+            event.acceptProposedAction()
+            # Optional: Show brush cursor feedback at current pos
+            x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+            if hasattr(self._editor, "update_brush_cursor"):
+                self._editor.update_brush_cursor(int(event.position().x()), int(event.position().y()))
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasFormat("application/x-rme-brush-id"):
+            data = event.mimeData().data("application/x-rme-brush-id")
+            try:
+                brush_id = int(str(data.data().decode("utf-8")))
+                # Set active brush
+                if hasattr(self._editor, "_set_selected_brush_id"):
+                    self._editor._set_selected_brush_id(brush_id)
+
+                # Optional: Paint immediately if dropped?
+                # For now, just selecting the brush is the safer UX pattern.
+                # User can then click to paint.
+
+                event.acceptProposedAction()
+            except Exception:
+                event.ignore()
+        else:
+            event.ignore()
 
     # ---------- helpers ----------
 
@@ -487,6 +527,16 @@ class MapCanvasWidget(QWidget):
         if self._render_pending:
             self._render_pending = False
             QTimer.singleShot(0, self.request_render)
+
+        # Performance Monitoring
+        perf = getattr(self._editor, "dock_performance", None)
+        if perf and perf.isVisible():
+            perf.frame_tick()
+            # Approximate tile count
+            cols = (x1 - x0)
+            rows = (y1 - y0)
+            perf.update_tile_count(cols * rows)
+            perf.update_draw_calls(1 if use_map_drawer else rows) # Rough estimate
 
     def mousePressEvent(self, event):
         editor = self._editor

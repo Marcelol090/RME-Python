@@ -53,25 +53,30 @@ class FavoriteButton(QPushButton):
 
     def _apply_style(self) -> None:
         """Apply styling."""
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self.setStyleSheet(
-            """
-            FavoriteButton {
-                background: #363650;
-                color: #E5E5E7;
+            f"""
+            FavoriteButton {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["primary"]};
                 border: 2px solid transparent;
-                border-radius: 8px;
+                border-radius: {r["md"]}px;
                 font-size: 18px;
-            }
+            }}
 
-            FavoriteButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
+            FavoriteButton:hover {{
+                background: {c["state"]["hover"]};
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            FavoriteButton:pressed {
-                background: #8B5CF6;
-            }
-        """
+            FavoriteButton:pressed {{
+                background: {c["brand"]["primary"]};
+            }}
+            """
         )
 
     def contextMenuEvent(self, event: object) -> None:
@@ -125,6 +130,10 @@ class QuickAccessBar(QFrame):
 
     def _setup_ui(self) -> None:
         """Initialize UI."""
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 4, 8, 4)
         layout.setSpacing(4)
@@ -132,7 +141,7 @@ class QuickAccessBar(QFrame):
         # Label
         label = QLabel("Fav")
         label.setToolTip("Favorites")
-        label.setStyleSheet("color: #F59E0B;")
+        label.setStyleSheet(f"color: {c['brand']['secondary']}; font-weight: bold;")
         layout.addWidget(label)
 
         # Scroll area for buttons
@@ -160,27 +169,32 @@ class QuickAccessBar(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self.setStyleSheet(
-            """
-            QuickAccessBar {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-            }
+            f"""
+            QuickAccessBar {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["lg"]}px;
+            }}
 
-            QPushButton {
-                background: #363650;
-                color: #A1A1AA;
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["secondary"]};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r["sm"]}px;
                 font-size: 14px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #8B5CF6;
-                color: white;
-            }
-        """
+            QPushButton:hover {{
+                background: {c["brand"]["primary"]};
+                color: {c["text"]["primary"]};
+            }}
+            """
         )
 
     def add_favorite(self, item: FavoriteItem) -> None:
