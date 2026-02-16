@@ -256,6 +256,42 @@ class QtMapEditorSessionMixin:
                 action.setChecked(bool(get_theme_manager().current_theme == theme_name))
                 action.blockSignals(False)
 
+    def _verify_ui_backend_contract(self) -> None:
+        from py_rme_canary.logic_layer.rust_accel import fnv1a_64
+        from py_rme_canary.vis_layer.ui.main_window.ui_backend_contract import (
+            verify_and_repair_ui_backend_contract,
+        )
+
+        last_signature = int(getattr(self, "_ui_backend_contract_signature", 0) or 0)
+        repairs, signature = verify_and_repair_ui_backend_contract(self, last_signature=last_signature)
+        self._ui_backend_contract_signature = int(signature)
+        if not repairs:
+            self._ui_backend_contract_last_repairs_key = ""
+            self._ui_backend_contract_last_repairs_signature = 0
+            return
+
+        normalized_repairs = sorted({str(item) for item in repairs if str(item)})
+        repairs_key = "|".join(normalized_repairs)
+        repairs_signature = int(fnv1a_64(repairs_key.encode("utf-8")))
+        if (
+            repairs_signature == int(getattr(self, "_ui_backend_contract_last_repairs_signature", 0) or 0)
+            and repairs_key == str(getattr(self, "_ui_backend_contract_last_repairs_key", ""))
+        ):
+            return
+
+        current_status = ""
+        with contextlib.suppress(Exception):
+            current_status = str(self.status.currentMessage() or "")
+        if current_status and not current_status.startswith("UI contract auto-repair:"):
+            return
+
+        self._ui_backend_contract_last_repairs_key = repairs_key
+        self._ui_backend_contract_last_repairs_signature = int(repairs_signature)
+        preview = ", ".join(normalized_repairs[:4])
+        remaining = len(normalized_repairs) - 4
+        if remaining > 0:
+            preview = f"{preview} (+{remaining})"
+        self.status.showMessage(f"UI contract auto-repair: {preview}", 3000)
     def _replace_items(self) -> None:
         """Open Replace Items dialog."""
         from py_rme_canary.vis_layer.ui.dialogs.replace_items_dialog import ReplaceItemsDialog

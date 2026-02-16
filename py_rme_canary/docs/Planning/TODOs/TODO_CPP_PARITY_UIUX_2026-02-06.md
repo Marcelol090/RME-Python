@@ -627,4 +627,104 @@
   - `Window > Themes` com ações exclusivas para os 3 presets Noct.
 - Atualização de branding:
   - título principal da app para `Noct Map Editor`;
-  - Welcome/About alinhados com naming e axolotl.
+- Welcome/About alinhados com naming e axolotl.
+
+## Incremental Update (2026-02-12 - UI↔Backend Contract Verifier + Rust signature optimization)
+- Adicionado verificador contínuo de contrato UI/backend em `ui_backend_contract.py`:
+  - valida e corrige divergências de estado em runtime entre `QAction`/widgets/session.
+  - foco inicial:
+    - `automagic` (action <-> checkbox),
+    - ações de Selection Depth vs modo da sessão,
+    - ações de tema vs `ThemeManager.current_theme`,
+    - brush size editor vs session.
+- Otimização com Rust:
+  - verificador usa assinatura incremental via `rust_accel.fnv1a_64(...)` para short-circuit e evitar reprocessar estado inalterado.
+- Integração no editor:
+  - timer dedicado (`600ms`) em `QtMapEditor` chamando `_verify_ui_backend_contract()`.
+  - auto-repair com status message quando inconsistências são corrigidas.
+
+## Incremental Update (2026-02-12 - UI↔Backend contract phase 2: View/Show parity + render sync)
+- Expandida a matriz de verificação `flag <-> QAction` no `ui_backend_contract.py` para cobrir flags críticas de View/Show:
+  - grid/tooltips/minimap, shade/all-floors/loose-items/ghost-floors,
+  - client box/client IDs/lights/highlight,
+  - creatures/spawns/npcs/special,
+  - colors/modified/houses/pathing/preview/indicators,
+  - wall hooks/pickupables/moveables/avoidables.
+- Quando há auto-repair:
+  - sincroniza `drawing_options_coordinator.sync_from_editor()` para manter front/backend/renderer consistentes;
+  - força `canvas.update()` para refletir estado corrigido imediatamente.
+- Objetivo: reduzir drift silencioso entre menus checkáveis e flags backend durante runtime.
+
+## Incremental Update (2026-02-12 - Dock titlebar icon warning cleanup)
+- Ajustado QSS em `vis_layer/ui/theme/__init__.py` para `QDockWidget`:
+  - `titlebar-close-icon: none`
+  - `titlebar-normal-icon: none`
+- Resultado esperado: remover warnings de recurso inexistente (`:/icons/close.svg`, `:/icons/float.svg`) sem alterar funcionalidade.
+
+## Incremental Update (2026-02-12 - UI contract feedback UX hardening)
+- Melhorado `_verify_ui_backend_contract()` em `qt_map_editor_session.py` para reduzir ruído de UX:
+  - deduplicação de notificações quando o mesmo conjunto de repairs se repete no timer;
+  - reset da deduplicação após ciclo limpo (sem repairs), permitindo novo alerta quando o problema reaparece;
+  - resumo de mensagem com limite de preview (`top 4`) + contador de excedente.
+- `editor.py` passou a inicializar `self._ui_backend_contract_last_repairs_key`.
+- Cobertura adicionada em `tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` para:
+  - garantir anti-spam por chave normalizada de repairs;
+  - validar reset após ciclo limpo.
+
+## Incremental Update (2026-02-12 - Rust dedup signature for UI contract status)
+- `_verify_ui_backend_contract()` passou a usar assinatura Rust (`fnv1a_64`) para deduplicar feedback de auto-repair na status bar:
+  - novo estado `editor._ui_backend_contract_last_repairs_signature`;
+  - comparação por `(signature + key)` para robustez.
+- `ui_backend_contract.py` agora retorna `repairs` já normalizados (`sorted` + `unique`) para estabilidade do fluxo front/back.
+- Testes reforçados:
+  - `test_qt_map_editor_contract_status.py` valida assinatura dedup em runtime;
+  - `test_ui_backend_contract.py` valida que `repairs` retorna sem duplicidades e ordenado.
+
+## Incremental Update (2026-02-12 - Indicator toolbar/menu bidirectional sync fix)
+- Corrigida sincronização bidirecional entre actions de indicator toolbar (`act_tb_*`) e menu (`act_show_*`) em `qt_map_editor_toolbars.py`.
+- Ajuste técnico:
+  - removido `blockSignals` no bridge de sync;
+  - adicionado guard `if target.isChecked() == checked: return`.
+- Resultado:
+  - `setChecked` no target volta a disparar side-effects de backend (`show_wall_hooks`, `show_pickupables`, etc.);
+  - evita drift onde UI parecia marcada mas flag backend permanecia desatualizada.
+
+## Incremental Update (2026-02-12 - UI contract status priority UX)
+- `_verify_ui_backend_contract()` passou a respeitar prioridade de mensagens operacionais na status bar:
+  - se `currentMessage()` contém mensagem não relacionada ao contrato, o aviso de auto-repair é adiado;
+  - evita sobrescrever feedback importante de ações do usuário (ex.: map cleanup, import/export, replace).
+- Mantida deduplicação por assinatura Rust e chave normalizada.
+- Teste novo em `test_qt_map_editor_contract_status.py` valida que:
+  - mensagem operacional não é sobrescrita;
+  - aviso de contrato aparece quando a barra fica livre.
+
+## Incremental Update (2026-02-12 - Contract parity for toolbar/menu mirrored indicators)
+- `ui_backend_contract.py` ganhou checagem de ações espelhadas de indicators:
+  - `act_tb_hooks` ↔ `act_show_wall_hooks`
+  - `act_tb_pickupables` ↔ `act_show_pickupables`
+  - `act_tb_moveables` ↔ `act_show_moveables`
+  - `act_tb_avoidables` ↔ `act_show_avoidables`
+- Snapshot do contrato agora inclui esses pares para detectar drift visual de toolbar/menu.
+- Auto-repair passa a alinhar estado da toolbar ao estado canônico do menu/backend.
+- Cobertura adicionada em `test_ui_backend_contract.py` com cenário dedicado de mirror sync.
+
+## Incremental Update (2026-02-12 - Brush contract + menu parity + Rust dedupe)
+- Plano implementado em 3 frentes (`P1/P2/P3`):
+  1. **Front-back contract de Brush (bidirecional):**
+     - `ui_backend_contract.py` agora valida e corrige estado do `BrushToolbar` (`size/shape/automagic`) a partir do estado canônico de backend/UI actions.
+  2. **Paridade de menu para Brush:**
+     - `build_actions.py` adicionou ações:
+       - `Brush Size -`
+       - `Brush Size +`
+       - `Brush Shape: Square`
+       - `Brush Shape: Circle`
+     - `build_menus.py` adicionou submenu `Window > Brush` expondo essas ações.
+     - `qt_map_editor_brushes.py` passou a sincronizar essas ações ao aplicar `_set_brush_size/_set_brush_shape`.
+  3. **Otimização de dedupe no render com fallback Rust:**
+     - `rust_accel.py` adicionou `dedupe_positions_3d(...)` com backend Rust opcional e fallback Python.
+     - `opengl_canvas.py` passou a usar `dedupe_positions_3d(...)` no hot path do footprint.
+- Testes adicionados/expandidos:
+  - `tests/ui/test_brush_sync.py` (novo)
+  - `tests/ui/test_toolbar_menu_sync.py` (submenu Brush no Window)
+  - `tests/unit/logic_layer/test_rust_accel.py` (dedupe_positions_3d)
+- `tests/unit/vis_layer/ui/test_ui_backend_contract.py` (brush toolbar sync)

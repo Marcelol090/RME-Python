@@ -2163,3 +2163,7 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - Sugestões:
   - `python3 py_rme_canary/scripts/jules_runner.py --project-root . generate-suggestions --source sources/github/Marcelol090/RME-Python --branch UixWidget --task uiux_playwright_release --category tests --quality-report .quality_reports/playwright_mcp_full_suite_report.json --output-dir reports/jules --report-dir .quality_reports --strict`
   - saída: `reports/jules/suggestions.json`
+- `ruff check ...` nos arquivos alterados -> **OK**
+- `python3 -m py_compile ...` nos arquivos alterados -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_rust_accel.py py_rme_canary/tests/unit/vis_layer/ui/test_ui_backend_contract.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_contract_status.py` -> **34 passed**
+- `./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py py_rme_canary/tests/ui/test_brush_sync.py` -> **22 passed**

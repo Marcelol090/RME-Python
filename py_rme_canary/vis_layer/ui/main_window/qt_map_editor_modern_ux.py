@@ -26,7 +26,8 @@ from py_rme_canary.logic_layer.clipboard import ClipboardManager
 from py_rme_canary.vis_layer.ui.dialogs.command_palette import CommandPalette
 from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
 from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
-from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import AboutDialog, MapPropertiesDialog
+from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import MapPropertiesDialog
+from py_rme_canary.vis_layer.ui.dialogs.about import AboutDialog
 from py_rme_canary.vis_layer.ui.dialogs.navigation_dialogs import GoToPositionDialog
 from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import SettingsDialog
 from py_rme_canary.vis_layer.ui.dialogs.spawn_manager import SpawnManagerDialog

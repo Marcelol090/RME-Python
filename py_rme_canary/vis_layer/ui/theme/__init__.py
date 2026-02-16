@@ -134,6 +134,11 @@ THEME_TOKENS: dict[str, ThemeTokens] = {
     "glass_morphism": NOCT_GREEN_GLASS_THEME,
     "glass_8bit": NOCT_8BIT_GLASS_THEME,
     "liquid_glass": NOCT_LIQUID_GLASS_THEME,
+    # Backward-compatible aliases used by menu actions/config.
+    "noct_green_glass": NOCT_GREEN_GLASS_THEME,
+    "noct_8bit_glass": NOCT_8BIT_GLASS_THEME,
+    "noct_liquid_glass": NOCT_LIQUID_GLASS_THEME,
+    "noct": NOCT_GREEN_GLASS_THEME,
 }
 
 THEME_PROFILES: dict[str, EditorThemeProfile] = {
@@ -160,6 +165,39 @@ THEME_PROFILES: dict[str, EditorThemeProfile] = {
         "cursor_style": "pixel_cross",
     },
     "liquid_glass": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "liquid_glass",
+        "tools_style": "fluid_capsule",
+        "brush_size": 3,
+        "brush_shape": "circle",
+        "brush_variation": 55,
+        "palette_large_icons": True,
+        "cursor_style": "liquid_blob",
+    },
+    "noct_green_glass": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "green_glass",
+        "tools_style": "soft_glow",
+        "brush_size": 2,
+        "brush_shape": "circle",
+        "brush_variation": 35,
+        "palette_large_icons": True,
+        "cursor_style": "neon_ring",
+    },
+    "noct_8bit_glass": {
+        "logo": "axolotl",
+        "app_name": "Noct Map Editor",
+        "component_style": "pixel_glass",
+        "tools_style": "pixel_panel",
+        "brush_size": 1,
+        "brush_shape": "square",
+        "brush_variation": 0,
+        "palette_large_icons": False,
+        "cursor_style": "pixel_cross",
+    },
+    "noct_liquid_glass": {
         "logo": "axolotl",
         "app_name": "Noct Map Editor",
         "component_style": "liquid_glass",
@@ -199,14 +237,14 @@ class ThemeManager:
     @property
     def profile(self) -> EditorThemeProfile:
         """Return editor profile linked to current theme."""
-        return THEME_PROFILES.get(self._current_theme, THEME_PROFILES["glass_morphism"])
+        return THEME_PROFILES.get(self._current_theme, THEME_PROFILES["noct_green_glass"])
 
     def list_themes(self) -> list[str]:
         return list(THEME_TOKENS.keys())
 
     def toggle_theme(self) -> None:
         """Cycle themes."""
-        themes = list(THEME_TOKENS.keys())
+        themes = ["noct_green_glass", "noct_8bit_glass", "noct_liquid_glass"]
         idx = themes.index(self._current_theme)
         next_idx = (idx + 1) % len(themes)
         self._current_theme = themes[next_idx]
