@@ -171,14 +171,22 @@ class LiveServer:
             if peer is None:
                 self._disconnect_client(client_sock)
                 return
-            pkt = peer.recv_packet()
-            if not pkt:
+
+            packets = peer.process_incoming_data()
+
+            # Check if peer disconnected itself (e.g. EOF or error inside process_incoming_data)
+            if peer.socket is None:
                 self._disconnect_client(client_sock)
                 return
-            packet_type, payload = pkt
-            self._process_packet(client_sock, int(packet_type), payload)
 
-        except Exception:
+            if not packets:
+                return
+
+            for packet_type, payload in packets:
+                self._process_packet(client_sock, int(packet_type), payload)
+
+        except Exception as e:
+            log.error(f"Error handling client data: {e}")
             self._disconnect_client(client_sock)
 
     def _process_packet(self, client: socket.socket, packet_type: int, payload: bytes) -> None:

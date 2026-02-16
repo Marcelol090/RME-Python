@@ -6,6 +6,10 @@
 
 ## Implemented
 
+- [SEC-007] Fixed Partial Read DoS vulnerability in LiveSocket by implementing non-blocking buffering (process_incoming_data).
+  - files: `py_rme_canary/core/protocols/live_socket.py`, `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified with reproduction test case `tests/reproduce_issue/test_live_socket_dos_partial.py` which now passes.
+
 - [SEC-005] Fixed DoS vulnerability in LiveSocket where unlimited payload size could lead to OOM attacks.
   - files: `py_rme_canary/core/protocols/live_socket.py`
   - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_socket_security.py`
