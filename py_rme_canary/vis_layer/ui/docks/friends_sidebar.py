@@ -152,22 +152,44 @@ class FriendCard(QFrame):
         friend: FriendEntry,
         *,
         on_view_map: Callable[[int], None],
+        on_chat: Callable[[int], None] | None = None,
+        on_more: Callable[[int], None] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._friend = friend
         self._on_view_map = on_view_map
+        self._on_chat = on_chat
+        self._on_more = on_more
         self._build()
 
     def _build(self) -> None:
         self.setFrameShape(QFrame.Shape.StyledPanel)
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self.setStyleSheet(
-            """
-            FriendCard {
-                background-color: #1f1f30;
-                border: 1px solid #32324e;
-                border-radius: 10px;
-            }
+            f"""
+            FriendCard {{
+                background-color: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+            }}
+            QPushButton {{
+                background-color: {c["surface"]["tertiary"]};
+                border: none;
+                border-radius: 4px;
+                padding: 4px 8px;
+                color: {c["text"]["secondary"]};
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {c["state"]["hover"]};
+                color: {c["text"]["primary"]};
+            }}
             """
         )
 
@@ -180,10 +202,10 @@ class FriendCard(QFrame):
 
         identity = QVBoxLayout()
         name = QLabel(self._friend.username)
-        name.setStyleSheet("font-weight: 600; font-size: 13px;")
+        name.setStyleSheet(f"font-weight: 600; font-size: 13px; color: {c['text']['primary']};")
         identity.addWidget(name)
         status_text = QLabel(self._friend.status.capitalize())
-        status_text.setStyleSheet("color: #9ea0b4; font-size: 11px;")
+        status_text.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 11px;")
         identity.addWidget(status_text)
         top.addLayout(identity, 1)
 
@@ -192,15 +214,29 @@ class FriendCard(QFrame):
 
         map_text = self._friend.current_map or "No shared map activity"
         map_label = QLabel(map_text)
-        map_label.setStyleSheet("color: #b8bad0; font-size: 11px;")
+        map_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 11px;")
         root.addWidget(map_label)
 
         actions = QHBoxLayout()
+        actions.setSpacing(4)
         actions.addItem(QSpacerItem(10, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+
+        if self._on_chat:
+            chat_btn = QPushButton("Chat")
+            chat_btn.clicked.connect(lambda: self._on_chat(int(self._friend.id)))
+            actions.addWidget(chat_btn)
+
         view_button = QPushButton("View Map")
         view_button.setEnabled(bool(self._friend.current_map))
         view_button.clicked.connect(lambda: self._on_view_map(int(self._friend.id)))
         actions.addWidget(view_button)
+
+        if self._on_more:
+            more_btn = QPushButton("⋮")
+            more_btn.setFixedSize(20, 20)
+            more_btn.clicked.connect(lambda: self._on_more(int(self._friend.id)))
+            actions.addWidget(more_btn)
+
         root.addLayout(actions)
 
 
@@ -213,6 +249,8 @@ class FriendsSidebar(QWidget):
     privacy_mode_changed = pyqtSignal(str)
     refresh_requested = pyqtSignal()
     view_map_requested = pyqtSignal(int)
+    chat_requested = pyqtSignal(int)
+    more_actions_requested = pyqtSignal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -339,6 +377,8 @@ class FriendsSidebar(QWidget):
                 FriendCard(
                     friend,
                     on_view_map=lambda friend_id: self.view_map_requested.emit(int(friend_id)),
+                    on_chat=lambda friend_id: self.chat_requested.emit(int(friend_id)),
+                    on_more=lambda friend_id: self.more_actions_requested.emit(int(friend_id)),
                     parent=self._online_group,
                 )
             )
@@ -350,6 +390,8 @@ class FriendsSidebar(QWidget):
                 FriendCard(
                     friend,
                     on_view_map=lambda friend_id: self.view_map_requested.emit(int(friend_id)),
+                    on_chat=lambda friend_id: self.chat_requested.emit(int(friend_id)),
+                    on_more=lambda friend_id: self.more_actions_requested.emit(int(friend_id)),
                     parent=self._offline_group,
                 )
             )

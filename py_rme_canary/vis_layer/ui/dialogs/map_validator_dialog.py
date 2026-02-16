@@ -23,6 +23,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
@@ -179,7 +181,7 @@ class ValidationWorker(QThread):
         self.finished.emit(issues)
 
 
-class MapValidatorDialog(QDialog):
+class MapValidatorDialog(ModernDialog):
     """Dialog for map validation results.
 
     Usage:
@@ -188,27 +190,18 @@ class MapValidatorDialog(QDialog):
     """
 
     def __init__(self, parent: QWidget | None = None, map_data: GameMap | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Map Validator")
         self._map = map_data
         self._worker: ValidationWorker | None = None
 
-        self.setWindowTitle("Map Validator")
         self.setModal(True)
         self.resize(600, 400)
 
-        self._setup_ui()
-        self._apply_style()
+        self._populate_ui()
 
-    def _setup_ui(self) -> None:
+    def _populate_ui(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
-
-        # Header
-        header = QLabel("Map Validation Results")
-        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #E5E5E7;")
-        layout.addWidget(header)
+        layout = self.content_layout
 
         # Progress bar
         self._progress = QProgressBar()
@@ -236,85 +229,15 @@ class MapValidatorDialog(QDialog):
         layout.addWidget(self._summary)
 
         # Buttons
-        button_layout = QHBoxLayout()
+        self.footer.setVisible(True)
 
         self._validate_btn = QPushButton("Validate")
         self._validate_btn.clicked.connect(self._start_validation)
-        button_layout.addWidget(self._validate_btn)
+        self.footer_layout.addWidget(self._validate_btn)
 
-        button_layout.addStretch()
+        self.add_spacer_to_footer()
 
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        button_box.rejected.connect(self.reject)
-        button_layout.addWidget(button_box)
-
-        layout.addLayout(button_layout)
-
-    def _apply_style(self) -> None:
-        """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
-
-            QTableWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                gridline-color: #363650;
-                color: #E5E5E7;
-            }
-
-            QTableWidget::item {
-                padding: 6px;
-            }
-
-            QTableWidget::item:selected {
-                background: #8B5CF6;
-            }
-
-            QHeaderView::section {
-                background: #1A1A2E;
-                color: #9CA3AF;
-                border: none;
-                padding: 8px;
-                font-weight: bold;
-            }
-
-            QProgressBar {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                text-align: center;
-                color: #E5E5E7;
-            }
-
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #8B5CF6, stop:1 #A78BFA);
-                border-radius: 3px;
-            }
-
-            QPushButton {
-                background: #8B5CF6;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                color: white;
-                font-weight: bold;
-            }
-
-            QPushButton:hover {
-                background: #7C3AED;
-            }
-
-            QPushButton:disabled {
-                background: #4B5563;
-            }
-        """
-        )
+        self.add_button("Close", callback=self.reject)
 
     def _start_validation(self) -> None:
         """Start the validation process."""

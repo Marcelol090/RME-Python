@@ -26,6 +26,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
@@ -51,13 +53,17 @@ class MetricWidget(QFrame):
         layout.setSpacing(2)
 
         # Label
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self._label = QLabel(label)
-        self._label.setStyleSheet("color: #9CA3AF; font-size: 10px;")
+        self._label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 10px;")
         layout.addWidget(self._label)
 
         # Value
         self._value_label = QLabel("--")
-        self._value_label.setStyleSheet("color: #E5E5E7; font-size: 14px; font-weight: bold;")
+        self._value_label.setStyleSheet(f"color: {c['text']['primary']}; font-size: 14px; font-weight: bold;")
         layout.addWidget(self._value_label)
 
         # Optional progress bar
@@ -68,28 +74,27 @@ class MetricWidget(QFrame):
             self._bar.setTextVisible(False)
             self._bar.setFixedHeight(4)
             self._bar.setStyleSheet(
-                """
-                QProgressBar {
-                    background: #2A2A3E;
+                f"""
+                QProgressBar {{
+                    background: {c['surface']['secondary']};
                     border: none;
                     border-radius: 2px;
-                }
-                QProgressBar::chunk {
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                        stop:0 #8B5CF6, stop:1 #A78BFA);
+                }}
+                QProgressBar::chunk {{
+                    background: {c['brand']['primary']};
                     border-radius: 2px;
-                }
+                }}
             """
             )
             layout.addWidget(self._bar)
 
         self.setStyleSheet(
-            """
-            MetricWidget {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-            }
+            f"""
+            MetricWidget {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
+            }}
         """
         )
 
@@ -106,34 +111,35 @@ class MetricWidget(QFrame):
             self._bar.setValue(pct)
 
             # Color coding based on threshold
+            tm = get_theme_manager()
+            c = tm.tokens["color"]
             if warning_threshold is not None:
                 if value >= warning_threshold:
                     self._bar.setStyleSheet(
-                        """
-                        QProgressBar {
-                            background: #2A2A3E;
+                        f"""
+                        QProgressBar {{
+                            background: {c['surface']['secondary']};
                             border: none;
                             border-radius: 2px;
-                        }
-                        QProgressBar::chunk {
-                            background: #EF4444;
+                        }}
+                        QProgressBar::chunk {{
+                            background: {c['state']['error']};
                             border-radius: 2px;
-                        }
+                        }}
                     """
                     )
                 else:
                     self._bar.setStyleSheet(
-                        """
-                        QProgressBar {
-                            background: #2A2A3E;
+                        f"""
+                        QProgressBar {{
+                            background: {c['surface']['secondary']};
                             border: none;
                             border-radius: 2px;
-                        }
-                        QProgressBar::chunk {
-                            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                stop:0 #8B5CF6, stop:1 #A78BFA);
+                        }}
+                        QProgressBar::chunk {{
+                            background: {c['brand']['primary']};
                             border-radius: 2px;
-                        }
+                        }}
                     """
                     )
 
@@ -200,27 +206,49 @@ class PerformanceDock(QDockWidget):
         self.setWidget(container)
 
         # Apply dock styling
+        self._apply_style()
+
+    def _apply_style(self) -> None:
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         self.setStyleSheet(
-            """
-            QDockWidget {
-                color: #E5E5E7;
+            f"""
+            QDockWidget {{
+                color: {c['text']['primary']};
                 font-weight: bold;
-            }
-            QDockWidget::title {
-                background: #1A1A2E;
+                background: {c['surface']['primary']};
+            }}
+            QDockWidget::title {{
+                background: {c['surface']['secondary']};
                 padding: 8px;
-                border-bottom: 1px solid #363650;
-            }
+                border-bottom: 1px solid {c['border']['default']};
+            }}
         """
         )
-
-        container.setStyleSheet("background: #16161E;")
+        self.widget().setStyleSheet(f"background: {c['surface']['primary']};")
 
     def _start_timer(self) -> None:
         """Start the update timer."""
         self._timer = QTimer()
         self._timer.timeout.connect(self._update_metrics)
-        self._timer.start(500)  # Update every 500ms
+        # Default to stopped, enabled via visibility or explicit call
+        # self._timer.start(500)
+
+    def set_monitoring(self, enabled: bool) -> None:
+        """Enable or disable monitoring."""
+        if enabled and not self._timer.isActive():
+            self._timer.start(500)
+        elif not enabled and self._timer.isActive():
+            self._timer.stop()
+
+    def showEvent(self, event) -> None:
+        self.set_monitoring(True)
+        super().showEvent(event)
+
+    def hideEvent(self, event) -> None:
+        self.set_monitoring(False)
+        super().hideEvent(event)
 
     def _update_metrics(self) -> None:
         """Update all metrics."""
