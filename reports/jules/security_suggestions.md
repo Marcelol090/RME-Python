@@ -1,46 +1,43 @@
-# Security Audit Report
+# Security Suggestions
 
-## Implemented Fixes
+- Generated at: `2026-02-13T10:00:00Z`
+- Category: `security`
+- Task: `security-scan-and-fix`
 
-### RCE-001: ScriptEngine Sandbox Hardening
-*   **Severity**: Critical
-*   **Description**: The `ScriptEngine` sandbox was vulnerable to Remote Code Execution (RCE) via `__getattribute__` and `__base__` traversal. An attacker could bypass the AST visitor's checks to access the `object` class and its subclasses, eventually reaching `os` or `subprocess` via `__init__.__globals__`.
-*   **Fix**: Modified `ScriptSecurityChecker` in `py_rme_canary/logic_layer/script_engine.py` to block access to `__getattribute__`, `__base__`, and `__closure__`.
-*   **Verification**: Verified with `test_exploit_5.py` which successfully blocked the exploit.
+## Implemented
 
-### XML-001: Secure XML Parsing
-*   **Severity**: High
-*   **Description**: The tool `generate_update_manifest.py` and test `test_lua_creature_import.py` were using the unsafe `xml.etree.ElementTree` library, which is vulnerable to Billion Laughs attacks and external entity expansion.
-*   **Fix**: Replaced usage with `defusedxml.ElementTree` and updated imports to use the project's safe XML wrappers.
-*   **Verification**: Verified that the tool runs correctly and tests pass.
+- [SEC-007] Fixed Partial Read DoS vulnerability in LiveSocket by implementing non-blocking buffering (process_incoming_data).
+  - files: `py_rme_canary/core/protocols/live_socket.py`, `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified with reproduction test case `tests/reproduce_issue/test_live_socket_dos_partial.py` which now passes.
 
-### SEC-001: Hardcoded Secrets
-*   **Severity**: Medium
-*   **Description**: A hardcoded API key was found in `test_jules_api.py`.
-*   **Fix**: Replaced the hardcoded key with `os.getenv` and a dummy fallback value.
-*   **Verification**: Tests pass.
+- [SEC-005] Fixed DoS vulnerability in LiveSocket where unlimited payload size could lead to OOM attacks.
+  - files: `py_rme_canary/core/protocols/live_socket.py`
+  - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_socket_security.py`
 
-### SEC-002: Secure LiveServer Authentication
-*   **Severity**: High
-*   **Description**: The Live Server protocol compared passwords using standard string equality (`==`), making it vulnerable to timing attacks. It also lacked secure comparison functions.
-*   **Fix**: Implemented `secrets.compare_digest` in `py_rme_canary/core/protocols/live_server.py` for constant-time password verification.
-*   **Verification**: Added unit tests to verify authentication logic.
+- [SEC-006] Fixed regression in ItemTypeDetector where door lookups were failing due to missing definitions.
+  - files: `py_rme_canary/logic_layer/item_type_detector.py`
+  - evidence: Verified with existing unit tests in `py_rme_canary/tests/unit/logic_layer/test_item_type_detector.py`
 
-### DOS-001: Denial of Service Prevention in Live Server
-*   **Severity**: High
-*   **Description**: The Live Server was vulnerable to Denial of Service (DoS) attacks via:
-    1.  Unbounded incoming packet queues (memory exhaustion).
-    2.  Massive payload sizes (OOM via `recv_packet`).
-    3.  Massive map requests (CPU/bandwidth exhaustion).
-    4.  Lack of rate limiting (flood attacks).
-*   **Fix**:
-    *   Added 16MB payload size limit in `LiveSocket`.
-    *   Added rate limiting (100 packets/sec) per client in `LiveServer`.
-    *   Bounded the incoming packet queue to 5000 items.
-    *   Limited map request area to 65536 tiles (256x256).
-*   **Verification**: Verified with unit tests simulating high load and large payloads.
+- [SEC-001] Fixed timing attack vulnerability in LiveServer password comparison using secrets.compare_digest.
+  - files: `py_rme_canary/core/protocols/live_server.py`
+  - evidence: Verified with unit tests in `py_rme_canary/tests/unit/core/protocols/test_live_server_security.py`
 
-## Suggested Next Steps
+- [SEC-002] Verified usage of defusedxml for safe XML parsing to prevent XXE attacks.
+  - files: `py_rme_canary/core/io/xml/safe.py`, `py_rme_canary/core/io/lua_creature_import.py`
 
-1.  **TLS-001**: Implement TLS encryption for the Live Editing Protocol (`py_rme_canary/core/protocols/live_client.py`) to protect user credentials during login.
-2.  **AUDIT-001**: Implement runtime audit hooks (`sys.addaudithook`) for the `ScriptEngine` to prevent future bypasses that might evade AST analysis.
+- [SEC-003] Verified ScriptEngine sandbox implementation blocking dangerous AST nodes.
+  - files: `py_rme_canary/logic_layer/script_engine.py`
+
+- [SEC-004] Fixed authentication bypass vulnerability where unauthenticated clients could send messages and updates.
+  - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
+
+- [SEC-007] Implemented Rate Limiting and Map Request Size Limits for LiveServer to mitigate DoS attacks.
+  - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified with `py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py` (50 packets/second limit + oversized map request rejection).
+
+## Suggested Next
+
+- [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.
+  - rationale: Passwords and map data are currently transmitted in plain text. TLS is required to prevent eavesdropping and MITM attacks.
+  - links: https://docs.python.org/3/library/ssl.html

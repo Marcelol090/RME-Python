@@ -366,6 +366,37 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_brush_variation_next.triggered.connect(lambda _c=False: editor._cycle_brush_variation(1))
     editor.addAction(editor.act_brush_variation_next)
 
+    # Brush size hotkeys (legacy parity: [ and ])
+    editor.act_brush_size_inc = QAction("Brush Size +", editor)
+    editor.act_brush_size_inc.setShortcut(QKeySequence("]"))
+    editor.act_brush_size_inc.triggered.connect(lambda _c=False: editor._cycle_brush_size(1))
+    editor.addAction(editor.act_brush_size_inc)
+
+    editor.act_brush_size_dec = QAction("Brush Size -", editor)
+    editor.act_brush_size_dec.setShortcut(QKeySequence("["))
+    editor.act_brush_size_dec.triggered.connect(lambda _c=False: editor._cycle_brush_size(-1))
+    editor.addAction(editor.act_brush_size_dec)
+
+    # Backward-compatible aliases used by UI contract tests/tools.
+    editor.act_brush_size_increase = editor.act_brush_size_inc
+    editor.act_brush_size_decrease = editor.act_brush_size_dec
+
+    editor.act_brush_shape_square = QAction("Brush Shape: Square", editor)
+    editor.act_brush_shape_square.setCheckable(True)
+    editor.act_brush_shape_square.triggered.connect(lambda _c=False: editor._set_brush_shape("square"))
+    editor.addAction(editor.act_brush_shape_square)
+
+    editor.act_brush_shape_circle = QAction("Brush Shape: Circle", editor)
+    editor.act_brush_shape_circle.setCheckable(True)
+    editor.act_brush_shape_circle.triggered.connect(lambda _c=False: editor._set_brush_shape("circle"))
+    editor.addAction(editor.act_brush_shape_circle)
+
+    editor.brush_shape_action_group = QActionGroup(editor)
+    editor.brush_shape_action_group.setExclusive(True)
+    editor.brush_shape_action_group.addAction(editor.act_brush_shape_square)
+    editor.brush_shape_action_group.addAction(editor.act_brush_shape_circle)
+    editor.act_brush_shape_square.setChecked(str(getattr(editor, "brush_shape", "square")) != "circle")
+
     # Brush actions (Window > Brush)
     editor.act_brush_size_group = QActionGroup(editor)
     editor.act_brush_size_group.setExclusive(True)
@@ -380,16 +411,8 @@ def build_actions(editor: QtMapEditor) -> None:
         editor.act_brush_size_group.addAction(act)
         editor.act_brush_size_actions.append(act)
 
-    editor.act_brush_shape_group = QActionGroup(editor)
-    editor.act_brush_shape_group.setExclusive(True)
-    editor.act_brush_shape_square = QAction("Square", editor)
-    editor.act_brush_shape_square.setCheckable(True)
-    editor.act_brush_shape_square.triggered.connect(lambda _c=False: editor._set_brush_shape("square"))
-    editor.act_brush_shape_circle = QAction("Circle", editor)
-    editor.act_brush_shape_circle.setCheckable(True)
-    editor.act_brush_shape_circle.triggered.connect(lambda _c=False: editor._set_brush_shape("circle"))
-    editor.act_brush_shape_group.addAction(editor.act_brush_shape_square)
-    editor.act_brush_shape_group.addAction(editor.act_brush_shape_circle)
+    # Keep both naming conventions used by tests/menus.
+    editor.act_brush_shape_group = editor.brush_shape_action_group
     if str(getattr(editor, "brush_shape", "square")) == "circle":
         editor.act_brush_shape_circle.setChecked(True)
     else:
@@ -420,6 +443,31 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_toggle_dark_mode.setCheckable(True)
     editor.act_toggle_dark_mode.setShortcut(QKeySequence("Ctrl+Shift+D"))
     editor.act_toggle_dark_mode.toggled.connect(lambda v: window_tools.toggle_dark_mode(editor, v))
+
+    # Theme presets (Noct Map Editor)
+    editor.act_theme_noct_green_glass = QAction("Noct Green Glass", editor)
+    editor.act_theme_noct_green_glass.setCheckable(True)
+    editor.act_theme_noct_green_glass.triggered.connect(
+        lambda _c=False: window_tools.set_theme(editor, "glass_morphism")
+    )
+
+    editor.act_theme_noct_8bit_glass = QAction("Noct 8-bit Glass", editor)
+    editor.act_theme_noct_8bit_glass.setCheckable(True)
+    editor.act_theme_noct_8bit_glass.triggered.connect(
+        lambda _c=False: window_tools.set_theme(editor, "glass_8bit")
+    )
+
+    editor.act_theme_noct_liquid_glass = QAction("Noct Liquid Glass", editor)
+    editor.act_theme_noct_liquid_glass.setCheckable(True)
+    editor.act_theme_noct_liquid_glass.triggered.connect(
+        lambda _c=False: window_tools.set_theme(editor, "liquid_glass")
+    )
+
+    editor.theme_group = QActionGroup(editor)
+    editor.theme_group.setExclusive(True)
+    editor.theme_group.addAction(editor.act_theme_noct_green_glass)
+    editor.theme_group.addAction(editor.act_theme_noct_8bit_glass)
+    editor.theme_group.addAction(editor.act_theme_noct_liquid_glass)
 
     editor.act_only_show_modified = QAction("Only show Modified", editor)
     editor.act_only_show_modified.setCheckable(True)

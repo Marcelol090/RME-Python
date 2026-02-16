@@ -2132,3 +2132,34 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `./.venv/bin/python -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/vis_layer/ui/main_window/editor.py py_rme_canary/vis_layer/ui/canvas/widget.py py_rme_canary/vis_layer/renderer/opengl_canvas.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **OK**
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> **13 passed, 1 warning**
 - `QT_QPA_PLATFORM=offscreen ./.venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **17 passed, 17 warnings**
+
+---
+
+## Sessão 2026-02-16: Stabilização de testes UI para desbloquear PR #67
+
+### Lacuna identificada
+- Após resolver conflitos com `development`, a PR #67 ficou `MERGEABLE` porém `UNSTABLE` por falhas de testes UI:
+  - `ModernProgressDialog` quebrava quando `get_theme_manager` era mockado sem estrutura completa.
+  - `test_theme.py` esperava exports legados `BASE/SEMANTIC` inexistentes.
+  - `test_welcome_screen.py` e `test_layer_dock.py` tinham comportamento frágil entre ambiente mockado e PyQt6 real (QApplication/asserções de `call_count`).
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/widgets/modern_progress_dialog.py`
+  - hardening de `_apply_style()` com fallback robusto para `tokens/profile` (inclusive quando `MagicMock`);
+  - fallback seguro de logo/app name com `str(...)`;
+  - defaults de cor/radius para evitar `KeyError` em cenários de teste.
+- `py_rme_canary/vis_layer/ui/theme/colors.py`
+  - adicionados exports legados `BASE` e `SEMANTIC` para compatibilidade com suíte unitária existente;
+  - `_resolve_theme_color()` agora resolve nomes de `BASE/SEMANTIC` antes do fallback final.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_welcome_screen.py`
+  - adicionado fixture `app` para garantir `QApplication` em runtime real;
+  - patches de ícone ajustados para `QIcon` válido quando PyQt6 está presente;
+  - asserts de população de lista adaptados para mock (`call_count`) e Qt real (`count()`).
+- `py_rme_canary/tests/unit/vis_layer/ui/test_layer_dock.py`
+  - adicionado fixture `app` para evitar crash de QWidget sem `QApplication`;
+  - correção de setup `mock_qt` quando PyQt6 está disponível.
+
+### Validação
+- `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_modern_progress.py py_rme_canary/tests/unit/vis_layer/ui/test_theme.py py_rme_canary/tests/unit/vis_layer/ui/test_welcome_screen.py py_rme_canary/tests/unit/vis_layer/ui/test_layer_dock.py` -> **23 passed, 1 warning**
+- `.venv/bin/ruff check py_rme_canary/vis_layer/ui/widgets/modern_progress_dialog.py py_rme_canary/vis_layer/ui/theme/colors.py` -> **OK**
+- `.venv/bin/python -m py_compile py_rme_canary/tests/unit/vis_layer/ui/test_layer_dock.py py_rme_canary/tests/unit/vis_layer/ui/test_welcome_screen.py py_rme_canary/vis_layer/ui/theme/colors.py py_rme_canary/vis_layer/ui/widgets/modern_progress_dialog.py` -> **OK**

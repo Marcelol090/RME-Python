@@ -4,6 +4,11 @@ import functools
 from collections.abc import Iterable
 from pathlib import Path
 
+# Note: Ideally we would not have circular imports, but if brush_definitions imports this
+# we need to be careful. However, we are just importing the cache clearing function below.
+# To avoid direct dependency from here to logic_layer, we can use a callback or hook,
+# but simply importing the module lazily inside the function works for now.
+
 from py_rme_canary.core.io.xml.safe import safe_etree as ET
 
 
@@ -84,3 +89,10 @@ def iter_npc_names(path: str | Path | None = None) -> Iterable[str]:
 def clear_creature_name_cache() -> None:
     load_monster_names.cache_clear()
     load_npc_names.cache_clear()
+
+    # Also clear the virtual brush cache which depends on creature names
+    try:
+        from py_rme_canary.logic_layer.brush_definitions import _virtual_brush_for_id
+        _virtual_brush_for_id.cache_clear()
+    except ImportError:
+        pass

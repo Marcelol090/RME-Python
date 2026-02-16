@@ -38,6 +38,7 @@ class QtMapEditorFriendsMixin:
         sidebar.privacy_mode_changed.connect(editor._friends_set_privacy_mode)
         sidebar.refresh_requested.connect(editor._refresh_friends_sidebar)
         sidebar.view_map_requested.connect(editor._friends_view_map)
+        sidebar.chat_requested.connect(editor._friends_chat)
 
         editor._friends_update_presence(status="online")
         editor._refresh_friends_sidebar()
@@ -151,6 +152,25 @@ class QtMapEditorFriendsMixin:
             else:
                 QMessageBox.information(editor, "Friend Activity", f"{friend.username} has no shared map activity.")
             return
+
+    def _friends_chat(self, friend_id: int) -> None:
+        """Open chat dialog with friend."""
+        editor = cast("QtMapEditor", self)
+        service = getattr(editor, "friends_service", None)
+        local_user_id = getattr(editor, "friends_local_user_id", None)
+        if service is None or local_user_id is None:
+            return
+
+        snapshot = service.snapshot(user_id=int(local_user_id))
+        target_name = "Unknown"
+        for friend in (*snapshot.online, *snapshot.offline):
+            if int(friend.id) == int(friend_id):
+                target_name = friend.username
+                break
+
+        from py_rme_canary.vis_layer.ui.dialogs.chat_dialog import ChatDialog
+        dlg = ChatDialog(parent=editor, friend_name=target_name)
+        dlg.exec()
 
     def _friends_sync_live_clients(self, clients: list[dict[str, object]]) -> None:
         editor = cast("QtMapEditor", self)

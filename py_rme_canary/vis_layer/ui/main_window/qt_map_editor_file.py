@@ -28,6 +28,7 @@ from py_rme_canary.logic_layer.map_format_conversion import (
     analyze_map_format_conversion,
     apply_map_format_version,
 )
+from py_rme_canary.vis_layer.ui.dialogs.loading_dialog import ModernLoadingDialog
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -69,25 +70,45 @@ class QtMapEditorFileMixin:
         description = dialog.get_description()
         # Note: map_name and author from dialog could be used for future metadata
 
-        # Create new map with template settings
-        self.current_path = None
-        self.map = GameMap(
-            header=MapHeader(
-                otbm_version=template.otbm_version,
-                width=map_size.width,
-                height=map_size.height,
-                description=description,
-            )
-        )
-        self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
-        self.apply_ui_state_to_session()
-        self.viewport.origin_x = 0
-        self.viewport.origin_y = 0
+        # Show loading dialog for immersion
+        loading = ModernLoadingDialog(self, title="Creating Map", message="Initializing map structure...")
+        loading.show()
+        QApplication.processEvents()
+
         try:
-            self._apply_preferences_for_new_map()
-        except Exception:
-            logger.exception("Failed to apply preferences for new map")
-        self.canvas.update()
+            # Create new map with template settings
+            self.current_path = None
+            loading.set_message("Allocating map memory...")
+            loading.set_progress(30)
+
+            self.map = GameMap(
+                header=MapHeader(
+                    otbm_version=template.otbm_version,
+                    width=map_size.width,
+                    height=map_size.height,
+                    description=description,
+                )
+            )
+
+            loading.set_message("Setting up editor session...")
+            loading.set_progress(60)
+            self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+            self.apply_ui_state_to_session()
+            self.viewport.origin_x = 0
+            self.viewport.origin_y = 0
+
+            loading.set_message("Applying preferences...")
+            loading.set_progress(90)
+            try:
+                self._apply_preferences_for_new_map()
+            except Exception:
+                logger.exception("Failed to apply preferences for new map")
+            self.canvas.update()
+
+            loading.set_progress(100)
+
+        finally:
+            loading.close()
 
     def _open_otbm(self: QtMapEditor) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -99,23 +120,23 @@ class QtMapEditorFileMixin:
         if not path:
             return
         logger.info("Opening map: %s", path)
-        from py_rme_canary.vis_layer.ui.widgets.modern_progress_dialog import ModernProgressDialog
 
-        progress = ModernProgressDialog(
+        # Use new ModernLoadingDialog
+        progress = ModernLoadingDialog(
+            parent=self,
             title="Opening Map",
-            label_text="Detecting map format...",
-            minimum=0,
-            maximum=6,
-            parent=self
+            message="Detecting map format..."
         )
         progress.show()
+        # Ensure it renders before blocking ops
+        QApplication.processEvents()
 
         def advance(step: int, message: str) -> None:
-            progress.setLabelText(message)
-            progress.setValue(int(step))
+            progress.set_message(message)
+            # Map steps 0-6 to 0-100% roughly
+            percent = int((step / 6.0) * 100)
+            progress.set_progress(percent)
             QApplication.processEvents()
-            if progress.wasCanceled():
-                raise RuntimeError("Map loading canceled by user.")
 
         try:
             advance(1, "Detecting map format...")

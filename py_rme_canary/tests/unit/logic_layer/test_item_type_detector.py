@@ -6,7 +6,7 @@ and other smart context menu logic.
 
 import pytest
 
-from py_rme_canary.core.data.item import Item
+from py_rme_canary.core.data.item import Item, Position
 from py_rme_canary.logic_layer.item_type_detector import (
     DOOR_PAIRS,
     ROTATABLE_SEQUENCES,
@@ -128,35 +128,41 @@ class TestTeleportDetection:
     def test_is_teleport_positive(self):
         """Test teleport detection returns True for teleport ID."""
         teleport = Item(id=1387)  # Common teleport ID
-        # If ID range check exists
-        if hasattr(ItemTypeDetector, "is_teleport"):
-            assert ItemTypeDetector.is_teleport(teleport) is True
+        assert ItemTypeDetector.is_teleport(teleport) is True
 
     def test_get_teleport_destination_with_data(self):
         """Test extracting teleport destination from item data."""
-        if not hasattr(ItemTypeDetector, "get_teleport_destination"):
-            pytest.skip("get_teleport_destination not implemented")
+        teleport = Item(id=1387, destination=Position(x=100, y=200, z=7))
+        dest = ItemTypeDetector.get_teleport_destination(teleport)
+        assert dest == (100, 200, 7)
 
-        Item(id=1387)
-        # TODO: Set teleport data with destination
-        # dest = ItemTypeDetector.get_teleport_destination(teleport)
-        # assert dest == (x, y, z)
+    def test_get_teleport_destination_none(self):
+        """Test that get_teleport_destination returns None when no destination is set."""
+        teleport = Item(id=1387, destination=None)
+        dest = ItemTypeDetector.get_teleport_destination(teleport)
+        assert dest is None
+
+    def test_get_teleport_destination_non_teleport(self):
+        """Test that get_teleport_destination returns None for non-teleport items even with destination."""
+        item = Item(id=1050, destination=Position(x=100, y=200, z=7))  # Wall with destination
+        dest = ItemTypeDetector.get_teleport_destination(item)
+        assert dest is None
 
 
 class TestHelperMethods:
     """Test other helper methods."""
 
+    @pytest.mark.skipif(not hasattr(ItemTypeDetector, "can_select_brush"), reason="can_select_brush not implemented")
     def test_can_select_brush_for_wall(self):
         """Test brush selection availability for wall."""
-        if hasattr(ItemTypeDetector, "can_select_brush"):
-            wall = Item(id=1050)
-            assert ItemTypeDetector.can_select_brush(wall) is True
+        wall = Item(id=1050)
+        assert ItemTypeDetector.can_select_brush(wall) is True
 
+    @pytest.mark.skipif(not hasattr(ItemTypeDetector, "get_brush_name"), reason="get_brush_name not implemented")
     def test_get_brush_name_for_category(self):
         """Test getting brush name from category."""
-        if hasattr(ItemTypeDetector, "get_brush_name"):
-            assert ItemTypeDetector.get_brush_name(ItemCategory.WALL) == "wall"
-            assert ItemTypeDetector.get_brush_name(ItemCategory.DOOR) == "door"
+        assert ItemTypeDetector.get_brush_name(ItemCategory.WALL) == "wall"
+        assert ItemTypeDetector.get_brush_name(ItemCategory.DOOR) == "door"
 
 
 # Integration-style tests

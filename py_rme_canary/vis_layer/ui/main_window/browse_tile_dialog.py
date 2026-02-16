@@ -23,12 +23,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.tile import Tile
     from py_rme_canary.core.database.items_database import ItemsDatabase
 
 
-class BrowseTileDialog(QDialog):
+class BrowseTileDialog(ModernDialog):
     """Dialog for browsing items on a tile.
 
     Based on C++ BrowseTileWindow (browse_tile_window.cpp).
@@ -46,8 +48,7 @@ class BrowseTileDialog(QDialog):
         tile: Tile | None = None,
         items_db: ItemsDatabase | None = None,
     ) -> None:
-        super().__init__(parent)
-        self.setWindowTitle("Browse Tile")
+        super().__init__(parent, title="Browse Tile")
         self.setModal(True)
         self.setMinimumSize(400, 300)
 
@@ -55,7 +56,7 @@ class BrowseTileDialog(QDialog):
         self._items_db = items_db
 
         # Create UI
-        layout = QVBoxLayout(self)
+        layout = self.content_layout
 
         # Tile info
         info_label = QLabel(f"Tile Position: ({tile.x}, {tile.y}, {tile.z})") if tile else QLabel("No tile selected")
@@ -67,7 +68,17 @@ class BrowseTileDialog(QDialog):
         self._items_list.itemDoubleClicked.connect(self._on_item_double_clicked)
         layout.addWidget(self._items_list)
 
-        # Action buttons
+        # Action buttons (Moved to content layout above list or below list?
+        # Original had them below list. ModernDialog footer is at the very bottom.
+        # But "Remove Selected" and "Properties" act on the list selection.
+        # It's better to keep them near the list or put them in the footer.
+        # Putting them in the footer is standard for "Modern" look if they are main actions.
+        # "Remove" is destructive, "Properties" is action.
+        # And "Close" is the dialog action.
+
+        # Let's keep them in the content area for now as they are specific to the list context,
+        # and use the footer for the main dialog action "Close".
+
         button_layout = QHBoxLayout()
 
         self._remove_btn = QPushButton("Remove Selected")
@@ -80,10 +91,9 @@ class BrowseTileDialog(QDialog):
 
         layout.addLayout(button_layout)
 
-        # Dialog buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        # Dialog buttons (Footer)
+        self.add_spacer_to_footer()
+        self.add_button("Close", self.reject)
 
         # Populate items list
         self._update_items_list()

@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING, cast
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar
+from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox, QToolBar, QWidget
 
 from py_rme_canary.vis_layer.ui.main_window.build_menus import build_menus_and_toolbars
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
+from py_rme_canary.vis_layer.ui.widgets.activity_bar import ActivityBar
 from py_rme_canary.vis_layer.ui.widgets.brush_toolbar import BrushToolbar, ToolSelector
+from py_rme_canary.vis_layer.ui.widgets.quick_access import FavoriteItem, QuickAccessBar
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -17,6 +19,66 @@ if TYPE_CHECKING:
 class QtMapEditorToolbarsMixin:
     def _build_menus_and_toolbars(self) -> None:
         editor = cast("QtMapEditor", self)
+
+        # ---- Activity Bar (Antigravity Sidebar) ----
+        editor.activity_bar = ActivityBar(editor)
+        editor.addToolBar(Qt.ToolBarArea.LeftToolBarArea, editor.activity_bar)
+
+        # Configure Activity Bar
+        def _toggle_dock(dock, visible):
+            if dock:
+                dock.setVisible(visible)
+                if visible:
+                    dock.raise_()
+
+        # Explore (Assets/Palette)
+        editor.activity_bar.add_activity(
+            "explore", "explore", "Assets & Palette",
+            lambda c: _toggle_dock(getattr(editor, "palettes", None), c)
+        )
+
+        # Search (Global Search)
+        # For dialogs, we might just toggle visibility or open.
+        # Since GlobalSearch is non-modal, we can treat it like a view.
+        # But here we'll just open it and reset the button if closed?
+        # For now, simplistic toggle if we had a dock.
+        # Given it's a dialog, let's make it trigger the action.
+        def _toggle_search(c):
+            if c:
+                editor.show_global_search()
+                # Auto-uncheck after opening since it's a separate window?
+                # Or keep checked if we track window state?
+                # For "Activity Bar" feel, search usually opens a side panel.
+                # Use command palette as fallback for now.
+
+        editor.activity_bar.add_activity(
+            "search", "search", "Global Search",
+            _toggle_search
+        )
+
+        # Friends
+        editor.activity_bar.add_activity(
+            "friends", "friends", "Friends & Social",
+            lambda c: _toggle_dock(getattr(editor, "dock_friends", None), c)
+        )
+
+        # Layers
+        editor.activity_bar.add_activity(
+            "layers", "tool_select", "Layers",  # Reusing select icon for layers for now
+            lambda c: _toggle_dock(getattr(editor, "dock_layers", None), c)
+        )
+
+        # Settings (Bottom)
+        editor.activity_bar.add_activity(
+            "settings", "settings", "Settings",
+            lambda c: editor.show_settings_dialog() if c else None,
+            bottom=True
+        )
+
+        # Initial State
+        editor.activity_bar.set_active("explore", True)
+
+
         # Menus live in ui/main_window/build_menus.py
         build_menus_and_toolbars(editor)
 
@@ -55,6 +117,19 @@ class QtMapEditorToolbarsMixin:
         editor.tb_brush_quick = QToolBar("Brush Settings", editor)
         editor.tb_brush_quick.setMovable(False)
         editor.addToolBar(Qt.ToolBarArea.TopToolBarArea, editor.tb_brush_quick)
+
+        # Quick Access / Favorites
+        editor.quick_access = QuickAccessBar(editor)
+        editor.quick_access.item_selected.connect(lambda i: editor._set_selected_brush_id(i))
+        # Add default favorites
+        editor.quick_access.add_favorite(FavoriteItem(4405, "Stone Wall"))
+        editor.quick_access.add_favorite(FavoriteItem(4469, "Grass"))
+        editor.tb_brush_quick.addWidget(editor.quick_access)
+
+        # Separator
+        sep = QWidget()
+        sep.setFixedWidth(12)
+        editor.tb_brush_quick.addWidget(sep)
 
         editor.brush_toolbar = BrushToolbar(editor)
         editor.brush_toolbar.size_changed.connect(lambda s: editor._set_brush_size(s))
@@ -162,9 +237,11 @@ class QtMapEditorToolbarsMixin:
 
         def _sync_toggle(source: QAction, target: QAction) -> None:
             def _apply(checked: bool) -> None:
-                target.blockSignals(True)
-                target.setChecked(bool(checked))
-                target.blockSignals(False)
+                checked_bool = bool(checked)
+                if target.isChecked() == checked_bool:
+                    return
+                # Keep QAction side-effects (backend flag updates) active.
+                target.setChecked(checked_bool)
 
             source.toggled.connect(_apply)
 

@@ -202,17 +202,96 @@ class QtMapEditorSessionMixin:
         """Toggle dark mode theme."""
         from PyQt6.QtWidgets import QApplication
 
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
         app = QApplication.instance()
         if app:
             if enabled:
-                from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
-
-                apply_modern_theme(app)
+                get_theme_manager().apply_theme()
             else:
                 app.setStyleSheet("")
 
         self.status.showMessage(f"Dark Mode {'enabled' if enabled else 'disabled'}")
 
+    def _set_editor_theme(self, theme_name: str) -> None:
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
+        tm = get_theme_manager()
+        tm.set_theme(str(theme_name))
+        self._apply_editor_theme_profile()
+        self.status.showMessage(f"Theme applied: {tm.profile['component_style']}")
+
+    def _apply_editor_theme_profile(self) -> None:
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
+        profile = get_theme_manager().profile
+
+        with contextlib.suppress(Exception):
+            self.setWindowTitle(str(profile.get("app_name", "Noct Map Editor")))
+
+        try:
+            self._set_brush_size(int(profile.get("brush_size", 1)))
+            self._set_brush_shape(str(profile.get("brush_shape", "square")))
+            self._set_brush_variation(int(profile.get("brush_variation", 0)))
+            self._toggle_palette_large_icons(bool(profile.get("palette_large_icons", False)))
+        except Exception:
+            pass
+
+        if hasattr(self, "brush_cursor_overlay") and self.brush_cursor_overlay is not None:
+            with contextlib.suppress(Exception):
+                self.brush_cursor_overlay.refresh_theme_profile()
+
+        # Keep theme actions in sync
+        action_theme_pairs = (
+            ("act_theme_noct_green_glass", "glass_morphism"),
+            ("act_theme_noct_8bit_glass", "glass_8bit"),
+            ("act_theme_noct_liquid_glass", "liquid_glass"),
+        )
+        for action_name, theme_name in action_theme_pairs:
+            action = getattr(self, action_name, None)
+            if action is None:
+                continue
+            with contextlib.suppress(Exception):
+                action.blockSignals(True)
+                action.setChecked(bool(get_theme_manager().current_theme == theme_name))
+                action.blockSignals(False)
+
+    def _verify_ui_backend_contract(self) -> None:
+        from py_rme_canary.logic_layer.rust_accel import fnv1a_64
+        from py_rme_canary.vis_layer.ui.main_window.ui_backend_contract import (
+            verify_and_repair_ui_backend_contract,
+        )
+
+        last_signature = int(getattr(self, "_ui_backend_contract_signature", 0) or 0)
+        repairs, signature = verify_and_repair_ui_backend_contract(self, last_signature=last_signature)
+        self._ui_backend_contract_signature = int(signature)
+        if not repairs:
+            self._ui_backend_contract_last_repairs_key = ""
+            self._ui_backend_contract_last_repairs_signature = 0
+            return
+
+        normalized_repairs = sorted({str(item) for item in repairs if str(item)})
+        repairs_key = "|".join(normalized_repairs)
+        repairs_signature = int(fnv1a_64(repairs_key.encode("utf-8")))
+        if (
+            repairs_signature == int(getattr(self, "_ui_backend_contract_last_repairs_signature", 0) or 0)
+            and repairs_key == str(getattr(self, "_ui_backend_contract_last_repairs_key", ""))
+        ):
+            return
+
+        current_status = ""
+        with contextlib.suppress(Exception):
+            current_status = str(self.status.currentMessage() or "")
+        if current_status and not current_status.startswith("UI contract auto-repair:"):
+            return
+
+        self._ui_backend_contract_last_repairs_key = repairs_key
+        self._ui_backend_contract_last_repairs_signature = int(repairs_signature)
+        preview = ", ".join(normalized_repairs[:4])
+        remaining = len(normalized_repairs) - 4
+        if remaining > 0:
+            preview = f"{preview} (+{remaining})"
+        self.status.showMessage(f"UI contract auto-repair: {preview}", 3000)
     def _replace_items(self) -> None:
         """Open Replace Items dialog."""
         from py_rme_canary.vis_layer.ui.dialogs.replace_items_dialog import ReplaceItemsDialog

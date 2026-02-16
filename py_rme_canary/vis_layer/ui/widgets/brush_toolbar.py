@@ -201,6 +201,7 @@ class BrushToolbar(QFrame):
         tm = get_theme_manager()
         c = tm.tokens["color"]
         r = tm.tokens["radius"]
+        brand_primary = c.get("brand", {}).get("primary", c["state"]["active"])
 
         self.setStyleSheet(
             f"""
@@ -226,7 +227,8 @@ class BrushToolbar(QFrame):
             }}
 
             QPushButton:checked {{
-                background: {c["state"]["active"]};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {c["state"]["active"]}, stop:1 {brand_primary});
                 border: 1px solid {c["border"]["interactive"]};
                 color: {c["text"]["primary"]};
             }}

@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
-    QDialog,
-    QDialogButtonBox,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -25,11 +23,13 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
 
-class ImportMapDialog(QDialog):
+class ImportMapDialog(ModernDialog):
     """Dialog for importing another map with offset.
 
     Allows importing OTBM files into current map with:
@@ -39,8 +39,7 @@ class ImportMapDialog(QDialog):
     """
 
     def __init__(self, parent=None, *, current_map: GameMap | None = None) -> None:
-        super().__init__(parent)
-        self.setWindowTitle("Import Map")
+        super().__init__(parent, title="Import Map")
         self.setModal(True)
         self.setMinimumWidth(450)
 
@@ -48,7 +47,7 @@ class ImportMapDialog(QDialog):
         self._import_path: Path | None = None
 
         # Create UI
-        layout = QVBoxLayout(self)
+        layout = self.content_layout
 
         # File selection
         file_group = QGroupBox("Map File")
@@ -128,13 +127,11 @@ class ImportMapDialog(QDialog):
 
         layout.addWidget(merge_group)
 
-        # Dialog buttons
-        self._button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        self._button_box.accepted.connect(self._on_import)
-        self._button_box.rejected.connect(self.reject)
-        self._button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
-
-        layout.addWidget(self._button_box)
+        # Dialog buttons (Modern Footer)
+        self.add_spacer_to_footer()
+        self._cancel_btn = self.add_button("Cancel", self.reject)
+        self._import_btn = self.add_button("Import", self._on_import, role="primary")
+        self._import_btn.setEnabled(False)
 
     def _browse_file(self) -> None:
         """Open file dialog to select OTBM file."""
@@ -145,7 +142,7 @@ class ImportMapDialog(QDialog):
         if file_path:
             self._import_path = Path(file_path)
             self._file_edit.setText(str(self._import_path))
-            self._button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self._import_btn.setEnabled(True)
 
     def _on_import(self) -> None:
         """Handle import button click."""

@@ -284,10 +284,11 @@ def assemble_png_idat(
 
 
 # ---------------------------------------------------------------------------
-# 5. Position deduplication (canvas footprint) (NEW)
+# 5. Position deduplication (canvas footprint)
 # ---------------------------------------------------------------------------
 
 def _python_dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Pure Python position deduplication (order-preserving)."""
     seen: set[tuple[int, int, int]] = set()
     out: list[tuple[int, int, int]] = []
     for px, py, pz in positions:
@@ -303,8 +304,10 @@ def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, i
     """Stable position dedupe with optional Rust backend acceleration."""
     backend = _import_backend()
     if backend is not None:
-        fn: Callable[..., Any] | None = getattr(backend, "dedupe_positions", None)
-        if fn is not None:
+        for name in ("dedupe_positions", "dedupe_positions_3d"):
+            fn: Callable[..., Any] | None = getattr(backend, name, None)
+            if fn is None:
+                continue
             try:
                 result = fn(positions)
                 if isinstance(result, list):
@@ -317,3 +320,35 @@ def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, i
             except Exception:
                 pass
     return _python_dedupe_positions(positions)
+
+
+def dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Compatibility alias for older call sites."""
+    return dedupe_positions(positions)
+
+
+# ---------------------------------------------------------------------------
+# 6. Rectangle intersection
+# ---------------------------------------------------------------------------
+
+def _python_rect_intersects(r1: tuple[int, int, int, int], r2: tuple[int, int, int, int]) -> bool:
+    """Check if two rectangles intersect (x, y, w, h)."""
+    return not (
+        r1[0] + r1[2] <= r2[0]
+        or r1[0] >= r2[0] + r2[2]
+        or r1[1] + r1[3] <= r2[1]
+        or r1[1] >= r2[1] + r2[3]
+    )
+
+
+def rect_intersects(r1: tuple[int, int, int, int], r2: tuple[int, int, int, int]) -> bool:
+    """Check intersection — uses Rust backend when available."""
+    backend = _import_backend()
+    if backend is not None:
+        fn: Callable[..., Any] | None = getattr(backend, "rect_intersects", None)
+        if fn is not None:
+            try:
+                return bool(fn(r1, r2))
+            except Exception:
+                pass
+    return _python_rect_intersects(r1, r2)

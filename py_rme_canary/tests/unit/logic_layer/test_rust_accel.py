@@ -11,6 +11,7 @@ import py_rme_canary.logic_layer.rust_accel as rust_accel
 from py_rme_canary.logic_layer.rust_accel import (
     assemble_png_idat,
     dedupe_positions,
+    dedupe_positions_3d,
     fnv1a_64,
     render_minimap_buffer,
     spawn_entry_names_at_cursor,
@@ -262,6 +263,32 @@ class TestRenderMinimapBuffer:
         )
         result = render_minimap_buffer([(255, 0, 0, 255)], 1, 1, 1, 0, 0, 0)
         assert result == b"\xFF\x00\x00"
+        assert len(calls) == 1
+
+
+class TestDedupePositions3D:
+    def test_dedupes_and_preserves_order_python_fallback(self) -> None:
+        positions = [(1, 2, 7), (1, 2, 7), (2, 2, 7), (1, 2, 7), (2, 2, 6)]
+        result = dedupe_positions_3d(positions)
+        assert result == [(1, 2, 7), (2, 2, 7), (2, 2, 6)]
+
+    def test_uses_backend_when_available(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls: list[object] = []
+
+        def _backend_fn(payload: object) -> list[tuple[int, int, int]]:
+            calls.append(payload)
+            return [(9, 9, 7)]
+
+        monkeypatch.setitem(
+            sys.modules,
+            "py_rme_canary_rust",
+            SimpleNamespace(
+                spawn_entry_names_at_cursor=lambda *a: [],
+                dedupe_positions_3d=_backend_fn,
+            ),
+        )
+        result = dedupe_positions_3d([(1, 1, 7), (1, 1, 7)])
+        assert result == [(9, 9, 7)]
         assert len(calls) == 1
 
 

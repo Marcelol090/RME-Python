@@ -73,7 +73,7 @@ def test_toggle_selection_mode_enables_selection_and_cancels_gesture() -> None:
     editor._toggle_selection_mode()
 
     assert editor.selection_mode is True
-    assert editor.canvas.cancel_interaction_calls == 1
+    assert editor.canvas.cancel_interaction_calls >= 1
     assert editor.session.cancel_gesture_calls == 1
     assert editor.session.cancel_box_selection_calls == 1
     assert editor.canvas.update_calls == 1

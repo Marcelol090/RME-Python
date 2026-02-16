@@ -389,6 +389,11 @@ class ItemContextMenu:
         if ItemTypeDetector.is_rotatable(item):
             builder.add_action("Rotate Item", cb("rotate_item"), enabled=_action_enabled("rotate_item"))
             has_specific_actions = True
+        # Inspect Action (Debug/Dev)
+        builder.add_action("Inspect Item...", lambda: self._inspect_item(item), enabled=True)
+        # Add to Quick Access
+        builder.add_action("Add to Quick Access", cb("add_quick_access"), enabled=True)
+        has_specific_actions = True
         if ItemTypeDetector.is_teleport(item):
             dest = ItemTypeDetector.get_teleport_destination(item)
             if dest:
@@ -442,6 +447,30 @@ class ItemContextMenu:
         builder.add_action("Find All of This Item", cb("find_all"), enabled=_action_enabled("find_all"))
         builder.add_action("Replace All...", cb("replace_all"), enabled=_action_enabled("replace_all"))
         builder.exec_at_cursor()
+
+    def _inspect_item(self, item: Item) -> None:
+        """Show a debug inspection dialog for the item."""
+        from PyQt6.QtWidgets import QMessageBox
+
+        details = [
+            f"ID: {item.id}",
+            f"Type: {type(item).__name__}",
+        ]
+
+        # Add attributes
+        if hasattr(item, "attributes"):
+            details.append("\nAttributes:")
+            for k, v in getattr(item, "attributes", {}).items():
+                details.append(f"  {k}: {v}")
+
+        # Add other props
+        for prop in ["action_id", "unique_id", "text", "destination", "count"]:
+            if hasattr(item, prop):
+                val = getattr(item, prop)
+                if val:
+                    details.append(f"{prop}: {val}")
+
+        QMessageBox.information(self._parent, f"Inspect Item #{item.id}", "\n".join(details))
 
 
 class BrushContextMenu:

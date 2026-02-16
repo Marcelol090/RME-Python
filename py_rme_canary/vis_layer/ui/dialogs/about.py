@@ -3,7 +3,8 @@
 Refactored to use ModernDialog and ThemeTokens.
 """
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (
     QFrame,
     QGroupBox,
@@ -20,7 +21,7 @@ from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 class AboutDialog(ModernDialog):
     """
     Modern About Dialog with Antigravity styling.
-    
+
     Features:
     - Centered glass layout
     - Brand gradient typography
@@ -116,19 +117,19 @@ class AboutDialog(ModernDialog):
                 font-weight: 800;
                 letter-spacing: 1px;
             }}
-            
+
             QLabel#AboutVersion {{
                 color: {c["text"]["tertiary"]};
                 font-size: 13px;
                 font-weight: 500;
             }}
-            
+
             QLabel#AboutDesc {{
                 color: {c["text"]["secondary"]};
                 font-size: 14px;
                 line-height: 1.4;
             }}
-            
+
             QGroupBox#CreditsBox {{
                 border: 1px solid {c["surface"]["tertiary"]};
                 border-radius: {r["lg"]}px;
@@ -139,7 +140,7 @@ class AboutDialog(ModernDialog):
                 text-transform: uppercase;
                 color: {c["text"]["tertiary"]};
             }}
-            
+
             QGroupBox#CreditsBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top center;
@@ -150,13 +151,11 @@ class AboutDialog(ModernDialog):
 
     def _setup_footer(self) -> None:
         # Centered Close Button
-        footer_layout = self.footer_container.layout()
-        if footer_layout:
-             # Clear default spacer/buttons if needed, but ModernDialog adds them
-             # We'll just add ours, layout is HBox
-             pass
-
         self.add_spacer_to_footer()
-        self.add_button("Visit GitHub", role="secondary", callback=lambda: None) # Placeholder
+        self.add_button(
+            "Visit GitHub",
+            role="secondary",
+            callback=lambda: QDesktopServices.openUrl(QUrl("https://github.com/Marcelol090/RME-Python")),
+        )
         self.add_button("Close", callback=self.accept, role="primary")
         self.add_spacer_to_footer()

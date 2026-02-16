@@ -22,6 +22,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
@@ -36,27 +38,30 @@ class StatusBarSection(QFrame):
         layout.setContentsMargins(8, 2, 8, 2)
         layout.setSpacing(4)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
         if icon:
             self.icon_label = QLabel(icon)
-            self.icon_label.setStyleSheet("font-size: 12px;")
+            self.icon_label.setStyleSheet(f"font-size: 12px; color: {c['text']['secondary']};")
             layout.addWidget(self.icon_label)
         else:
             self.icon_label = None
 
         self.text_label = QLabel(text)
-        self.text_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+        self.text_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 11px;")
         layout.addWidget(self.text_label)
 
         if tooltip:
             self.setToolTip(tooltip)
 
         self.setStyleSheet(
-            """
-            StatusBarSection {
+            f"""
+            StatusBarSection {{
                 background: transparent;
-                border-left: 1px solid #363650;
+                border-left: 1px solid {c['border']['default']};
                 padding-left: 8px;
-            }
+            }}
         """
         )
 
@@ -348,18 +353,21 @@ class ModernStatusBar(QStatusBar):
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            QStatusBar {
-                background: #1A1A2E;
-                border-top: 1px solid #363650;
-                color: #A1A1AA;
-                min-height: 26px;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
 
-            QStatusBar::item {
+        self.setStyleSheet(
+            f"""
+            QStatusBar {{
+                background: {c['surface']['secondary']};
+                border-top: 1px solid {c['border']['default']};
+                color: {c['text']['secondary']};
+                min-height: 26px;
+            }}
+
+            QStatusBar::item {{
                 border: none;
-            }
+            }}
         """
         )
 

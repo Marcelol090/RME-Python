@@ -14,6 +14,30 @@ if TYPE_CHECKING:
 
 class QtMapEditorBrushesMixin:
     # ---------- brush controls ----------
+    def _refresh_brush_offset_cache(self: QtMapEditor) -> None:
+        size = max(1, int(getattr(self, "brush_size", 1) or 1))
+        shape = str(getattr(self, "brush_shape", "square") or "square")
+        draw_offsets = tuple(get_brush_offsets(size, shape))
+        border_offsets = tuple(get_brush_border_offsets(size, shape))
+        self._brush_offsets_cache = draw_offsets
+        self._brush_border_offsets_cache = border_offsets
+        # Hot cache consumed directly by canvas render loop.
+        self._brush_draw_offsets = draw_offsets
+        self._brush_border_offsets = border_offsets
+
+    def _brush_offsets(self: QtMapEditor) -> tuple[tuple[int, int], ...]:
+        cached = getattr(self, "_brush_offsets_cache", None)
+        if not cached:
+            self._refresh_brush_offset_cache()
+            cached = getattr(self, "_brush_offsets_cache", ())
+        return cached
+
+    def _brush_border_offsets(self: QtMapEditor) -> tuple[tuple[int, int], ...]:
+        cached = getattr(self, "_brush_border_offsets_cache", None)
+        if not cached:
+            self._refresh_brush_offset_cache()
+            cached = getattr(self, "_brush_border_offsets_cache", ())
+        return cached
 
     def _set_selected_brush_id(self: QtMapEditor, sid: int) -> None:
         sid = int(sid)
@@ -24,10 +48,11 @@ class QtMapEditorBrushesMixin:
         self._update_brush_label()
 
     def _set_brush_size(self: QtMapEditor, size: int) -> None:
-        self.brush_size = max(0, int(size))
-        self._warm_brush_offsets_cache()
+        val = max(0, int(size))
+        self.brush_size = val
         with contextlib.suppress(Exception):
-            self.session.brush_size = int(self.brush_size)
+            if hasattr(self, "session") and self.session.brush_size != val:
+                self.session.brush_size = int(val)
 
         if hasattr(self, "size_spin") and isinstance(self.size_spin, QSpinBox):
             self.size_spin.blockSignals(True)
@@ -48,6 +73,15 @@ class QtMapEditorBrushesMixin:
                 if hasattr(act, "blockSignals"):
                     act.blockSignals(False)
 
+        # Keep legacy +/- action enabled state in sync with current size.
+        with contextlib.suppress(Exception):
+            if hasattr(self, "act_brush_size_decrease"):
+                self.act_brush_size_decrease.setEnabled(int(self.brush_size) > 1)
+            if hasattr(self, "act_brush_size_increase"):
+                self.act_brush_size_increase.setEnabled(int(self.brush_size) < 15)
+
+        self._warm_brush_offsets_cache()
+
     def _set_brush_variation(self: QtMapEditor, variation: int) -> None:
         self.brush_variation = int(variation)
         with contextlib.suppress(Exception):
@@ -56,6 +90,16 @@ class QtMapEditorBrushesMixin:
             self.variation_spin.blockSignals(True)
             self.variation_spin.setValue(int(self.brush_variation))
             self.variation_spin.blockSignals(False)
+
+    def _cycle_brush_size(self: QtMapEditor, delta: int) -> None:
+        """Cycle brush size by delta (e.g. +1 or -1), clamped to 0..15."""
+        delta = int(delta)
+        cur = int(getattr(self, "brush_size", 0) or 0)
+        # Assuming max size 15 for now (legacy limit often higher but UI spinbox checks needed)
+        # BrushToolbar buttons are 1, 3, 5, 7, 9.
+        # Let's allow step 1.
+        nxt = max(0, min(15, cur + delta))
+        self._set_brush_size(nxt)
 
     def _cycle_brush_variation(self: QtMapEditor, delta: int) -> None:
         delta = int(delta)
@@ -134,13 +178,7 @@ class QtMapEditorBrushesMixin:
                 self.act_brush_shape_circle.blockSignals(False)
 
     def _warm_brush_offsets_cache(self: QtMapEditor) -> None:
-        size = int(getattr(self, "brush_size", 0) or 0)
-        shape = str(getattr(self, "brush_shape", "square") or "square")
-        draw_offsets = get_brush_offsets(size, shape)
-        border_offsets = get_brush_border_offsets(size, shape)
-        # Keep a hot copy on editor for render loop access (avoids per-event lookup).
-        self._brush_draw_offsets = draw_offsets
-        self._brush_border_offsets = border_offsets
+        self._refresh_brush_offset_cache()
 
     def _set_z(self: QtMapEditor, z: int) -> None:
         self.viewport.z = int(z)
@@ -170,3 +208,8 @@ class QtMapEditorBrushesMixin:
         if sid is None:
             return
         self._set_selected_brush_id(int(sid))
+
+    def _on_session_brush_size_changed(self: QtMapEditor, size: int) -> None:
+        """Callback from EditorSession when brush size changes externally."""
+        if int(self.brush_size) != int(size):
+            self._set_brush_size(int(size))

@@ -74,6 +74,25 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_edit.addAction(editor.act_replace_items)
     m_edit.addSeparator()
 
+    # Brush submenu
+    m_brush = m_edit.addMenu("Brush")
+    if hasattr(editor, "act_brush_size_inc"):
+        m_brush.addAction(editor.act_brush_size_inc)
+    if hasattr(editor, "act_brush_size_dec"):
+        m_brush.addAction(editor.act_brush_size_dec)
+    m_brush.addSeparator()
+    if hasattr(editor, "act_brush_variation_next"):
+        m_brush.addAction(editor.act_brush_variation_next)
+    if hasattr(editor, "act_brush_variation_prev"):
+        m_brush.addAction(editor.act_brush_variation_prev)
+    if hasattr(editor, "act_brush_shape_square") or hasattr(editor, "act_brush_shape_circle"):
+        m_brush.addSeparator()
+        if hasattr(editor, "act_brush_shape_square"):
+            m_brush.addAction(editor.act_brush_shape_square)
+        if hasattr(editor, "act_brush_shape_circle"):
+            m_brush.addAction(editor.act_brush_shape_circle)
+    m_brush.addSeparator()
+
     # Border Options submenu (C++ Edit > Border Options)
     m_border = m_edit.addMenu("Border Options")
     m_border.addAction(editor.act_automagic)
@@ -253,6 +272,26 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_window.addAction(editor.act_ingame_preview)
     m_window.addAction(editor.act_new_palette)
 
+    # Brush submenu in Window menu (toolbar/menu parity for UI contracts)
+    if (
+        hasattr(editor, "act_brush_size_inc")
+        or hasattr(editor, "act_brush_size_dec")
+        or hasattr(editor, "act_brush_shape_square")
+        or hasattr(editor, "act_brush_shape_circle")
+    ):
+        m_window.addSeparator()
+        m_brush_window = m_window.addMenu("Brush")
+        if hasattr(editor, "act_brush_size_dec"):
+            m_brush_window.addAction(editor.act_brush_size_dec)
+        if hasattr(editor, "act_brush_size_inc"):
+            m_brush_window.addAction(editor.act_brush_size_inc)
+        if hasattr(editor, "act_brush_shape_square") or hasattr(editor, "act_brush_shape_circle"):
+            m_brush_window.addSeparator()
+            if hasattr(editor, "act_brush_shape_square"):
+                m_brush_window.addAction(editor.act_brush_shape_square)
+            if hasattr(editor, "act_brush_shape_circle"):
+                m_brush_window.addAction(editor.act_brush_shape_circle)
+
     # Palette submenu (C++ Window > Palette)
     m_palette = m_window.addMenu("Palette")
     m_palette.addAction(editor.act_palette_terrain)
@@ -293,6 +332,11 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_window.addAction(editor.act_palette_large_icons)
     if hasattr(editor, "act_toggle_dark_mode"):
         m_window.addAction(editor.act_toggle_dark_mode)
+    if hasattr(editor, "act_theme_noct_green_glass"):
+        m_theme = m_window.addMenu("Themes")
+        m_theme.addAction(editor.act_theme_noct_green_glass)
+        m_theme.addAction(editor.act_theme_noct_8bit_glass)
+        m_theme.addAction(editor.act_theme_noct_liquid_glass)
 
     # ---- Mirror Menu (PyRME extension) ----
     m_mirror = mb.addMenu(load_icon("menu_mirror"), "Mirror")

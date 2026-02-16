@@ -16,7 +16,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QStatusBar,
-    QStyle,
     QToolBar,
 )
 
@@ -56,6 +55,7 @@ from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_palettes import QtMapE
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_session import QtMapEditorSessionMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_toolbars import QtMapEditorToolbarsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_view import QtMapEditorViewMixin
+from py_rme_canary.vis_layer.ui.main_window.ui_backend_contract import verify_and_repair_ui_backend_contract
 
 
 class QtMapEditor(
@@ -323,7 +323,8 @@ class QtMapEditor(
     def __init__(self) -> None:
         super().__init__()
 
-        self.setWindowTitle("py_rme_canary (PyQt6) – Map Editor")
+        self.setWindowTitle("Noct Map Editor")
+        self.setWindowIcon(load_icon("logo_axolotl"))
         self.resize(1280, 860)
 
         self.brush_mgr = BrushManager.from_json_file(os.path.join("data", "brushes.json"))
@@ -347,6 +348,7 @@ class QtMapEditor(
 
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+        self.session.on_brush_size_changed = self._on_session_brush_size_changed
 
         self.viewport = Viewport()
         self.current_path: str | None = None
@@ -453,7 +455,8 @@ class QtMapEditor(
         self.canvas = OpenGLCanvasWidget(self, editor=self)
         self.setCentralWidget(self.canvas)
 
-        self.status = QStatusBar(self)
+        from py_rme_canary.vis_layer.ui.widgets.status_bar import ModernStatusBar
+        self.status = ModernStatusBar(self)
         self.setStatusBar(self.status)
 
         # Core actions + wiring live in ui/main_window/build_actions.py
@@ -476,15 +479,18 @@ class QtMapEditor(
         self.act_map_statistics_graphs.setShortcut(QKeySequence("Ctrl+Shift+G"))
         self.act_map_statistics_graphs.triggered.connect(self._show_map_statistics_graphs)
 
-        self.act_replace_items = QAction(load_icon("action_replace"), "Replace Items...", self)
-        self.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
-        self.act_replace_items.triggered.connect(self._open_replace_items_dialog)
+        if not hasattr(self, "act_replace_items"):
+            self.act_replace_items = QAction(load_icon("action_replace"), "Replace Items...", self)
+            self.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
+            self.act_replace_items.triggered.connect(self._open_replace_items_dialog)
 
-        self.act_replace_items_on_selection = QAction("Replace Items on Selection...", self)
-        self.act_replace_items_on_selection.triggered.connect(self._open_replace_items_on_selection_dialog)
+        if not hasattr(self, "act_replace_items_on_selection"):
+            self.act_replace_items_on_selection = QAction("Replace Items on Selection...", self)
+            self.act_replace_items_on_selection.triggered.connect(self._open_replace_items_on_selection_dialog)
 
-        self.act_remove_item_on_selection = QAction("Remove Item on Selection...", self)
-        self.act_remove_item_on_selection.triggered.connect(self._open_remove_item_on_selection_dialog)
+        if not hasattr(self, "act_remove_item_on_selection"):
+            self.act_remove_item_on_selection = QAction("Remove Item on Selection...", self)
+            self.act_remove_item_on_selection.triggered.connect(self._open_remove_item_on_selection_dialog)
 
         self.menu_find_on_map = QMenu("Find on Map", self)
         self.act_find_waypoint = QAction("Waypoint...", self)
@@ -576,8 +582,18 @@ class QtMapEditor(
         self._live_timer.timeout.connect(self._poll_live_events)
         self._live_timer.start()
 
+        # Continuous UI/backend contract verification (with Rust-accelerated signature diff)
+        self._ui_backend_contract_signature: int = 0
+        self._ui_backend_contract_last_repairs_key: str = ""
+        self._ui_backend_contract_last_repairs_signature: int = 0
+        self._ui_backend_contract_timer = QTimer(self)
+        self._ui_backend_contract_timer.setInterval(600)
+        self._ui_backend_contract_timer.timeout.connect(self._verify_ui_backend_contract)
+        self._ui_backend_contract_timer.start()
+
         self._update_brush_label()
         self.apply_ui_state_to_session()
+        self._verify_ui_backend_contract()
         self.act_ghost_higher_floors.setChecked(bool(self.ghost_higher_floors))
         self.act_show_client_box.setChecked(bool(self.show_client_box))
         self.act_show_client_ids.setChecked(bool(self.show_client_ids))
@@ -647,25 +663,22 @@ class QtMapEditor(
     def animation_time_ms(self) -> int:
         return int(self._animation_clock_ms)
 
-        # Small UX polish
-        self.act_copy_position.setStatusTip("Copy current cursor position to clipboard")
-        self.act_jump_to_brush.setStatusTip("Focus the brush list filter")
-        self.act_jump_to_item.setStatusTip("Focus the brush id field")
-        self.act_duplicate_selection.setStatusTip("Copy selection and arm paste")
-        self.act_clear_selection.setStatusTip("Clear current selection")
-        self.act_automagic.setStatusTip("Toggle automatic border functions (legacy: A)")
-        self.act_borderize_selection.setStatusTip("Recreate automatic borders in the selected area")
+    def _verify_ui_backend_contract(self) -> None:
+        repairs, signature = verify_and_repair_ui_backend_contract(
+            self,
+            last_signature=int(getattr(self, "_ui_backend_contract_signature", 0)),
+        )
+        self._ui_backend_contract_signature = int(signature)
+        if not repairs:
+            return
 
-        # Fallback icons for common actions (native style)
-        if self.act_new.icon().isNull():
-            self.act_new.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
-        if self.act_open.icon().isNull():
-            self.act_open.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
-        if self.act_save.icon().isNull():
-            self.act_save.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
-        if self.act_save_as.icon().isNull():
-            self.act_save_as.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
-        if self.act_undo.icon().isNull():
-            self.act_undo.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack))
-        if self.act_redo.icon().isNull():
-            self.act_redo.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward))
+        repairs_key = "|".join(sorted(str(entry) for entry in repairs))
+        if (
+            repairs_key == str(getattr(self, "_ui_backend_contract_last_repairs_key", ""))
+            and int(getattr(self, "_ui_backend_contract_last_repairs_signature", 0)) == int(signature)
+        ):
+            return
+
+        self._ui_backend_contract_last_repairs_key = repairs_key
+        self._ui_backend_contract_last_repairs_signature = int(signature)
+        logger.debug("UI/backend contract repairs applied: %s", ", ".join(repairs))

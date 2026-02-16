@@ -38,6 +38,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
     from py_rme_canary.core.data.item import Item
@@ -250,7 +252,7 @@ class SearchResultWidget(QWidget):
         )
 
 
-class FindItemDialog(QDialog):
+class FindItemDialog(ModernDialog):
     """Dialog for finding items across the map with advanced filters.
 
     Features:
@@ -265,21 +267,17 @@ class FindItemDialog(QDialog):
     replace_all_requested = pyqtSignal(list)  # Emits list of SearchResult
 
     def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Find Items")
         self.game_map = game_map
         self._search_results: list[SearchResult] = []
 
-        self.setWindowTitle("Find Items")
         self.setMinimumSize(self._scale_dip(600), self._scale_dip(700))
 
-        self._setup_ui()
-        self._apply_style()
+        self._populate_ui()
 
-    def _setup_ui(self) -> None:
+    def _populate_ui(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout = self.content_layout
 
         # Search Mode
         mode_group = QGroupBox("Search By")
@@ -422,21 +420,17 @@ class FindItemDialog(QDialog):
 
         layout.addWidget(results_group)
 
-        # Action Buttons
-        button_layout = QHBoxLayout()
+        # Action Buttons in Footer
+        self.footer.setVisible(True)
 
         self.replace_all_btn = QPushButton("Replace All...")
         self.replace_all_btn.clicked.connect(self._on_replace_all)
         self.replace_all_btn.setEnabled(False)
-        button_layout.addWidget(self.replace_all_btn)
+        self.footer_layout.addWidget(self.replace_all_btn)
 
-        button_layout.addStretch()
+        self.add_spacer_to_footer()
+        self.add_button("Close", callback=self.accept)
 
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        button_layout.addWidget(close_btn)
-
-        layout.addLayout(button_layout)
         self._refresh_search_mode_ui()
 
     def _on_search(self) -> None:
@@ -814,57 +808,3 @@ class FindItemDialog(QDialog):
         """Handle replace all button."""
         if self._search_results:
             self.replace_all_requested.emit(self._search_results)
-
-    def _apply_style(self) -> None:
-        """Apply modern dark theme."""
-        self.setStyleSheet(
-            """
-            FindItemDialog {
-                background: #1E1E2E;
-            }
-            QGroupBox {
-                color: #E5E5E7;
-                font-weight: 600;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                margin-top: 12px;
-                padding-top: 12px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 8px;
-            }
-            QLineEdit, QSpinBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                padding: 6px;
-            }
-            QLineEdit:focus, QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
-            QRadioButton, QCheckBox {
-                color: #E5E5E7;
-            }
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background: #A78BFA;
-            }
-            QPushButton:pressed {
-                background: #7C3AED;
-            }
-            QPushButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
-        """
-        )

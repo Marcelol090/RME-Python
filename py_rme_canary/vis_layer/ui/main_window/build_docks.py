@@ -71,30 +71,34 @@ def build_docks(editor: QtMapEditor) -> None:
     editor.dock_friends.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_window_friends, v))
     editor.act_window_friends.setChecked(False)
 
-    # Sprite preview dock
-    asset_dock = QDockWidget("Sprite Preview", editor)
+    # Modern Assets & Sprite Preview dock
+    from py_rme_canary.vis_layer.ui.docks.assets_dock import ModernAssetsDock
+
+    asset_dock = ModernAssetsDock(editor, editor)
     editor.dock_sprite_preview = asset_dock
     asset_dock.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
 
-    asset_panel = QWidget(asset_dock)
-    av = QVBoxLayout(asset_panel)
-    av.setContentsMargins(8, 8, 8, 8)
-
-    av.addWidget(QLabel("spriteId:"))
-    editor.sprite_id_spin = QSpinBox(asset_panel)
-    editor.sprite_id_spin.setRange(0, 10_000_000)
-    editor.sprite_id_spin.setValue(0)
-    editor.sprite_id_spin.valueChanged.connect(lambda _v: editor._update_sprite_preview())
-    av.addWidget(editor.sprite_id_spin)
-
-    editor.sprite_preview = QLabel(asset_panel)
-    editor.sprite_preview.setMinimumSize(64, 64)
-    editor.sprite_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    editor.sprite_preview.setText("No assets loaded")
-    av.addWidget(editor.sprite_preview, stretch=1)
-
-    asset_dock.setWidget(asset_panel)
     editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, asset_dock)
+
+    # Bind widgets for legacy compatibility (QtMapEditorAssetsMixin expects these)
+    editor.sprite_id_spin = asset_dock.sprite_id_spin
+    editor.sprite_preview = asset_dock.preview_lbl
 
     asset_dock.visibilityChanged.connect(lambda v: editor._sync_dock_action(editor.act_show_preview, v))
     asset_dock.setVisible(bool(getattr(editor, "show_preview", True)))
+
+    # Layer Manager dock
+    from py_rme_canary.vis_layer.ui.docks.layer_dock import ModernLayerDock
+
+    editor.dock_layers = ModernLayerDock(editor, editor)
+    editor.dock_layers.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
+    editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_layers)
+    editor.dock_layers.hide()
+
+    # Performance Monitor dock
+    from py_rme_canary.vis_layer.ui.docks.performance_dock import PerformanceDock
+
+    editor.dock_performance = PerformanceDock(editor)
+    editor.dock_performance.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.BottomDockWidgetArea)
+    editor.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor.dock_performance)
+    editor.dock_performance.hide()
