@@ -27,11 +27,14 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
 
-class WaypointListDialog(QDialog):
+class WaypointListDialog(ModernDialog):
     """Dialog for managing map waypoints.
 
     Signals:
@@ -46,35 +49,24 @@ class WaypointListDialog(QDialog):
         current_pos: tuple[int, int, int] | None = None,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Waypoint Manager")
 
         self._game_map = game_map
         self._current_pos = current_pos or (0, 0, 7)
 
-        self.setWindowTitle("Waypoint Manager")
         self.setMinimumSize(450, 400)
-        self.setModal(True)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
         self._load_waypoints()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
 
-        # Header
-        header = QLabel("Waypoints")
-        header.setStyleSheet(
-            """
-            font-size: 18px;
-            font-weight: 700;
-            color: #E5E5E7;
-        """
-        )
-        layout.addWidget(header)
+        layout = self.content_layout
+        layout.setSpacing(12)
 
         # Search
         self.search = QLineEdit()
@@ -88,7 +80,7 @@ class WaypointListDialog(QDialog):
         self.waypoint_list.itemSelectionChanged.connect(self._on_selection_changed)
         layout.addWidget(self.waypoint_list)
 
-        # Action buttons
+        # Action buttons (bottom row inside content)
         action_layout = QHBoxLayout()
         action_layout.setSpacing(8)
 
@@ -115,75 +107,71 @@ class WaypointListDialog(QDialog):
 
         # Current position info
         pos_label = QLabel(f"Current: ({self._current_pos[0]}, {self._current_pos[1]}, {self._current_pos[2]})")
-        pos_label.setStyleSheet("color: #52525B; font-size: 11px;")
+        pos_label.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 11px;")
         layout.addWidget(pos_label)
-
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.accept)
-        layout.addWidget(buttons)
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QLineEdit {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+        self.content_area.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 padding: 10px 14px;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QLineEdit:focus {{
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            QListWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                color: #E5E5E7;
+            QListWidget {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                color: {c["text"]["primary"]};
                 outline: none;
-            }
+            }}
 
-            QListWidget::item {
+            QListWidget::item {{
                 padding: 10px 12px;
-                border-radius: 6px;
+                border-radius: {r["sm"]}px;
                 margin: 2px 4px;
-            }
+            }}
 
-            QListWidget::item:hover {
-                background: #363650;
-            }
+            QListWidget::item:hover {{
+                background: {c["state"]["hover"]};
+            }}
 
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
+            QListWidget::item:selected {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 8px 16px;
                 font-size: 12px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
+            QPushButton:hover {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QPushButton:disabled {
-                background: #2A2A3E;
-                color: #52525B;
-                border-color: #363650;
-            }
+            QPushButton:disabled {{
+                background: {c["surface"]["primary"]};
+                color: {c["text"]["disabled"]};
+                border-color: {c["border"]["default"]};
+            }}
         """
         )
 
@@ -323,30 +311,29 @@ class WaypointListDialog(QDialog):
                 self._load_waypoints()
 
 
-class WaypointQuickAdd(QDialog):
+class WaypointQuickAdd(ModernDialog):
     """Quick dialog to add waypoint at position."""
 
     def __init__(self, position: tuple[int, int, int], parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-
         self._position = position
+        super().__init__(parent, title="Add Waypoint")
 
-        self.setWindowTitle("Add Waypoint")
         self.setFixedWidth(300)
-        self.setModal(True)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        layout = self.content_layout
         layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
 
         # Position info
         pos_label = QLabel(f"Position: ({self._position[0]}, {self._position[1]}, {self._position[2]})")
-        pos_label.setStyleSheet("color: #A1A1AA;")
+        pos_label.setStyleSheet(f"color: {c['text']['secondary']};")
         layout.addWidget(pos_label)
 
         # Name input
@@ -355,32 +342,31 @@ class WaypointQuickAdd(QDialog):
         layout.addWidget(self.name_input)
 
         # Buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject, role="secondary")
+        self.add_button("Ok", callback=self.accept, role="primary")
 
         self.name_input.setFocus()
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QLineEdit {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+        self.content_area.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 10px;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QLineEdit:focus {{
+                border-color: {c["brand"]["primary"]};
+            }}
         """
         )
 

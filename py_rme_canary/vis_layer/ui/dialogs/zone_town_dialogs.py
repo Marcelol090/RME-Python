@@ -30,6 +30,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
@@ -52,15 +55,19 @@ class ColorButton(QPushButton):
 
     def _update_style(self) -> None:
         """Update button appearance."""
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
         self.setStyleSheet(
             f"""
             ColorButton {{
                 background: {self._color.name()};
-                border: 2px solid #363650;
-                border-radius: 6px;
+                border: 2px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
             }}
             ColorButton:hover {{
-                border-color: #8B5CF6;
+                border-color: {c['brand']['primary']};
             }}
         """
         )
@@ -83,7 +90,7 @@ class ColorButton(QPushButton):
         self._update_style()
 
 
-class ZoneListDialog(QDialog):
+class ZoneListDialog(ModernDialog):
     """Dialog for managing map zones.
 
     Zones are named areas with associated colors for visualization.
@@ -92,34 +99,20 @@ class ZoneListDialog(QDialog):
     zone_selected = pyqtSignal(str)
 
     def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Zone Manager")
 
         self._game_map = game_map
 
-        self.setWindowTitle("Zone Manager")
         self.setMinimumSize(400, 400)
-        self.setModal(True)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
         self._load_zones()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
+        layout = self.content_layout
         layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        # Header
-        header = QLabel("Zones")
-        header.setStyleSheet(
-            """
-            font-size: 18px;
-            font-weight: 700;
-            color: #E5E5E7;
-        """
-        )
-        layout.addWidget(header)
 
         # Zone list
         self.zone_list = QListWidget()
@@ -127,80 +120,66 @@ class ZoneListDialog(QDialog):
         self.zone_list.itemDoubleClicked.connect(self._on_edit)
         layout.addWidget(self.zone_list)
 
-        # Action buttons
-        action_layout = QHBoxLayout()
-        action_layout.setSpacing(8)
+        # Footer Buttons
+        self.add_spacer_to_footer()
 
-        self.btn_add = QPushButton("New Zone")
-        self.btn_add.clicked.connect(self._on_add)
-        action_layout.addWidget(self.btn_add)
-
-        self.btn_edit = QPushButton("Edit")
-        self.btn_edit.setEnabled(False)
-        self.btn_edit.clicked.connect(self._on_edit)
-        action_layout.addWidget(self.btn_edit)
-
-        self.btn_delete = QPushButton("Delete")
+        self.btn_delete = self.add_button("Delete", callback=self._on_delete, role="secondary")
         self.btn_delete.setEnabled(False)
-        self.btn_delete.clicked.connect(self._on_delete)
-        action_layout.addWidget(self.btn_delete)
 
-        action_layout.addStretch()
+        self.btn_edit = self.add_button("Edit", callback=self._on_edit, role="secondary")
+        self.btn_edit.setEnabled(False)
 
-        layout.addLayout(action_layout)
-
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.accept)
-        layout.addWidget(buttons)
+        self.btn_add = self.add_button("New Zone", callback=self._on_add, role="primary")
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QListWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                color: #E5E5E7;
+        self.content_area.setStyleSheet(
+            f"""
+            QListWidget {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                color: {c["text"]["primary"]};
                 outline: none;
-            }
+            }}
 
-            QListWidget::item {
+            QListWidget::item {{
                 padding: 10px 12px;
-                border-radius: 6px;
+                border-radius: {r["sm"]}px;
                 margin: 2px 4px;
-            }
+            }}
 
-            QListWidget::item:hover {
-                background: #363650;
-            }
+            QListWidget::item:hover {{
+                background: {c["state"]["hover"]};
+            }}
 
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
+            QListWidget::item:selected {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 8px 16px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
+            QPushButton:hover {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QPushButton:disabled {
-                background: #2A2A3E;
-                color: #52525B;
-            }
+            QPushButton:disabled {{
+                background: {c["surface"]["primary"]};
+                color: {c["text"]["disabled"]};
+                border-color: {c["border"]["default"]};
+            }}
         """
         )
 
@@ -310,27 +289,24 @@ class ZoneListDialog(QDialog):
                 self._load_zones()
 
 
-class ZoneEditDialog(QDialog):
+class ZoneEditDialog(ModernDialog):
     """Dialog for editing zone properties."""
 
     def __init__(self, zone: object | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-
         self._zone = zone
         self._is_new = zone is None
 
-        self.setWindowTitle("New Zone" if self._is_new else "Edit Zone")
-        self.setMinimumWidth(300)
-        self.setModal(True)
+        super().__init__(parent, title="New Zone" if self._is_new else "Edit Zone")
 
-        self._setup_ui()
+        self.setMinimumWidth(300)
+
+        self._init_content()
         self._apply_style()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        layout = self.content_layout
         layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
 
         # Form
         form = QFormLayout()
@@ -361,35 +337,33 @@ class ZoneEditDialog(QDialog):
         layout.addLayout(form)
 
         # Buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject, role="secondary")
+        self.add_button("Ok", callback=self.accept, role="primary")
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QLineEdit {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
+        self.content_area.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 8px;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QLineEdit:focus {{
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            QLabel {
-                color: #A1A1AA;
-            }
+            QLabel {{
+                color: {c["text"]["secondary"]};
+            }}
         """
         )
 
@@ -398,7 +372,7 @@ class ZoneEditDialog(QDialog):
         return {"name": self.name_input.text().strip(), "color": self.color_btn.color().name()}
 
 
-class TownListDialog(QDialog):
+class TownListDialog(ModernDialog):
     """Dialog for managing map towns.
 
     Towns have temple positions for player respawning.
@@ -412,35 +386,24 @@ class TownListDialog(QDialog):
         current_pos: tuple[int, int, int] | None = None,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Town Manager")
 
         self._game_map = game_map
         self._current_pos = current_pos or (0, 0, 7)
 
-        self.setWindowTitle("Town Manager")
         self.setMinimumSize(450, 400)
-        self.setModal(True)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
         self._load_towns()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
 
-        # Header
-        header = QLabel("Towns")
-        header.setStyleSheet(
-            """
-            font-size: 18px;
-            font-weight: 700;
-            color: #E5E5E7;
-        """
-        )
-        layout.addWidget(header)
+        layout = self.content_layout
+        layout.setSpacing(12)
 
         # Town list
         self.town_list = QListWidget()
@@ -476,61 +439,62 @@ class TownListDialog(QDialog):
 
         # Current position
         pos_label = QLabel(f"Current: ({self._current_pos[0]}, {self._current_pos[1]}, {self._current_pos[2]})")
-        pos_label.setStyleSheet("color: #52525B; font-size: 11px;")
+        pos_label.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 11px;")
         layout.addWidget(pos_label)
 
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.accept)
-        layout.addWidget(buttons)
+        # Footer Buttons
+        self.add_spacer_to_footer()
+        self.add_button("Close", callback=self.accept, role="secondary")
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QListWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                color: #E5E5E7;
+        self.content_area.setStyleSheet(
+            f"""
+            QListWidget {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                color: {c["text"]["primary"]};
                 outline: none;
-            }
+            }}
 
-            QListWidget::item {
+            QListWidget::item {{
                 padding: 10px 12px;
-                border-radius: 6px;
+                border-radius: {r["sm"]}px;
                 margin: 2px 4px;
-            }
+            }}
 
-            QListWidget::item:hover {
-                background: #363650;
-            }
+            QListWidget::item:hover {{
+                background: {c["state"]["hover"]};
+            }}
 
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
+            QListWidget::item:selected {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 8px 12px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
+            QPushButton:hover {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QPushButton:disabled {
-                background: #2A2A3E;
-                color: #52525B;
-            }
+            QPushButton:disabled {{
+                background: {c["surface"]["primary"]};
+                color: {c["text"]["disabled"]};
+                border-color: {c["border"]["default"]};
+            }}
         """
         )
 

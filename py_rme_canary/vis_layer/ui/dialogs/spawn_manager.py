@@ -30,6 +30,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
@@ -58,6 +61,12 @@ class SpawnCard(QFrame):
         layout.setSpacing(6)
         layout.setContentsMargins(12, 12, 12, 12)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+        t = tm.tokens.get("typography", {})
+        font_mono = t.get("font_mono", "monospace")
+
         # Header
         header = QHBoxLayout()
 
@@ -65,7 +74,7 @@ class SpawnCard(QFrame):
         type_name = "Monster Spawn" if self._spawn_type == "monster" else "NPC Spawn"
 
         title = QLabel(f"{icon} {type_name}")
-        title.setStyleSheet("font-weight: 600; color: #E5E5E7; font-size: 12px;")
+        title.setStyleSheet(f"font-weight: 600; color: {c['text']['primary']}; font-size: 12px;")
         header.addWidget(title)
 
         header.addStretch()
@@ -74,12 +83,13 @@ class SpawnCard(QFrame):
         radius = getattr(self._spawn, "radius", 0)
         badge = QLabel(f"r={radius}")
         badge.setStyleSheet(
-            """
-            background: #363650;
-            color: #A1A1AA;
+            f"""
+            background: {c['surface']['tertiary']};
+            color: {c['text']['secondary']};
             padding: 2px 6px;
-            border-radius: 4px;
+            border-radius: {r['sm']}px;
             font-size: 10px;
+            font-family: {font_mono};
         """
         )
         header.addWidget(badge)
@@ -90,7 +100,7 @@ class SpawnCard(QFrame):
         center = self._spawn.center
         pos = f"({int(center.x)}, {int(center.y)}, {int(center.z)})"
         pos_label = QLabel(pos)
-        pos_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+        pos_label.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 11px;")
         layout.addWidget(pos_label)
 
         # Creature list
@@ -108,7 +118,7 @@ class SpawnCard(QFrame):
             creatures_text = "No creatures"
 
         creatures_label = QLabel(creatures_text)
-        creatures_label.setStyleSheet("color: #52525B; font-size: 10px;")
+        creatures_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 10px;")
         creatures_label.setWordWrap(True)
         layout.addWidget(creatures_label)
 
@@ -132,28 +142,33 @@ class SpawnCard(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        border = "#8B5CF6" if self._selected else "#363650"
-        bg = "#363650" if self._selected else "#2A2A3E"
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
+        border = c["brand"]["primary"] if self._selected else c["border"]["default"]
+        bg = c["state"]["active"] if self._selected else c["surface"]["secondary"]
 
         self.setStyleSheet(
             f"""
             SpawnCard {{
                 background: {bg};
                 border: 2px solid {border};
-                border-radius: 10px;
+                border-radius: {r['md']}px;
             }}
 
             QPushButton {{
-                background: #404060;
-                color: #E5E5E7;
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
                 border: none;
-                border-radius: 4px;
+                border-radius: {r['sm']}px;
                 padding: 4px 10px;
                 font-size: 10px;
             }}
 
             QPushButton:hover {{
-                background: #8B5CF6;
+                background: {c['brand']['primary']};
+                color: {c['surface']['primary']};
             }}
         """
         )
@@ -178,33 +193,34 @@ class SpawnCard(QFrame):
         super().mousePressEvent(event)
 
 
-class SpawnEditDialog(QDialog):
+class SpawnEditDialog(ModernDialog):
     """Dialog for editing a spawn."""
 
     def __init__(self, spawn: object, spawn_type: str = "monster", parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-
         self._spawn = spawn
         self._spawn_type = spawn_type
 
         icon = "M" if spawn_type == "monster" else "N"
-        self.setWindowTitle(f"{icon} Edit {'Monster' if spawn_type == 'monster' else 'NPC'} Spawn")
-        self.setMinimumWidth(400)
-        self.setModal(True)
+        title = f"{icon} Edit {'Monster' if spawn_type == 'monster' else 'NPC'} Spawn"
+        super().__init__(parent, title=title)
 
-        self._setup_ui()
+        self.setMinimumWidth(400)
+
+        self._init_content()
         self._apply_style()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        layout = self.content_layout
         layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
 
         # Position
         center = self._spawn.center
         pos_label = QLabel(f"Position: ({int(center.x)}, {int(center.y)}, {int(center.z)})")
-        pos_label.setStyleSheet("color: #A1A1AA; font-size: 12px;")
+        pos_label.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 12px;")
         layout.addWidget(pos_label)
 
         # Form
@@ -229,7 +245,7 @@ class SpawnEditDialog(QDialog):
 
         # Creature list
         creatures_label = QLabel("Creatures:")
-        creatures_label.setStyleSheet("color: #E5E5E7; font-weight: 600;")
+        creatures_label.setStyleSheet(f"color: {c['text']['primary']}; font-weight: 600;")
         layout.addWidget(creatures_label)
 
         self.creature_list = QListWidget()
@@ -265,53 +281,50 @@ class SpawnEditDialog(QDialog):
 
         layout.addLayout(creature_actions)
 
-        layout.addStretch()
-
-        # Buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        # Footer Buttons
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject, role="secondary")
+        self.add_button("Save", callback=self.accept, role="primary")
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QSpinBox, QLineEdit {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
+        self.content_area.setStyleSheet(
+            f"""
+            QSpinBox, QLineEdit {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r['sm']}px;
                 padding: 8px;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QSpinBox:focus, QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QSpinBox:focus, QLineEdit:focus {{
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            QListWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                color: #E5E5E7;
-            }
+            QListWidget {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r['md']}px;
+                color: {c["text"]["primary"]};
+            }}
 
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r['sm']}px;
                 padding: 8px 16px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #8B5CF6;
-            }
+            QPushButton:hover {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
         """
         )
 
@@ -348,7 +361,7 @@ class SpawnEditDialog(QDialog):
         return values
 
 
-class SpawnManagerDialog(QDialog):
+class SpawnManagerDialog(ModernDialog):
     """Main spawn manager dialog.
 
     Signals:
@@ -358,67 +371,37 @@ class SpawnManagerDialog(QDialog):
     goto_position = pyqtSignal(int, int, int)
 
     def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Spawn Manager")
 
         self._game_map = game_map
         self._spawn_cards: list[SpawnCard] = []
 
-        self.setWindowTitle("Spawn Manager")
         self.setMinimumSize(550, 500)
-        self.setModal(True)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
         self._load_spawns()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        layout = self.content_layout
         layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
 
-        # Header
+        # Header stats (moved from old header)
         header_layout = QHBoxLayout()
-
-        header = QLabel("Spawn Manager")
-        header.setStyleSheet(
-            """
-            font-size: 18px;
-            font-weight: 700;
-            color: #E5E5E7;
-        """
-        )
-        header_layout.addWidget(header)
-
         header_layout.addStretch()
 
         self.count_label = QLabel("")
-        self.count_label.setStyleSheet("color: #A1A1AA;")
+        self.count_label.setStyleSheet(f"color: {c['text']['secondary']};")
         header_layout.addWidget(self.count_label)
 
         layout.addLayout(header_layout)
 
         # Tabs for monster/npc
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(
-            """
-            QTabWidget::pane {
-                border: none;
-                background: transparent;
-            }
-            QTabBar::tab {
-                background: #2A2A3E;
-                color: #A1A1AA;
-                padding: 10px 20px;
-                border-radius: 6px 6px 0 0;
-                margin-right: 4px;
-            }
-            QTabBar::tab:selected {
-                background: #8B5CF6;
-                color: white;
-            }
-        """
-        )
 
         # Monster spawns tab
         monster_tab = QWidget()
@@ -460,19 +443,31 @@ class SpawnManagerDialog(QDialog):
 
         layout.addWidget(self.tabs)
 
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.accept)
-        layout.addWidget(buttons)
-
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet(
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
+        self.content_area.setStyleSheet(
+            f"""
+            QTabWidget::pane {{
+                border: none;
+                background: transparent;
+            }}
+            QTabBar::tab {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['secondary']};
+                padding: 10px 20px;
+                border-radius: {r['sm']}px {r['sm']}px 0 0;
+                margin-right: 4px;
+            }}
+            QTabBar::tab:selected {{
+                background: {c['brand']['primary']};
+                color: {c['surface']['primary']};
+                font-weight: bold;
+            }}
             """
-            QDialog {
-                background: #1E1E2E;
-            }
-        """
         )
 
     def _load_spawns(self) -> None:
