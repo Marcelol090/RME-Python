@@ -1,16 +1,24 @@
 
-import pytest
+import time
 from unittest.mock import Mock, patch
-from py_rme_canary.core.protocols.live_server import LiveServer
+
 from py_rme_canary.core.protocols.live_packets import PacketType
+from py_rme_canary.core.protocols.live_server import LiveServer
+
 
 class TestLiveServerSecurity:
+    def _create_mock_peer(self):
+        peer = Mock()
+        peer.packet_count = 0
+        peer.last_packet_reset = time.time()
+        return peer
+
     def test_login_password_success(self):
         server = LiveServer()
         server.set_password("secret123")
 
         mock_client = Mock()
-        mock_peer = Mock()
+        mock_peer = self._create_mock_peer()
         mock_peer.client_id = 1
         mock_peer.packet_count = 0
         mock_peer.last_packet_reset = 0.0
@@ -32,9 +40,7 @@ class TestLiveServerSecurity:
         server.set_password("secret123")
 
         mock_client = Mock()
-        mock_peer = Mock()
-        mock_peer.packet_count = 0
-        mock_peer.last_packet_reset = 0.0
+        mock_peer = self._create_mock_peer()
         server.clients[mock_client] = mock_peer
 
         # Encode login payload: "user\0wrong"
@@ -53,14 +59,15 @@ class TestLiveServerSecurity:
         server.set_password("secret")
 
         mock_client = Mock()
-        mock_peer = Mock()
-        mock_peer.packet_count = 0
-        mock_peer.last_packet_reset = 0.0
+        mock_peer = self._create_mock_peer()
         server.clients[mock_client] = mock_peer
 
         payload = b"user\0wrong"
 
-        with patch("py_rme_canary.core.protocols.live_server.secrets.compare_digest", return_value=False) as mock_compare:
+        with patch(
+            "py_rme_canary.core.protocols.live_server.secrets.compare_digest",
+            return_value=False,
+        ) as mock_compare:
             with patch.object(server, "_disconnect_client"):
                 server._process_packet(mock_client, PacketType.LOGIN, payload)
 

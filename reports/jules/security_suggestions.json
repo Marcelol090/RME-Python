@@ -66,12 +66,12 @@
     },
     {
       "id": "SEC-007",
-      "summary": "Implemented Rate Limiting for LiveServer to prevent DoS attacks.",
+      "summary": "Implemented Rate Limiting and Map Request Size Limits for LiveServer to mitigate DoS attacks.",
       "files": [
         "py_rme_canary/core/protocols/live_server.py",
         "py_rme_canary/core/protocols/live_peer.py"
       ],
-      "evidence": "Verified with py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py. Implemented 50 packets/second limit per client."
+      "evidence": "Verified with py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py (50 packets/second limit and oversized map request rejection)."
     }
   ],
   "suggested_next": [

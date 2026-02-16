@@ -233,10 +233,10 @@ class LiveServer:
     def _process_packet(self, client: socket.socket, packet_type: int, payload: bytes) -> None:
         """Business logic for handling packets."""
         peer = self.clients.get(client)
+        if peer is None:
+            return
 
         if packet_type == PacketType.LOGIN:
-            if peer is None:
-                return
             name, password = _decode_login_payload(payload)
             if self.password and not secrets.compare_digest(str(password), str(self.password)):
                 peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
@@ -252,16 +252,15 @@ class LiveServer:
             log.info(f"Client {name} logged in (id={client_id})")
             return
 
-        if peer is None or not peer.is_authenticated:
+        if not peer.is_authenticated:
             log.warning(f"Unauthenticated packet {packet_type}")
             self._disconnect_client(client)
             return
 
         if packet_type == PacketType.CURSOR_UPDATE:
             # Decode and store cursor, then rebroadcast
-            if peer is not None:
-                client_id, x, y, z = decode_cursor(payload)
-                peer.set_cursor(x, y, z)
+            client_id, x, y, z = decode_cursor(payload)
+            peer.set_cursor(x, y, z)
             self.broadcast(PacketType.CURSOR_UPDATE, payload, exclude=client)
             self._enqueue_packet(int(packet_type), payload)
             return
@@ -272,13 +271,12 @@ class LiveServer:
             return
 
         if packet_type == PacketType.MESSAGE:
-            if peer is not None:
-                # Re-encode with client info for broadcast
-                text = payload.decode("utf-8", errors="ignore")
-                log.info(f"Chat from {peer.name}: {text}")
-                broadcast_payload = encode_chat(peer.client_id, peer.name, text)
-                self.broadcast(PacketType.MESSAGE, broadcast_payload)
-                self._enqueue_packet(int(packet_type), broadcast_payload)
+            # Re-encode with client info for broadcast
+            text = payload.decode("utf-8", errors="ignore")
+            log.info(f"Chat from {peer.name}: {text}")
+            broadcast_payload = encode_chat(peer.client_id, peer.name, text)
+            self.broadcast(PacketType.MESSAGE, broadcast_payload)
+            self._enqueue_packet(int(packet_type), broadcast_payload)
             return
 
         if packet_type == PacketType.MAP_REQUEST:
@@ -298,13 +296,15 @@ class LiveServer:
         log.info(f"Map request from {peer.name}: ({x_min},{y_min}) to ({x_max},{y_max}) z={z}")
 
         # Security: Prevent massive map requests
-        area = abs(x_max - x_min) * abs(y_max - y_min)
+        width = abs(x_max - x_min) + 1
+        height = abs(y_max - y_min) + 1
+        area = width * height
         if area > MAX_MAP_REQUEST_AREA:
-             log.warning(f"Rejected massive map request from {peer.name}: {area} tiles (limit {MAX_MAP_REQUEST_AREA})")
-             # Send empty response
-             chunk = encode_map_chunk(0, 1, [], x_min=x_min, y_min=y_min, z=z)
-             peer.send_packet(PacketType.MAP_CHUNK, chunk)
-             return
+            log.warning(f"Rejected massive map request from {peer.name}: {area} tiles (limit {MAX_MAP_REQUEST_AREA})")
+            # Send empty response
+            chunk = encode_map_chunk(0, 1, [], x_min=x_min, y_min=y_min, z=z)
+            peer.send_packet(PacketType.MAP_CHUNK, chunk)
+            return
 
         if self._map_provider is None:
             # No map provider, send empty response

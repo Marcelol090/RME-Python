@@ -1,6 +1,6 @@
 # Security Suggestions
 
-- Generated at: `2026-02-12T16:45:00Z`
+- Generated at: `2026-02-13T10:00:00Z`
 - Category: `security`
 - Task: `security-scan-and-fix`
 
@@ -32,9 +32,9 @@
   - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
   - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
 
-- [SEC-007] Implemented Rate Limiting for LiveServer.
+- [SEC-007] Implemented Rate Limiting and Map Request Size Limits for LiveServer to mitigate DoS attacks.
   - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
-  - evidence: Verified with `py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py`. Implemented 50 packets/second limit per client.
+  - evidence: Verified with `py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py` (50 packets/second limit + oversized map request rejection).
 
 ## Suggested Next
 
