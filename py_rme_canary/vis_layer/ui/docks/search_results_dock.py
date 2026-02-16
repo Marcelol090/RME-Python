@@ -15,7 +15,6 @@ Layer: vis_layer (PyQt6 UI)
 from __future__ import annotations
 
 import contextlib
-
 import csv
 import logging
 from dataclasses import dataclass, field
@@ -100,6 +99,8 @@ class SearchResultsTableWidget(QTableWidget):
 
     # Signal: (x, y, z) when user double-clicks
     jump_to_position = pyqtSignal(int, int, int)
+    # Signal: list[(x, y, z)] when user requests map selection from context menu.
+    select_positions_requested = pyqtSignal(list)
 
     # Columns
     COLUMNS = [
@@ -257,6 +258,14 @@ class SearchResultsTableWidget(QTableWidget):
 
         action = menu.exec(self.viewport().mapToGlobal(pos))
 
+        if action == select_all_action:
+            visible_results = self._visible_results()
+            source = visible_results if visible_results else self._results
+            positions = [(int(r.x), int(r.y), int(r.z)) for r in source]
+            if positions:
+                self.select_positions_requested.emit(positions)
+            return
+
         selected = self.get_selected_results()
         if not selected:
             return
@@ -267,8 +276,20 @@ class SearchResultsTableWidget(QTableWidget):
         elif action == copy_pos_action:
             text = "\n".join(f"{r.x}, {r.y}, {r.z}" for r in selected)
             QApplication.clipboard().setText(text)
-        elif action == select_all_action:
-            pass  # TODO: implement select-all-on-map
+
+    def _visible_results(self) -> list[SearchResult]:
+        """Return current non-hidden rows as SearchResult objects."""
+        visible: list[SearchResult] = []
+        for row in range(self.rowCount()):
+            if self.isRowHidden(row):
+                continue
+            item = self.item(row, 0)
+            if item is None:
+                continue
+            result = item.data(Qt.ItemDataRole.UserRole + 1)
+            if isinstance(result, SearchResult):
+                visible.append(result)
+        return visible
 
 
 class SearchResultsDock(QDockWidget):
@@ -340,6 +361,7 @@ class SearchResultsDock(QDockWidget):
         # Results table
         self.table = SearchResultsTableWidget()
         self.table.jump_to_position.connect(self._on_jump_requested)
+        self.table.select_positions_requested.connect(self._on_select_positions_requested)
         layout.addWidget(self.table)
 
         # Status bar
@@ -525,8 +547,68 @@ class SearchResultsDock(QDockWidget):
         if self._current_set is None:
             return
 
-        positions = [(r.x, r.y, r.z) for r in self._current_set.results]
-        self.selection_requested.emit(positions)
+        positions = [(int(r.x), int(r.y), int(r.z)) for r in self._current_set.results]
+        self._apply_selection_on_map(positions)
+
+    def _on_select_positions_requested(self, positions: list[tuple[int, int, int]]) -> None:
+        """Handle table request to map-select result tiles."""
+        self._apply_selection_on_map(positions)
+
+    def _normalize_positions(self, positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+        """Normalize and deduplicate map positions while preserving order."""
+        normalized: list[tuple[int, int, int]] = []
+        seen: set[tuple[int, int, int]] = set()
+        for raw in positions:
+            try:
+                x, y, z = raw
+            except Exception:
+                continue
+            key = (int(x), int(y), int(z))
+            if key in seen:
+                continue
+            seen.add(key)
+            normalized.append(key)
+        return normalized
+
+    def _apply_selection_on_map(self, positions: list[tuple[int, int, int]]) -> None:
+        """Apply positions as current selection and refresh UI/backend contract."""
+        normalized = self._normalize_positions(positions)
+        if not normalized:
+            return
+
+        self.selection_requested.emit(list(normalized))
+
+        if self.editor is None:
+            return
+
+        session = getattr(self.editor, "session", None)
+        if session is None:
+            return
+
+        applied_positions: set[tuple[int, int, int]] = set(normalized)
+        with contextlib.suppress(Exception):
+            if hasattr(session, "set_selection_tiles"):
+                applied_positions = set(session.set_selection_tiles(normalized))
+
+        if not applied_positions:
+            with contextlib.suppress(Exception):
+                self.editor._set_status("Search results selection ignored: no non-empty tiles.", 3000)
+            return
+
+        with contextlib.suppress(Exception):
+            first_x, first_y, first_z = normalized[0]
+            self.editor.center_on_position(first_x, first_y, first_z)
+
+        with contextlib.suppress(Exception):
+            canvas = getattr(self.editor, "canvas", None)
+            if canvas is not None:
+                canvas.update()
+
+        with contextlib.suppress(Exception):
+            self.editor._update_action_enabled_states()
+
+        with contextlib.suppress(Exception):
+            self.editor._set_status(f"Selected {len(applied_positions)} search result tile(s).", 3000)
 
 
 def create_search_results_dock(editor: QtMapEditor) -> SearchResultsDock:

@@ -2163,3 +2163,40 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_modern_progress.py py_rme_canary/tests/unit/vis_layer/ui/test_theme.py py_rme_canary/tests/unit/vis_layer/ui/test_welcome_screen.py py_rme_canary/tests/unit/vis_layer/ui/test_layer_dock.py` -> **23 passed, 1 warning**
 - `.venv/bin/ruff check py_rme_canary/vis_layer/ui/widgets/modern_progress_dialog.py py_rme_canary/vis_layer/ui/theme/colors.py` -> **OK**
 - `.venv/bin/python -m py_compile py_rme_canary/tests/unit/vis_layer/ui/test_layer_dock.py py_rme_canary/tests/unit/vis_layer/ui/test_welcome_screen.py py_rme_canary/vis_layer/ui/theme/colors.py py_rme_canary/vis_layer/ui/widgets/modern_progress_dialog.py` -> **OK**
+
+---
+
+## Sessão 2026-02-16: Search Results dock -> seleção transacional no backend
+
+### Lacuna identificada
+- O menu de contexto do `SearchResultsTableWidget` tinha a ação `Select All on Map` ainda em `TODO`.
+- O `SearchResultsDock` possuía signal `selection_requested`, mas faltava fechamento de contrato com `EditorSession` para seleção em lote e refresh consistente da UI.
+
+### Implementação no Python
+- `py_rme_canary/logic_layer/session/editor.py`
+  - adicionada API `set_selection_tiles(...)`:
+    - aceita seleção em lote (`Iterable[(x, y, z)]`);
+    - normaliza/deduplica posições;
+    - aplica filtro opcional de tiles vazios (`filter_nonempty=True` por default).
+- `py_rme_canary/vis_layer/ui/docks/search_results_dock.py`
+  - `SearchResultsTableWidget`:
+    - nova signal `select_positions_requested`;
+    - `Select All on Map` agora operacional (usa resultados visíveis, fallback para todos).
+  - `SearchResultsDock`:
+    - pipeline único `_apply_selection_on_map(...)`;
+    - aplica seleção via `session.set_selection_tiles(...)`;
+    - sincroniza center/canvas/update_action_status (`center_on_position`, `canvas.update`, `_update_action_enabled_states`, `_set_status`).
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py`
+  - `test_set_selection_tiles_filters_empty_tiles_by_default`
+  - `test_set_selection_tiles_can_keep_empty_tiles_when_requested`
+- `py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py`
+  - `test_table_select_all_on_map_emits_visible_positions`
+  - `test_search_results_dock_applies_selection_to_editor_session`
+  - `test_select_all_results_routes_to_map_selection`
+
+### Validação
+- `.venv/bin/ruff check py_rme_canary/logic_layer/session/editor.py py_rme_canary/vis_layer/ui/docks/search_results_dock.py py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py` -> **OK**
+- `.venv/bin/python -m py_compile py_rme_canary/logic_layer/session/editor.py py_rme_canary/vis_layer/ui/docks/search_results_dock.py py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py` -> **5 passed, 1 warning**

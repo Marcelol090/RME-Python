@@ -746,3 +746,21 @@
     - valida uso do cache sem chamar `get_brush_offsets/get_brush_border_offsets` no caminho sem mirror.
   - `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
     - valida rebuild de cache ao alternar shape e tamanho.
+
+## Incremental Update (2026-02-16 - Search Results select-to-map contract)
+- Fechado gap de integração UI->backend no dock de resultados de busca:
+  - `SearchResultsTableWidget` tinha ação de contexto `Select All on Map` sem implementação real (`TODO`).
+- Implementado:
+  - `vis_layer/ui/docks/search_results_dock.py`
+    - nova signal `select_positions_requested` no table widget;
+    - `Select All on Map` agora seleciona resultados visíveis (ou todos quando não há filtro visível) e emite posições para o dock;
+    - `SearchResultsDock` agora aplica seleção no backend via `session.set_selection_tiles(...)`, centraliza tile inicial, atualiza canvas e status.
+  - `logic_layer/session/editor.py`
+    - nova API `set_selection_tiles(...)` para seleção em lote com normalização/deduplicação e filtro opcional de tiles vazios.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_search_results_dock.py`
+    - valida `Select All on Map` sem depender de rows previamente selecionadas;
+    - valida aplicação da seleção no `editor.session` + refresh de UI/status;
+    - valida que `select_all_results()` roteia para o pipeline único de seleção.
+  - `tests/unit/logic_layer/test_editor_session_selection_bulk.py`
+    - valida filtro default de tiles vazios e modo opcional `filter_nonempty=False`.
