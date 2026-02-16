@@ -168,6 +168,7 @@ class QtMapEditorModernUXMixin:
                 "clear_house": lambda: self._clear_house_id(),
                 "assign_house": lambda: self._assign_house_dialog(),
                 "set_house_entry": lambda: self._set_house_entry_here(),
+                "add_quick_access": lambda: self._add_cursor_item_to_quick_access(),
             }
         )
         logger.debug("Context menus configured")
@@ -693,6 +694,51 @@ class QtMapEditorModernUXMixin:
             self._house_set_entry_here()
             return
         self._show_not_implemented("House entry placement")
+
+    def _add_cursor_item_to_quick_access(self: QtMapEditor) -> None:
+        """Add the item under cursor to Quick Access."""
+        if not hasattr(self, "quick_access") or not self.quick_access:
+            return
+
+        x, y, z = self._get_cursor_position()
+        tile = None
+        if hasattr(self, "map") and self.map:
+            tile = self.map.get_tile(x, y, z)
+
+        if not tile:
+            return
+
+        # Prefer top item, then ground
+        target = tile.items[-1] if tile.items else tile.ground
+        if not target:
+            return
+
+        item_id = int(target.id)
+
+        # Resolve name
+        name = f"Item {item_id}"
+        try:
+            from py_rme_canary.logic_layer.asset_manager import AssetManager
+            name = AssetManager.instance().get_item_name(item_id) or name
+        except Exception:
+            pass
+
+        from py_rme_canary.vis_layer.ui.widgets.quick_access import FavoriteItem
+
+        # Determine category (simplified)
+        cat = "item"
+        if tile.ground and target == tile.ground:
+            cat = "terrain"
+
+        self.quick_access.add_favorite(FavoriteItem(
+            item_id=item_id,
+            name=name,
+            icon=name[:2].upper(),
+            category=cat
+        ))
+
+        if hasattr(self, "status"):
+            self.status.showMessage(f"Added '{name}' to Quick Access")
 
 
 def integrate_modern_ux(editor: QtMapEditor) -> None:

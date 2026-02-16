@@ -391,6 +391,8 @@ class ItemContextMenu:
             has_specific_actions = True
         # Inspect Action (Debug/Dev)
         builder.add_action("Inspect Item...", lambda: self._inspect_item(item), enabled=True)
+        # Add to Quick Access
+        builder.add_action("Add to Quick Access", cb("add_quick_access"), enabled=True)
         has_specific_actions = True
         if ItemTypeDetector.is_teleport(item):
             dest = ItemTypeDetector.get_teleport_destination(item)
