@@ -186,6 +186,9 @@ class QtMapEditorNavigationMixin:
         self.selection_mode = bool(self.act_selection_mode.isChecked())
         # Cancel any active paint gesture if user toggles modes mid-drag.
         if self.selection_mode:
+            if hasattr(self, "canvas"):
+                with contextlib.suppress(Exception):
+                    self.canvas.cancel_interaction()
             self.session.cancel_gesture()
         elif bool(getattr(self, "lasso_enabled", False)) and hasattr(self, "act_lasso_select"):
             try:
@@ -217,6 +220,9 @@ class QtMapEditorNavigationMixin:
                 except Exception as e:
                     logger.warning("Error checking selection mode action: %s", e)
             self.selection_mode = True
+            if hasattr(self, "canvas"):
+                with contextlib.suppress(Exception):
+                    self.canvas.cancel_interaction()
             self.session.cancel_gesture()
         if not self.lasso_enabled and hasattr(self, "canvas"):
             with contextlib.suppress(Exception):

@@ -284,10 +284,10 @@ def assemble_png_idat(
 
 
 # ---------------------------------------------------------------------------
-# 5. Position Deduplication (render hot path)
+# 5. Position deduplication (canvas footprint)
 # ---------------------------------------------------------------------------
 
-def _python_dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+def _python_dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
     """Pure Python position deduplication (order-preserving)."""
     seen: set[tuple[int, int, int]] = set()
     out: list[tuple[int, int, int]] = []
@@ -300,45 +300,35 @@ def _python_dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[t
     return out
 
 
-def dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-    """Deduplicate (x,y,z) positions preserving order; uses Rust backend when available."""
+def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Stable position dedupe with optional Rust backend acceleration."""
     backend = _import_backend()
     if backend is not None:
-        fn: Callable[..., Any] | None = getattr(backend, "dedupe_positions_3d", None)
-        if fn is not None:
+        for name in ("dedupe_positions", "dedupe_positions_3d"):
+            fn: Callable[..., Any] | None = getattr(backend, name, None)
+            if fn is None:
+                continue
             try:
                 result = fn(positions)
                 if isinstance(result, list):
                     out: list[tuple[int, int, int]] = []
-                    for item in result:
-                        if isinstance(item, (tuple, list)) and len(item) == 3:
-                            out.append((int(item[0]), int(item[1]), int(item[2])))
-                    return out
+                    for entry in result:
+                        if isinstance(entry, (tuple, list)) and len(entry) == 3:
+                            out.append((int(entry[0]), int(entry[1]), int(entry[2])))
+                    if len(out) == len(result):
+                        return out
             except Exception:
                 pass
-        # Backward-compatible symbol name used by some branches.
-        fn_legacy: Callable[..., Any] | None = getattr(backend, "dedupe_positions", None)
-        if fn_legacy is not None:
-            try:
-                result = fn_legacy(positions)
-                if isinstance(result, list):
-                    out: list[tuple[int, int, int]] = []
-                    for item in result:
-                        if isinstance(item, (tuple, list)) and len(item) == 3:
-                            out.append((int(item[0]), int(item[1]), int(item[2])))
-                    return out
-            except Exception:
-                pass
-    return _python_dedupe_positions_3d(positions)
+    return _python_dedupe_positions(positions)
 
 
-def dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-    """Compatibility alias for branches using `dedupe_positions`."""
-    return dedupe_positions_3d(positions)
+def dedupe_positions_3d(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
+    """Compatibility alias for older call sites."""
+    return dedupe_positions(positions)
 
 
 # ---------------------------------------------------------------------------
-# 6. Rectangle Intersection
+# 6. Rectangle intersection
 # ---------------------------------------------------------------------------
 
 def _python_rect_intersects(r1: tuple[int, int, int, int], r2: tuple[int, int, int, int]) -> bool:

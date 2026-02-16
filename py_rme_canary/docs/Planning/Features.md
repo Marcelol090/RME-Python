@@ -38,6 +38,7 @@
 - [x] Lasso/Freehand Selection → `logic_layer/lasso_selection.py`
 - [x] Floor Selection Modes → `logic_layer/drawing_options.py`
 - [x] Gem Button (Mode Toggle) → Selection/Drawing mode switch (Spacebar) via `selection_mode` in `vis_layer/ui/main_window/build_actions.py`
+- [x] Selection Mode Gesture Cancel Contract → toggling Selection/Lasso cancels active canvas interaction (`cancel_interaction`) + session gestures to avoid stuck paint state
 
 ### Import/Export
 
@@ -62,6 +63,7 @@
 - [x] Raw Brush → `logic_layer/raw_brush.py`
 - [x] Eraser Brush → `logic_layer/eraser_brush.py` (EraserMode flags: ITEMS/GROUND/MONSTERS/NPCS/SPAWNS, matches C++ left-click=top item, right-click=ground behavior)
 - [x] Fill Tool → `logic_layer/fill_tool.py`
+- [x] Brush Footprint Offset Cache → `logic_layer/geometry.py` (cached draw/border offsets; warmed on UI brush size/shape changes)
 
 ### Terrain Brushes
 
@@ -112,7 +114,7 @@
 
 - [x] Sprite Cache → `logic_layer/sprite_cache.py`
 - [x] Render Optimizer → `logic_layer/render_optimizer.py`
-- [x] Rust Acceleration → `logic_layer/rust_accel.py` (5 functions: spawn lookup, FNV-1a hash, sprite hash, minimap buffer, PNG IDAT)
+- [x] Rust Acceleration → `logic_layer/rust_accel.py` (6 functions: spawn lookup, FNV-1a hash, sprite hash, minimap buffer, PNG IDAT, position dedupe)
 
 ### UI/UX C++ Parity (Redux Menu & Dialog Alignment)
 
@@ -125,6 +127,8 @@
 - [x] "Sprites Not Loaded" Banner → `vis_layer/renderer/opengl_canvas.py` (overlay warning when appearances.dat not loaded)
 - [x] Icon Aliases → `vis_layer/ui/resources/icon_pack.py` (16 aliases for menu/action icon reuse)
 - [x] Responsive Settings Dialog → QScrollArea wrapping with min/max sidebar widths instead of fixed
+- [x] Brush Toolbar Theme Tokens → `vis_layer/ui/widgets/brush_toolbar.py` now reads palette/border/state/text from `ThemeManager.tokens` (no hardcoded RGBA for the component shell)
+- [x] Theme-aware Widget Refresh Hook → `ThemeManager.apply_theme()` now calls `refresh_theme()` on registered widgets (e.g., `BrushToolbar`) for runtime theme switches
 
 #### Part 2 — Deep C++ Menu Parity (build_actions + build_menus)
 
@@ -187,8 +191,9 @@
 - [x] Live Chat/Log → Real-time chat interface in Live Log panel
 - [x] Cursor Broadcasting → See other users' mouse positions via `core/protocols/cursor_broadcaster.py`
 - [x] State Synchronization → Initial map sync + real-time tile change sync
-- [ ] Ban List Management → User management (kick/ban) from hosted session — *not yet implemented*
-- [ ] Close Server Graceful Shutdown → Graceful disconnect of all connected clients — *partial*
+- [x] Host/Client Action Gating → Menu/toolbar actions now follow legacy role rules (`is_local`, `is_host`, `is_live`) in `vis_layer/ui/main_window/qt_map_editor_session.py`
+- [x] Ban List Management → Host can list/unban banned hosts via `Live > Manage Ban List...` (`live_connect.py` + `session.editor`)
+- [x] Close Server Graceful Shutdown → Confirmed disconnect/shutdown flow implemented for `File > Close`, `File > Exit` and window-manager close (`closeEvent`).
 
 ---
 
@@ -225,7 +230,7 @@
 | Doodad Modes (Spray/1-click)|  ✅      |       ✅        |      ✅       |
 | Tool Options Per-Palette |     ✅      |       ✅        |      ✅       |
 | Scroll/Zoom Center Logic |     ✅      |       ✅        |      ✅       |
-| Live Ban List            |     ✅      |       ✅        |      ⏳       |
+| Live Ban List            |     ✅      |       ✅        |      ✅       |
 
 **Legend:** ✅ = Supported | ❌ = Not Supported | ⏳ = Planned
 
@@ -2892,6 +2897,15 @@ public:
 
 ---
 
+## Incremental Notes (2026-02-14 - UIxWidget brush/render contract)
+
+- Brush footprint offsets now keep a hot cache on `QtMapEditor` (`_brush_draw_offsets`, `_brush_border_offsets`) and are refreshed whenever brush size/shape changes.
+- `MapCanvasWidget` and `OpenGLCanvasWidget` now read cached offsets first on paint/preview paths, reducing repeated lookups during continuous drag.
+- Selection/menu parity remains preserved with the same action contracts while render-path CPU work is reduced.
+- New verification coverage ensures paint flow uses cached offsets (no hidden fallback lookup) for both canvas implementations.
+
+---
+
 ## 🎯 Summary
 
 This comprehensive documentation covers:
@@ -2908,5 +2922,5 @@ All systems work together to provide a powerful, flexible map editing experience
 ---
 
 **Document Version:** 1.2
-**Last Updated:** 2026-02-11
+**Last Updated:** 2026-02-14
 **Target Audience:** RME developers, contributors, and advanced users

@@ -131,6 +131,11 @@ class QtMapEditor(
     act_borderize_paste: QAction
     act_selection_mode: QAction
     act_lasso_select: QAction
+    act_brush_size_group: QActionGroup
+    act_brush_size_actions: list[QAction]
+    act_brush_shape_group: QActionGroup
+    act_brush_shape_square: QAction
+    act_brush_shape_circle: QAction
     act_selection_depth_compensate: QAction
     act_selection_depth_current: QAction
     act_selection_depth_lower: QAction
@@ -233,6 +238,7 @@ class QtMapEditor(
     act_live_stop: QAction
     act_live_kick: QAction
     act_live_ban: QAction
+    act_live_banlist: QAction
 
     # Editor-owned actions (created in editor.py)
     act_find_item: QAction
@@ -311,6 +317,8 @@ class QtMapEditor(
     friends_local_user_id: int | None
     friends_privacy_mode: str
     _friends_timer: QTimer | None
+    _brush_draw_offsets: tuple[tuple[int, int], ...]
+    _brush_border_offsets: tuple[tuple[int, int], ...]
 
     def __init__(self) -> None:
         super().__init__()
@@ -351,6 +359,7 @@ class QtMapEditor(
 
         self.brush_size = 0
         self.brush_shape = "square"
+        self._warm_brush_offsets_cache()
 
         self.fill_armed = False
         self.paste_armed = False
@@ -640,6 +649,11 @@ class QtMapEditor(
                 action_logger.info("Action triggered: %s checked=%s", _name, checked)
 
             action.triggered.connect(_handler)
+
+    def closeEvent(self, event) -> None:  # noqa: N802
+        if not self._handle_window_close_request(event):
+            return
+        super().closeEvent(event)
 
     def advance_animation_clock(self, delta_ms: int) -> None:
         if int(delta_ms) <= 0:

@@ -4,9 +4,10 @@ Theme Manager with Design Tokens for Canary Studio Map Editor.
 
 from __future__ import annotations
 
+import contextlib
 from typing import NotRequired, TypedDict
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QWidget
 
 
 class ThemeColors(TypedDict):
@@ -266,6 +267,21 @@ class ThemeManager:
         tokens = self.tokens
         qss = self._generate_stylesheet(tokens)
         app.setStyleSheet(qss)
+        self._refresh_theme_aware_widgets(app)
+
+    def _refresh_theme_aware_widgets(self, app: QApplication) -> None:
+        """Call refresh hook on widgets that provide `refresh_theme()`."""
+        seen: set[int] = set()
+        for top in app.topLevelWidgets():
+            for widget in [top, *top.findChildren(QWidget)]:
+                wid = id(widget)
+                if wid in seen:
+                    continue
+                seen.add(wid)
+                refresh = getattr(widget, "refresh_theme", None)
+                if callable(refresh):
+                    with contextlib.suppress(Exception):
+                        refresh()
 
     def _generate_stylesheet(self, tokens: ThemeTokens) -> str:
         """Generate QSS stylesheet from tokens with Premium Polish."""

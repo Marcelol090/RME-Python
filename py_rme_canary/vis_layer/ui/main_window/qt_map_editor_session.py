@@ -1140,16 +1140,36 @@ class QtMapEditorSessionMixin:
     def _update_action_enabled_states(self) -> None:
         has_sel = bool(self.session.has_selection())
         can_paste = bool(self.session.can_paste())
+        session = getattr(self, "session", None)
+        has_map = bool(session is not None and getattr(session, "game_map", None) is not None)
 
-        self.act_copy.setEnabled(has_sel)
-        self.act_cut.setEnabled(has_sel)
-        self.act_delete_selection.setEnabled(has_sel)
-        self.act_duplicate_selection.setEnabled(has_sel)
+        def _session_flag(flag_name: str, *, default: bool = False) -> bool:
+            method = getattr(session, flag_name, None)
+            if callable(method):
+                with contextlib.suppress(Exception):
+                    return bool(method())
+            return bool(default)
 
-        self.act_move_selection_up.setEnabled(has_sel)
-        self.act_move_selection_down.setEnabled(has_sel)
+        is_live = _session_flag("is_live_active", default=False)
+        is_client = _session_flag("is_live_client", default=False)
+        is_server = _session_flag("is_live_server", default=False)
+        is_host = bool(has_map and not is_client)
+        is_local = bool(has_map and not is_live)
 
-        self.act_borderize_selection.setEnabled(has_sel)
+        def _set_enabled(action_name: str, enabled: bool) -> None:
+            action = getattr(self, action_name, None)
+            if action is not None and hasattr(action, "setEnabled"):
+                action.setEnabled(bool(enabled))
+
+        _set_enabled("act_copy", has_sel)
+        _set_enabled("act_cut", has_sel)
+        _set_enabled("act_delete_selection", has_sel)
+        _set_enabled("act_duplicate_selection", has_sel)
+
+        _set_enabled("act_move_selection_up", has_sel)
+        _set_enabled("act_move_selection_down", has_sel)
+
+        _set_enabled("act_borderize_selection", has_sel)
 
         selection_scoped_actions = (
             "act_replace_items_on_selection",
@@ -1161,28 +1181,72 @@ class QtMapEditorSessionMixin:
             "act_find_container_selection",
             "act_find_writeable_selection",
         )
+        selection_scoped_enabled = bool(has_sel and is_host)
         for action_name in selection_scoped_actions:
-            action = getattr(self, action_name, None)
-            if action is not None and hasattr(action, "setEnabled"):
-                action.setEnabled(has_sel)
+            _set_enabled(action_name, selection_scoped_enabled)
 
-        if hasattr(self, "act_clear_invalid_tiles_selection"):
-            self.act_clear_invalid_tiles_selection.setEnabled(has_sel)
-        if hasattr(self, "act_randomize_selection"):
-            self.act_randomize_selection.setEnabled(has_sel)
+        _set_enabled("act_clear_invalid_tiles_selection", has_sel)
+        _set_enabled("act_randomize_selection", has_sel)
 
-        if hasattr(self, "act_house_set_id_on_selection"):
-            self.act_house_set_id_on_selection.setEnabled(has_sel)
-        if hasattr(self, "act_house_clear_id_on_selection"):
-            self.act_house_clear_id_on_selection.setEnabled(has_sel)
+        _set_enabled("act_house_set_id_on_selection", has_sel)
+        _set_enabled("act_house_clear_id_on_selection", has_sel)
 
-        if hasattr(self, "act_switch_door_here"):
-            self.act_switch_door_here.setEnabled(True)
+        _set_enabled("act_switch_door_here", True)
 
-        self.act_paste.setEnabled(can_paste)
+        _set_enabled("act_paste", can_paste)
 
         # Esc should remain meaningful even when no selection.
-        self.act_clear_selection.setEnabled(has_sel or bool(self.paste_armed) or bool(self.fill_armed))
+        _set_enabled("act_clear_selection", has_sel or bool(self.paste_armed) or bool(self.fill_armed))
+
+        # Legacy role gating (local/host/client) for top-level actions.
+        for action_name in (
+            "act_save",
+            "act_save_as",
+            "act_find_item",
+            "act_find_everything_map",
+            "act_find_unique_map",
+            "act_find_action_map",
+            "act_find_container_map",
+            "act_find_writeable_map",
+            "act_remove_item_map",
+        ):
+            _set_enabled(action_name, is_host)
+
+        for action_name in (
+            "act_close_map",
+            "act_import_map",
+            "act_import_monsters_npcs",
+            "act_replace_items",
+            "act_borderize_map",
+            "act_randomize_map",
+            "act_remove_corpses_map",
+            "act_remove_unreachable_map",
+            "act_clear_invalid_house_tiles_map",
+            "act_clear_modified_state",
+            "act_edit_towns",
+            "act_map_cleanup",
+            "act_map_properties",
+            "act_map_statistics_legacy",
+        ):
+            _set_enabled(action_name, is_local)
+
+        for action_name in (
+            "act_new_view",
+            "act_zoom_in",
+            "act_zoom_out",
+            "act_zoom_normal",
+            "act_goto_previous_position",
+            "act_goto_position",
+        ):
+            _set_enabled(action_name, has_map)
+
+        _set_enabled("act_live_host", is_local)
+        _set_enabled("act_live_stop", is_server)
+        _set_enabled("act_src_connect", not is_live)
+        _set_enabled("act_src_disconnect", is_live)
+        _set_enabled("act_live_kick", is_server)
+        _set_enabled("act_live_ban", is_server)
+        _set_enabled("act_live_banlist", is_server)
 
     def _on_tiles_changed(self, _changed) -> None:
         self.canvas.update()

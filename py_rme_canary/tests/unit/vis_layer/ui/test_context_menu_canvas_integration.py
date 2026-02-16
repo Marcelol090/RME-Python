@@ -198,3 +198,157 @@ def test_item_context_menu_uses_position_for_copy_when_tile_is_empty(monkeypatch
     assert builder is not None
     action_labels = [entry[1] for entry in builder.actions if entry[0] == "action"]
     assert "Copy Position (100, 200, 7)" in action_labels
+
+
+class _PaintSession:
+    def __init__(self) -> None:
+        self.border_calls: list[tuple[int, int, int]] = []
+        self.draw_calls: list[tuple[int, int, int, bool]] = []
+
+    def mark_autoborder_position(self, *, x: int, y: int, z: int) -> None:
+        self.border_calls.append((int(x), int(y), int(z)))
+
+    def mouse_move(self, *, x: int, y: int, z: int, alt: bool) -> None:
+        self.draw_calls.append((int(x), int(y), int(z), bool(alt)))
+
+
+def _make_paint_editor(*, mirror_enabled: bool = False) -> SimpleNamespace:
+    return SimpleNamespace(
+        map=SimpleNamespace(header=SimpleNamespace(width=64, height=64)),
+        viewport=SimpleNamespace(z=7),
+        session=_PaintSession(),
+        brush_size=0,
+        brush_shape="square",
+        mirror_enabled=bool(mirror_enabled),
+        mirror_axis="x",
+        has_mirror_axis=lambda: bool(mirror_enabled),
+        get_mirror_axis_value=lambda: 10,
+    )
+
+
+def _make_map_paint_canvas(editor: SimpleNamespace) -> SimpleNamespace:
+    canvas = SimpleNamespace(_editor=editor, _tile_at=lambda _x, _y: (20, 20))
+    canvas._draw_offsets = lambda: canvas_module.MapCanvasWidget._draw_offsets(canvas)
+    canvas._border_offsets = lambda: canvas_module.MapCanvasWidget._border_offsets(canvas)
+    return canvas
+
+
+def _make_opengl_paint_canvas(editor: SimpleNamespace) -> SimpleNamespace:
+    canvas = SimpleNamespace(_editor=editor, _tile_at=lambda _x, _y: (20, 20))
+    canvas._draw_offsets = lambda: opengl_module.OpenGLCanvasWidget._draw_offsets(canvas)
+    canvas._border_offsets = lambda: opengl_module.OpenGLCanvasWidget._border_offsets(canvas)
+    return canvas
+
+
+def test_map_canvas_paint_footprint_without_mirror_skips_dedupe(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _boom(_positions):
+        raise AssertionError("dedupe_positions should not be called when mirror is disabled")
+
+    monkeypatch.setattr(canvas_module, "dedupe_positions", _boom)
+    editor = _make_paint_editor(mirror_enabled=False)
+    fake_canvas = _make_map_paint_canvas(editor)
+
+    canvas_module.MapCanvasWidget._paint_footprint_at(fake_canvas, 0, 0, alt=False)
+
+    assert len(editor.session.border_calls) == 9
+    assert len(editor.session.draw_calls) == 1
+    assert editor.session.draw_calls[0][-1] is False
+
+
+def test_opengl_canvas_paint_footprint_without_mirror_skips_dedupe(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _boom(_positions):
+        raise AssertionError("dedupe_positions should not be called when mirror is disabled")
+
+    monkeypatch.setattr(opengl_module, "dedupe_positions", _boom)
+    editor = _make_paint_editor(mirror_enabled=False)
+    fake_canvas = _make_opengl_paint_canvas(editor)
+
+    opengl_module.OpenGLCanvasWidget._paint_footprint_at(fake_canvas, 0, 0, alt=True)
+
+    assert len(editor.session.border_calls) == 9
+    assert len(editor.session.draw_calls) == 1
+    assert editor.session.draw_calls[0][-1] is True
+
+
+def test_map_canvas_paint_footprint_with_mirror_uses_dedupe_and_union(monkeypatch: pytest.MonkeyPatch) -> None:
+    dedupe_calls = {"count": 0}
+    union_calls = {"count": 0}
+
+    def _dedupe(positions):
+        dedupe_calls["count"] += 1
+        return list(positions)
+
+    def _union(positions, *, axis, axis_value, width, height):
+        union_calls["count"] += 1
+        return list(positions)
+
+    monkeypatch.setattr(canvas_module, "dedupe_positions", _dedupe)
+    monkeypatch.setattr(canvas_module, "union_with_mirrored", _union)
+    editor = _make_paint_editor(mirror_enabled=True)
+    fake_canvas = _make_map_paint_canvas(editor)
+
+    canvas_module.MapCanvasWidget._paint_footprint_at(fake_canvas, 0, 0, alt=False)
+
+    assert dedupe_calls["count"] == 2
+    assert union_calls["count"] == 2
+
+
+def test_opengl_canvas_paint_footprint_with_mirror_uses_dedupe_and_union(monkeypatch: pytest.MonkeyPatch) -> None:
+    dedupe_calls = {"count": 0}
+    union_calls = {"count": 0}
+
+    def _dedupe(positions):
+        dedupe_calls["count"] += 1
+        return list(positions)
+
+    def _union(positions, *, axis, axis_value, width, height):
+        union_calls["count"] += 1
+        return list(positions)
+
+    monkeypatch.setattr(opengl_module, "dedupe_positions", _dedupe)
+    monkeypatch.setattr(opengl_module, "union_with_mirrored", _union)
+    editor = _make_paint_editor(mirror_enabled=True)
+    fake_canvas = _make_opengl_paint_canvas(editor)
+
+    opengl_module.OpenGLCanvasWidget._paint_footprint_at(fake_canvas, 0, 0, alt=True)
+
+    assert dedupe_calls["count"] == 2
+    assert union_calls["count"] == 2
+
+
+def test_map_canvas_paint_footprint_uses_cached_offsets_without_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _boom(*_args, **_kwargs):
+        raise AssertionError("get_brush_offsets fallback should not be called with editor cache")
+
+    monkeypatch.setattr(canvas_module, "get_brush_offsets", _boom)
+    monkeypatch.setattr(canvas_module, "get_brush_border_offsets", _boom)
+    editor = _make_paint_editor(mirror_enabled=False)
+    editor._brush_draw_offsets = ((0, 0),)
+    editor._brush_border_offsets = ((0, 0),)
+    fake_canvas = _make_map_paint_canvas(editor)
+
+    canvas_module.MapCanvasWidget._paint_footprint_at(fake_canvas, 0, 0, alt=False)
+
+    assert editor.session.border_calls == [(20, 20, 7)]
+    assert editor.session.draw_calls == [(20, 20, 7, False)]
+
+
+def test_opengl_canvas_paint_footprint_uses_cached_offsets_without_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _boom(*_args, **_kwargs):
+        raise AssertionError("get_brush_offsets fallback should not be called with editor cache")
+
+    monkeypatch.setattr(opengl_module, "get_brush_offsets", _boom)
+    monkeypatch.setattr(opengl_module, "get_brush_border_offsets", _boom)
+    editor = _make_paint_editor(mirror_enabled=False)
+    editor._brush_draw_offsets = ((0, 0),)
+    editor._brush_border_offsets = ((0, 0),)
+    fake_canvas = _make_opengl_paint_canvas(editor)
+
+    opengl_module.OpenGLCanvasWidget._paint_footprint_at(fake_canvas, 0, 0, alt=True)
+
+    assert editor.session.border_calls == [(20, 20, 7)]
+    assert editor.session.draw_calls == [(20, 20, 7, True)]

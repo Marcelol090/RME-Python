@@ -66,17 +66,17 @@ def test_window_menu_exposes_tool_options(editor):
     assert "Tool Options" in window_action_texts
 
 
-def test_window_menu_exposes_brush_actions(editor):
+def test_window_menu_exposes_brush_submenus(editor):
     menubar_actions = editor.menuBar().actions()
     window_menu = next((action.menu() for action in menubar_actions if action.text() == "Window"), None)
     assert window_menu is not None
     brush_menu = next((action.menu() for action in window_menu.actions() if action.text() == "Brush"), None)
     assert brush_menu is not None
-    labels = {action.text() for action in brush_menu.actions() if action.text()}
-    assert "Brush Size -" in labels
-    assert "Brush Size +" in labels
-    assert "Brush Shape: Square" in labels
-    assert "Brush Shape: Circle" in labels
+    brush_action_texts = {action.text() for action in brush_menu.actions() if action.text()}
+    assert (
+        {"Brush Size -", "Brush Size +"} <= brush_action_texts
+        or {"Size", "Shape"} <= brush_action_texts
+    )
 
 
 def test_tool_options_action_shows_palette_dock(editor, qtbot):
@@ -218,3 +218,34 @@ def test_theme_switch_updates_exclusive_actions(editor, qtbot):
     qtbot.wait(10)
     assert editor.act_theme_noct_liquid_glass.isChecked() is True
     assert editor.act_theme_noct_8bit_glass.isChecked() is False
+
+
+def test_brush_menu_actions_sync_with_editor_state(editor, qtbot):
+    if hasattr(editor, "act_brush_size_actions") and editor.act_brush_size_actions:
+        size_act = next((act for act in editor.act_brush_size_actions if int(act.data()) == 5), None)
+        assert size_act is not None
+        size_act.trigger()
+        qtbot.wait(10)
+        assert int(editor.brush_size) == 5
+        assert size_act.isChecked() is True
+
+        editor._set_brush_size(3)
+        qtbot.wait(10)
+        size3 = next(act for act in editor.act_brush_size_actions if int(act.data()) == 3)
+        assert size3.isChecked() is True
+        assert size_act.isChecked() is False
+    else:
+        editor.act_brush_size_inc.trigger()
+        qtbot.wait(10)
+        assert int(editor.brush_size) >= 1
+
+    editor.act_brush_shape_circle.trigger()
+    qtbot.wait(10)
+    assert editor.brush_shape == "circle"
+    assert editor.act_brush_shape_circle.isChecked() is True
+    assert editor.act_brush_shape_square.isChecked() is False
+
+    editor._set_brush_shape("square")
+    qtbot.wait(10)
+    assert editor.act_brush_shape_square.isChecked() is True
+    assert editor.act_brush_shape_circle.isChecked() is False

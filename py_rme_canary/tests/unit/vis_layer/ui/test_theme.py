@@ -97,6 +97,32 @@ class TestIntegration:
         stylesheet = app.styleSheet()
         assert len(stylesheet) > 0
 
+    def test_theme_manager_refreshes_theme_aware_widgets(self):
+        """ThemeManager should call refresh_theme on theme-aware widgets."""
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
+        class _ThemeAwareWidget:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def refresh_theme(self) -> None:
+                self.calls += 1
+
+            def findChildren(self, _typ):  # noqa: N802 - Qt naming parity
+                return []
+
+        class _FakeApp:
+            def __init__(self, widgets):
+                self._widgets = widgets
+
+            def topLevelWidgets(self):  # noqa: N802 - Qt naming parity
+                return list(self._widgets)
+
+        widget = _ThemeAwareWidget()
+        manager = get_theme_manager()
+        manager._refresh_theme_aware_widgets(_FakeApp([widget]))  # type: ignore[arg-type]
+        assert widget.calls == 1
+
 
 class TestContextMenus:
     """Tests for context menu builder."""

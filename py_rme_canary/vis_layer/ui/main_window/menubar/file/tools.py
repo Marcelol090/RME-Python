@@ -18,6 +18,9 @@ def save_as(editor) -> None:
 
 
 def exit_app(editor) -> None:
+    if hasattr(editor, "_confirm_live_session_close") and not editor._confirm_live_session_close(for_app_exit=True):
+        return
+    editor._live_close_confirmed_for_exit = True
     editor.close()
 
 
