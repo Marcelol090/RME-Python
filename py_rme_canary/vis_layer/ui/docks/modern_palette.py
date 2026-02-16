@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from PyQt6.QtCore import QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
-from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtCore import QSize, Qt, QMimeData, pyqtSignal, QByteArray
+from PyQt6.QtGui import QColor, QDrag, QFont, QIcon, QPainter, QPixmap
+from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QVBoxLayout, QWidget, QAbstractItemView
 
 
 @dataclass(slots=True)
@@ -60,6 +60,38 @@ def _make_fallback_icon(text: str, size: int) -> QPixmap:
     return px
 
 
+class DraggableListWidget(QListWidget):
+    """QListWidget with custom drag support for brushes."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.DragOnly)
+
+    def startDrag(self, supportedActions: Qt.DropAction) -> None:
+        item = self.currentItem()
+        if not item:
+            return
+
+        brush_id = item.data(Qt.ItemDataRole.UserRole)
+        if brush_id is None:
+            return
+
+        mime_data = QMimeData()
+        mime_data.setData("application/x-rme-brush-id", QByteArray(str(brush_id).encode("utf-8")))
+
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+
+        # Use icon as drag pixmap if available
+        icon = item.icon()
+        if not icon.isNull():
+            drag.setPixmap(icon.pixmap(32, 32))
+            drag.setHotSpot(QPoint(16, 16) if hasattr(QPoint, "__init__") else Qt.QPoint(16, 16))
+
+        drag.exec(Qt.DropAction.CopyAction)
+
+
 class ModernPaletteWidget(QWidget):
     """Brush list widget with icon cards used inside tabs — Antigravity style."""
 
@@ -83,7 +115,7 @@ class ModernPaletteWidget(QWidget):
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(4)
 
-        self.list_widget = QListWidget(self)
+        self.list_widget = DraggableListWidget(self)
         self.list_widget.setObjectName("AssetGrid")
         self.list_widget.setMouseTracking(True)  # Enable hover tracking
         self.list_widget.setViewMode(QListWidget.ViewMode.IconMode)
