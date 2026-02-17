@@ -39,6 +39,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+
 if TYPE_CHECKING:
     pass
 
@@ -348,7 +350,7 @@ class ItemIdSelector(QFrame):
         self.id_spin.setValue(value)
 
 
-class BatchItemEditor(QDialog):
+class BatchItemEditor(ModernDialog):
     """Dialog for batch editing items across the map.
 
     Features:
@@ -368,29 +370,23 @@ class BatchItemEditor(QDialog):
     operation_complete = pyqtSignal(BatchResult)
 
     def __init__(self, parent: QWidget | None = None, selection_only: bool = False) -> None:
-        super().__init__(parent)
+        title = "Replace Items (Selection)" if selection_only else "Batch Item Editor"
+        super().__init__(parent, title=title)
         self._selection_only = selection_only
         self._executor: Callable[[list[ReplacingItem]], BatchResult] | None = None
         self._sprite_provider: Callable[[int], QPixmap | None] | None = None
 
-        title = "Replace Items (Selection)" if selection_only else "Batch Item Editor"
-        self.setWindowTitle(title)
         self.setMinimumSize(550, 500)
-        self.setModal(True)
+        # ModernDialog is modal and frameless by default
 
         self._setup_ui()
-        self._apply_style()
+        # No need for _apply_style() as ModernDialog handles theming
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
+        # Use existing content layout from ModernDialog
+        layout = self.content_layout
         layout.setSpacing(12)
-
-        # Header
-        header = QLabel("Batch Item Editor")
-        header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
-        layout.addWidget(header)
 
         desc = QLabel(
             "Add item replacements and execute them across the map. "
@@ -529,59 +525,20 @@ class BatchItemEditor(QDialog):
 
         layout.addLayout(progress_layout)
 
-        # Button bar
-        btn_layout = QHBoxLayout()
+        # Footer Actions
 
-        # Selection only checkbox
+        # Selection only checkbox (Add to footer)
         if not self._selection_only:
             self.selection_check = QCheckBox("Selection Only")
             self.selection_check.setStyleSheet("color: #E5E5E7;")
-            btn_layout.addWidget(self.selection_check)
+            # Insert before buttons
+            self.footer_layout.addWidget(self.selection_check)
 
-        btn_layout.addStretch()
+        self.add_spacer_to_footer() # Push buttons to the right
 
-        execute_btn = QPushButton("Execute")
-        execute_btn.clicked.connect(self._execute)
-        execute_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 10px 24px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background: #7C3AED; }
-        """
-        )
-        btn_layout.addWidget(execute_btn)
-
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.close)
-        close_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                padding: 10px 24px;
-            }
-            QPushButton:hover { background: #363650; }
-        """
-        )
-        btn_layout.addWidget(close_btn)
-
-        layout.addLayout(btn_layout)
-
-    def _apply_style(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet(
-            """
-            QDialog { background: #0F0F1A; }
-        """
-        )
+        # Add buttons to footer
+        self.add_button("Execute", self._execute, role="primary")
+        self.add_button("Close", self.close)
 
     def _add_replacement(self) -> None:
         """Add current selection to replacement queue."""
