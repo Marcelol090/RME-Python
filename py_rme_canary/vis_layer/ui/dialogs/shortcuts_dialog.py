@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
@@ -17,6 +18,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 
 if TYPE_CHECKING:
     pass
@@ -110,7 +113,7 @@ class ShortcutCategory(QFrame):
         return visible_count > 0
 
 
-class KeyboardShortcutsDialog(QDialog):
+class KeyboardShortcutsDialog(ModernDialog):
     """Dialog showing all keyboard shortcuts."""
 
     SHORTCUTS = {
@@ -162,40 +165,73 @@ class KeyboardShortcutsDialog(QDialog):
     }
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Keyboard Shortcuts")
 
         self._categories: list[ShortcutCategory] = []
 
-        self.setWindowTitle("Keyboard Shortcuts")
         self.setMinimumSize(500, 600)
-        self.setModal(True)
+        # ModernDialog is modal and frameless by default
 
         self._setup_ui()
-        self._apply_style()
+        # self._apply_style() # Dialog style handled by ModernDialog
 
     def _setup_ui(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        # Use existing content layout
+        layout = self.content_layout
         layout.setSpacing(12)
         layout.setContentsMargins(20, 20, 20, 20)
-
-        # Header
-        header = QLabel("Keyboard Shortcuts")
-        header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
-        layout.addWidget(header)
 
         # Search
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search shortcuts...")
         self.search_input.textChanged.connect(self._on_search)
+
+        # Style search input (keep custom style for specific widget)
+        self.search_input.setStyleSheet(
+            """
+            QLineEdit {
+                background: #2A2A3E;
+                border: 2px solid #363650;
+                border-radius: 8px;
+                padding: 10px 14px;
+                color: #E5E5E7;
+                font-size: 14px;
+            }
+
+            QLineEdit:focus {
+                border-color: #8B5CF6;
+            }
+            """
+        )
         layout.addWidget(self.search_input)
 
         # Scroll area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        # Transparent background to blend with ModernDialog
+        scroll.setStyleSheet(
+            """
+            QScrollArea { background: transparent; border: none; }
+            QScrollBar:vertical {
+                background: #1E1E2E;
+                width: 8px;
+                border-radius: 4px;
+            }
+
+            QScrollBar::handle:vertical {
+                background: #363650;
+                border-radius: 4px;
+            }
+
+            QScrollBar::handle:vertical:hover {
+                background: #8B5CF6;
+            }
+            """
+        )
 
         content = QWidget()
+        content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         content_layout = QVBoxLayout(content)
         content_layout.setSpacing(12)
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -211,43 +247,8 @@ class KeyboardShortcutsDialog(QDialog):
         scroll.setWidget(content)
         layout.addWidget(scroll)
 
-    def _apply_style(self) -> None:
-        """Apply styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
-
-            QLineEdit {
-                background: #2A2A3E;
-                border: 2px solid #363650;
-                border-radius: 8px;
-                padding: 10px 14px;
-                color: #E5E5E7;
-                font-size: 14px;
-            }
-
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
-
-            QScrollBar:vertical {
-                background: #1E1E2E;
-                width: 8px;
-                border-radius: 4px;
-            }
-
-            QScrollBar::handle:vertical {
-                background: #363650;
-                border-radius: 4px;
-            }
-
-            QScrollBar::handle:vertical:hover {
-                background: #8B5CF6;
-            }
-        """
-        )
+        # Add Close button to footer
+        self.add_button("Close", self.close)
 
     def _on_search(self, query: str) -> None:
         """Filter shortcuts by search query."""
