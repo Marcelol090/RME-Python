@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+# Maximum area (tiles) allowed in a single map request to prevent DoS
+MAX_MAP_REQUEST_AREA = 65536
+
 
 def _decode_login_payload(payload: bytes) -> tuple[str, str]:
     if not payload:
@@ -193,6 +196,13 @@ class LiveServer:
                 peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
                 self._disconnect_client(client)
                 return
+            # Sanitize name
+            name = "".join(c for c in name if c.isprintable()).strip()
+            if not name:
+                name = "Unknown"
+            if len(name) > 32:
+                name = name[:32]
+
             peer.set_name(str(name))
             peer.set_password(str(password))
             peer.is_authenticated = True
@@ -249,6 +259,15 @@ class LiveServer:
             return
 
         x_min, y_min, x_max, y_max, z = decode_map_request(payload)
+
+        # Check area limit
+        width = abs(x_max - x_min) + 1
+        height = abs(y_max - y_min) + 1
+        area = width * height
+        if area > MAX_MAP_REQUEST_AREA:
+            log.warning(f"Map request from {peer.name} exceeded area limit: {area} > {MAX_MAP_REQUEST_AREA}")
+            return
+
         log.info(f"Map request from {peer.name}: ({x_min},{y_min}) to ({x_max},{y_max}) z={z}")
 
         if self._map_provider is None:

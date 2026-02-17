@@ -21,7 +21,7 @@ PEER_COLORS: list[tuple[int, int, int]] = [
 ]
 
 
-@dataclass(slots=True)
+@dataclass
 class LivePeer(LiveSocket):
     """Represents a connected live-editing client on the server."""
 

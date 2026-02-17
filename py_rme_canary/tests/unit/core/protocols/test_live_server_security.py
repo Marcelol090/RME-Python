@@ -63,3 +63,30 @@ class TestLiveServerSecurity:
             args = mock_compare.call_args[0]
             assert "wrong" in args
             assert "secret" in args
+
+    def test_login_name_sanitization(self):
+        server = LiveServer()
+        mock_client = Mock()
+        mock_peer = Mock()
+        mock_peer.client_id = 1
+        server.clients[mock_client] = mock_peer
+
+        # Payload with control chars (newline) and excessively long name
+        # "valid" + "\n" + "a"*100 -> "validaaaaa..." (newline stripped)
+        long_part = "a" * 100
+        dirty_name = f"valid\n{long_part}"
+        payload = dirty_name.encode("utf-8") + b"\0password"
+
+        with patch.object(server, "broadcast_client_list"):
+            server._process_packet(mock_client, PacketType.LOGIN, payload)
+
+        assert mock_peer.set_name.called
+        args = mock_peer.set_name.call_args[0]
+        sanitized_name = args[0]
+
+        # Newline should be removed
+        assert "\n" not in sanitized_name
+        # Truncated to 32 chars
+        assert len(sanitized_name) == 32
+        # Starts with "valid"
+        assert sanitized_name.startswith("valid")
