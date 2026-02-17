@@ -28,6 +28,18 @@
   - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
   - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
 
+- [SEC-007] Fixed DoS vulnerability in LiveServer map requests by enforcing area limit.
+  - files: `py_rme_canary/core/protocols/live_server.py`
+  - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_dos_map_request.py`
+
+- [SEC-008] Fixed LiveServer crash due to LivePeer inheritance issue.
+  - files: `py_rme_canary/core/protocols/live_peer.py`
+  - evidence: Verified by successful execution of LiveServer unit tests.
+
+- [SEC-009] Implemented input sanitization for LiveServer login names.
+  - files: `py_rme_canary/core/protocols/live_server.py`
+  - evidence: Verified with unit tests in `py_rme_canary/tests/unit/core/protocols/test_live_server_security.py`
+
 ## Suggested Next
 
 - [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.
