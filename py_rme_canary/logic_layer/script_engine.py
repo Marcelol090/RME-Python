@@ -600,6 +600,21 @@ class ScriptSecurityChecker(ast.NodeVisitor):
             "__module__",
             "__mro__",
             "__getattribute__",
+            "__func__",
+            "__self__",
+            "gi_frame",
+            "gi_code",
+            "gi_yieldfrom",
+            "cr_frame",
+            "cr_code",
+            "cr_await",
+            "tb_frame",
+            "tb_next",
+            "f_back",
+            "f_builtins",
+            "f_globals",
+            "f_locals",
+            "f_trace",
         }
         if node.attr in dangerous_attrs:
             self.errors.append(f"Forbidden attribute access: {node.attr}")
