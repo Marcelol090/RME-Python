@@ -10,25 +10,26 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
-    QDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QProgressBar,
-    QPushButton,
     QRadioButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
 
-class ItemFindReplaceDialog(QDialog):
+class ItemFindReplaceDialog(ModernDialog):
     """Dialog for finding and replacing items.
 
     Features:
@@ -39,21 +40,21 @@ class ItemFindReplaceDialog(QDialog):
     """
 
     def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Find & Replace Items")
 
         self._game_map = game_map
         self._match_count = 0
 
-        self.setWindowTitle("Find & Replace Items")
         self.setMinimumSize(450, 400)
         self.setModal(True)
 
-        self._setup_ui()
+        self._setup_content()
         self._apply_style()
 
-    def _setup_ui(self) -> None:
+    def _setup_content(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        # Use content_layout from ModernDialog
+        layout = self.content_layout
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -121,7 +122,7 @@ class ItemFindReplaceDialog(QDialog):
 
         # Results
         self.results_label = QLabel("")
-        self.results_label.setStyleSheet("color: #A1A1AA;")
+        self.results_label.setObjectName("ResultsLabel")
         layout.addWidget(self.results_label)
 
         # Progress
@@ -130,96 +131,97 @@ class ItemFindReplaceDialog(QDialog):
         self.progress.hide()
         layout.addWidget(self.progress)
 
-        # Buttons
-        button_layout = QHBoxLayout()
+        # Buttons (Footer)
+        self.add_spacer_to_footer()
 
-        self.btn_find = QPushButton("Find All")
-        self.btn_find.clicked.connect(self._do_find)
-        button_layout.addWidget(self.btn_find)
+        self.btn_find = self.add_button("Find All", callback=self._do_find, role="primary")
 
-        self.btn_replace_all = QPushButton("Replace All")
+        self.btn_replace_all = self.add_button("Replace All", callback=self._do_replace_all, role="secondary")
         self.btn_replace_all.setEnabled(False)
-        self.btn_replace_all.clicked.connect(self._do_replace_all)
-        button_layout.addWidget(self.btn_replace_all)
 
-        button_layout.addStretch()
+        # Close button is handled by header "x" but usually modern dialogs have a close or cancel in footer?
+        # ModernDialog has a close button in the header. We can add a "Close" button to the footer if desired.
+        self.add_button("Close", callback=self.accept, role="secondary")
 
-        btn_close = QPushButton("Close")
-        btn_close.clicked.connect(self.accept)
-        button_layout.addWidget(btn_close)
-
-        layout.addLayout(button_layout)
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QGroupBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+        # Note: We apply styles to specific widgets because ModernDialog handles the base window style.
+        # But we can still style children.
+
+        self.setStyleSheet(f"""
+            QGroupBox {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 margin-top: 12px;
                 padding-top: 12px;
-                color: #E5E5E7;
+                color: {c["text"]["primary"]};
                 font-weight: 600;
-            }
+            }}
 
-            QGroupBox::title {
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 12px;
                 padding: 0 8px;
-            }
+            }}
 
-            QSpinBox, QLineEdit {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                padding: 8px;
-                color: #E5E5E7;
-            }
+            QSpinBox, QLineEdit {{
+                background: {c["surface"]["tertiary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
+                padding: 6px;
+                color: {c["text"]["primary"]};
+            }}
 
-            QSpinBox:focus, QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QSpinBox:focus, QLineEdit:focus {{
+                border: 1px solid {c["brand"]["primary"]};
+            }}
 
-            QCheckBox, QRadioButton {
-                color: #E5E5E7;
-            }
+            QCheckBox, QRadioButton {{
+                color: {c["text"]["primary"]};
+            }}
 
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
+            QLabel#ResultsLabel {{
+                color: {c["text"]["secondary"]};
+            }}
+
+            QProgressBar {{
+                background: {c["surface"]["tertiary"]};
                 border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-
-            QPushButton:hover {
-                background: #A78BFA;
-            }
-
-            QPushButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
-
-            QProgressBar {
-                background: #363650;
-                border: none;
-                border-radius: 4px;
+                border-radius: {r["sm"]}px;
                 height: 6px;
-            }
+            }}
 
-            QProgressBar::chunk {
-                background: #8B5CF6;
-                border-radius: 4px;
-            }
-        """
-        )
+            QProgressBar::chunk {{
+                background: {c["brand"]["primary"]};
+                border-radius: {r["sm"]}px;
+            }}
+
+            QPushButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
+                padding: 6px 16px;
+                font-weight: 600;
+            }}
+
+            QPushButton:hover {{
+                background: {c["state"]["hover"]};
+                border-color: {c["brand"]["primary"]};
+            }}
+
+            QPushButton:disabled {{
+                background: {c["surface"]["primary"]};
+                color: {c["text"]["tertiary"]};
+                border-color: {c["border"]["default"]};
+            }}
+        """)
 
     def _on_delete_mode_changed(self, state: int) -> None:
         """Handle delete mode toggle."""
