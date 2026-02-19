@@ -28,6 +28,10 @@
   - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
   - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
 
+- [SEC-007] Patched sandbox escape vulnerability in ScriptEngine by blocking frame and generator attributes (gi_frame, f_back, etc).
+  - files: `py_rme_canary/logic_layer/script_engine.py`
+  - evidence: Verified with reproduction script accessing gi_frame/f_back
+
 ## Suggested Next
 
 - [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.

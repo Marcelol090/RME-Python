@@ -1,7 +1,7 @@
 {
   "version": 1,
   "category": "security",
-  "generated_at": "2026-02-12T16:45:00Z",
+  "generated_at": "2026-02-19T07:22:00Z",
   "task": "security-scan-and-fix",
   "implemented": [
     {
@@ -53,6 +53,14 @@
         "py_rme_canary/core/protocols/live_peer.py"
       ],
       "evidence": "Verified with reproduction test case in py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py"
+    },
+    {
+      "id": "SEC-007",
+      "summary": "Patched sandbox escape vulnerability in ScriptEngine by blocking frame and generator attributes (gi_frame, f_back, etc).",
+      "files": [
+        "py_rme_canary/logic_layer/script_engine.py"
+      ],
+      "evidence": "Verified with reproduction script accessing gi_frame/f_back"
     }
   ],
   "suggested_next": [

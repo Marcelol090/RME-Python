@@ -72,3 +72,27 @@ def test_allowed_math_module(engine: ScriptEngine) -> None:
     result = engine.execute(script)
     assert result.success
     assert result.return_value == 2.0
+
+
+def test_blocked_frame_access(engine: ScriptEngine) -> None:
+    script = """
+def g():
+    yield 1
+gen = g()
+frame = gen.gi_frame
+"""
+    result = engine.execute(script)
+    assert result.status == ScriptStatus.SECURITY_ERROR
+    assert "Forbidden attribute access" in result.error
+    assert "gi_frame" in result.error
+
+
+def test_blocked_frame_back_access(engine: ScriptEngine) -> None:
+    # This might require a bit more setup to actually get a frame object,
+    # but the static analysis should catch 'f_back' usage regardless of whether
+    # the object is actually a frame.
+    script = "x = 1; print(x.f_back)"
+    result = engine.execute(script)
+    assert result.status == ScriptStatus.SECURITY_ERROR
+    assert "Forbidden attribute access" in result.error
+    assert "f_back" in result.error
