@@ -764,3 +764,25 @@
     - valida que `select_all_results()` roteia para o pipeline único de seleção.
   - `tests/unit/logic_layer/test_editor_session_selection_bulk.py`
     - valida filtro default de tiles vazios e modo opcional `filter_nonempty=False`.
+
+## Incremental Update (2026-02-19 - Hotkey 0-9 parity hardening)
+- Varredura no legacy (`editor/hotkey_manager.*`, `rendering/ui/keyboard_handler.cpp`) encontrou divergência no Python:
+  - UI estava usando `F1-F10` em vez do contrato legado `1..0` / `Ctrl+1..0`.
+  - handler usava campos inexistentes (`hotkey.enabled`, `hotkey.hotkey_type`, `hotkey.brush_id`) e `viewport.center_x/center_y` (inválido com slots).
+- Implementado alinhamento de paridade:
+  - `build_actions.py`:
+    - hotkeys de uso em `1..0`;
+    - hotkeys de gravação em `Ctrl+1..0`.
+  - `build_menus.py`:
+    - submenu `Navigate > Hotkeys (1-0)` com blocos `Use` e `Set (Ctrl)`.
+  - `qt_map_editor_brushes.py`:
+    - novo pipeline `_assign_hotkey(slot)` (Selection Mode grava posição central; Drawing Mode grava brush por nome);
+    - `_activate_hotkey(slot)` com fallback robusto e mensagens de status (`Used hotkey`, `Unassigned hotkey`, `Brush "<name>" not found`);
+    - uso de `center_view_on(...)` para navegação por posição (sem atributos inválidos no viewport).
+  - `logic_layer/hotkey_manager.py`:
+    - contrato `get_hotkey` / `set_hotkey` confirmado e usado diretamente no mixin UI.
+  - `vis_layer/ui/docks/modern_properties_panel.py`:
+    - fallback de theme tokens (`border.subtle` -> `border.default`, `state.selected` -> `state.active`) para evitar `KeyError` no bootstrap da UI.
+- Cobertura adicionada:
+  - `tests/unit/logic_layer/test_hotkey_manager.py`
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py`

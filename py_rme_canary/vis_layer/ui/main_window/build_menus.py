@@ -271,12 +271,20 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_zoom_nav.addAction(editor.act_zoom_out)
     m_zoom_nav.addAction(editor.act_zoom_normal)
 
-    # Hotkey Slots (C++ Navigate > Hotkeys)
-    if hasattr(editor, "act_hotkey_actions") and editor.act_hotkey_actions:
+    # Hotkey slots (C++ Navigate > Hotkeys): use (1..0) and assign (Ctrl+1..0).
+    has_hotkey_use = hasattr(editor, "act_hotkey_actions") and bool(editor.act_hotkey_actions)
+    has_hotkey_set = hasattr(editor, "act_hotkey_set_actions") and bool(editor.act_hotkey_set_actions)
+    if has_hotkey_use or has_hotkey_set:
         m_navigate.addSeparator()
-        m_hotkeys = m_navigate.addMenu("Hotkeys (F1–F10)")
-        for act in editor.act_hotkey_actions:
-            m_hotkeys.addAction(act)
+        m_hotkeys = m_navigate.addMenu("Hotkeys (1-0)")
+        if has_hotkey_use:
+            m_hotkeys_use = m_hotkeys.addMenu("Use")
+            for act in editor.act_hotkey_actions:
+                m_hotkeys_use.addAction(act)
+        if has_hotkey_set:
+            m_hotkeys_set = m_hotkeys.addMenu("Set (Ctrl)")
+            for act in editor.act_hotkey_set_actions:
+                m_hotkeys_set.addAction(act)
 
     # ---- Window Menu (C++ Window) ----
     m_window = mb.addMenu(load_icon("menu_window"), "Window")

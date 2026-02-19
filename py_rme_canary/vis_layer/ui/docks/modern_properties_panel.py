@@ -407,6 +407,8 @@ class ModernPropertiesPanel(QDockWidget):
         tm = get_theme_manager()
         c = tm.tokens["color"]
         r = tm.tokens["radius"]
+        border_subtle = str(c.get("border", {}).get("subtle", c["border"]["default"]))
+        state_selected = str(c.get("state", {}).get("selected", c["state"]["active"]))
 
         self.setStyleSheet(
             f"""
@@ -494,8 +496,8 @@ class ModernPropertiesPanel(QDockWidget):
                 color: {c["text"]["primary"]};
                 border: 1px solid {c["border"]["default"]};
                 border-radius: {r["md"]}px;
-                gridline-color: {c["border"]["subtle"]};
-                selection-background-color: {c["state"]["selected"]};
+                gridline-color: {border_subtle};
+                selection-background-color: {state_selected};
                 selection-color: {c["text"]["primary"]};
             }}
 

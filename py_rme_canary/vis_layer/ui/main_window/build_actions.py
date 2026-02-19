@@ -910,15 +910,24 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_live_banlist = QAction("Manage Ban List...", editor)
     editor.act_live_banlist.triggered.connect(lambda _c=False: live_connect.manage_ban_list(editor))
 
-    # Hotkeys (F1-F10) — 10-slot brush/position quick access (C++ parity)
+    # Hotkeys (legacy parity): 1..0 to use, Ctrl+1..0 to assign.
+    # C++ stores slots by numeric key index (0..9), so key "0" maps slot 0.
     editor.act_hotkey_actions = []
-    for slot_idx in range(10):
-        fn_key = f"F{slot_idx + 1}" if slot_idx < 9 else "F10"
-        act = QAction(f"Hotkey Slot {slot_idx + 1}", editor)
-        act.setShortcut(QKeySequence(fn_key))
-        act.triggered.connect((lambda s: lambda _c=False: editor._activate_hotkey(s))(slot_idx))
-        editor.addAction(act)  # Register for global shortcut
-        editor.act_hotkey_actions.append(act)
+    editor.act_hotkey_set_actions = []
+    for key_text in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"):
+        slot_idx = int(key_text)
+
+        act_use = QAction(f"Use Hotkey {key_text}", editor)
+        act_use.setShortcut(QKeySequence(key_text))
+        act_use.triggered.connect((lambda s: lambda _c=False: editor._activate_hotkey(s))(slot_idx))
+        editor.addAction(act_use)
+        editor.act_hotkey_actions.append(act_use)
+
+        act_set = QAction(f"Set Hotkey {key_text}", editor)
+        act_set.setShortcut(QKeySequence(f"Ctrl+{key_text}"))
+        act_set.triggered.connect((lambda s: lambda _c=False: editor._assign_hotkey(s))(slot_idx))
+        editor.addAction(act_set)
+        editor.act_hotkey_set_actions.append(act_set)
 
     # Apply defaults based on editor state (idempotent)
     editor.act_show_grid.setChecked(bool(getattr(editor, "show_grid", True)))

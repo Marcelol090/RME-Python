@@ -2200,3 +2200,63 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `.venv/bin/ruff check py_rme_canary/logic_layer/session/editor.py py_rme_canary/vis_layer/ui/docks/search_results_dock.py py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py` -> **OK**
 - `.venv/bin/python -m py_compile py_rme_canary/logic_layer/session/editor.py py_rme_canary/vis_layer/ui/docks/search_results_dock.py py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py` -> **OK**
 - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_editor_session_selection_bulk.py py_rme_canary/tests/unit/vis_layer/ui/test_search_results_dock.py` -> **5 passed, 1 warning**
+
+---
+
+## Sessão 2026-02-19: Hotkeys legado 0-9 (use/set) + correção de contrato UI/backend
+
+### Lacuna identificada
+- Na varredura de paridade com o legacy C++ Redux (`editor/hotkey_manager.*`, `rendering/ui/keyboard_handler.cpp`), o Python estava divergente:
+  - hotkeys mapeadas em `F1-F10` (legacy usa numérico `1..0` e gravação em `Ctrl+1..0`);
+  - handler de ativação acessava campos inexistentes (`hotkey.enabled`, `hotkey.hotkey_type`, `hotkey.brush_id`);
+  - navegação por hotkey de posição tentava usar `viewport.center_x/center_y` (atributos inválidos em viewport com `slots`).
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/build_actions.py`
+  - trocado contrato de hotkeys para:
+    - `1..0` -> usar slot;
+    - `Ctrl+1..0` -> gravar slot.
+  - adicionadas listas separadas:
+    - `act_hotkey_actions` (uso);
+    - `act_hotkey_set_actions` (gravação).
+- `py_rme_canary/vis_layer/ui/main_window/build_menus.py`
+  - `Navigate > Hotkeys (1-0)` agora organiza ações em:
+    - `Use`
+    - `Set (Ctrl)`
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py`
+  - novo fluxo legado de gravação `_assign_hotkey(slot)`:
+    - em `Selection Mode`: grava posição central da viewport;
+    - em modo desenho: grava `brush_name` da brush ativa.
+  - `_activate_hotkey(slot)` refeito:
+    - usa `Hotkey.is_position / is_brush / is_empty`;
+    - posição -> força `Selection Mode` + `center_view_on(...)`;
+    - brush -> força modo desenho + resolve brush por nome e seleciona ID;
+    - mensagens de status alinhadas (`Used hotkey`, `Unassigned hotkey`, `Brush "<name>" not found`).
+  - helpers novos:
+    - `_ensure_hotkey_manager()` com carga lazy e persistência em `~/.py_rme_canary/hotkeys.json`;
+    - `_view_center_tile()` com clamp em header do mapa.
+- `py_rme_canary/logic_layer/hotkey_manager.py`
+  - contrato `get_hotkey(...)` / `set_hotkey(...)` validado e consumido diretamente pelos mixins de UI.
+- `py_rme_canary/vis_layer/ui/docks/modern_properties_panel.py`
+  - hardening de tokens de tema no stylesheet:
+    - `border.subtle` com fallback para `border.default`;
+    - `state.selected` com fallback para `state.active`;
+  - remove `KeyError` de bootstrap da janela em testes de menu/toolbar.
+
+### Testes adicionados
+- `py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py`
+  - persistência de slots brush/position;
+  - retorno vazio para índice inválido.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py`
+  - gravação de slot em modo desenho;
+  - gravação de slot em modo seleção (posição);
+  - ativação de brush hotkey com troca para drawing mode;
+  - ativação de posição hotkey com troca para selection mode + center;
+  - status de slot não atribuído.
+
+### Validação
+- `.venv/bin/ruff check py_rme_canary/logic_layer/hotkey_manager.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/build_menus.py py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/logic_layer/hotkey_manager.py py_rme_canary/vis_layer/ui/main_window/qt_map_editor_brushes.py py_rme_canary/vis_layer/ui/main_window/build_actions.py py_rme_canary/vis_layer/ui/main_window/build_menus.py py_rme_canary/vis_layer/ui/docks/modern_properties_panel.py py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py` -> **7 passed, 1 warning**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **19 passed**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **26 passed**

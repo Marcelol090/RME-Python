@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
@@ -214,33 +215,153 @@ class QtMapEditorBrushesMixin:
         if int(self.brush_size) != int(size):
             self._set_brush_size(int(size))
 
-    def _activate_hotkey(self: QtMapEditor, slot: int) -> None:
-        """Activate HotkeyManager slot *slot* (0-9, mapped to F1-F10).
+    @staticmethod
+    def _hotkey_key_label(slot: int) -> str:
+        idx = int(slot) % 10
+        return "0" if idx == 0 else str(idx)
 
-        If the slot stores a brush id, set it as the active brush.
-        If it stores a position, teleport the viewport to that position.
-        """
+    def _ensure_hotkey_manager(self: QtMapEditor) -> object | None:
         hkm = getattr(self, "hotkey_manager", None)
+        if hkm is not None:
+            return hkm
+        try:
+            from py_rme_canary.logic_layer.hotkey_manager import HotkeyManager
+
+            cfg_dir = Path.home() / ".py_rme_canary"
+            self.hotkey_manager = HotkeyManager(config_dir=cfg_dir)
+            with contextlib.suppress(Exception):
+                self.hotkey_manager.load()
+            return self.hotkey_manager
+        except Exception:
+            return None
+
+    def _set_selection_mode_checked(self: QtMapEditor, enabled: bool) -> None:
+        enabled = bool(enabled)
+        action = getattr(self, "act_selection_mode", None)
+        if action is None:
+            self.selection_mode = enabled
+            return
+        with contextlib.suppress(Exception):
+            if bool(action.isChecked()) != enabled:
+                action.trigger()
+
+    def _resolve_brush_id_from_name(self: QtMapEditor, brush_name: str) -> int | None:
+        target = str(brush_name or "").strip().lower()
+        if not target:
+            return None
+        brushes = getattr(getattr(self, "brush_mgr", None), "_brushes", {})
+        if not isinstance(brushes, dict):
+            return None
+        for sid, brush in brushes.items():
+            name = str(getattr(brush, "name", "")).strip().lower()
+            if name == target:
+                return int(sid)
+        return None
+
+    def _view_center_tile(self: QtMapEditor) -> tuple[int, int, int]:
+        tile_px = max(1, int(getattr(self.viewport, "tile_px", 32) or 32))
+        cols = max(1, int(self.canvas.width()) // tile_px)
+        rows = max(1, int(self.canvas.height()) // tile_px)
+        x = int(getattr(self.viewport, "origin_x", 0)) + (cols // 2)
+        y = int(getattr(self.viewport, "origin_y", 0)) + (rows // 2)
+        z = int(getattr(self.viewport, "z", 7))
+        game_map = getattr(self, "map", None)
+        header = getattr(game_map, "header", None) if game_map is not None else None
+        if header is not None:
+            max_x = max(0, int(getattr(header, "width", 1)) - 1)
+            max_y = max(0, int(getattr(header, "height", 1)) - 1)
+            x = max(0, min(max_x, int(x)))
+            y = max(0, min(max_y, int(y)))
+        return int(x), int(y), int(z)
+
+    def _assign_hotkey(self: QtMapEditor, slot: int) -> None:
+        """Assign a hotkey slot using legacy semantics.
+
+        Selection mode: store viewport-center position.
+        Drawing mode: store current brush name.
+        """
+        key = self._hotkey_key_label(int(slot))
+        hkm = self._ensure_hotkey_manager()
         if hkm is None:
-            try:
-                from py_rme_canary.logic_layer.hotkey_manager import HotkeyManager
+            return
+        from py_rme_canary.logic_layer.hotkey_manager import Hotkey
 
-                self.hotkey_manager = HotkeyManager()
-                hkm = self.hotkey_manager
-            except Exception:
-                return
-
-        hotkey = hkm.get_hotkey(int(slot))
-        if hotkey is None or not hotkey.enabled:
+        if bool(getattr(self, "selection_mode", False)):
+            x, y, z = self._view_center_tile()
+            hkm.set_hotkey(int(slot), Hotkey.from_position(int(x), int(y), int(z)))
+            with contextlib.suppress(Exception):
+                hkm.save()
+            self.status.showMessage(f"Set hotkey {key}: position ({x}, {y}, {z})")
             return
 
-        from py_rme_canary.logic_layer.hotkey_manager import HotkeyType
+        sid = int(getattr(self.brush_id_entry, "value", lambda: 0)())
+        brush = None
+        with contextlib.suppress(Exception):
+            brush = self.brush_mgr.get_brush_any(int(sid))
+        if brush is None:
+            with contextlib.suppress(Exception):
+                brush = self.brush_mgr.get_brush(int(sid))
+        if brush is None:
+            self.status.showMessage(f"Set hotkey {key}: no active brush")
+            return
 
-        if hotkey.hotkey_type == HotkeyType.BRUSH and hotkey.brush_id is not None:
-            self._set_selected_brush_id(int(hotkey.brush_id))
-        elif hotkey.hotkey_type == HotkeyType.POSITION and hotkey.position is not None:
-            x, y, z = hotkey.position
-            self.viewport.center_x = int(x)
-            self.viewport.center_y = int(y)
-            self.viewport.z = int(z)
-            self.canvas.update()
+        brush_name = str(getattr(brush, "name", "")).strip()
+        if not brush_name:
+            self.status.showMessage(f"Set hotkey {key}: brush without name")
+            return
+
+        hkm.set_hotkey(int(slot), Hotkey.from_brush(brush_name))
+        with contextlib.suppress(Exception):
+            hkm.save()
+        self.status.showMessage(f"Set hotkey {key}: brush \"{brush_name}\"")
+
+    def _activate_hotkey(self: QtMapEditor, slot: int) -> None:
+        """Activate a hotkey slot (legacy 0-9 semantics).
+
+        Position slot: switches to Selection Mode and jumps to stored tile.
+        Brush slot: switches to Drawing Mode and selects stored brush name.
+        """
+        key = self._hotkey_key_label(int(slot))
+        hkm = self._ensure_hotkey_manager()
+        if hkm is None:
+            return
+        if not bool(getattr(hkm, "enabled", True)):
+            return
+
+        hotkey = hkm.get_hotkey(int(slot))
+        if hotkey is None or bool(getattr(hotkey, "is_empty", True)):
+            self.status.showMessage(f"Unassigned hotkey {key}")
+            return
+
+        if bool(getattr(hotkey, "is_position", False)):
+            pos = getattr(hotkey, "position", None)
+            if pos is None:
+                self.status.showMessage(f"Unassigned hotkey {key}")
+                return
+            x = int(getattr(pos, "x", 0))
+            y = int(getattr(pos, "y", 0))
+            z = int(getattr(pos, "z", 7))
+            self._set_selection_mode_checked(True)
+            if hasattr(self, "center_view_on"):
+                self.center_view_on(int(x), int(y), int(z), push_history=True)
+            else:
+                self.viewport.origin_x = int(x)
+                self.viewport.origin_y = int(y)
+                self._set_z(int(z))
+                self.canvas.update()
+            self.status.showMessage(f"Used hotkey {key}")
+            return
+
+        if not bool(getattr(hotkey, "is_brush", False)):
+            self.status.showMessage(f"Unassigned hotkey {key}")
+            return
+
+        brush_name = str(getattr(hotkey, "brush_name", "")).strip()
+        sid = self._resolve_brush_id_from_name(brush_name)
+        if sid is None:
+            self.status.showMessage(f"Brush \"{brush_name}\" not found")
+            return
+
+        self._set_selection_mode_checked(False)
+        self._set_selected_brush_id(int(sid))
+        self.status.showMessage(f"Used hotkey {key}")

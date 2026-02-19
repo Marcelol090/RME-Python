@@ -177,6 +177,7 @@
 
 - [x] Gem Button (Selection/Drawing Mode Toggle) → Spacebar shortcut; `selection_mode` state tracked in `vis_layer/ui/main_window/build_actions.py`, `qt_map_editor_toolbars.py`, and canvas widgets. Toggles between Selection Mode (marquee select, move, inspect) and Drawing Mode (brush placement).
 - [x] Scroll/Zoom Logic → Scrolling zooms towards view center (not cursor); `Ctrl+G` (Go to Position) compensates for Z-layer offset to center tile visually. Implemented in `vis_layer/ui/canvas/widget.py` and `vis_layer/renderer/opengl_canvas.py`.
+- [x] Hotkey Slots (legacy parity) → numeric hotkeys `1..0` use stored brush/position and `Ctrl+1..0` assign slots with brush-name/viewport-center semantics via `vis_layer/ui/main_window/build_actions.py`, `vis_layer/ui/main_window/build_menus.py`, `vis_layer/ui/main_window/qt_map_editor_brushes.py`, and `logic_layer/hotkey_manager.py`.
 - [x] Tool Options Dynamic Adaptation → `modern_tool_options.py` adapts per palette tab:
   - *Terrain/Collection:* Tools (Brush/Circle/Square) + Size slider
   - *Doodad:* Thickness (Variation) + Size slider
