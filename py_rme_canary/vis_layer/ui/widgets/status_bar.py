@@ -150,17 +150,19 @@ class SelectionModeIndicator(StatusBarSection):
         - "intersection": Intersect with selection (Shift+Ctrl)
     """
 
-    # Mode configurations
-    MODES = {
-        "normal": ("N", "Normal", "#A1A1AA"),
-        "additive": ("+", "Add", "#22C55E"),
-        "subtractive": ("-", "Subtract", "#EF4444"),
-        "intersection": ("INT", "Intersect", "#8B5CF6"),
-    }
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(icon="N", text="Normal", tooltip="Selection mode", parent=parent)
         self._mode = "normal"
+
+    def _get_modes(self) -> dict[str, tuple[str, str, str]]:
+        """Build mode configs from current theme tokens."""
+        c = get_theme_manager().tokens["color"]
+        return {
+            "normal": ("N", "Normal", c["text"]["tertiary"]),
+            "additive": ("+", "Add", c["state"]["success"]),
+            "subtractive": ("-", "Subtract", c["state"]["error"]),
+            "intersection": ("INT", "Intersect", c["brand"]["primary"]),
+        }
 
     def set_mode(self, mode: str) -> None:
         """Update selection mode display.
@@ -168,11 +170,12 @@ class SelectionModeIndicator(StatusBarSection):
         Args:
             mode: One of "normal", "additive", "subtractive", "intersection"
         """
-        if mode not in self.MODES:
+        modes = self._get_modes()
+        if mode not in modes:
             mode = "normal"
 
         self._mode = mode
-        icon, text, color = self.MODES[mode]
+        icon, text, color = modes[mode]
 
         self.set_icon(icon)
         self.set_text(text)
@@ -243,31 +246,35 @@ class LiveConnectionIndicator(StatusBarSection):
 
     def set_disconnected(self) -> None:
         """Show disconnected state."""
+        c = get_theme_manager().tokens["color"]
         self.set_icon("LIVE")
         self.set_text("Offline")
         self.setToolTip("Live Collaboration: Disconnected")
-        self._update_color("#EF4444")
+        self._update_color(c["state"]["error"])
         self._user_count = 0
 
     def set_connecting(self) -> None:
         """Show connecting state."""
+        c = get_theme_manager().tokens["color"]
         self.set_icon("LIVE")
         self.set_text("Connecting...")
         self.setToolTip("Live Collaboration: Connecting")
-        self._update_color("#EAB308")
+        self._update_color(c["state"]["warning"])
 
     def set_reconnecting(self, attempt: int = 0) -> None:
         """Show reconnecting state."""
+        c = get_theme_manager().tokens["color"]
         self.set_icon("LIVE")
         text = "Reconnecting..."
         if attempt > 0:
             text = f"Reconnecting ({attempt})..."
         self.set_text(text)
         self.setToolTip(f"Live Collaboration: Reconnecting (attempt {attempt})")
-        self._update_color("#EAB308")
+        self._update_color(c["state"]["warning"])
 
     def set_connected(self, user_count: int = 0, *, is_host: bool = False) -> None:
         """Show connected state."""
+        c = get_theme_manager().tokens["color"]
         self.set_icon("LIVE")
         self._user_count = int(user_count)
         role = "Hosting" if is_host else "Connected"
@@ -276,7 +283,7 @@ class LiveConnectionIndicator(StatusBarSection):
         else:
             self.set_text(role)
         self.setToolTip(f"Live Collaboration: {role}")
-        self._update_color("#22C55E")
+        self._update_color(c["state"]["success"])
 
     def update_user_count(self, count: int) -> None:
         """Update the displayed user count."""

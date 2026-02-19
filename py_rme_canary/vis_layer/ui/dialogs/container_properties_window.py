@@ -21,7 +21,10 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     pass
@@ -65,20 +68,23 @@ class ContainerItemButton(QPushButton):
         self._style()
 
     def _style(self):
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            ContainerItemButton {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
-            ContainerItemButton:hover {
-                border-color: #8B5CF6;
-                background: #363650;
-            }
-            ContainerItemButton:pressed {
-                background: #8B5CF6;
-            }
+            f"""
+            ContainerItemButton {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
+            }}
+            ContainerItemButton:hover {{
+                border-color: {c['brand']['primary']};
+                background: {c['state']['hover']};
+            }}
+            ContainerItemButton:pressed {{
+                background: {c['brand']['primary']};
+            }}
         """
         )
 
@@ -107,15 +113,17 @@ class ContainerItemButton(QPushButton):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+        c = get_theme_manager().tokens["color"]
+
         if self._item and not self._item.is_empty:
             # Draw sprite placeholder
             rect = self.rect().adjusted(2, 2, -2, -2)
-            painter.setPen(QPen(QColor(0x8B, 0x5C, 0xF6), 1))
-            painter.setBrush(QColor(0x36, 0x36, 0x50))
+            painter.setPen(QPen(QColor(c["brand"]["primary"]), 1))
+            painter.setBrush(QColor(c["surface"]["tertiary"]))
             painter.drawRoundedRect(rect, 2, 2)
 
             # Draw item ID
-            painter.setPen(QColor(0xE5, 0xE5, 0xE7))
+            painter.setPen(QColor(c["text"]["primary"]))
             font = painter.font()
             font.setPointSize(7 if self._large else 5)
             painter.setFont(font)
@@ -123,7 +131,7 @@ class ContainerItemButton(QPushButton):
         else:
             # Draw empty slot indicator
             rect = self.rect().adjusted(4, 4, -4, -4)
-            painter.setPen(QPen(QColor(0x36, 0x36, 0x50), 1, Qt.PenStyle.DotLine))
+            painter.setPen(QPen(QColor(c["border"]["default"]), 1, Qt.PenStyle.DotLine))
             painter.drawRect(rect)
 
 
@@ -234,51 +242,54 @@ class ContainerPropertiesWindow(QDialog):
         self._update_contents_label()
 
     def _style(self):
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            ContainerPropertiesWindow {
-                background: #1E1E2E;
-            }
-            QGroupBox {
-                color: #E5E5E7;
+            f"""
+            ContainerPropertiesWindow {{
+                background: {c['surface']['primary']};
+            }}
+            QGroupBox {{
+                color: {c['text']['primary']};
                 font-weight: bold;
-                border: 1px solid #363650;
-                border-radius: 4px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 8px;
                 padding: 0 4px;
-            }
-            QLabel {
-                color: #E5E5E7;
-            }
-            QSpinBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            }}
+            QLabel {{
+                color: {c['text']['primary']};
+            }}
+            QSpinBox {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 padding: 4px;
-            }
-            QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            }}
+            QSpinBox:focus {{
+                border-color: {c['brand']['primary']};
+            }}
+            QPushButton {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 padding: 8px 16px;
                 min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #363650;
-            }
-            QPushButton:pressed {
-                background: #8B5CF6;
-            }
+            }}
+            QPushButton:hover {{
+                background: {c['state']['hover']};
+            }}
+            QPushButton:pressed {{
+                background: {c['brand']['primary']};
+            }}
         """
         )
 
@@ -298,17 +309,18 @@ class ContainerPropertiesWindow(QDialog):
         self._last_clicked_index = index
         item = self._items[index]
 
+        c = get_theme_manager().tokens["color"]
         menu = QMenu(self)
         menu.setStyleSheet(
-            """
-            QMenu {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-            }
-            QMenu::item:selected {
-                background: #8B5CF6;
-            }
+            f"""
+            QMenu {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+            }}
+            QMenu::item:selected {{
+                background: {c['brand']['primary']};
+            }}
         """
         )
 

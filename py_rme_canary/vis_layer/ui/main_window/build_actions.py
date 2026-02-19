@@ -453,9 +453,7 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_theme_noct_8bit_glass = QAction("Noct 8-bit Glass", editor)
     editor.act_theme_noct_8bit_glass.setCheckable(True)
-    editor.act_theme_noct_8bit_glass.triggered.connect(
-        lambda _c=False: window_tools.set_theme(editor, "glass_8bit")
-    )
+    editor.act_theme_noct_8bit_glass.triggered.connect(lambda _c=False: window_tools.set_theme(editor, "glass_8bit"))
 
     editor.act_theme_noct_liquid_glass = QAction("Noct Liquid Glass", editor)
     editor.act_theme_noct_liquid_glass.setCheckable(True)
@@ -516,6 +514,9 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_convert_map_format = QAction("Convert Map Format...", editor)
     editor.act_convert_map_format.triggered.connect(lambda _c=False: editor._convert_map_format())
 
+    editor.act_change_map_version = QAction("Change OTBM Version...", editor)
+    editor.act_change_map_version.triggered.connect(lambda _c=False: editor._change_map_version())
+
     # Map legacy parity (C++ Map menu)
     editor.act_edit_towns = QAction(load_icon("action_town"), "Edit Towns...", editor)
     editor.act_edit_towns.setShortcut(QKeySequence("Ctrl+T"))
@@ -536,9 +537,7 @@ def build_actions(editor: QtMapEditor) -> None:
     editor.act_floor_actions = []
     for floor_level in range(16):
         act = QAction(f"Floor {floor_level}", editor)
-        act.triggered.connect(
-            (lambda fl: lambda _c=False: view_tools.goto_floor(editor, fl))(floor_level)
-        )
+        act.triggered.connect((lambda fl: lambda _c=False: view_tools.goto_floor(editor, fl))(floor_level))
         editor.act_floor_actions.append(act)
 
     # Navigate actions (C++ Navigate menu)
@@ -548,15 +547,11 @@ def build_actions(editor: QtMapEditor) -> None:
     # View/Show toggles missing from C++ parity
     editor.act_always_show_zones = QAction("Always show zones", editor)
     editor.act_always_show_zones.setCheckable(True)
-    editor.act_always_show_zones.toggled.connect(
-        lambda v: window_tools.set_view_flag(editor, "always_show_zones", v)
-    )
+    editor.act_always_show_zones.toggled.connect(lambda v: window_tools.set_view_flag(editor, "always_show_zones", v))
 
     editor.act_ext_house_shader = QAction("Extended house shader", editor)
     editor.act_ext_house_shader.setCheckable(True)
-    editor.act_ext_house_shader.toggled.connect(
-        lambda v: window_tools.set_view_flag(editor, "ext_house_shader", v)
-    )
+    editor.act_ext_house_shader.toggled.connect(lambda v: window_tools.set_view_flag(editor, "ext_house_shader", v))
 
     editor.act_show_light_strength = QAction("Show Light Strength", editor)
     editor.act_show_light_strength.setCheckable(True)
@@ -574,16 +569,12 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_show_towns = QAction("Show towns", editor)
     editor.act_show_towns.setCheckable(True)
-    editor.act_show_towns.toggled.connect(
-        lambda v: window_tools.set_view_flag(editor, "show_towns", v)
-    )
+    editor.act_show_towns.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_towns", v))
 
     editor.act_show_waypoints = QAction("Show waypoints", editor)
     editor.act_show_waypoints.setCheckable(True)
     editor.act_show_waypoints.setShortcut(QKeySequence("Shift+W"))
-    editor.act_show_waypoints.toggled.connect(
-        lambda v: window_tools.set_view_flag(editor, "show_waypoints", v)
-    )
+    editor.act_show_waypoints.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_waypoints", v))
 
     editor.act_highlight_locked_doors = QAction("Highlight Locked Doors", editor)
     editor.act_highlight_locked_doors.setCheckable(True)
@@ -594,29 +585,21 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_experimental_fog = QAction("Fog in light view", editor)
     editor.act_experimental_fog.setCheckable(True)
-    editor.act_experimental_fog.toggled.connect(
-        lambda v: window_tools.set_view_flag(editor, "experimental_fog", v)
-    )
+    editor.act_experimental_fog.toggled.connect(lambda v: window_tools.set_view_flag(editor, "experimental_fog", v))
 
     # Show Lights (C++ Show menu: Shift+L)
     editor.act_show_lights = QAction(load_icon("action_show_lights"), "Show Light", editor)
     editor.act_show_lights.setCheckable(True)
     editor.act_show_lights.setShortcut(QKeySequence("Shift+L"))
     editor.act_show_lights.setChecked(bool(getattr(editor, "show_lights", False)))
-    editor.act_show_lights.toggled.connect(
-        lambda v: window_tools.set_view_flag(editor, "show_lights", v)
-    )
+    editor.act_show_lights.toggled.connect(lambda v: window_tools.set_view_flag(editor, "show_lights", v))
 
     # Selection menu actions (C++ parity)
     editor.act_replace_items_on_selection = QAction(load_icon("action_replace"), "Replace Items on Selection", editor)
-    editor.act_replace_items_on_selection.triggered.connect(
-        lambda _c=False: editor._replace_items_on_selection()
-    )
+    editor.act_replace_items_on_selection.triggered.connect(lambda _c=False: editor._replace_items_on_selection())
 
     editor.act_remove_item_on_selection = QAction(load_icon("action_remove_item"), "Remove Item on Selection", editor)
-    editor.act_remove_item_on_selection.triggered.connect(
-        lambda _c=False: editor._remove_item_on_selection()
-    )
+    editor.act_remove_item_on_selection.triggered.connect(lambda _c=False: editor._remove_item_on_selection())
 
     editor.act_waypoint_set_here = QAction("Set Waypoint Here...", editor)
     editor.act_waypoint_set_here.triggered.connect(lambda _c=False: editor._waypoint_set_here())
@@ -926,6 +909,16 @@ def build_actions(editor: QtMapEditor) -> None:
 
     editor.act_live_banlist = QAction("Manage Ban List...", editor)
     editor.act_live_banlist.triggered.connect(lambda _c=False: live_connect.manage_ban_list(editor))
+
+    # Hotkeys (F1-F10) — 10-slot brush/position quick access (C++ parity)
+    editor.act_hotkey_actions = []
+    for slot_idx in range(10):
+        fn_key = f"F{slot_idx + 1}" if slot_idx < 9 else "F10"
+        act = QAction(f"Hotkey Slot {slot_idx + 1}", editor)
+        act.setShortcut(QKeySequence(fn_key))
+        act.triggered.connect((lambda s: lambda _c=False: editor._activate_hotkey(s))(slot_idx))
+        editor.addAction(act)  # Register for global shortcut
+        editor.act_hotkey_actions.append(act)
 
     # Apply defaults based on editor state (idempotent)
     editor.act_show_grid.setChecked(bool(getattr(editor, "show_grid", True)))

@@ -24,6 +24,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
@@ -120,8 +122,9 @@ class ItemFindReplaceDialog(QDialog):
         layout.addWidget(options_group)
 
         # Results
+        c = get_theme_manager().tokens["color"]
         self.results_label = QLabel("")
-        self.results_label.setStyleSheet("color: #A1A1AA;")
+        self.results_label.setStyleSheet(f"color: {c['text']['tertiary']};")
         layout.addWidget(self.results_label)
 
         # Progress
@@ -151,73 +154,76 @@ class ItemFindReplaceDialog(QDialog):
         layout.addLayout(button_layout)
 
     def _apply_style(self) -> None:
-        """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        """Apply themed styling."""
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
 
-            QGroupBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {c['surface']['primary']};
+            }}
+
+            QGroupBox {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
                 margin-top: 12px;
                 padding-top: 12px;
-                color: #E5E5E7;
+                color: {c['text']['primary']};
                 font-weight: 600;
-            }
+            }}
 
-            QGroupBox::title {
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 12px;
                 padding: 0 8px;
-            }
+            }}
 
-            QSpinBox, QLineEdit {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 6px;
+            QSpinBox, QLineEdit {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 padding: 8px;
-                color: #E5E5E7;
-            }
+                color: {c['text']['primary']};
+            }}
 
-            QSpinBox:focus, QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QSpinBox:focus, QLineEdit:focus {{
+                border-color: {c['brand']['primary']};
+            }}
 
-            QCheckBox, QRadioButton {
-                color: #E5E5E7;
-            }
+            QCheckBox, QRadioButton {{
+                color: {c['text']['primary']};
+            }}
 
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
+            QPushButton {{
+                background: {c['brand']['primary']};
+                color: {c['surface']['primary']};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r['sm']}px;
                 padding: 8px 16px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #A78BFA;
-            }
+            QPushButton:hover {{
+                background: {c['brand']['active']};
+            }}
 
-            QPushButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
+            QPushButton:disabled {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['disabled']};
+            }}
 
-            QProgressBar {
-                background: #363650;
+            QProgressBar {{
+                background: {c['surface']['tertiary']};
                 border: none;
-                border-radius: 4px;
+                border-radius: {r['sm']}px;
                 height: 6px;
-            }
+            }}
 
-            QProgressBar::chunk {
-                background: #8B5CF6;
-                border-radius: 4px;
-            }
+            QProgressBar::chunk {{
+                background: {c['brand']['primary']};
+                border-radius: {r['sm']}px;
+            }}
         """
         )
 

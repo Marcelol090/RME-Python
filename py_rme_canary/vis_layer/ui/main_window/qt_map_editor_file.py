@@ -122,11 +122,7 @@ class QtMapEditorFileMixin:
         logger.info("Opening map: %s", path)
 
         # Use new ModernLoadingDialog
-        progress = ModernLoadingDialog(
-            parent=self,
-            title="Opening Map",
-            message="Detecting map format..."
-        )
+        progress = ModernLoadingDialog(parent=self, title="Opening Map", message="Detecting map format...")
         progress.show()
         # Ensure it renders before blocking ops
         QApplication.processEvents()
@@ -219,7 +215,9 @@ class QtMapEditorFileMixin:
                     summary_lines.append(f"Description: {desc_preview}")
 
                 if dyn:
-                    summary_lines.append(f"Dynamic ID conversions: {sum(dyn.values()) if isinstance(dyn, dict) else dyn}")
+                    summary_lines.append(
+                        f"Dynamic ID conversions: {sum(dyn.values()) if isinstance(dyn, dict) else dyn}"
+                    )
                 if unknown_count:
                     summary_lines.append(f"Unknown IDs skipped: {unknown_count}")
                 if warnings:
@@ -387,6 +385,23 @@ class QtMapEditorFileMixin:
         apply_map_format_version(self.map, target_version=int(target_version))
         self._update_status_capabilities(prefix=f"Map format converted to OTBM {int(target_version)}")
         self.canvas.update()
+
+    def _change_map_version(self: QtMapEditor) -> None:
+        """Open the Map Version Changer dialog (C++ parity)."""
+        if self.map is None:
+            return
+        from py_rme_canary.vis_layer.ui.dialogs.map_version_dialog import (
+            MapVersionDialog,
+        )
+
+        new_ver = MapVersionDialog.change_version(
+            self.map,
+            id_mapper=getattr(self, "id_mapper", None),
+            parent=self,
+        )
+        if new_ver is not None:
+            self._update_status_capabilities(prefix=f"Map version changed to OTBM {new_ver}")
+            self.canvas.update()
 
     def _open_preferences(self: QtMapEditor) -> None:
         from py_rme_canary.vis_layer.ui.main_window.preferences_dialog import PreferencesDialog
@@ -804,7 +819,9 @@ class QtMapEditorFileMixin:
                     tile = self.map.get_tile(x, y, z)
                     if tile is None:
                         continue
-                    color = self.map_drawer._get_tile_color(tile) if hasattr(self, "map_drawer") else (100, 100, 100, 255)
+                    color = (
+                        self.map_drawer._get_tile_color(tile) if hasattr(self, "map_drawer") else (100, 100, 100, 255)
+                    )
                     r, g, b = int(color[0]), int(color[1]), int(color[2])
                     img.setPixelColor(x, y, QColor(r, g, b))
 

@@ -1,0 +1,33 @@
+[WARNING] Unstaged files detected.
+[INFO] Stashing unstaged files to C:\Users\Marcelo Henrique\.cache\pre-commit\patch1771472534-28736.
+ruff.....................................................................Failed
+- hook id: ruff
+- exit code: 1
+- files were modified by this hook
+
+py_rme_canary\vis_layer\ui\dialogs\find_item_dialog.py:126:121: E501 Line too long (125 > 120)
+py_rme_canary\vis_layer\ui\dialogs\find_item_dialog.py:612:9: SIM102 Use a single `if` statement instead of nested `if` statements
+Found 3 errors (1 fixed, 2 remaining).
+
+ruff-format..............................................................Failed
+- hook id: ruff-format
+- files were modified by this hook
+
+4 files reformatted, 13 files left unchanged
+
+mypy.....................................................................Failed
+- hook id: mypy
+- exit code: 1
+
+py_rme_canary\logic_layer\selection_worker.py:20: error: Module "py_rme_canary.core.data.position" has no attribute "TileKey"  [attr-defined]
+Found 1 error in 1 file (checked 2 source files)
+
+Radon Cyclomatic Complexity..............................................Passed
+shellcheck...........................................(no files to check)Skipped
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+check yaml...........................................(no files to check)Skipped
+check for added large files..............................................Passed
+check for merge conflicts................................................Passed
+[WARNING] Stashed changes conflicted with hook auto-fixes... Rolling back fixes...
+[INFO] Restored changes from C:\Users\Marcelo Henrique\.cache\pre-commit\patch1771472534-28736.

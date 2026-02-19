@@ -30,6 +30,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.spawn import Spawn
     from py_rme_canary.core.data.tile import Tile
@@ -64,8 +66,10 @@ class SpawnRadiusPreview(QFrame):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+        c = get_theme_manager().tokens["color"]
+
         # Background
-        painter.fillRect(self.rect(), QColor(0x31, 0x32, 0x44))
+        painter.fillRect(self.rect(), QColor(c["surface"]["secondary"]))
 
         # Calculate center and scale
         cx = self.width() // 2
@@ -74,10 +78,12 @@ class SpawnRadiusPreview(QFrame):
         scale = max(scale, 5)
 
         # Draw spawn radius circle
-        pen = QPen(QColor(0x8B, 0x5C, 0xF6))
+        pen = QPen(QColor(c["brand"]["primary"]))
         pen.setWidth(2)
         painter.setPen(pen)
-        painter.setBrush(QColor(0x8B, 0x5C, 0xF6, 50))
+        brand_color = QColor(c["brand"]["primary"])
+        brand_color.setAlpha(50)
+        painter.setBrush(brand_color)
 
         radius_pixels = self._radius * scale
         painter.drawEllipse(
@@ -88,14 +94,14 @@ class SpawnRadiusPreview(QFrame):
         )
 
         # Draw center point (spawn origin)
-        painter.setBrush(QColor(0xF3, 0x8B, 0xA8))
+        painter.setBrush(QColor(c["state"]["error"]))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(cx - 4, cy - 4, 8, 8)
 
         # Draw sample creature positions
         import math
 
-        creature_color = QColor(0xA6, 0xE3, 0xA1)
+        creature_color = QColor(c["state"]["success"])
         painter.setBrush(creature_color)
 
         for i in range(min(self._max_creatures, 8)):
@@ -106,7 +112,7 @@ class SpawnRadiusPreview(QFrame):
             painter.drawEllipse(x - 3, y - 3, 6, 6)
 
         # Draw info text
-        painter.setPen(QColor(0xCD, 0xD6, 0xF4))
+        painter.setPen(QColor(c["text"]["primary"]))
         painter.drawText(
             self.rect().adjusted(0, 0, 0, -5),
             Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter,
@@ -286,111 +292,114 @@ class SpawnPropertiesWindow(QDialog):
         layout.addWidget(buttons)
 
     def _apply_style(self) -> None:
-        """Apply dark theme styling."""
+        """Apply themed styling."""
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #1E1E2E;
-                color: #CDD6F4;
-            }
-            QGroupBox {
+            f"""
+            QDialog {{
+                background-color: {c['surface']['primary']};
+                color: {c['text']['primary']};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #45475A;
-                border-radius: 6px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 margin-top: 12px;
                 padding-top: 12px;
-                background-color: #181825;
-            }
-            QGroupBox::title {
+                background-color: {c['surface']['secondary']};
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 12px;
                 padding: 0 6px;
-                color: #8B5CF6;
-            }
-            QLabel {
-                color: #CDD6F4;
-            }
-            QLabel#headerLabel {
+                color: {c['brand']['primary']};
+            }}
+            QLabel {{
+                color: {c['text']['primary']};
+            }}
+            QLabel#headerLabel {{
                 font-size: 14px;
                 font-weight: bold;
-                color: #8B5CF6;
-            }
-            QLabel#legend {
+                color: {c['brand']['primary']};
+            }}
+            QLabel#legend {{
                 font-size: 10px;
-                color: #6C7086;
-            }
-            QLabel#presetLabel {
+                color: {c['text']['tertiary']};
+            }}
+            QLabel#presetLabel {{
                 font-size: 11px;
-                color: #89B4FA;
+                color: {c['brand']['active']};
                 padding: 2px 4px;
-            }
-            QLabel#presetLabel:hover {
-                color: #8B5CF6;
-            }
-            QLabel#statsLabel {
+            }}
+            QLabel#presetLabel:hover {{
+                color: {c['brand']['primary']};
+            }}
+            QLabel#statsLabel {{
                 font-size: 11px;
-                color: #A6ADC8;
+                color: {c['text']['secondary']};
                 padding: 8px;
-                background-color: #313244;
+                background-color: {c['surface']['tertiary']};
                 border-radius: 4px;
-            }
-            QSpinBox {
-                background-color: #313244;
-                border: 1px solid #45475A;
+            }}
+            QSpinBox {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
                 border-radius: 4px;
                 padding: 6px 10px;
-                color: #CDD6F4;
+                color: {c['text']['primary']};
                 min-width: 80px;
-            }
-            QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
-            QSpinBox::up-button, QSpinBox::down-button {
-                background-color: #45475A;
+            }}
+            QSpinBox:focus {{
+                border-color: {c['brand']['primary']};
+            }}
+            QSpinBox::up-button, QSpinBox::down-button {{
+                background-color: {c['border']['default']};
                 border: none;
                 width: 20px;
-            }
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background-color: #585B70;
-            }
-            QSlider::groove:horizontal {
-                border: 1px solid #45475A;
+            }}
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
+                background-color: {c['state']['hover']};
+            }}
+            QSlider::groove:horizontal {{
+                border: 1px solid {c['border']['default']};
                 height: 6px;
-                background-color: #313244;
+                background-color: {c['surface']['tertiary']};
                 border-radius: 3px;
-            }
-            QSlider::handle:horizontal {
-                background-color: #8B5CF6;
+            }}
+            QSlider::handle:horizontal {{
+                background-color: {c['brand']['primary']};
                 border: none;
                 width: 16px;
                 height: 16px;
                 margin: -5px 0;
                 border-radius: 8px;
-            }
-            QSlider::handle:horizontal:hover {
-                background-color: #A78BFA;
-            }
-            QSlider::sub-page:horizontal {
-                background-color: #8B5CF6;
+            }}
+            QSlider::handle:horizontal:hover {{
+                background-color: {c['brand']['active']};
+            }}
+            QSlider::sub-page:horizontal {{
+                background-color: {c['brand']['primary']};
                 border-radius: 3px;
-            }
-            QPushButton {
-                background-color: #45475A;
+            }}
+            QPushButton {{
+                background-color: {c['border']['default']};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r['sm']}px;
                 padding: 8px 20px;
-                color: #CDD6F4;
+                color: {c['text']['primary']};
                 font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #585B70;
-            }
-            QPushButton:pressed {
-                background-color: #8B5CF6;
-            }
-            QDialogButtonBox QPushButton {
+            }}
+            QPushButton:hover {{
+                background-color: {c['state']['hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {c['brand']['primary']};
+            }}
+            QDialogButtonBox QPushButton {{
                 min-width: 90px;
-            }
+            }}
         """
         )
 

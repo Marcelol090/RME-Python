@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QCheckBox,
-    QDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -39,6 +38,7 @@ from PyQt6.QtWidgets import (
 )
 
 from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
@@ -104,6 +104,9 @@ class SearchResultWidget(QWidget):
         layout.setContentsMargins(margin_h, margin_v, margin_h, margin_v)
         layout.setSpacing(self._scale_dip(8))
 
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         # Item info
         item = self.result.item
         pos = self.result.position
@@ -119,7 +122,11 @@ class SearchResultWidget(QWidget):
         sprite_size = self._scale_dip(32)
         sprite_label.setFixedSize(sprite_size, sprite_size)
         sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sprite_label.setStyleSheet("background: #1E1E2E; border: 1px solid #363650; border-radius: 4px;")
+        sprite_label.setStyleSheet(
+            f"background: {c['surface']['primary']};"
+            f" border: 1px solid {c['border']['default']};"
+            f" border-radius: {r['sm']}px;"
+        )
         pixmap = self._resolve_sprite_pixmap(asset_mgr=asset_mgr, item=item, size=sprite_size)
         if pixmap is not None and not pixmap.isNull():
             sprite_label.setPixmap(pixmap)
@@ -127,7 +134,8 @@ class SearchResultWidget(QWidget):
         else:
             sprite_label.setText("—")
             sprite_label.setStyleSheet(
-                "background: #1E1E2E; border: 1px solid #363650; border-radius: 4px; color: #6B7280;"
+                f"background: {c['surface']['primary']}; border: 1px solid {c['border']['default']};"
+                f" border-radius: {r['sm']}px; color: {c['text']['tertiary']};"
             )
         layout.addWidget(sprite_label, 0)
 
@@ -151,12 +159,12 @@ class SearchResultWidget(QWidget):
 
         label = QLabel(info_text)
         label.setStyleSheet(
-            """
-            QLabel {
-                color: #E5E5E7;
+            f"""
+            QLabel {{
+                color: {c['text']['primary']};
                 font-size: 12px;
                 padding: 4px;
-            }
+            }}
         """
         )
         layout.addWidget(label, 1)
@@ -165,19 +173,19 @@ class SearchResultWidget(QWidget):
         jump_btn = QPushButton("Jump →")
         jump_btn.setFixedWidth(self._scale_dip(88))
         jump_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
+            f"""
+            QPushButton {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
                 border: none;
-                border-radius: 4px;
+                border-radius: {r['sm']}px;
                 padding: 4px 8px;
                 font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #8B5CF6;
-                color: white;
-            }
+            }}
+            QPushButton:hover {{
+                background: {c['brand']['primary']};
+                color: {c['surface']['primary']};
+            }}
         """
         )
         jump_btn.clicked.connect(lambda: self.clicked.emit(pos))
@@ -387,33 +395,36 @@ class FindItemDialog(ModernDialog):
         results_group = QGroupBox("Results")
         results_layout = QVBoxLayout(results_group)
 
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.results_label = QLabel("No results yet")
-        self.results_label.setStyleSheet("color: #A1A1AA; font-style: italic;")
+        self.results_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-style: italic;")
         results_layout.addWidget(self.results_label)
 
         self.results_list = QListWidget()
         self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self.results_list.setStyleSheet(
-            """
-            QListWidget {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 6px;
+            f"""
+            QListWidget {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
                 padding: 4px;
-            }
-            QListWidget::item {
-                background: #2A2A3E;
-                border-radius: 4px;
+            }}
+            QListWidget::item {{
+                background: {c['surface']['secondary']};
+                border-radius: {r['sm']}px;
                 padding: 2px;
                 margin: 2px 0;
-            }
-            QListWidget::item:selected {
-                background: #363650;
-                border: 1px solid #8B5CF6;
-            }
-            QListWidget::item:hover {
-                background: #363650;
-            }
+            }}
+            QListWidget::item:selected {{
+                background: {c['surface']['tertiary']};
+                border: 1px solid {c['brand']['primary']};
+            }}
+            QListWidget::item:hover {{
+                background: {c['surface']['tertiary']};
+            }}
         """
         )
         results_layout.addWidget(self.results_list)
@@ -600,9 +611,12 @@ class FindItemDialog(ModernDialog):
                 if search_term not in item_name:
                     return False
 
-        elif filters.search_mode == SearchMode.TYPE:
-            if filters.search_value and not self._matches_type_filter(item, filters.search_value):
-                return False
+        elif (
+            filters.search_mode == SearchMode.TYPE
+            and filters.search_value
+            and not self._matches_type_filter(item, filters.search_value)
+        ):
+            return False
 
         # Action ID filter
         if filters.has_action_id and item.action_id != filters.action_id_value:
