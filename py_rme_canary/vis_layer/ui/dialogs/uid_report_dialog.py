@@ -10,20 +10,19 @@ from __future__ import annotations
 from typing import Any
 
 from PyQt6.QtWidgets import (
-    QDialog,
-    QHBoxLayout,
     QHeaderView,
     QLabel,
     QMessageBox,
-    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 
-class UIDReportDialog(QDialog):
+
+class UIDReportDialog(ModernDialog):
     """Dialog showing duplicate UID conflicts."""
 
     def __init__(
@@ -31,18 +30,15 @@ class UIDReportDialog(QDialog):
         parent: QWidget | None = None,
         session: Any = None,
     ) -> None:
-        super().__init__(parent)
         self._session = session
         self._conflicts: list[Any] = []
-
-        self.setWindowTitle("Duplicate UID Report")
+        super().__init__(parent, title="Duplicate UID Report")
         self.setMinimumSize(600, 400)
-        self.setModal(False)  # Allow interaction with main window
+        self.setModal(False)
+        self._setup_content()
 
-        self._setup_ui()
-
-    def _setup_ui(self) -> None:
-        layout = QVBoxLayout(self)
+    def _setup_content(self) -> None:
+        layout = QVBoxLayout()
 
         # Status label
         self._status_label = QLabel("Click 'Scan' to check for duplicate UIDs")
@@ -58,24 +54,13 @@ class UIDReportDialog(QDialog):
         self._table.itemDoubleClicked.connect(self._on_item_double_clicked)
         layout.addWidget(self._table)
 
-        # Buttons
-        button_layout = QHBoxLayout()
+        self.set_content_layout(layout)
 
-        self._scan_btn = QPushButton("Scan Map")
-        self._scan_btn.clicked.connect(self._on_scan)
-        button_layout.addWidget(self._scan_btn)
-
-        self._goto_btn = QPushButton("Go To Selected")
-        self._goto_btn.clicked.connect(self._on_goto)
-        button_layout.addWidget(self._goto_btn)
-
-        button_layout.addStretch()
-
-        self._close_btn = QPushButton("Close")
-        self._close_btn.clicked.connect(self.accept)
-        button_layout.addWidget(self._close_btn)
-
-        layout.addLayout(button_layout)
+        # Buttons in footer
+        self.add_button("Scan Map", callback=self._on_scan, role="primary")
+        self.add_button("Go To Selected", callback=self._on_goto)
+        self.add_spacer_to_footer()
+        self.add_button("Close", callback=self.accept)
 
     def _on_scan(self) -> None:
         """Run UID validation scan."""
