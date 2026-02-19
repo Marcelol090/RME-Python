@@ -55,6 +55,10 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_reload.addAction(editor.act_reload_data)
         m_file.addSeparator()
 
+    # C++ parity: File > Recent Files
+    editor.menu_recent_files = m_file.addMenu("Recent Files")
+    m_file.addSeparator()
+
     if hasattr(editor, "act_preferences"):
         m_file.addAction(editor.act_preferences)
 
@@ -69,6 +73,25 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     # Replace Items (C++ Edit > Replace Items... Ctrl+Shift+F)
     m_edit.addAction(editor.act_replace_items)
     m_edit.addSeparator()
+
+    # Brush submenu
+    m_brush = m_edit.addMenu("Brush")
+    if hasattr(editor, "act_brush_size_inc"):
+        m_brush.addAction(editor.act_brush_size_inc)
+    if hasattr(editor, "act_brush_size_dec"):
+        m_brush.addAction(editor.act_brush_size_dec)
+    m_brush.addSeparator()
+    if hasattr(editor, "act_brush_variation_next"):
+        m_brush.addAction(editor.act_brush_variation_next)
+    if hasattr(editor, "act_brush_variation_prev"):
+        m_brush.addAction(editor.act_brush_variation_prev)
+    if hasattr(editor, "act_brush_shape_square") or hasattr(editor, "act_brush_shape_circle"):
+        m_brush.addSeparator()
+        if hasattr(editor, "act_brush_shape_square"):
+            m_brush.addAction(editor.act_brush_shape_square)
+        if hasattr(editor, "act_brush_shape_circle"):
+            m_brush.addAction(editor.act_brush_shape_circle)
+    m_brush.addSeparator()
 
     # Border Options submenu (C++ Edit > Border Options)
     m_border = m_edit.addMenu("Border Options")
@@ -234,13 +257,40 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     if hasattr(editor, "act_floor_actions"):
         for act in editor.act_floor_actions:
             m_floor.addAction(act)
+    # Legacy parity: Navigate > Zoom
+    m_zoom_nav = m_navigate.addMenu("Zoom")
+    m_zoom_nav.addAction(editor.act_zoom_in)
+    m_zoom_nav.addAction(editor.act_zoom_out)
+    m_zoom_nav.addAction(editor.act_zoom_normal)
 
     # ---- Window Menu (C++ Window) ----
     m_window = mb.addMenu(load_icon("menu_window"), "Window")
     m_window.addAction(editor.act_window_minimap)
+    if hasattr(editor, "act_window_tool_options"):
+        m_window.addAction(editor.act_window_tool_options)
     if hasattr(editor, "act_ingame_preview"):
         m_window.addAction(editor.act_ingame_preview)
     m_window.addAction(editor.act_new_palette)
+
+    # Brush submenu in Window menu (toolbar/menu parity for UI contracts)
+    if (
+        hasattr(editor, "act_brush_size_inc")
+        or hasattr(editor, "act_brush_size_dec")
+        or hasattr(editor, "act_brush_shape_square")
+        or hasattr(editor, "act_brush_shape_circle")
+    ):
+        m_window.addSeparator()
+        m_brush_window = m_window.addMenu("Brush")
+        if hasattr(editor, "act_brush_size_dec"):
+            m_brush_window.addAction(editor.act_brush_size_dec)
+        if hasattr(editor, "act_brush_size_inc"):
+            m_brush_window.addAction(editor.act_brush_size_inc)
+        if hasattr(editor, "act_brush_shape_square") or hasattr(editor, "act_brush_shape_circle"):
+            m_brush_window.addSeparator()
+            if hasattr(editor, "act_brush_shape_square"):
+                m_brush_window.addAction(editor.act_brush_shape_square)
+            if hasattr(editor, "act_brush_shape_circle"):
+                m_brush_window.addAction(editor.act_brush_shape_circle)
 
     # Palette submenu (C++ Window > Palette)
     m_palette = m_window.addMenu("Palette")
@@ -254,6 +304,18 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_palette.addAction(editor.act_palette_waypoint)
     m_palette.addAction(editor.act_palette_zones)
     m_palette.addAction(editor.act_palette_raw)
+
+    # Brush submenu (UI parity for size/shape controls)
+    if hasattr(editor, "act_brush_size_actions") or hasattr(editor, "act_brush_shape_square"):
+        m_brush = m_window.addMenu("Brush")
+        if hasattr(editor, "act_brush_size_actions"):
+            m_brush_size = m_brush.addMenu("Size")
+            for act in editor.act_brush_size_actions:
+                m_brush_size.addAction(act)
+        if hasattr(editor, "act_brush_shape_square") and hasattr(editor, "act_brush_shape_circle"):
+            m_brush_shape = m_brush.addMenu("Shape")
+            m_brush_shape.addAction(editor.act_brush_shape_square)
+            m_brush_shape.addAction(editor.act_brush_shape_circle)
 
     # Toolbars submenu (C++ Window > Toolbars)
     m_toolbars = m_window.addMenu("Toolbars")
@@ -270,6 +332,11 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_window.addAction(editor.act_palette_large_icons)
     if hasattr(editor, "act_toggle_dark_mode"):
         m_window.addAction(editor.act_toggle_dark_mode)
+    if hasattr(editor, "act_theme_noct_green_glass"):
+        m_theme = m_window.addMenu("Themes")
+        m_theme.addAction(editor.act_theme_noct_green_glass)
+        m_theme.addAction(editor.act_theme_noct_8bit_glass)
+        m_theme.addAction(editor.act_theme_noct_liquid_glass)
 
     # ---- Mirror Menu (PyRME extension) ----
     m_mirror = mb.addMenu(load_icon("menu_mirror"), "Mirror")
@@ -305,20 +372,22 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_live.addAction(editor.act_src_connect)
     if hasattr(editor, "act_src_disconnect"):
         m_live.addAction(editor.act_src_disconnect)
-    if hasattr(editor, "act_live_kick") or hasattr(editor, "act_live_ban"):
+    if hasattr(editor, "act_live_kick") or hasattr(editor, "act_live_ban") or hasattr(editor, "act_live_banlist"):
         m_live.addSeparator()
     if hasattr(editor, "act_live_kick"):
         m_live.addAction(editor.act_live_kick)
     if hasattr(editor, "act_live_ban"):
         m_live.addAction(editor.act_live_ban)
+    if hasattr(editor, "act_live_banlist"):
+        m_live.addAction(editor.act_live_banlist)
 
     # ---- Experimental Menu (C++ parity) ----
     m_experimental = mb.addMenu("Experimental")
     if hasattr(editor, "act_experimental_fog"):
         m_experimental.addAction(editor.act_experimental_fog)
 
-    # ---- Help / About Menu (C++ About) ----
-    m_help = mb.addMenu(load_icon("menu_help"), "Help")
+    # ---- About Menu (C++ top-level "About") ----
+    m_help = mb.addMenu(load_icon("menu_help"), "About")
     editor.menu_help = m_help
     if hasattr(editor, "act_extensions"):
         m_help.addAction(editor.act_extensions)

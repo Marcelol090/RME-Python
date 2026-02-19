@@ -21,7 +21,7 @@ PEER_COLORS: list[tuple[int, int, int]] = [
 ]
 
 
-@dataclass(slots=True)
+@dataclass
 class LivePeer(LiveSocket):
     """Represents a connected live-editing client on the server."""
 
@@ -32,6 +32,8 @@ class LivePeer(LiveSocket):
     cursor_y: int = 0
     cursor_z: int = 0
     is_authenticated: bool = False
+    packet_count: int = 0
+    last_packet_reset: float = 0.0
 
     def __init__(
         self,
@@ -49,6 +51,8 @@ class LivePeer(LiveSocket):
         self.cursor_y = 0
         self.cursor_z = 0
         self.is_authenticated = False
+        self.packet_count = 0
+        self.last_packet_reset = 0.0
 
     def get_color(self) -> tuple[int, int, int]:
         """Get assigned color for this peer based on client_id."""

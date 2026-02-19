@@ -10,6 +10,8 @@ import pytest
 import py_rme_canary.logic_layer.rust_accel as rust_accel
 from py_rme_canary.logic_layer.rust_accel import (
     assemble_png_idat,
+    dedupe_positions,
+    dedupe_positions_3d,
     fnv1a_64,
     render_minimap_buffer,
     spawn_entry_names_at_cursor,
@@ -264,6 +266,32 @@ class TestRenderMinimapBuffer:
         assert len(calls) == 1
 
 
+class TestDedupePositions3D:
+    def test_dedupes_and_preserves_order_python_fallback(self) -> None:
+        positions = [(1, 2, 7), (1, 2, 7), (2, 2, 7), (1, 2, 7), (2, 2, 6)]
+        result = dedupe_positions_3d(positions)
+        assert result == [(1, 2, 7), (2, 2, 7), (2, 2, 6)]
+
+    def test_uses_backend_when_available(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls: list[object] = []
+
+        def _backend_fn(payload: object) -> list[tuple[int, int, int]]:
+            calls.append(payload)
+            return [(9, 9, 7)]
+
+        monkeypatch.setitem(
+            sys.modules,
+            "py_rme_canary_rust",
+            SimpleNamespace(
+                spawn_entry_names_at_cursor=lambda *a: [],
+                dedupe_positions_3d=_backend_fn,
+            ),
+        )
+        result = dedupe_positions_3d([(1, 1, 7), (1, 1, 7)])
+        assert result == [(9, 9, 7)]
+        assert len(calls) == 1
+
+
 # ---------------------------------------------------------------------------
 # assemble_png_idat — PNG row assembly + compression
 # ---------------------------------------------------------------------------
@@ -328,3 +356,45 @@ class TestAssemblePngIdat:
         result = assemble_png_idat(bytearray([255, 0, 0]), 1, 1)
         assert result == b"COMPRESSED"
         assert len(calls) == 1
+
+
+class TestDedupePositions:
+    def test_python_fallback_preserves_order(self) -> None:
+        positions = [(1, 2, 7), (1, 2, 7), (2, 2, 7), (1, 2, 7), (3, 4, 7)]
+        assert dedupe_positions(positions) == [(1, 2, 7), (2, 2, 7), (3, 4, 7)]
+
+    def test_uses_backend_when_available(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls: list[object] = []
+
+        def _backend_fn(payload: object) -> list[tuple[int, int, int]]:
+            calls.append(payload)
+            return [(9, 9, 7)]
+
+        monkeypatch.setitem(
+            sys.modules,
+            "py_rme_canary_rust",
+            SimpleNamespace(
+                spawn_entry_names_at_cursor=lambda *a: [],
+                dedupe_positions=_backend_fn,
+            ),
+        )
+
+        result = dedupe_positions([(1, 2, 7), (1, 2, 7)])
+        assert result == [(9, 9, 7)]
+        assert calls == [[(1, 2, 7), (1, 2, 7)]]
+
+    def test_backend_error_falls_back_to_python(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _backend_fn(payload: object) -> list[tuple[int, int, int]]:
+            raise RuntimeError("backend fail")
+
+        monkeypatch.setitem(
+            sys.modules,
+            "py_rme_canary_rust",
+            SimpleNamespace(
+                spawn_entry_names_at_cursor=lambda *a: [],
+                dedupe_positions=_backend_fn,
+            ),
+        )
+
+        result = dedupe_positions([(1, 1, 7), (1, 1, 7), (2, 2, 7)])
+        assert result == [(1, 1, 7), (2, 2, 7)]

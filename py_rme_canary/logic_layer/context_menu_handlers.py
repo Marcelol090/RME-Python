@@ -74,12 +74,13 @@ class ContextMenuActionHandlers:
                     return
         print(str(message))
 
-    def _resolve_session(self) -> EditorSession | object | None:
+    def _resolve_session(self) -> EditorSession | None:
         if self.editor_session is not None:
             return self.editor_session
         editor = self._resolve_editor()
         if editor is None:
             return None
+        # In a real scenario we should strictly type editor, but for now we cast/assume
         return getattr(editor, "session", None)
 
     def _refresh_editor_after_change(self) -> None:
@@ -674,6 +675,17 @@ class ContextMenuActionHandlers:
 
         self._show_status("[Replace Tiles] No selection replace action available")
 
+    def can_replace_tiles_on_selection(self) -> bool:
+        if not self.has_selection():
+            return False
+        editor = self._resolve_editor()
+        if editor is None:
+            return False
+        return bool(
+            hasattr(editor, "_replace_items_on_selection")
+            or hasattr(editor, "_open_replace_items_on_selection_dialog")
+        )
+
     def paste_at_position(self, position: tuple[int, int, int]) -> None:
         session = self._resolve_session()
         if session is None:
@@ -729,6 +741,13 @@ class ContextMenuActionHandlers:
 
         chosen = int(dialog.get_selected_item_id())
         self._show_status(f"[Tileset] Item {chosen} prepared for tileset assignment workflow.")
+
+    def can_move_item_to_tileset(self) -> bool:
+        from py_rme_canary.core.config.user_settings import get_user_settings
+
+        with suppress(Exception):
+            return bool(get_user_settings().get_enable_tileset_editing())
+        return False
 
     # ========================
     # Door Toggle
@@ -895,9 +914,11 @@ class ContextMenuActionHandlers:
         clipboard = self._clipboard
         if clipboard is None:
             return
-        text = f"{position[0]}, {position[1]}, {position[2]}"
+        # Legacy redux parity: Copy Position uses Lua table literal.
+        x, y, z = int(position[0]), int(position[1]), int(position[2])
+        text = f"{{x={x}, y={y}, z={z}}}"
         clipboard.setText(text, QClipboard.Mode.Clipboard)
-        print(f"[Copy] Position {text} copied to clipboard")
+        self._show_status(f"[Copy] Position {text} copied to clipboard")
 
     def copy_client_id(self, item: Item) -> None:
         """Copy item's client ID to clipboard.
@@ -1196,18 +1217,65 @@ class ContextMenuActionHandlers:
         self, tile: Tile | None = None, position: tuple[int, int, int] | None = None
     ) -> dict[str, Callable[[], object | None]]:
         """Get unified context callbacks for empty/no-item tile menus."""
-        return {
+        callbacks: dict[str, Callable[[], object | None]] = {
             "selection_has_selection": lambda: self.has_selection(),
             "selection_can_paste": lambda: self.can_paste_buffer(),
+            "can_selection_paste": lambda: self.can_paste_buffer(),
             "selection_copy": lambda: self.copy_selection(),
             "selection_cut": lambda: self.cut_selection(),
             "selection_paste": lambda: self.paste_at_position(position) if position else None,
             "selection_delete": lambda: self.delete_selection(),
+            "can_selection_replace_tiles": lambda: self.can_replace_tiles_on_selection(),
             "selection_replace_tiles": lambda: self.replace_tiles_on_selection(),
             "copy_position": lambda: self.copy_position(position) if position else None,
             "browse_tile": lambda: self.browse_tile(tile, position) if tile and position else None,
             "properties": lambda: self.open_tile_properties(tile, position),
         }
+        if tile is not None:
+            top_item: Item | None = None
+            top_first = self._tile_items_top_first(tile)
+            if top_first:
+                top_item = top_first[0]
+            elif getattr(tile, "ground", None) is not None:
+                top_item = getattr(tile, "ground", None)
+
+            if top_item is not None:
+                callbacks["select_raw"] = lambda item=top_item: self.select_raw_brush(item)
+
+                if self._has_brush_type(tile=tile, item=top_item, wanted_types={"wall"}):
+                    callbacks["select_wall"] = lambda item=top_item: self.select_wall_brush(item=item, tile=tile)
+
+                if self._has_brush_type(
+                    tile=tile,
+                    item=top_item,
+                    wanted_types={"ground", "terrain"},
+                    include_ground=True,
+                ):
+                    callbacks["select_ground"] = lambda item=top_item: self.select_ground_brush(item=item, tile=tile)
+
+                if self._has_brush_type(
+                    tile=tile,
+                    item=top_item,
+                    wanted_types={"wall", "table", "carpet", "doodad", "door", "ground", "terrain"},
+                    include_ground=True,
+                ):
+                    callbacks["select_collection"] = (
+                        lambda item=top_item: self.select_collection_brush(item=item, tile=tile)
+                    )
+
+            has_creature = bool((getattr(tile, "monsters", []) or []) or getattr(tile, "npc", None) is not None)
+            if has_creature:
+                callbacks["select_creature"] = lambda: self.select_creature_brush(tile=tile)
+
+            has_spawn = bool(
+                getattr(tile, "spawn_monster", None) is not None or getattr(tile, "spawn_npc", None) is not None
+            )
+            if has_spawn:
+                callbacks["select_spawn"] = lambda: self.select_spawn_brush(tile=tile)
+
+            if int(getattr(tile, "house_id", 0) or 0) > 0:
+                callbacks["select_house"] = lambda: self.select_house_brush(tile=tile)
+        return callbacks
 
     # ========================
     # Helper: Create Callback Dict
@@ -1230,14 +1298,17 @@ class ContextMenuActionHandlers:
             # Legacy-style selection operations (canvas menu header)
             "selection_has_selection": lambda: self.has_selection(),
             "selection_can_paste": lambda: self.can_paste_buffer(),
+            "can_selection_paste": lambda: self.can_paste_buffer(),
             "selection_copy": lambda: self.copy_selection(),
             "selection_cut": lambda: self.cut_selection(),
             "selection_paste": lambda: self.paste_at_position(position) if position else None,
             "selection_delete": lambda: self.delete_selection(),
+            "can_selection_replace_tiles": lambda: self.can_replace_tiles_on_selection(),
             "selection_replace_tiles": lambda: self.replace_tiles_on_selection(),
             # Always available smart actions
             "select_raw": lambda: self.select_raw_brush(item),
             "move_to_tileset": lambda: self.move_item_to_tileset(item),
+            "can_move_to_tileset": lambda: self.can_move_item_to_tileset(),
             # Item interactions
             "toggle_door": lambda: self.toggle_door(item, tile, position) if tile and position else None,
             "rotate_item": lambda: self.rotate_item(item, tile, position) if tile and position else None,

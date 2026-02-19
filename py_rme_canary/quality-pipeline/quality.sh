@@ -7,7 +7,16 @@ set -Eeuo pipefail
 
 export PYTHONUTF8=1
 export TERM="${TERM:-xterm-256color}"
-PYTHON_BIN="${PYTHON_BIN:-python}"
+PYTHON_BIN="${PYTHON_BIN:-python3.12}"
+
+if ! command -v "$PYTHON_BIN" &>/dev/null; then
+  for _candidate in python3.12 python3 python; do
+    if command -v "$_candidate" &>/dev/null; then
+      PYTHON_BIN="$_candidate"
+      break
+    fi
+  done
+fi
 
 # Garante que o diretório de scripts do Python esteja no PATH (Windows/MinGW)
 if [[ "${OS:-}" == "Windows_NT" || "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then

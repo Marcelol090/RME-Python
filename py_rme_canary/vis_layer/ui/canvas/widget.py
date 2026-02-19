@@ -9,11 +9,16 @@ from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from py_rme_canary.logic_layer.lasso_selection import get_lasso_tool
 from py_rme_canary.logic_layer.mirroring import union_with_mirrored
+from py_rme_canary.logic_layer.rust_accel import dedupe_positions
 from py_rme_canary.logic_layer.session.selection import SelectionApplyMode
 from py_rme_canary.vis_layer.renderer.qpainter_backend import QPainterRenderBackend
 from py_rme_canary.vis_layer.ui.canvas.tools.manager import ToolManager
 
-from ..helpers import iter_brush_border_offsets, iter_brush_offsets, qcolor_from_id
+from ..helpers import (
+    get_brush_border_offsets,
+    get_brush_offsets,
+    qcolor_from_id,
+)
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
@@ -55,8 +60,48 @@ class MapCanvasWidget(QWidget):
         self._hover_tile: tuple[int, int, int] | None = None
         self._hover_stack: list[int] = []
 
+        # Drag & Drop support
+        self.setAcceptDrops(True)
+
     def sizeHint(self):
         return super().sizeHint()
+
+    # ---------- drag & drop ----------
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasFormat("application/x-rme-brush-id"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasFormat("application/x-rme-brush-id"):
+            event.acceptProposedAction()
+            # Optional: Show brush cursor feedback at current pos
+            x, y = self._tile_at(int(event.position().x()), int(event.position().y()))
+            if hasattr(self._editor, "update_brush_cursor"):
+                self._editor.update_brush_cursor(int(event.position().x()), int(event.position().y()))
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasFormat("application/x-rme-brush-id"):
+            data = event.mimeData().data("application/x-rme-brush-id")
+            try:
+                brush_id = int(str(data.data().decode("utf-8")))
+                # Set active brush
+                if hasattr(self._editor, "_set_selected_brush_id"):
+                    self._editor._set_selected_brush_id(brush_id)
+
+                # Optional: Paint immediately if dropped?
+                # For now, just selecting the brush is the safer UX pattern.
+                # User can then click to paint.
+
+                event.acceptProposedAction()
+            except Exception:
+                event.ignore()
+        else:
+            event.ignore()
 
     # ---------- helpers ----------
 
@@ -180,6 +225,20 @@ class MapCanvasWidget(QWidget):
         except Exception:
             return
 
+    def _draw_offsets(self) -> tuple[tuple[int, int], ...]:
+        editor = self._editor
+        cached = getattr(editor, "_brush_draw_offsets", None)
+        if isinstance(cached, tuple):
+            return cached
+        return get_brush_offsets(int(editor.brush_size), str(editor.brush_shape))
+
+    def _border_offsets(self) -> tuple[tuple[int, int], ...]:
+        editor = self._editor
+        cached = getattr(editor, "_brush_border_offsets", None)
+        if isinstance(cached, tuple):
+            return cached
+        return get_brush_border_offsets(int(editor.brush_size), str(editor.brush_shape))
+
     def _paint_footprint_at(self, px: int, py: int, *, alt: bool = False) -> None:
         editor = self._editor
         x, y = self._tile_at(px, py)
@@ -187,49 +246,57 @@ class MapCanvasWidget(QWidget):
         if not (0 <= x < editor.map.header.width and 0 <= y < editor.map.header.height):
             return
 
-        def _dedupe_positions(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-            seen: set[tuple[int, int, int]] = set()
-            out: list[tuple[int, int, int]] = []
-            for px, py, pz in positions:
-                key = (int(px), int(py), int(pz))
-                if key in seen:
-                    continue
-                seen.add(key)
-                out.append(key)
-            return out
+        mirror_enabled = bool(getattr(editor, "mirror_enabled", False)) and bool(editor.has_mirror_axis())
+        if not mirror_enabled:
+            for dx, dy in self._border_offsets():
+                tx = int(x + dx)
+                ty = int(y + dy)
+                if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
+                    editor.session.mark_autoborder_position(x=int(tx), y=int(ty), z=int(z))
 
-        def _union_with_mirror(positions: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
-            if not getattr(editor, "mirror_enabled", False) or not editor.has_mirror_axis():
-                return _dedupe_positions(positions)
-            axis = str(getattr(editor, "mirror_axis", "x")).lower()
-            v = int(editor.get_mirror_axis_value())
-            return union_with_mirrored(
-                positions,
-                axis=axis,
-                axis_value=int(v),
-                width=int(editor.map.header.width),
-                height=int(editor.map.header.height),
-            )
+            for dx, dy in self._draw_offsets():
+                tx = int(x + dx)
+                ty = int(y + dy)
+                if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
+                    editor.session.mouse_move(x=int(tx), y=int(ty), z=int(z), alt=bool(alt))
+            return
+
+        axis = str(getattr(editor, "mirror_axis", "x")).lower()
+        v = int(editor.get_mirror_axis_value())
+        width = int(editor.map.header.width)
+        height = int(editor.map.header.height)
 
         # Mark legacy `tilestoborder` ring.
         border_positions: list[tuple[int, int, int]] = []
-        for dx, dy in iter_brush_border_offsets(editor.brush_size, editor.brush_shape):
+        for dx, dy in self._border_offsets():
             tx = int(x + dx)
             ty = int(y + dy)
-            if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
+            if 0 <= tx < width and 0 <= ty < height:
                 border_positions.append((tx, ty, int(z)))
 
-        for tx, ty, _tz in _union_with_mirror(border_positions):
+        for tx, ty, _tz in union_with_mirrored(
+            dedupe_positions(border_positions),
+            axis=axis,
+            axis_value=int(v),
+            width=width,
+            height=height,
+        ):
             editor.session.mark_autoborder_position(x=int(tx), y=int(ty), z=int(z))
 
         draw_positions: list[tuple[int, int, int]] = []
-        for dx, dy in iter_brush_offsets(editor.brush_size, editor.brush_shape):
+        for dx, dy in self._draw_offsets():
             tx = int(x + dx)
             ty = int(y + dy)
-            if 0 <= tx < editor.map.header.width and 0 <= ty < editor.map.header.height:
+            if 0 <= tx < width and 0 <= ty < height:
                 draw_positions.append((tx, ty, int(z)))
 
-        for tx, ty, _tz in _union_with_mirror(draw_positions):
+        for tx, ty, _tz in union_with_mirrored(
+            dedupe_positions(draw_positions),
+            axis=axis,
+            axis_value=int(v),
+            width=width,
+            height=height,
+        ):
             editor.session.mouse_move(x=int(tx), y=int(ty), z=int(z), alt=bool(alt))
 
     def _draw_with_map_drawer(self, painter: QPainter) -> bool:
@@ -490,6 +557,16 @@ class MapCanvasWidget(QWidget):
         if self._render_pending:
             self._render_pending = False
             QTimer.singleShot(0, self.request_render)
+
+        # Performance Monitoring
+        perf = getattr(self._editor, "dock_performance", None)
+        if perf and perf.isVisible():
+            perf.frame_tick()
+            # Approximate tile count
+            cols = (x1 - x0)
+            rows = (y1 - y0)
+            perf.update_tile_count(cols * rows)
+            perf.update_draw_calls(1 if use_map_drawer else rows) # Rough estimate
 
     def mousePressEvent(self, event):
         editor = self._editor

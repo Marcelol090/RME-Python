@@ -32,6 +32,15 @@ Before starting any task, you must understand the current state:
     *   `logic_layer/`: Business Logic (Brushes, Operations).
     *   `vis_layer/`: UI (PyQt6).
 
+### 🌿 Branch Scope Guard (UixWidget)
+When working on branch `UixWidget`, limit changes to:
+- `vis_layer/**` (widgets, dialogs, UX interactions, renderer-facing UI)
+- UI tests under `tests/ui/**` and `tests/unit/vis_layer/**`
+- UI planning/changelog docs only
+
+Promotion flow:
+- `UixWidget` -> `development` -> `main`
+
 ### 🛠️ Tech Stack & Constraints
 *   **Language**: Python 3.12+ (Strict `mypy` typing).
 *   **UI**: PyQt6 (Use `vis_layer` separation, no logic in widgets).

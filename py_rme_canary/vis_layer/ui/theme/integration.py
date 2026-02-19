@@ -8,6 +8,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+# Use the centralized ThemeManager from __init__.py
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from PyQt6.QtWidgets import QApplication, QMainWindow
 
@@ -31,12 +34,10 @@ def apply_modern_theme(app: QApplication) -> bool:
         apply_modern_theme(app)
     """
     try:
-        from py_rme_canary.vis_layer.ui.theme.modern_theme import ModernTheme
+        tm = get_theme_manager()
+        tm.apply_theme()  # This applies the stylesheet using current tokens
 
-        stylesheet = ModernTheme.get_stylesheet()
-        app.setStyleSheet(stylesheet)
-
-        logger.info("Modern theme applied successfully")
+        logger.info(f"Modern theme ({tm.current_theme}) applied successfully")
         return True
 
     except ImportError as e:

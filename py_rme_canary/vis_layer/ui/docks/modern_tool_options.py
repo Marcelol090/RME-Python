@@ -1,18 +1,22 @@
 """Modern Tool Options Widget — Antigravity Design.
 
-Provides controls for brush size, shape, and variability
-with glassmorphism panels and gradient accent styling.
-Reference: GAP_ANALYSIS_LEGACY_UI.md
+Provides controls for brush size, shape, variability and tool-option toggles
+(Preview AutoBorder, Lock Doors) with glassmorphism panels and gradient accent styling.
+
+C++ Reference: remeres-map-editor-redux/source/ui/tool_options_surface.cpp
+  - preview_check  → SHOW_AUTOBORDER_PREVIEW (terrain/collection only)
+  - lock_check     → DRAW_LOCKED_DOOR        (terrain/collection only)
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QRectF, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QRectF, QSettings, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QIcon, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import (
     QButtonGroup,
+    QCheckBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -21,13 +25,20 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
-
 
 # ---------------------------------------------------------------------------
 # Painted shape icons for consistency
 # ---------------------------------------------------------------------------
+
+_SETTINGS_ORG = "PyRME"
+_SETTINGS_APP = "Canary"
+_KEY_PREVIEW = "tool_options/show_autoborder_preview"
+_KEY_LOCK = "tool_options/draw_locked_door"
+
 
 def _shape_icon(shape: str, size: int = 18, checked: bool = False) -> QIcon:
     """Draw shape icon — square or circle."""
@@ -58,17 +69,30 @@ def _shape_icon(shape: str, size: int = 18, checked: bool = False) -> QIcon:
 
 
 class ModernToolOptionsWidget(QWidget):
-    """Tool options panel (Size, Shape, Variation) — Antigravity style."""
+    """Tool options panel (Size, Shape, Variation, Preview Border, Lock Doors) — Antigravity style.
+
+    C++ parity: ToolOptionsSurface (tool_options_surface.cpp)
+    - Preview AutoBorder checkbox  → mirrors interactables.preview_check_rect / SHOW_AUTOBORDER_PREVIEW
+    - Lock Doors (Shift) checkbox  → mirrors interactables.lock_check_rect  / DRAW_LOCKED_DOOR
+    """
 
     size_changed = pyqtSignal(int)
     shape_changed = pyqtSignal(str)  # "square" or "circle"
     variation_changed = pyqtSignal(int)
+    preview_border_changed = pyqtSignal(bool)  # NEW: Preview AutoBorder toggle
+    lock_doors_changed = pyqtSignal(bool)  # NEW: Lock Doors toggle
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._current_brush_type = "terrain"
+        self._settings = QSettings(_SETTINGS_ORG, _SETTINGS_APP)
         self._setup_ui()
         self._apply_style()
+        self._load_persisted_settings()
+
+    # ------------------------------------------------------------------
+    # Build UI
+    # ------------------------------------------------------------------
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -145,7 +169,7 @@ class ModernToolOptionsWidget(QWidget):
         self.shape_group.buttonClicked.connect(self._on_shape_changed)
         layout.addWidget(self.shape_container)
 
-        # 3. Variation / Thickness (for Doodads)
+        # 3. Variation / Thickness (for Doodads / Collection)
         self.var_container = QWidget()
         var_layout = QVBoxLayout(self.var_container)
         var_layout.setContentsMargins(0, 0, 0, 0)
@@ -170,92 +194,186 @@ class ModernToolOptionsWidget(QWidget):
 
         layout.addWidget(self.var_container)
 
+        # 4. Terrain toggles — Preview AutoBorder + Lock Doors
+        #    C++ parity: ToolOptionsSurface.interactables.preview_check_rect / lock_check_rect
+        #    Visible only when brush type is terrain or collection (has_tools gate)
+        self.toggles_container = QWidget()
+        toggles_layout = QVBoxLayout(self.toggles_container)
+        toggles_layout.setContentsMargins(0, 4, 0, 0)
+        toggles_layout.setSpacing(6)
+
+        self.chk_preview_border = QCheckBox("Preview AutoBorder")
+        self.chk_preview_border.setObjectName("toolToggle")
+        self.chk_preview_border.setToolTip(
+            "Show live auto-border preview while painting terrain"
+        )
+        self.chk_preview_border.stateChanged.connect(self._on_preview_border_changed)
+        toggles_layout.addWidget(self.chk_preview_border)
+
+        self.chk_lock_doors = QCheckBox("Lock Doors (Shift)")
+        self.chk_lock_doors.setObjectName("toolToggle")
+        self.chk_lock_doors.setToolTip(
+            "Place locked doors when painting door brushes"
+        )
+        self.chk_lock_doors.stateChanged.connect(self._on_lock_doors_changed)
+        toggles_layout.addWidget(self.chk_lock_doors)
+
+        layout.addWidget(self.toggles_container)
+
         layout.addStretch()
 
+    # ------------------------------------------------------------------
+    # Persistence helpers
+    # ------------------------------------------------------------------
+
+    def _load_persisted_settings(self) -> None:
+        """Load checkbox states from QSettings (mirrors C++ Config::SHOW_AUTOBORDER_PREVIEW / DRAW_LOCKED_DOOR)."""
+        preview = self._settings.value(_KEY_PREVIEW, False, type=bool)
+        lock = self._settings.value(_KEY_LOCK, False, type=bool)
+        self.chk_preview_border.blockSignals(True)
+        self.chk_lock_doors.blockSignals(True)
+        self.chk_preview_border.setChecked(preview)
+        self.chk_lock_doors.setChecked(lock)
+        self.chk_preview_border.blockSignals(False)
+        self.chk_lock_doors.blockSignals(False)
+
+    def get_preview_border(self) -> bool:
+        """Return current Preview AutoBorder state."""
+        return self.chk_preview_border.isChecked()
+
+    def get_lock_doors(self) -> bool:
+        """Return current Lock Doors state."""
+        return self.chk_lock_doors.isChecked()
+
+    # ------------------------------------------------------------------
+    # Styling
+    # ------------------------------------------------------------------
+
     def _apply_style(self) -> None:
-        self.setStyleSheet("""
-            #header {
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
+        self.setStyleSheet(
+            f"""
+            #header {{
                 font-weight: 700;
-                color: rgba(161, 161, 170, 0.6);
+                color: {c["text"]["disabled"]};
                 font-size: 10px;
                 letter-spacing: 1.5px;
-            }
-            #sectionLabel {
-                color: rgba(200, 200, 210, 0.8);
+            }}
+            #sectionLabel {{
+                color: {c["text"]["secondary"]};
                 font-size: 12px;
                 font-weight: 600;
-            }
-            #valueLabel {
-                color: #A78BFA;
+            }}
+            #valueLabel {{
+                color: {c["brand"]["secondary"]};
                 font-family: 'JetBrains Mono', 'Consolas', monospace;
                 font-weight: bold;
                 font-size: 13px;
-            }
-            QPushButton#shapeBtn {
-                background: rgba(19, 19, 29, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 8px;
+            }}
+            QPushButton#shapeBtn {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 padding: 4px 16px;
-                color: rgba(200, 200, 210, 0.8);
+                color: {c["text"]["secondary"]};
                 font-size: 12px;
                 font-weight: 600;
-            }
-            QPushButton#shapeBtn:checked {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(139, 92, 246, 0.3), stop:1 rgba(124, 58, 237, 0.25));
-                color: white;
-                border: 1px solid rgba(139, 92, 246, 0.45);
-            }
-            QPushButton#shapeBtn:hover:!checked {
-                border-color: rgba(139, 92, 246, 0.3);
-                background: rgba(139, 92, 246, 0.08);
-            }
-            #ToolSlider::groove:horizontal {
-                background: rgba(54, 54, 80, 0.4);
+            }}
+            QPushButton#shapeBtn:checked {{
+                background: {c["brand"]["primary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["brand"]["primary"]};
+            }}
+            QPushButton#shapeBtn:hover:!checked {{
+                border-color: {c["brand"]["primary"]};
+                background: {c["state"]["hover"]};
+            }}
+            #ToolSlider::groove:horizontal {{
+                background: {c["surface"]["tertiary"]};
                 height: 4px;
                 border-radius: 2px;
-            }
-            #ToolSlider::handle:horizontal {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
-                    fx:0.5, fy:0.3,
-                    stop:0 #A78BFA, stop:1 #8B5CF6);
-                border: 2px solid rgba(124, 58, 237, 0.7);
+            }}
+            #ToolSlider::handle:horizontal {{
+                background: {c["brand"]["primary"]};
+                border: 2px solid {c["brand"]["secondary"]};
                 width: 14px;
                 height: 14px;
                 margin: -6px 0;
                 border-radius: 8px;
-            }
-            #ToolSlider::handle:horizontal:hover {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
-                    fx:0.5, fy:0.3,
-                    stop:0 #C4B5FD, stop:1 #A78BFA);
-            }
-            #ToolSlider::sub-page:horizontal {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #7C3AED, stop:1 #8B5CF6);
+            }}
+            #ToolSlider::handle:horizontal:hover {{
+                background: {c["brand"]["secondary"]};
+            }}
+            #ToolSlider::sub-page:horizontal {{
+                background: {c["brand"]["primary"]};
                 border-radius: 2px;
-            }
-        """)
+            }}
+            QCheckBox#toolToggle {{
+                color: {c["text"]["secondary"]};
+                font-size: 12px;
+                spacing: 8px;
+            }}
+            QCheckBox#toolToggle::indicator {{
+                width: 14px;
+                height: 14px;
+                border: 1px solid {c["border"]["default"]};
+                border-radius: 3px;
+                background: {c["surface"]["secondary"]};
+            }}
+            QCheckBox#toolToggle::indicator:checked {{
+                background: {c["brand"]["primary"]};
+                border-color: {c["brand"]["primary"]};
+            }}
+            QCheckBox#toolToggle:hover {{
+                color: {c["text"]["primary"]};
+            }}
+        """
+        )
+
+    def refresh_theme(self) -> None:
+        """Re-apply styling after theme switch."""
+        self._apply_style()
+
+    # ------------------------------------------------------------------
+    # Brush-type visibility (C++ parity: RebuildLayout has_tools gate)
+    # ------------------------------------------------------------------
+
+    # Brush types that display the terrain tool toggles (has_tools in C++)
+    _HAS_TOOLS_TYPES: frozenset[str] = frozenset({"terrain", "collection"})
+
+    # Visibility map: (show_size, show_shape, show_var)
+    _VISIBILITY_BY_PALETTE: dict[str, tuple[bool, bool, bool]] = {
+        "terrain": (True, True, False),
+        "collection": (True, True, True),
+        "doodad": (True, True, True),
+        "item": (False, False, False),
+        "house": (False, False, False),
+        "spawn": (True, True, False),
+        "raw": (False, False, False),
+    }
 
     def set_brush_type(self, brush_type: str) -> None:
         """Update visibility based on brush type."""
         self._current_brush_type = brush_type.lower()
 
-        mapping = {
-            "terrain": (True, True, False),
-            "collection": (True, True, True),
-            "doodad": (True, True, True),
-            "item": (False, False, False),
-            "house": (False, False, False),
-            "spawn": (True, True, False),  # Radius
-            "raw": (False, False, False),
-        }
-
-        show_size, show_shape, show_var = mapping.get(self._current_brush_type, (True, True, False))
-
+        show_size, show_shape, show_var = self._VISIBILITY_BY_PALETTE.get(
+            self._current_brush_type, (True, True, False)
+        )
         self.size_container.setVisible(show_size)
         self.shape_container.setVisible(show_shape)
         self.var_container.setVisible(show_var)
+
+        # Terrain toggles visible only for has_tools types (terrain, collection)
+        self.toggles_container.setVisible(
+            self._current_brush_type in self._HAS_TOOLS_TYPES
+        )
+
+    # ------------------------------------------------------------------
+    # Signal handlers
+    # ------------------------------------------------------------------
 
     def _on_size_changed(self, value: int) -> None:
         self.size_val_label.setText(str(value))
@@ -270,3 +388,13 @@ class ModernToolOptionsWidget(QWidget):
     def _on_variation_changed(self, value: int) -> None:
         self.var_val_label.setText(f"{value}%")
         self.variation_changed.emit(value)
+
+    def _on_preview_border_changed(self, state: int) -> None:
+        checked = state == Qt.CheckState.Checked.value
+        self._settings.setValue(_KEY_PREVIEW, checked)
+        self.preview_border_changed.emit(checked)
+
+    def _on_lock_doors_changed(self, state: int) -> None:
+        checked = state == Qt.CheckState.Checked.value
+        self._settings.setValue(_KEY_LOCK, checked)
+        self.lock_doors_changed.emit(checked)

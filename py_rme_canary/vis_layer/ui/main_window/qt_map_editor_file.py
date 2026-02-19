@@ -38,6 +38,23 @@ logger = logging.getLogger(__name__)
 
 
 class QtMapEditorFileMixin:
+    def _handle_window_close_request(self: QtMapEditor, event: object | None = None) -> bool:
+        """Handle close-request parity flow (window-manager close / Alt+F4)."""
+        skip_confirm = bool(getattr(self, "_live_close_confirmed_for_exit", False))
+        self._live_close_confirmed_for_exit = False
+
+        if not skip_confirm and not self._confirm_live_session_close(for_app_exit=True):
+            ignore = getattr(event, "ignore", None)
+            if callable(ignore):
+                with contextlib.suppress(Exception):
+                    ignore()
+            return False
+
+        if hasattr(self, "_friends_mark_offline"):
+            with contextlib.suppress(Exception):
+                self._friends_mark_offline()
+        return True
+
     def _new_map(self: QtMapEditor) -> None:
         """Create new map with template selection."""
         from py_rme_canary.vis_layer.ui.dialogs.new_map_dialog import NewMapDialog
@@ -656,16 +673,80 @@ class QtMapEditorFileMixin:
     # ------------------------------------------------------------------
 
     def _generate_map(self: QtMapEditor) -> None:
-        """Stub for Generate Map (C++ GENERATE_MAP action)."""
-        QMessageBox.information(
-            self,
-            "Generate Map",
-            "Map generation is not yet implemented.\n"
-            "This feature will allow procedural map generation.",
-        )
+        """Open map template generation flow (C++ GENERATE_MAP action parity baseline)."""
+        # Legacy action opens a generation flow. In Python, reuse the modern template-driven
+        # new-map pipeline instead of keeping a dead-end stub.
+        self._new_map()
+        with contextlib.suppress(Exception):
+            self.status.showMessage("Generate Map: template flow opened")
+
+    def _confirm_live_session_close(self: QtMapEditor, *, for_app_exit: bool = False) -> bool:
+        """Legacy-aligned live session shutdown/disconnect confirmation."""
+        session = getattr(self, "session", None)
+        if session is None:
+            return True
+
+        with contextlib.suppress(Exception):
+            is_client = bool(session.is_live_client())
+        if "is_client" not in locals():
+            is_client = False
+        with contextlib.suppress(Exception):
+            is_server = bool(session.is_live_server())
+        if "is_server" not in locals():
+            is_server = False
+        is_live = bool(is_client or is_server)
+        if not is_live:
+            return True
+
+        if bool(for_app_exit):
+            if is_client:
+                reply = QMessageBox.question(
+                    self,
+                    "Disconnect",
+                    "Do you want to disconnect?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Yes,
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    return False
+            elif is_server:
+                reply = QMessageBox.question(
+                    self,
+                    "Shutdown",
+                    "Do you want to shut down the server? (any clients will be disconnected)",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Yes,
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    return False
+        else:
+            reply = QMessageBox.question(
+                self,
+                "Must Close Server",
+                "You are currently connected to a live server, to close this map the connection must be severed.",
+                QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Ok,
+            )
+            if reply != QMessageBox.StandardButton.Ok:
+                return False
+
+        with contextlib.suppress(Exception):
+            if is_client:
+                session.disconnect_live()
+            elif is_server:
+                session.stop_live_server()
+        with contextlib.suppress(Exception):
+            if hasattr(self, "dock_live_log") and self.dock_live_log is not None:
+                self.dock_live_log.set_input_enabled(False)
+        with contextlib.suppress(Exception):
+            self._update_action_enabled_states()
+        return True
 
     def _close_map(self: QtMapEditor) -> None:
         """Close the currently open map without exiting (C++ CLOSE action)."""
+        if not self._confirm_live_session_close(for_app_exit=False):
+            return
+
         if getattr(self, "_dirty", False):
             reply = QMessageBox.question(
                 self,
@@ -682,8 +763,11 @@ class QtMapEditorFileMixin:
                 self._save()
 
         # Reset to empty map
-        self.map = GameMap(header=MapHeader(width=256, height=256))
-        self.session = EditorSession(self.map)
+        self.map = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
+        self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+        with contextlib.suppress(Exception):
+            self.apply_ui_state_to_session()
+        self.current_path = None
         self._current_file_path = None
         self._dirty = False
         self.setWindowTitle("Canary Map Editor")
@@ -705,8 +789,7 @@ class QtMapEditorFileMixin:
             return
 
         try:
-            from PyQt6.QtGui import QColor as QC2
-            from PyQt6.QtGui import QImage
+            from PyQt6.QtGui import QColor, QImage
 
             header = self.map.header
             w = int(header.width)
@@ -714,7 +797,7 @@ class QtMapEditorFileMixin:
             z = int(self.viewport.z)
 
             img = QImage(w, h, QImage.Format.Format_RGB32)
-            img.fill(QC2(0, 0, 0))
+            img.fill(QColor(0, 0, 0))
 
             for y in range(h):
                 for x in range(w):
@@ -723,7 +806,7 @@ class QtMapEditorFileMixin:
                         continue
                     color = self.map_drawer._get_tile_color(tile) if hasattr(self, "map_drawer") else (100, 100, 100, 255)
                     r, g, b = int(color[0]), int(color[1]), int(color[2])
-                    img.setPixelColor(x, y, QC2(r, g, b))
+                    img.setPixelColor(x, y, QColor(r, g, b))
 
             if img.save(str(path)):
                 self.status.showMessage(f"Minimap exported: {path}")

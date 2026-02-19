@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import Mock, patch
-from py_rme_canary.core.protocols.live_server import LiveServer
+
 from py_rme_canary.core.protocols.live_packets import PacketType
+from py_rme_canary.core.protocols.live_server import LiveServer
+
 
 class TestLiveServerAuthBypass:
     def test_unauthenticated_message_disconnects_client(self):
@@ -16,11 +17,13 @@ class TestLiveServerAuthBypass:
         mock_peer.client_id = 1
         mock_peer.name = "Attacker"
         mock_peer.is_authenticated = False # Explicitly False
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = 0.0
 
         server.clients[mock_client] = mock_peer
 
         # Encode chat message
-        payload = "I am inside!".encode("utf-8")
+        payload = b"I am inside!"
 
         # Mock broadcast and disconnect
         with patch.object(server, "broadcast") as mock_broadcast, \
@@ -47,10 +50,12 @@ class TestLiveServerAuthBypass:
         mock_peer.client_id = 1
         mock_peer.name = "User"
         mock_peer.is_authenticated = True # Authenticated
+        mock_peer.packet_count = 0
+        mock_peer.last_packet_reset = 0.0
 
         server.clients[mock_client] = mock_peer
 
-        payload = "Hello!".encode("utf-8")
+        payload = b"Hello!"
 
         with patch.object(server, "broadcast") as mock_broadcast, \
              patch.object(server, "_disconnect_client") as mock_disconnect:

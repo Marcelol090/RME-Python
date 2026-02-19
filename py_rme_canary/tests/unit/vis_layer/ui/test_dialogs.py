@@ -24,22 +24,26 @@ class TestWelcomeDialog:
         """Test creating welcome dialog."""
         from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
 
-        dialog = WelcomeDialog()
+        dialog = WelcomeDialog(recent_files=[])
         assert dialog is not None
-        assert dialog.windowTitle() == "Welcome"
+        assert dialog.isModal() is True
 
     def test_welcome_dialog_with_recent_files(self, app):
         """Test welcome dialog with recent files."""
+        from PyQt6.QtWidgets import QLabel
+
         from py_rme_canary.vis_layer.ui.dialogs.welcome_dialog import WelcomeDialog
 
-        recent = [
-            ("/path/to/map1.otbm", "map1.otbm"),
-            ("/path/to/map2.otbm", "map2.otbm"),
-        ]
+        recent = ["/path/to/map1.otbm", "/path/to/map2.otbm"]
         dialog = WelcomeDialog(recent_files=recent)
 
         # Should show recent files
-        assert dialog.recent_list.count() == 2
+        labels = dialog.findChildren(QLabel)
+        found_map1 = any("map1.otbm" in lbl.text() for lbl in labels)
+        found_map2 = any("map2.otbm" in lbl.text() for lbl in labels)
+
+        assert found_map1
+        assert found_map2
 
 
 class TestSettingsDialog:
@@ -69,6 +73,7 @@ class TestSettingsDialog:
         dialog = SettingsDialog()
 
         # Should have 5 categories (General/Editor/Graphics/Interface/Client Version)
+        # Note: Using private attribute _nav_list as per new implementation.
         assert dialog._nav_list.count() == 5
 
     def test_category_navigation(self, app):

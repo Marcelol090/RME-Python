@@ -19,8 +19,12 @@ if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
 
 
+from PyQt6.QtCore import Qt, pyqtSignal
+
 class ModernPaletteDock(QDockWidget):
     """Modern replacement for the palette dock."""
+
+    brush_hovered = pyqtSignal(int, str)  # Forwarded from widget
 
     def __init__(self, editor: QtMapEditor, parent: QWidget | None = None) -> None:
         super().__init__("Palette", parent)
@@ -143,6 +147,7 @@ class ModernPaletteDock(QDockWidget):
             widget = ModernPaletteWidget(sprite_lookup=sprite_lookup)
             widget.set_icon_size(int(self._icon_size))
             widget.brush_selected.connect(self._on_brush_selected)
+            widget.brush_hovered.connect(self.brush_hovered.emit)
 
             tab_idx = self.tabs.addTab(widget, label)
             icon = tab_icons.get(key)
@@ -192,6 +197,8 @@ class ModernPaletteDock(QDockWidget):
         self._refresh_palette_content(key, widget)
         self._apply_filter_to_widget(key, widget)
         self._sync_editor_brush_bindings()
+        if hasattr(self.editor, "_sync_palette_selection_actions"):
+            self.editor._sync_palette_selection_actions(key)
 
     def _on_filter_changed(self, _text: str) -> None:
         widget = self._current_palette_widget()

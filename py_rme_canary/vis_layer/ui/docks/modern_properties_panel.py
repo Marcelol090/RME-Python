@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDockWidget,
@@ -21,15 +22,20 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
     QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.houses import House
@@ -94,10 +100,16 @@ class ModernPropertiesPanel(QDockWidget):
         self.house_tab = self._create_house_tab()
         self.spawn_tab = self._create_spawn_tab()
 
+        self.item_advanced_tab = self._create_item_advanced_tab()
+
         self.tabs.addTab(self.tile_tab, "Tile")
         self.tabs.addTab(self.item_tab, "Item")
+        self.tabs.addTab(self.item_advanced_tab, "Advanced")
         self.tabs.addTab(self.house_tab, "House")
         self.tabs.addTab(self.spawn_tab, "Spawn")
+
+        # Advanced tab initially hidden (only shown when an item is selected)
+        self.tabs.setTabVisible(2, False)
 
         main_layout.addWidget(self.tabs)
 
@@ -188,7 +200,8 @@ class ModernPropertiesPanel(QDockWidget):
         # Image Preview
         self.item_preview = QLabel()
         self.item_preview.setFixedSize(32, 32)
-        self.item_preview.setStyleSheet("background: #2A2A3E; border-radius: 4px;")
+        # Styled in _apply_style via objectName
+        self.item_preview.setObjectName("itemPreview")
         layout.addRow("Preview:", self.item_preview)
 
         # Client ID (read-only)
@@ -212,6 +225,17 @@ class ModernPropertiesPanel(QDockWidget):
         self.item_unique_id.setRange(0, 65535)
         self.item_unique_id.valueChanged.connect(lambda v: self._mark_changed("unique_id", v))
         layout.addRow("Unique ID:", self.item_unique_id)
+
+        # Tier (C++ parity: createClassificationFields — visible for weapon/equipment/classified items)
+        self.item_tier = QSpinBox()
+        self.item_tier.setRange(0, 255)
+        self.item_tier.setToolTip("Item tier (0–255). Shown for weapon/equipment/classified items.")
+        self.item_tier.valueChanged.connect(lambda v: self._mark_changed("tier", v))
+        self.item_tier_label = QLabel("Tier:")
+        layout.addRow(self.item_tier_label, self.item_tier)
+        # Hidden until item with classification/weapon/equipment is shown
+        self.item_tier_label.setVisible(False)
+        self.item_tier.setVisible(False)
 
         # Text (for books/signs)
         text_group = QGroupBox("Text Content")
@@ -292,6 +316,57 @@ class ModernPropertiesPanel(QDockWidget):
 
         return widget
 
+    def _create_item_advanced_tab(self) -> QWidget:
+        """Create the Advanced attributes tab — C++ parity with PropertiesWindow::createAttributesPanel().
+
+        Displays a Key / Type / Value editable table matching the C++ AttributeService:
+          - Types: Number, Float, Boolean, String
+          - Add Attribute button appends a new empty row
+          - Remove Attribute button deletes the selected row
+        """
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
+        # Table: Key | Type | Value
+        self.attr_table = QTableWidget(0, 3)
+        self.attr_table.setObjectName("attrTable")
+        self.attr_table.setHorizontalHeaderLabels(["Key", "Type", "Value"])
+        self.attr_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.attr_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.attr_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.attr_table.verticalHeader().setVisible(False)
+        self.attr_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.attr_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.attr_table.setAlternatingRowColors(True)
+        self.attr_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked
+            | QAbstractItemView.EditTrigger.SelectedClicked
+        )
+        # Type column changed handler — re-validate value when type changes
+        self.attr_table.cellChanged.connect(self._on_attr_cell_changed)
+        layout.addWidget(self.attr_table)
+
+        # Add / Remove buttons
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(8)
+
+        self.btn_add_attr = QPushButton("+ Add Attribute")
+        self.btn_add_attr.setObjectName("secondaryButton")
+        self.btn_add_attr.clicked.connect(self._on_add_attribute)
+        btn_row.addWidget(self.btn_add_attr)
+
+        self.btn_remove_attr = QPushButton("− Remove")
+        self.btn_remove_attr.setObjectName("secondaryButton")
+        self.btn_remove_attr.clicked.connect(self._on_remove_attribute)
+        btn_row.addWidget(self.btn_remove_attr)
+
+        btn_row.addStretch()
+        layout.addLayout(btn_row)
+
+        return widget
+
     def _create_spawn_tab(self) -> QWidget:
         """Create spawn properties tab."""
         widget = QWidget()
@@ -328,85 +403,212 @@ class ModernPropertiesPanel(QDockWidget):
         return widget
 
     def _apply_style(self) -> None:
-        """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            ModernPropertiesPanel {
-                background: #1E1E2E;
-            }
+        """Apply modern styling using theme tokens."""
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            #propertiesHeader {
-                color: #E5E5E7;
+        self.setStyleSheet(
+            f"""
+            ModernPropertiesPanel {{
+                background: {c["surface"]["primary"]};
+            }}
+
+            #propertiesHeader {{
+                color: {c["text"]["primary"]};
                 font-size: 14px;
                 font-weight: 600;
                 padding: 8px 0;
-            }
+            }}
 
-            #monoLabel {
+            #monoLabel {{
                 font-family: 'JetBrains Mono', 'Consolas', monospace;
-                color: #8B5CF6;
-            }
+                color: {c["brand"]["primary"]};
+            }}
 
-            QGroupBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+            #itemPreview {{
+                background: {c["surface"]["secondary"]};
+                border-radius: {r["sm"]}px;
+            }}
+
+            QGroupBox {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 margin-top: 16px;
                 padding-top: 8px;
                 font-weight: 600;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QGroupBox::title {
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 8px;
-                color: #A1A1AA;
-            }
+                color: {c["text"]["secondary"]};
+            }}
 
-            #primaryButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #8B5CF6, stop:1 #7C3AED);
-                color: white;
+            #primaryButton {{
+                background: {c["brand"]["primary"]};
+                color: {c["text"]["primary"]};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r["md"]}px;
+                padding: 8px 16px;
+                font-weight: 600;
+                min-width: 80px;
+            }}
+
+            #primaryButton:hover {{
+                background: {c["brand"]["secondary"]};
+            }}
+
+            #primaryButton:disabled {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["disabled"]};
+            }}
+
+            #secondaryButton {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
                 padding: 8px 16px;
                 font-weight: 500;
                 min-width: 80px;
-            }
+            }}
 
-            #primaryButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #A78BFA, stop:1 #8B5CF6);
-            }
+            #secondaryButton:hover {{
+                background: {c["state"]["hover"]};
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            #primaryButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
+            #secondaryButton:disabled {{
+                background: {c["surface"]["secondary"]};
+                color: {c["text"]["disabled"]};
+                border-color: {c["surface"]["tertiary"]};
+            }}
 
-            #secondaryButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: 500;
-                min-width: 80px;
-            }
+            QTableWidget#attrTable {{
+                background: {c["surface"]["secondary"]};
+                alternate-background-color: {c["surface"]["primary"]};
+                color: {c["text"]["primary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                gridline-color: {c["border"]["subtle"]};
+                selection-background-color: {c["state"]["selected"]};
+                selection-color: {c["text"]["primary"]};
+            }}
 
-            #secondaryButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
-
-            #secondaryButton:disabled {
-                background: #2A2A3E;
-                color: #52525B;
-                border-color: #363650;
-            }
+            QTableWidget#attrTable QHeaderView::section {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["secondary"]};
+                border: none;
+                border-bottom: 1px solid {c["border"]["default"]};
+                padding: 4px 8px;
+                font-weight: 600;
+                font-size: 11px;
+            }}
         """
         )
+
+    # ------------------------------------------------------------------
+    # Advanced Attributes tab helpers (C++ AttributeService parity)
+    # ------------------------------------------------------------------
+
+    _ATTR_TYPES: list[str] = ["String", "Number", "Float", "Boolean"]
+
+    def _populate_attr_table(self, attributes: dict[str, object]) -> None:
+        """Fill attr_table from an item's attributes dict: keys → str, values → typed."""
+        self.attr_table.blockSignals(True)
+        self.attr_table.setRowCount(0)
+
+        for key, value in attributes.items():
+            row = self.attr_table.rowCount()
+            self.attr_table.insertRow(row)
+
+            # Key
+            key_item = QTableWidgetItem(str(key))
+            self.attr_table.setItem(row, 0, key_item)
+
+            # Detect type
+            if isinstance(value, bool):
+                type_str, val_str = "Boolean", "1" if value else "0"
+            elif isinstance(value, int):
+                type_str, val_str = "Number", str(value)
+            elif isinstance(value, float):
+                type_str, val_str = "Float", str(value)
+            else:
+                type_str, val_str = "String", str(value)
+
+            # Type dropdown cell
+            type_combo = QComboBox()
+            type_combo.addItems(self._ATTR_TYPES)
+            type_combo.setCurrentText(type_str)
+            self.attr_table.setCellWidget(row, 1, type_combo)
+
+            # Value
+            val_item = QTableWidgetItem(val_str)
+            self.attr_table.setItem(row, 2, val_item)
+
+        self.attr_table.blockSignals(False)
+
+    def _collect_attributes(self) -> dict[str, object]:
+        """Read all rows from attr_table and return a key→typed-value dict."""
+        result: dict[str, object] = {}
+        for row in range(self.attr_table.rowCount()):
+            key_item = self.attr_table.item(row, 0)
+            val_item = self.attr_table.item(row, 2)
+            if not key_item or not key_item.text().strip():
+                continue
+
+            key = key_item.text().strip()
+            val_str = val_item.text() if val_item else ""
+
+            type_combo = self.attr_table.cellWidget(row, 1)
+            type_str = type_combo.currentText() if type_combo else "String"
+
+            try:
+                if type_str == "Number":
+                    result[key] = int(val_str)
+                elif type_str == "Float":
+                    result[key] = float(val_str)
+                elif type_str == "Boolean":
+                    result[key] = val_str == "1" or val_str.lower() == "true"
+                else:
+                    result[key] = val_str
+            except (ValueError, TypeError):
+                result[key] = val_str
+
+        return result
+
+    def _on_attr_cell_changed(self, row: int, col: int) -> None:
+        """Mark attributes as changed when any cell edits."""
+        if col in (0, 2):  # Key or Value column changed
+            self._mark_changed("custom_attributes", self._collect_attributes())
+
+    def _on_add_attribute(self) -> None:
+        """Append a new empty row (C++ PropertiesWindow::OnClickAddAttribute parity)."""
+        row = self.attr_table.rowCount()
+        self.attr_table.insertRow(row)
+        self.attr_table.setItem(row, 0, QTableWidgetItem(""))
+
+        type_combo = QComboBox()
+        type_combo.addItems(self._ATTR_TYPES)
+        self.attr_table.setCellWidget(row, 1, type_combo)
+
+        self.attr_table.setItem(row, 2, QTableWidgetItem(""))
+        self.attr_table.editItem(self.attr_table.item(row, 0))
+        self._mark_changed("custom_attributes", self._collect_attributes())
+
+    def _on_remove_attribute(self) -> None:
+        """Remove selected row (C++ PropertiesWindow::OnClickRemoveAttribute parity)."""
+        rows = self.attr_table.selectedItems()
+        if not rows:
+            return
+        row = self.attr_table.currentRow()
+        if row >= 0:
+            self.attr_table.removeRow(row)
+            self._mark_changed("custom_attributes", self._collect_attributes())
 
     def _mark_changed(self, field: str, value: Any) -> None:
         """Mark a field as changed."""
@@ -569,6 +771,25 @@ class ModernPropertiesPanel(QDockWidget):
         self.item_dest_x.valueChanged.connect(lambda v: self._mark_changed("destination_x", v))
         self.item_dest_y.valueChanged.connect(lambda v: self._mark_changed("destination_y", v))
         self.item_dest_z.valueChanged.connect(lambda v: self._mark_changed("destination_z", v))
+
+        # --- Tier field visibility (C++ createClassificationFields parity) ---
+        # Show tier for items with classification > 0, weapons, or wearable equipment
+        classification = getattr(item, "classification", 0) or 0
+        is_weapon = getattr(item, "is_weapon", False)
+        is_equipment = getattr(item, "is_wearable_equipment", False) or getattr(item, "is_equipment", False)
+        show_tier = bool(classification > 0 or is_weapon or is_equipment)
+        self.item_tier_label.setVisible(show_tier)
+        self.item_tier.setVisible(show_tier)
+        if show_tier:
+            self.item_tier.blockSignals(True)
+            self.item_tier.setValue(getattr(item, "tier", 0) or 0)
+            self.item_tier.blockSignals(False)
+
+        # --- Advanced Attributes tab (C++ createAttributesPanel parity) ---
+        raw_attrs = getattr(item, "attributes", None) or getattr(item, "extra_attributes", None) or {}
+        self._populate_attr_table(raw_attrs)
+        # Show or hide the Advanced tab (index 2)
+        self.tabs.setTabVisible(2, True)
 
         self.btn_apply.setEnabled(False)
         self.btn_revert.setEnabled(False)

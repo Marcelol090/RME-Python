@@ -49,6 +49,10 @@ def toggle_minimap_dock(editor, value: bool) -> None:
     editor._toggle_minimap_dock(bool(value))
 
 
+def open_tool_options(editor) -> None:
+    editor._show_tool_options_panel()
+
+
 def toggle_actions_history_dock(editor, value: bool) -> None:
     editor._toggle_actions_history_dock(bool(value))
 
@@ -56,6 +60,10 @@ def toggle_actions_history_dock(editor, value: bool) -> None:
 def toggle_dark_mode(editor, value: bool) -> None:
     """Toggle dark mode theme."""
     editor._toggle_dark_mode(bool(value))
+
+
+def set_theme(editor, theme_name: str) -> None:
+    editor._set_editor_theme(str(theme_name))
 
 
 def toggle_live_log_dock(editor, value: bool) -> None:

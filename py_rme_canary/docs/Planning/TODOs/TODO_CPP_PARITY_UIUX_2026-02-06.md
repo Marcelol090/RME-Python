@@ -1,4 +1,4 @@
-# TODO Deep Search - Paridade C++/Lua -> Python (2026-02-06)
+# TODO CPP Parity UI/UX - Paridade C++/Lua -> Python (2026-02-06)
 
 ## Escopo auditado
 - Referência C++/Lua:
@@ -299,3 +299,450 @@
   - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py` -> `3 passed`.
   - Full logic-layer context-menu unit module remains blocked in this runtime by Python mismatch:
     - local interpreter is `Python 3.10`, while project source includes `Python 3.12` syntax in unrelated imports (e.g. `class LRUCache[T]`).
+
+## Incremental Update (2026-02-10 - Phase 7)
+- Closed another C++ parity gap (`Edit Towns` action):
+  - `qt_map_editor_dialogs._edit_towns()` no longer shows stub-only message.
+  - Action now routes to real Town Manager (`show_town_manager`) with fallback to session helper flow.
+- Refactored `TownListDialog` to align with real backend model:
+  - Uses `Town.temple_position` (instead of stale `temple` attribute assumption).
+  - Uses real `Town` dataclass creation on add.
+  - Temple update path now writes `temple_position` and supports session-backed mutation (`set_town_temple_position`).
+  - Delete now blocks when houses are linked to the town (legacy parity behavior from redux `towns_window.cpp`).
+  - Added parent refresh hooks after mutations (`canvas.update`, dirty flag).
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_town_list_dialog.py`
+    - loads `temple_position` correctly
+    - add uses current cursor position
+    - set temple delegates to session
+    - delete is blocked with linked houses
+
+## Incremental Update (2026-02-10 - Phase 8)
+- Removed `Generate Map` dead-end stub in file menu parity flow:
+  - `qt_map_editor_file._generate_map()` now routes to the real template-based map creation flow (`_new_map()`).
+  - Added status feedback for action visibility in UI telemetry (`Generate Map: template flow opened`).
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py::test_generate_map_routes_to_new_map_flow`
+
+## Incremental Update (2026-02-10 - Phase 9)
+- Closed `Map Cleanup` parity gap for undo/redo safety:
+  - `qt_map_editor_dialogs._map_cleanup()` no longer mutates tiles directly.
+  - Cleanup now delegates to transactional session flow via `_map_clear_invalid_tiles()` when available.
+  - Fallback path now uses `session.clear_invalid_tiles(selection_only=False)` and keeps UI/action refresh behavior.
+- Removed `id_mapper` hard requirement from cleanup path:
+  - cleanup now follows `EditorSession.clear_invalid_tiles` definition of invalid items (placeholder/unknown replacements).
+- Added map-level session wrapper:
+  - `qt_map_editor_session._map_clear_invalid_tiles(confirm: bool = True)` to centralize map cleanup routing and avoid duplicated confirmation prompts.
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_map_cleanup.py`
+    - cancel path (no changes)
+    - delegation path (`_map_clear_invalid_tiles`)
+    - fallback path (`session.clear_invalid_tiles(selection_only=False)`)
+    - behavior without `id_mapper`
+
+## Incremental Update (2026-02-11 - Phase 10)
+- Validation closure for Phase 7/8 parity items (`Edit Towns` + `Generate Map`):
+  - `tests/unit/vis_layer/ui/test_town_list_dialog.py` -> validated temple position flow, add by current cursor, session delegation and house-linked delete guard.
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_generate_map.py` -> validated `_generate_map()` delegates to `_new_map()` template flow.
+- Quality pipeline analytical run completed:
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --timeout 120` -> concluded with Jules artifacts.
+  - Noted environment-specific blocker when security stage is enabled: `bandit` process may hang in this runtime; mitigated by using `--skip-security` for deterministic local validation and keeping targeted security runs isolated.
+
+## Incremental Update (2026-02-11 - Phase 11)
+- Performance optimization using Rust acceleration boundary (legacy-compatible output preserved):
+  - `logic_layer/minimap_png_exporter.py` now routes heavy pixel-buffer rendering through `logic_layer.rust_accel.render_minimap_buffer(...)`.
+  - PNG IDAT assembly/compression now routes through `logic_layer.rust_accel.assemble_png_idat(...)`.
+  - Fallback behavior remains deterministic because `rust_accel` preserves pure-Python path when Rust module is unavailable.
+- Added dedicated regression coverage:
+  - `tests/unit/logic_layer/test_minimap_png_exporter_rust_path.py`
+    - validates `render_minimap_buffer` integration in floor export flow.
+    - validates `assemble_png_idat` integration in `_write_png`.
+
+## Incremental Update (2026-02-11 - Phase 12)
+- Context-menu `select` actions hardened for backend capability parity:
+  - `ItemContextMenu` now uses a centralized action registry (`_ITEM_SELECT_ACTIONS`) to keep legacy action order stable.
+  - Added capability gates via `can_*` callbacks for dynamic enable/disable without breaking visibility of legacy entries.
+  - `Move To Tileset...` now reflects runtime capability from user settings instead of always appearing actionable.
+- Backend callback map expanded in `ContextMenuActionHandlers`:
+  - Added `can_move_item_to_tileset()` and wired `can_move_to_tileset` callback.
+  - Added `can_replace_tiles_on_selection()` and wired `can_selection_replace_tiles` callback for tile/item context menus.
+  - Added `can_selection_paste` callback to align paste action enablement with session capability.
+- Regression coverage added:
+  - `tests/unit/logic_layer/test_context_menu_handlers.py`
+    - `test_can_move_item_to_tileset_reflects_user_setting`
+    - `test_item_context_callbacks_expose_can_move_to_tileset`
+    - `test_tile_context_callbacks_expose_selection_replace_capability`
+  - `tests/unit/vis_layer/ui/test_context_menus_select_actions.py` (new)
+    - validates disabled state for `Move To Tileset...` when capability is false.
+    - validates deterministic order for select actions (`Wallbrush` -> `Groundbrush` -> `Collection`).
+
+## Incremental Update (2026-02-11 - Phase 13)
+- Selection menu parity hardening (`Selection` top-level actions):
+  - `QtMapEditorSessionMixin._update_action_enabled_states()` now controls all selection-scoped actions
+    according to `session.has_selection()` (legacy-aligned enable/disable behavior):
+    - `Replace Items on Selection`
+    - `Find Item on Selection`
+    - `Remove Item on Selection`
+    - `Find Everything/Unique/Action/Container/Writeable (Selection)`
+- Added regression coverage:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py` (new)
+    - validates all selection-scoped actions disabled when no selection.
+    - validates all selection-scoped actions enabled when selection exists.
+
+## Incremental Update (2026-02-11 - Phase 14)
+- Palette `select` menu parity/UX hardening (`Window > Palette`):
+  - Palette actions are now `checkable` and grouped via exclusive `QActionGroup`,
+    mirroring legacy "one active palette page" behavior.
+  - Added two-way synchronization of menu checked-state with active palette:
+    - menu trigger -> dock palette selection (`_select_palette`)
+    - dock tab change -> checked menu action (`ModernPaletteDock._on_tab_changed`)
+- Files updated:
+  - `vis_layer/ui/main_window/build_actions.py`
+  - `vis_layer/ui/main_window/qt_map_editor_palettes.py`
+  - `vis_layer/ui/docks/modern_palette_dock.py`
+- Regression update:
+  - `tests/ui/test_toolbar_menu_sync.py` expanded with exclusive checked-state assertions.
+
+## Incremental Update (2026-02-11 - Phase 15)
+- Selection depth `select` menu hardening (`Selection > Selection Mode`):
+  - Added centralized `_sync_selection_depth_actions(...)` in navigation mixin.
+  - `build_actions` now delegates initial checked-state sync to the helper instead of local `if/elif` branching.
+  - `_set_selection_depth_mode(...)` now reuses the same sync helper after session mode changes.
+- Regression update:
+  - `tests/ui/test_toolbar_menu_sync.py` expanded with depth-mode exclusivity and programmatic sync assertions.
+
+## Incremental Update (2026-02-11 - Phase 16)
+- Mirror axis `select` submenu hardening (`Mirror > Mirror Axis`):
+  - Added explicit exclusive `QActionGroup` for `act_mirror_axis_x` and `act_mirror_axis_y`.
+  - Kept runtime sync in `QtMapEditorMirrorMixin._sync_mirror_actions()` as source of truth.
+- Regression update:
+  - Added `tests/unit/vis_layer/ui/test_qt_map_editor_mirror.py` to validate axis exclusivity and invalid-axis fallback.
+
+## Incremental Update (2026-02-11 - Phase 17)
+- Brush shape selector hardening (`Sizes toolbar`):
+  - Added explicit exclusive `QButtonGroup` for `shape_square` and `shape_circle`.
+  - Initial checked-state now follows `editor.brush_shape` instead of hardcoded defaults.
+- Regression update:
+  - Added `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py` to validate shape exclusivity and invalid-shape fallback.
+
+## Incremental Update (2026-02-11 - Legacy Popup Parity Sweep)
+- Varredura incremental no `remeres-map-editor-redux/source/ui/map_popup_menu.cpp` com foco em labels/fluxos de contexto.
+- Paridade aplicada em `py_rme_canary`:
+  - `Copy Position` agora usa formato Lua table (`{x=..., y=..., z=...}`) no clipboard (alinhado ao legado).
+  - Menu de tile renomeado de `Browse Tile...` para `Browse Field` (label legado).
+- Cobertura adicionada:
+  - teste para formato de cópia de posição legado;
+  - teste para presença do label `Browse Field` no `TileContextMenu`.
+
+## Incremental Update (2026-02-11 - Window Menu parity: Tool Options)
+- Gap encontrado na varredura de `menubar.xml`: faltava `Window > Tool Options` no Python.
+- Implementado:
+  - nova action `act_window_tool_options` em `build_actions.py`;
+  - inclusão no menu `Window` em `build_menus.py`;
+  - novo handler `open_tool_options(editor)` em `menubar/window/tools.py`;
+  - novo método `_show_tool_options_panel()` em `qt_map_editor_docks.py` para exibir `dock_palette` e focar `tool_options`.
+- Sincronização com arquitetura já existente:
+  - reaproveita `ModernPaletteDock.tool_options` (sem criar dock paralelo redundante).
+
+## Incremental Update (2026-02-11 - Context popup selection gating)
+- Varredura do `map_popup_menu.cpp` indicou diferença no topo do menu de contexto:
+  - no legado, `Copy Position` (atalho rápido de seleção) depende de seleção ativa.
+- Ajuste aplicado no menu unificado Python (`ItemContextMenu`):
+  - `Copy Position (x, y, z)` no bloco superior agora fica habilitado apenas quando há seleção.
+  - cópia de posição no submenu `Copy Data` permanece disponível para contexto de item/tile.
+- Regressão coberta com testes de estado `enabled` (sem seleção vs com seleção).
+
+## Incremental Update (2026-02-11 - Window > Toolbars naming/order parity)
+- Varredura do `menubar.xml` apontou divergência no submenu `Window > Toolbars`.
+- Ajustes aplicados em `qt_map_editor_toolbars.py`:
+  - ação `Brush ID` renomeada para `Brushes` (paridade de nomenclatura);
+  - adicionada ação `Sizes` (paridade legada) apontando para o toolbar moderno de quick brush settings;
+  - ordem do submenu alinhada ao legado: `Brushes`, `Position`, `Sizes`, `Standard`;
+  - itens modernos (`Indicators`, `Tools`) mantidos após separador para preservar UX atual.
+- Compatibilidade preservada:
+  - `act_view_toolbar_brush_settings` mantida como alias para `act_view_toolbar_sizes`.
+
+## Incremental Update (2026-02-11 - Copy Position format sync)
+- Gap identificado entre UX/configuração e ação de menu:
+  - `Preferences > Copy Position Format` existia, mas `_copy_position_to_clipboard` não aplicava o formato escolhido.
+- Implementado em `qt_map_editor_edit.py`:
+  - novo helper `format_position_for_copy(x, y, z, copy_format=...)`;
+  - `_copy_position_to_clipboard` agora usa `UserSettings.get_copy_position_format()` e aplica o formato correto.
+- Default alinhado ao legado: Lua table (`{x = X, y = Y, z = Z}`).
+
+## Incremental Update (2026-02-11 - File menu Recent Files parity)
+- `menubar.xml` revisitado: submenu `File > Recent Files` deve existir no builder principal (ordem legada).
+- Ajustes aplicados:
+  - `build_menus.py` agora cria `menu_recent_files` no `File` antes de `Preferences`.
+  - `QtMapEditorModernUXMixin._setup_recent_files()` passa a reutilizar `menu_recent_files` quando já existe e só faz fallback para `menu_file.addMenu(...)` em builders customizados.
+- Resultado: elimina risco de submenu duplicado e preserva ordem de menu alinhada ao legado.
+
+## Incremental Update (2026-02-11 - Tile-only popup legacy select actions)
+- Gap de paridade detectado no fluxo de tile sem item (menu unificado):
+  - legado exibe `Select Creature` / `Select Spawn` / `Select House` quando contexto do tile suporta.
+- Implementado:
+  - `ContextMenuActionHandlers.get_tile_context_callbacks(...)` agora expõe callbacks condicionais:
+    - `select_creature` quando tile possui monster/npc;
+    - `select_spawn` quando tile possui spawn monster/npc;
+    - `select_house` quando tile possui `house_id`.
+  - `ItemContextMenu` (ramo `item is None`) agora renderiza essas ações quando disponíveis.
+
+## Incremental Update (2026-02-11 - Top-level About menu label parity)
+- Revisão do `menubar.xml` confirmou topo `About` no legado (não `Help`).
+- Ajuste aplicado em `build_menus.py`:
+  - menu superior renomeado para `About`, mantendo compatibilidade com atributo interno `menu_help`.
+
+## Incremental Update (2026-02-11 - Navigate menu Zoom parity)
+- Revisão incremental de `menubar.xml` confirmou submenu `Navigate > Zoom` no legado.
+- Ajuste aplicado em `build_menus.py`:
+  - adicionado submenu `Zoom` dentro de `Navigate` com ações já existentes:
+    - `Zoom In`
+    - `Zoom Out`
+    - `Zoom Normal`
+- Mantém o submenu `Editor > Zoom` já existente e adiciona o ponto de acesso legado em `Navigate`.
+
+## Incremental Update (2026-02-11 - Navigate action labels parity)
+- Ajuste de textos em `build_actions.py` para aproximar wording do legado em `Navigate`:
+  - `Jump to Brush` -> `Jump to Brush...`
+  - `Jump to Item` -> `Jump to Item...`
+  - `Go To Previous Position` -> `Go to Previous Position`
+  - `Go To Position` -> `Go to Position...`
+
+## Incremental Update (2026-02-11 - Search labels and RAW naming parity)
+- Ajuste textual de ações para refletir menu legado:
+  - removidos sufixos `(Map)` e `(Selection)` das ações de busca (`Find Everything/Unique/Action/Container/Writeable`), já que o escopo é definido pelo menu onde aparecem.
+  - label de palette `Raw` ajustado para `RAW`.
+- Sem mudança de comportamento/handler, apenas paridade de nomenclatura e consistência de UI.
+
+## Incremental Update (2026-02-11 - Browse Field enablement parity)
+- Ajustado gating do `Browse Field` no menu de tile (sem item):
+  - agora habilita quando há seleção ativa, mesmo sem ground/items no tile;
+  - mantém habilitado também quando existem itens no tile.
+- Objetivo: aproximar comportamento do popup legado orientado a seleção (`anything_selected`).
+
+## Incremental Update (2026-02-11 - Selection Mode wording parity)
+- Ajustados labels das ações de `Selection Mode` para corresponder ao legado:
+  - `Compensate Selection`
+  - `Current Floor`
+  - `Lower Floors`
+  - `Visible Floors`
+- Mudança textual apenas (sem alteração de lógica dos modos).
+
+## Incremental Update (2026-02-11 - Reload label parity)
+- Ajuste textual da ação de recarga para refletir o legado (`Reload`):
+  - `act_reload_data` em `build_actions.py` alterada de `Reload Data Files` para `Reload`.
+- Sem alteração de comportamento/handler (`F5` permanece igual).
+
+## Incremental Update (2026-02-11 - View/Show label casing parity)
+- Ajustes de nomenclatura no `build_actions.py` para alinhamento textual com `remeres-map-editor-redux/data/menubar.xml`:
+  - `Show all Floors`
+  - `Show grid`
+  - `Show tooltips`
+  - `Show Light Strength`
+  - `Show Technical Items`
+  - `Highlight Items`
+  - `Highlight Locked Doors`
+  - `Show Wall Hooks`
+- Escopo: somente labels/UX textual; sem alteração de handlers ou regras de negócio.
+
+## Incremental Update (2026-02-11 - View/Show labels parity phase 2)
+- Fechado bloco adicional de labels legados em `build_actions.py`:
+  - `Show as Minimap`
+  - `Only show Colors`
+  - `Only show Modified`
+  - `Show creatures`
+  - `Show spawns`
+- Escopo intencional: apenas paridade textual/UI, sem alterar os handlers já conectados ao backend.
+
+## Incremental Update (2026-02-11 - Tile popup select parity phase 3)
+- Fechada lacuna de paridade no popup de tile sem item selecionado (`ItemContextMenu` ramo `item is None`):
+  - adicionadas ações legadas quando disponíveis:
+    - `Select RAW`
+    - `Select Wallbrush`
+    - `Select Groundbrush`
+    - `Select Collection`
+- Backend (`ContextMenuActionHandlers.get_tile_context_callbacks`) passou a expor callbacks dessas ações com detecção de brush por contexto do tile (top item/ground + brush manager).
+- Mantido comportamento de `Select Creature/Spawn/House` já existente.
+
+## Incremental Update (2026-02-11 - TileContextMenu browse gating parity)
+- Ajustado `TileContextMenu.show_for_tile(...)` para habilitar `Browse Field` quando há seleção ativa **mesmo sem itens/ground** no tile.
+- Alinhamento com o comportamento legado baseado em `anything_selected`.
+- Cobertura adicionada em `tests/unit/vis_layer/ui/test_context_menus_select_actions.py`.
+
+## Incremental Update (2026-02-11 - TileContextMenu select actions sync)
+- Sincronizado `TileContextMenu` com o menu unificado para exibir ações legadas `Select ...` quando callbacks existem:
+  - `Select Creature`, `Select Spawn`, `Select RAW`, `Select Wallbrush`, `Select Groundbrush`, `Select Collection`, `Select House`.
+- Objetivo: remover divergência de UX entre fluxos de popup de tile.
+
+## Incremental Update (2026-02-11 - TileContextMenu capability gates)
+- `TileContextMenu` passou a respeitar `can_*` para ações `Select ...`, alinhando com o comportamento do menu unificado.
+- Exemplo coberto: `can_select_wall=False` mantém a ação visível porém desabilitada (paridade de UX de capacidade).
+
+## Incremental Update (2026-02-11 - TileContextMenu browse capability gate)
+- `TileContextMenu` passou a aplicar `can_browse_tile` (quando presente) para `Browse Field`.
+- Mantido requisito de contexto (`has_selection` ou tile com itens/ground), agora combinado com capability gate para consistência com menu unificado.
+
+## Incremental Update (2026-02-11 - Tile popup ordering parity)
+- Ajustada a ordem no `TileContextMenu` para aproximar o legado:
+  - ações `Select ...` vêm antes de `Properties...` e `Browse Field`.
+  - `Browse Field` permanece no fechamento do bloco de tile.
+- Objetivo: manter consistência visual/mental model com `map_popup_menu.cpp`.
+
+## Incremental Update (2026-02-11 - TileContextMenu properties gating)
+- `Properties...` no `TileContextMenu` agora respeita contexto real de tile (ground/item/creature/spawn) antes de habilitar.
+- Ação continua visível, mas desabilitada em tile vazio para paridade com o fluxo legado.
+
+## Incremental Update (2026-02-11 - TileContextMenu copy-position gating)
+- `Copy Position` no `TileContextMenu` agora segue o legado: habilita apenas quando há seleção ativa.
+- Mantido capability gate (`can_copy_position`) quando fornecido.
+
+## Incremental Update (2026-02-11 - TileContextMenu edit-action selection gating)
+- `Copy`, `Cut` e `Delete` no topo do `TileContextMenu` agora seguem estritamente o estado de seleção (`has_selection`), como no legado C++.
+- `Paste` permanece condicionado a `can_paste` + capability gate.
+
+## Incremental Update (2026-02-11 - TileContextMenu replace-tiles parity)
+- Adicionada ação `Replace tiles...` no `TileContextMenu` clássico quando há seleção ativa, alinhando com legado e com menu unificado.
+- `qt_map_editor_modern_ux._setup_context_menus()` agora injeta callbacks `selection_replace_tiles` e `can_selection_replace_tiles` para esse fluxo.
+
+## Incremental Update (2026-02-12 - Automagic action/checkbox sync parity + Python 3.12 hardening)
+- Corrigida paridade de sincronização bidirecional entre `act_automagic` e `automagic_cb` em `qt_map_editor_toolbars.py`:
+  - `automagic_cb -> act_automagic`
+  - `act_automagic -> automagic_cb` com `blockSignals` para evitar loop.
+- Ajustado `SelectionDepthMode` para baseline Python 3.12:
+  - migração para `StrEnum`;
+  - adição/ajuste de parser resiliente `from_value(...)`.
+- Objetivo: eliminar regressões de UI state-sync em menus/select controls e consolidar compatibilidade py312 no fluxo de editor.
+
+## Incremental Update (2026-02-13 - Live role gating parity)
+- Auditoria de paridade comparando:
+  - `remeres-map-editor-redux/source/ui/menubar/menubar_action_manager.cpp`
+  - `remeres-map-editor-redux/source/ui/toolbar/standard_toolbar.cpp`
+- Fechado gap no Python para regras de habilitação por papel (host/local/client):
+  - `qt_map_editor_session.py::_update_action_enabled_states()` agora aplica gates de `is_local`, `is_host`, `is_live`, `is_server`.
+  - ações de `File/Search/Map/Live` e ações de seleção no menu passam a seguir a mesma lógica funcional do legado.
+- `EditorSession` ganhou API explícita de estado live para evitar acoplamento com atributos privados:
+  - `is_live_active()`, `is_live_client()`, `is_live_server()`.
+- `live_connect.py` passou a forçar refresh de estados de ação após connect/disconnect/host/stop, evitando UI stale.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_action_enabled_states.py`
+    - novos cenários para `live_client`, `live_server` e modo local.
+  - `tests/unit/vis_layer/ui/test_live_connect_action_refresh.py`
+    - garante refresh de estado após operações de live connect.
+
+## Incremental Update (2026-02-13 - Live close/shutdown + banlist management)
+- Continuação da auditoria de paridade no legacy:
+  - `remeres-map-editor-redux/source/ui/main_frame.cpp` (fluxo de close/disconnect/shutdown)
+  - `remeres-map-editor-redux/source/live/live_server.cpp` (banimento de host)
+- Implementado no Python:
+  - `qt_map_editor_file.py`
+    - novo `_confirm_live_session_close(...)` com prompts de disconnect/shutdown alinhados ao legacy.
+    - `_close_map()` agora exige encerramento da sessão live antes de fechar mapa.
+    - `_close_map()` corrigido para recriar `EditorSession` com assinatura correta (`brush_mgr` + callback), evitando `TypeError`.
+  - `menubar/file/tools.py`
+    - `exit_app()` agora consulta `_confirm_live_session_close(for_app_exit=True)` antes de fechar.
+  - `core/protocols/live_server.py`
+    - API de banlist: `get_banned_hosts()`, `unban_host()`, `clear_banned_hosts()`.
+  - `logic_layer/session/editor.py`
+    - wrappers: `list_live_banned_hosts()`, `unban_live_host()`, `clear_live_banlist()`.
+  - `live_connect.py` + `build_actions.py` + `build_menus.py`
+    - nova ação `Live > Manage Ban List...` para listar/desbanir hosts.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_file_live_close.py`
+  - `tests/unit/core/protocols/test_live_server_banlist.py`
+  - `tests/unit/logic_layer/test_editor_live_banlist.py`
+  - `tests/unit/vis_layer/ui/test_live_connect_action_refresh.py` (novo cenário de banlist)
+
+## Incremental Update (2026-02-13 - Window-manager close parity finalization)
+- Fechada a parte restante de graceful shutdown no fechamento por janela (X/Alt+F4):
+  - `QtMapEditor.closeEvent(...)` agora passa pelo fluxo de paridade live.
+  - novo helper testável `qt_map_editor_file.py::_handle_window_close_request(...)`.
+- Evitado prompt duplicado no fluxo `File > Exit`:
+  - `menubar/file/tools.py::exit_app()` seta flag `_live_close_confirmed_for_exit` após confirmação.
+  - `closeEvent` consome essa flag para não reconfirmar imediatamente.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_window_close_flow.py`
+  - `tests/unit/vis_layer/ui/main_window/test_file_tools_exit_app.py`
+
+## Incremental Update (2026-02-13 - Brush footprint cache + Rust dedupe in canvas path)
+- Continuação da varredura de paridade/performance (legacy render loop) com foco em custo por mouse-move:
+  - `logic_layer/geometry.py`
+    - novos caches para offsets de brush:
+      - `get_brush_offsets(size, shape)`
+      - `get_brush_border_offsets(size, shape)`
+    - normalização de shape antes da chave de cache para evitar recomputações com aliases inválidos.
+  - `vis_layer/ui/main_window/qt_map_editor_brushes.py`
+    - aquecimento de cache no update de tamanho/shape (`_warm_brush_offsets_cache`).
+  - `vis_layer/ui/canvas/widget.py` e `vis_layer/renderer/opengl_canvas.py`
+    - trocado iterador dinâmico por offsets cacheados no fluxo de pintura/preview.
+    - dedupe local substituído por `rust_accel.dedupe_positions(...)` (com fallback Python estável).
+  - `logic_layer/rust_accel.py`
+    - nova API `dedupe_positions(...)` com caminho Rust opcional e fallback deterministicamente ordenado.
+- Cobertura adicionada/atualizada:
+  - `tests/unit/logic_layer/test_brush_footprint.py`
+    - valida cache e normalização de chave.
+  - `tests/unit/logic_layer/test_rust_accel.py`
+    - valida fallback, uso de backend e fallback em erro para `dedupe_positions`.
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
+    - preservado comportamento de sincronização shape square/circle com stubs UI (duck-typing).
+
+## Incremental Update (2026-02-13 - Selection/Lasso mode UI-backend contract tests)
+- Fechado gap de verificação determinística no modo seleção:
+  - novo `tests/unit/vis_layer/ui/test_mode_contract.py` cobrindo:
+    - `Selection Mode` ligado: sincroniza estado UI (`act_selection_mode`) com backend (`selection_mode`) e cancela gesto ativo;
+    - `Selection Mode` desligado: limpa estado de lasso e cancela box selection;
+    - `Lasso` ligado/desligado: força seleção quando necessário e mantém ações sincronizadas.
+- Objetivo: evitar regressão de estado “stuck tool” entre menu/toolbar e canvas input pipeline.
+
+## Incremental Update (2026-02-13 - Footprint paint fast path when mirror is off)
+- Otimização adicional no caminho quente de pintura (mouse move contínuo):
+  - `vis_layer/ui/canvas/widget.py` e `vis_layer/renderer/opengl_canvas.py`:
+    - quando `mirror_enabled=False`, o fluxo de footprint não cria listas intermediárias e não chama dedupe;
+    - marca `autoborder` e aplica `mouse_move` diretamente a partir dos offsets já cacheados.
+  - quando `mirror_enabled=True`, mantém pipeline seguro:
+    - `dedupe_positions(...)` + `union_with_mirrored(...)`.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py`
+    - `test_map_canvas_paint_footprint_without_mirror_skips_dedupe`
+    - `test_opengl_canvas_paint_footprint_without_mirror_skips_dedupe`
+    - `test_map_canvas_paint_footprint_with_mirror_uses_dedupe_and_union`
+    - `test_opengl_canvas_paint_footprint_with_mirror_uses_dedupe_and_union`
+
+## Incremental Update (2026-02-13 - BrushToolbar theme-token parity)
+- Fechado gap de consistência visual no componente `BrushToolbar`:
+  - `vis_layer/ui/widgets/brush_toolbar.py`
+    - style deixou de usar RGBA hardcoded e passou a ler `ThemeManager.tokens` (`surface/text/border/state/radius`);
+    - separadores verticais agora seguem `border.default`;
+    - ícones de shape (`square/circle`) sincronizados com cores de texto do tema (`text.primary` / `text.secondary`).
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_widgets.py::test_brush_toolbar_uses_theme_tokens_in_stylesheet`
+
+## Incremental Update (2026-02-13 - Selection mode gesture-cancel hardening)
+- Hardening de contrato UI↔canvas ao alternar `Selection Mode` / `Lasso`:
+  - `vis_layer/ui/main_window/qt_map_editor_navigation.py`
+    - `_toggle_selection_mode(...)` agora chama `canvas.cancel_interaction()` antes de `session.cancel_gesture()` ao entrar em seleção;
+    - `_toggle_lasso(...)` faz o mesmo ao forçar entrada em `selection_mode`.
+- Objetivo: evitar estado de interação pendente (`_mouse_down`/arrasto) ao trocar modo no meio de um stroke.
+- Cobertura atualizada:
+  - `tests/unit/vis_layer/ui/test_mode_contract.py`
+    - valida chamada de `cancel_interaction` nos fluxos de toggle relevantes.
+
+## Incremental Update (2026-02-13 - Runtime theme refresh hook for widgets)
+- Fechado gap de atualização de UI em troca de tema durante runtime:
+  - `vis_layer/ui/theme/__init__.py`
+    - `ThemeManager.apply_theme()` agora executa `_refresh_theme_aware_widgets(...)`.
+    - widgets com método `refresh_theme()` recebem callback após `app.setStyleSheet(...)`.
+  - `vis_layer/ui/widgets/brush_toolbar.py`
+    - novo método público `refresh_theme()` para reaplicar estilo/token + ícones.
+- Cobertura adicionada:
+  - `tests/unit/vis_layer/ui/test_theme.py::test_theme_manager_refreshes_theme_aware_widgets`
+
+## Incremental Update (2026-02-14 - Brush offsets hot-cache in render loop)
+- Fechado gap de overhead no loop de pintura contínua:
+  - `QtMapEditor` agora mantém offsets prontos (`_brush_draw_offsets`, `_brush_border_offsets`) atualizados por `_warm_brush_offsets_cache`.
+  - `MapCanvasWidget` e `OpenGLCanvasWidget` passam a consumir o cache local antes de qualquer fallback.
+  - `OpenGLCanvasWidget._update_brush_preview(...)` também usa offsets cacheados.
+- Cobertura adicionada/atualizada:
+  - `tests/unit/vis_layer/ui/test_context_menu_canvas_integration.py`
+    - valida uso do cache sem chamar `get_brush_offsets/get_brush_border_offsets` no caminho sem mirror.
+  - `tests/unit/vis_layer/ui/test_qt_map_editor_brushes_shape.py`
+    - valida rebuild de cache ao alternar shape e tamanho.

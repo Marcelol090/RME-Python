@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import (
@@ -14,6 +15,12 @@ from PyQt6.QtWidgets import (
 
 if TYPE_CHECKING:
     from py_rme_canary.vis_layer.ui.main_window.editor import QtMapEditor
+
+
+def _refresh_action_states(editor: QtMapEditor) -> None:
+    if hasattr(editor, "_update_action_enabled_states"):
+        with contextlib.suppress(Exception):
+            editor._update_action_enabled_states()
 
 
 class ConnectDialog(QDialog):
@@ -105,10 +112,13 @@ def open_connect_dialog(editor: QtMapEditor) -> None:
                 QMessageBox.information(editor, "Connected", f"Successfully connected to {host}:{port}")
                 if hasattr(editor, "dock_live_log"):
                     editor.dock_live_log.set_input_enabled(True)
+                _refresh_action_states(editor)
             else:
                 QMessageBox.critical(editor, "Connection Failed", f"Could not connect to {host}:{port}")
+                _refresh_action_states(editor)
         except Exception as e:
             QMessageBox.critical(editor, "Error", str(e))
+            _refresh_action_states(editor)
 
 
 def disconnect_live(editor: QtMapEditor) -> None:
@@ -116,6 +126,7 @@ def disconnect_live(editor: QtMapEditor) -> None:
     QMessageBox.information(editor, "Disconnected", "Disconnected from Live Server")
     if hasattr(editor, "dock_live_log"):
         editor.dock_live_log.set_input_enabled(False)
+    _refresh_action_states(editor)
 
 
 def open_host_dialog(editor: QtMapEditor) -> None:
@@ -126,15 +137,19 @@ def open_host_dialog(editor: QtMapEditor) -> None:
             success = editor.session.start_live_server(host=host, port=port, name=name, password=password)
             if success:
                 QMessageBox.information(editor, "Live Server", f"Hosting on {host}:{port}")
+                _refresh_action_states(editor)
             else:
                 QMessageBox.critical(editor, "Live Server", "Failed to start live server")
+                _refresh_action_states(editor)
         except Exception as e:
             QMessageBox.critical(editor, "Error", str(e))
+            _refresh_action_states(editor)
 
 
 def stop_host(editor: QtMapEditor) -> None:
     editor.session.stop_live_server()
     QMessageBox.information(editor, "Live Server", "Live server stopped")
+    _refresh_action_states(editor)
 
 
 def kick_client(editor: QtMapEditor) -> None:
@@ -157,3 +172,32 @@ def ban_client(editor: QtMapEditor) -> None:
         return
     if not editor.session.ban_live_client(int(client_id), reason=str(reason)):
         QMessageBox.information(editor, "Ban Client", "Client not found or server not running")
+
+
+def manage_ban_list(editor: QtMapEditor) -> None:
+    banned_hosts = list(editor.session.list_live_banned_hosts())
+    if not banned_hosts:
+        QMessageBox.information(editor, "Ban List", "Ban list is empty or server is not running")
+        return
+
+    host, ok = QInputDialog.getItem(editor, "Ban List", "Banned host:", banned_hosts, 0, False)
+    if not ok:
+        return
+    host = str(host).strip()
+    if not host:
+        return
+
+    confirm = QMessageBox.question(
+        editor,
+        "Ban List",
+        f"Unban host '{host}'?",
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        QMessageBox.StandardButton.Yes,
+    )
+    if confirm != QMessageBox.StandardButton.Yes:
+        return
+
+    if editor.session.unban_live_host(host):
+        QMessageBox.information(editor, "Ban List", f"Host '{host}' removed from ban list")
+    else:
+        QMessageBox.warning(editor, "Ban List", f"Could not unban '{host}'")

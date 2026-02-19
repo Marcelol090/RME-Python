@@ -202,17 +202,96 @@ class QtMapEditorSessionMixin:
         """Toggle dark mode theme."""
         from PyQt6.QtWidgets import QApplication
 
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
         app = QApplication.instance()
         if app:
             if enabled:
-                from py_rme_canary.vis_layer.ui.theme.integration import apply_modern_theme
-
-                apply_modern_theme(app)
+                get_theme_manager().apply_theme()
             else:
                 app.setStyleSheet("")
 
         self.status.showMessage(f"Dark Mode {'enabled' if enabled else 'disabled'}")
 
+    def _set_editor_theme(self, theme_name: str) -> None:
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
+        tm = get_theme_manager()
+        tm.set_theme(str(theme_name))
+        self._apply_editor_theme_profile()
+        self.status.showMessage(f"Theme applied: {tm.profile['component_style']}")
+
+    def _apply_editor_theme_profile(self) -> None:
+        from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
+        profile = get_theme_manager().profile
+
+        with contextlib.suppress(Exception):
+            self.setWindowTitle(str(profile.get("app_name", "Noct Map Editor")))
+
+        try:
+            self._set_brush_size(int(profile.get("brush_size", 1)))
+            self._set_brush_shape(str(profile.get("brush_shape", "square")))
+            self._set_brush_variation(int(profile.get("brush_variation", 0)))
+            self._toggle_palette_large_icons(bool(profile.get("palette_large_icons", False)))
+        except Exception:
+            pass
+
+        if hasattr(self, "brush_cursor_overlay") and self.brush_cursor_overlay is not None:
+            with contextlib.suppress(Exception):
+                self.brush_cursor_overlay.refresh_theme_profile()
+
+        # Keep theme actions in sync
+        action_theme_pairs = (
+            ("act_theme_noct_green_glass", "glass_morphism"),
+            ("act_theme_noct_8bit_glass", "glass_8bit"),
+            ("act_theme_noct_liquid_glass", "liquid_glass"),
+        )
+        for action_name, theme_name in action_theme_pairs:
+            action = getattr(self, action_name, None)
+            if action is None:
+                continue
+            with contextlib.suppress(Exception):
+                action.blockSignals(True)
+                action.setChecked(bool(get_theme_manager().current_theme == theme_name))
+                action.blockSignals(False)
+
+    def _verify_ui_backend_contract(self) -> None:
+        from py_rme_canary.logic_layer.rust_accel import fnv1a_64
+        from py_rme_canary.vis_layer.ui.main_window.ui_backend_contract import (
+            verify_and_repair_ui_backend_contract,
+        )
+
+        last_signature = int(getattr(self, "_ui_backend_contract_signature", 0) or 0)
+        repairs, signature = verify_and_repair_ui_backend_contract(self, last_signature=last_signature)
+        self._ui_backend_contract_signature = int(signature)
+        if not repairs:
+            self._ui_backend_contract_last_repairs_key = ""
+            self._ui_backend_contract_last_repairs_signature = 0
+            return
+
+        normalized_repairs = sorted({str(item) for item in repairs if str(item)})
+        repairs_key = "|".join(normalized_repairs)
+        repairs_signature = int(fnv1a_64(repairs_key.encode("utf-8")))
+        if (
+            repairs_signature == int(getattr(self, "_ui_backend_contract_last_repairs_signature", 0) or 0)
+            and repairs_key == str(getattr(self, "_ui_backend_contract_last_repairs_key", ""))
+        ):
+            return
+
+        current_status = ""
+        with contextlib.suppress(Exception):
+            current_status = str(self.status.currentMessage() or "")
+        if current_status and not current_status.startswith("UI contract auto-repair:"):
+            return
+
+        self._ui_backend_contract_last_repairs_key = repairs_key
+        self._ui_backend_contract_last_repairs_signature = int(repairs_signature)
+        preview = ", ".join(normalized_repairs[:4])
+        remaining = len(normalized_repairs) - 4
+        if remaining > 0:
+            preview = f"{preview} (+{remaining})"
+        self.status.showMessage(f"UI contract auto-repair: {preview}", 3000)
     def _replace_items(self) -> None:
         """Open Replace Items dialog."""
         from py_rme_canary.vis_layer.ui.dialogs.replace_items_dialog import ReplaceItemsDialog
@@ -286,12 +365,12 @@ class QtMapEditorSessionMixin:
         self.status.showMessage(f"Clear modified state: {cleared} tiles")
         self.canvas.update()
 
-    def _clear_invalid_tiles(self, *, selection_only: bool) -> None:
+    def _clear_invalid_tiles(self, *, selection_only: bool, confirm: bool = True) -> None:
         if bool(selection_only) and not self.session.has_selection():
             self.status.showMessage("Clear invalid tiles: nothing selected")
             return
 
-        if not bool(selection_only) and not self._confirm(
+        if bool(confirm) and not bool(selection_only) and not self._confirm(
             "Clear Invalid Tiles (Map)",
             "This will remove placeholder/unknown items (id=0 / unknown replacements) from the entire map. Do you want to proceed?",
         ):
@@ -311,6 +390,10 @@ class QtMapEditorSessionMixin:
             no_changes_message="Clear invalid tiles: no changes",
             changed_message=f"Clear invalid tiles ({scope}): removed {int(removed)} items",
         )
+
+    def _map_clear_invalid_tiles(self, *, confirm: bool = True) -> None:
+        """Map-level wrapper used by menu parity flows (e.g., Map Cleanup)."""
+        self._clear_invalid_tiles(selection_only=False, confirm=bool(confirm))
 
     def _map_remove_item_global(self) -> None:
         from py_rme_canary.vis_layer.ui.main_window.dialogs import FindItemDialog
@@ -1057,34 +1140,113 @@ class QtMapEditorSessionMixin:
     def _update_action_enabled_states(self) -> None:
         has_sel = bool(self.session.has_selection())
         can_paste = bool(self.session.can_paste())
+        session = getattr(self, "session", None)
+        has_map = bool(session is not None and getattr(session, "game_map", None) is not None)
 
-        self.act_copy.setEnabled(has_sel)
-        self.act_cut.setEnabled(has_sel)
-        self.act_delete_selection.setEnabled(has_sel)
-        self.act_duplicate_selection.setEnabled(has_sel)
+        def _session_flag(flag_name: str, *, default: bool = False) -> bool:
+            method = getattr(session, flag_name, None)
+            if callable(method):
+                with contextlib.suppress(Exception):
+                    return bool(method())
+            return bool(default)
 
-        self.act_move_selection_up.setEnabled(has_sel)
-        self.act_move_selection_down.setEnabled(has_sel)
+        is_live = _session_flag("is_live_active", default=False)
+        is_client = _session_flag("is_live_client", default=False)
+        is_server = _session_flag("is_live_server", default=False)
+        is_host = bool(has_map and not is_client)
+        is_local = bool(has_map and not is_live)
 
-        self.act_borderize_selection.setEnabled(has_sel)
+        def _set_enabled(action_name: str, enabled: bool) -> None:
+            action = getattr(self, action_name, None)
+            if action is not None and hasattr(action, "setEnabled"):
+                action.setEnabled(bool(enabled))
 
-        if hasattr(self, "act_clear_invalid_tiles_selection"):
-            self.act_clear_invalid_tiles_selection.setEnabled(has_sel)
-        if hasattr(self, "act_randomize_selection"):
-            self.act_randomize_selection.setEnabled(has_sel)
+        _set_enabled("act_copy", has_sel)
+        _set_enabled("act_cut", has_sel)
+        _set_enabled("act_delete_selection", has_sel)
+        _set_enabled("act_duplicate_selection", has_sel)
 
-        if hasattr(self, "act_house_set_id_on_selection"):
-            self.act_house_set_id_on_selection.setEnabled(has_sel)
-        if hasattr(self, "act_house_clear_id_on_selection"):
-            self.act_house_clear_id_on_selection.setEnabled(has_sel)
+        _set_enabled("act_move_selection_up", has_sel)
+        _set_enabled("act_move_selection_down", has_sel)
 
-        if hasattr(self, "act_switch_door_here"):
-            self.act_switch_door_here.setEnabled(True)
+        _set_enabled("act_borderize_selection", has_sel)
 
-        self.act_paste.setEnabled(can_paste)
+        selection_scoped_actions = (
+            "act_replace_items_on_selection",
+            "act_find_item_selection",
+            "act_remove_item_on_selection",
+            "act_find_everything_selection",
+            "act_find_unique_selection",
+            "act_find_action_selection",
+            "act_find_container_selection",
+            "act_find_writeable_selection",
+        )
+        selection_scoped_enabled = bool(has_sel and is_host)
+        for action_name in selection_scoped_actions:
+            _set_enabled(action_name, selection_scoped_enabled)
+
+        _set_enabled("act_clear_invalid_tiles_selection", has_sel)
+        _set_enabled("act_randomize_selection", has_sel)
+
+        _set_enabled("act_house_set_id_on_selection", has_sel)
+        _set_enabled("act_house_clear_id_on_selection", has_sel)
+
+        _set_enabled("act_switch_door_here", True)
+
+        _set_enabled("act_paste", can_paste)
 
         # Esc should remain meaningful even when no selection.
-        self.act_clear_selection.setEnabled(has_sel or bool(self.paste_armed) or bool(self.fill_armed))
+        _set_enabled("act_clear_selection", has_sel or bool(self.paste_armed) or bool(self.fill_armed))
+
+        # Legacy role gating (local/host/client) for top-level actions.
+        for action_name in (
+            "act_save",
+            "act_save_as",
+            "act_find_item",
+            "act_find_everything_map",
+            "act_find_unique_map",
+            "act_find_action_map",
+            "act_find_container_map",
+            "act_find_writeable_map",
+            "act_remove_item_map",
+        ):
+            _set_enabled(action_name, is_host)
+
+        for action_name in (
+            "act_close_map",
+            "act_import_map",
+            "act_import_monsters_npcs",
+            "act_replace_items",
+            "act_borderize_map",
+            "act_randomize_map",
+            "act_remove_corpses_map",
+            "act_remove_unreachable_map",
+            "act_clear_invalid_house_tiles_map",
+            "act_clear_modified_state",
+            "act_edit_towns",
+            "act_map_cleanup",
+            "act_map_properties",
+            "act_map_statistics_legacy",
+        ):
+            _set_enabled(action_name, is_local)
+
+        for action_name in (
+            "act_new_view",
+            "act_zoom_in",
+            "act_zoom_out",
+            "act_zoom_normal",
+            "act_goto_previous_position",
+            "act_goto_position",
+        ):
+            _set_enabled(action_name, has_map)
+
+        _set_enabled("act_live_host", is_local)
+        _set_enabled("act_live_stop", is_server)
+        _set_enabled("act_src_connect", not is_live)
+        _set_enabled("act_src_disconnect", is_live)
+        _set_enabled("act_live_kick", is_server)
+        _set_enabled("act_live_ban", is_server)
+        _set_enabled("act_live_banlist", is_server)
 
     def _on_tiles_changed(self, _changed) -> None:
         self.canvas.update()

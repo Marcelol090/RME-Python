@@ -214,7 +214,22 @@ class EditorSession:
 
     # UI-controlled brush size (radius). Kept Qt-free so non-tile tools (e.g.
     # spawn-area tools) can respect the current size.
-    brush_size: int = 0
+    _brush_size: int = field(default=0, init=False, repr=False)
+
+    # Callback for brush size changes (to notify UI).
+    on_brush_size_changed: Callable[[int], None] | None = field(default=None, init=False, repr=False)
+
+    @property
+    def brush_size(self) -> int:
+        return self._brush_size
+
+    @brush_size.setter
+    def brush_size(self, value: int) -> None:
+        val = int(value)
+        if self._brush_size != val:
+            self._brush_size = val
+            if self.on_brush_size_changed:
+                self.on_brush_size_changed(val)
 
     # Legacy-inspired: brush variation index.
     # MVP: used as a deterministic selector for brushes with `randomize_ids`.
@@ -3328,6 +3343,18 @@ class EditorSession:
             tiles.append(tile)
         return tiles
 
+    def is_live_active(self) -> bool:
+        """Return True when connected to live server or hosting one."""
+        return bool(self._live_client is not None or self._live_server is not None)
+
+    def is_live_client(self) -> bool:
+        """Return True when this editor is connected as a live client."""
+        return bool(self._live_client is not None)
+
+    def is_live_server(self) -> bool:
+        """Return True when this editor is hosting a live server."""
+        return bool(self._live_server is not None)
+
     def connect_live(self, host: str, port: int, *, name: str = "", password: str = "") -> bool:
         """Connect to a Live Editing server."""
         if self._live_client is not None:
@@ -3388,6 +3415,36 @@ class EditorSession:
         if server is None:
             return False
         return bool(server.ban_client(int(client_id), reason=str(reason)))
+
+    def list_live_banned_hosts(self) -> list[str]:
+        server = self._live_server
+        if server is None:
+            return []
+        get_hosts = getattr(server, "get_banned_hosts", None)
+        if callable(get_hosts):
+            with suppress(Exception):
+                return [str(host) for host in list(get_hosts()) if str(host).strip()]
+        return []
+
+    def unban_live_host(self, host: str) -> bool:
+        server = self._live_server
+        if server is None:
+            return False
+        unban = getattr(server, "unban_host", None)
+        if callable(unban):
+            with suppress(Exception):
+                return bool(unban(str(host)))
+        return False
+
+    def clear_live_banlist(self) -> int:
+        server = self._live_server
+        if server is None:
+            return 0
+        clear_hosts = getattr(server, "clear_banned_hosts", None)
+        if callable(clear_hosts):
+            with suppress(Exception):
+                return int(clear_hosts())
+        return 0
 
     def send_live_chat(self, message: str) -> bool:
         if self._live_client is None:

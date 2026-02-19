@@ -9,17 +9,21 @@ import secrets
 import select
 import socket
 import threading
+import time
 from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from .live_packets import PacketType, decode_cursor, encode_chat
 from .live_peer import LivePeer
 
-if TYPE_CHECKING:
-    pass
-
 log = logging.getLogger(__name__)
+
+# Security constants
+MAX_PACKETS_PER_SECOND = 50
+MAX_PACKETS_PER_SEC = MAX_PACKETS_PER_SECOND
+MAX_QUEUE_SIZE = 5000
+MAX_MAP_REQUEST_AREA = 65536  # 256x256 tiles
 
 
 def _decode_login_payload(payload: bytes) -> tuple[str, str]:
@@ -64,6 +68,9 @@ class LiveServer:
         self._banned_hosts: set[str] = set()
         self._incoming_queue: list[tuple[int, bytes]] = []
         self._queue_lock = threading.Lock()
+
+        # Rate limiting: socket -> (last_reset_time, count)
+        self._client_packet_rates: dict[socket.socket, tuple[float, int]] = {}
 
         # Callback for map data requests: (x_min, y_min, x_max, y_max, z) -> list[tiles]
         self._map_provider: Callable[[int, int, int, int, int], Any] | None = None
@@ -129,8 +136,16 @@ class LiveServer:
         """Broadcast updated client list to all peers."""
         payload = _encode_client_list(self.clients)
         self.broadcast(PacketType.CLIENT_LIST, payload)
+        self._enqueue_packet(int(PacketType.CLIENT_LIST), payload)
+
+    def _enqueue_packet(self, packet_type: int, payload: bytes) -> None:
+        """Safely enqueue a packet with bounds check."""
         with self._queue_lock:
-            self._incoming_queue.append((int(PacketType.CLIENT_LIST), payload))
+            if len(self._incoming_queue) >= MAX_QUEUE_SIZE:
+                # Drop packet to prevent OOM
+                log.warning(f"Dropping packet {packet_type} (queue full)")
+                return
+            self._incoming_queue.append((packet_type, payload))
 
     def _accept_loop(self) -> None:
         """Main loop to accept connections and handle data."""
@@ -158,11 +173,28 @@ class LiveServer:
                             server=self, sock=client, address=(str(addr[0]), int(addr[1])), client_id=self._client_seq
                         )
                         self.clients[client] = peer
+                        self._client_packet_rates[client] = (time.time(), 0)
                     else:
                         self._handle_client_data(sock)
 
             except Exception as e:
                 log.error(f"Server loop error: {e}")
+
+    def _check_rate_limit(self, client: socket.socket) -> bool:
+        """Check if client exceeded rate limit. Returns False if exceeded."""
+        now = time.time()
+        last_time, count = self._client_packet_rates.get(client, (now, 0))
+
+        if now - last_time >= 1.0:
+            # Reset counter every second
+            self._client_packet_rates[client] = (now, 1)
+            return True
+
+        if count >= MAX_PACKETS_PER_SEC:
+            return False
+
+        self._client_packet_rates[client] = (last_time, count + 1)
+        return True
 
     def _handle_client_data(self, client_sock: socket.socket) -> None:
         """Reads data from a client socket."""
@@ -171,24 +203,39 @@ class LiveServer:
             if peer is None:
                 self._disconnect_client(client_sock)
                 return
-            pkt = peer.recv_packet()
-            if not pkt:
+
+            # Rate limiting
+            if not self._check_rate_limit(client_sock):
+                log.warning(f"Client {peer.name} exceeded rate limit, disconnecting")
                 self._disconnect_client(client_sock)
                 return
-            packet_type, payload = pkt
-            self._process_packet(client_sock, int(packet_type), payload)
 
-        except Exception:
+            packets = peer.process_incoming_data()
+
+            # Check if peer disconnected itself (e.g. EOF or error inside process_incoming_data)
+            if peer.socket is None:
+                self._disconnect_client(client_sock)
+                return
+
+            if not packets:
+                return
+
+            for packet_type, payload in packets:
+                self._process_packet(client_sock, int(packet_type), payload)
+
+        except Exception as e:
+            log.error(f"Error handling client data: {e}")
             self._disconnect_client(client_sock)
 
     def _process_packet(self, client: socket.socket, packet_type: int, payload: bytes) -> None:
         """Business logic for handling packets."""
         peer = self.clients.get(client)
+        if peer is None:
+            return
 
         if packet_type == PacketType.LOGIN:
-            if peer is None:
-                return
             name, password = _decode_login_payload(payload)
+            # Secure password comparison
             if self.password and not secrets.compare_digest(str(password), str(self.password)):
                 peer.send_packet(PacketType.LOGIN_ERROR, b"Invalid password")
                 self._disconnect_client(client)
@@ -203,36 +250,31 @@ class LiveServer:
             log.info(f"Client {name} logged in (id={client_id})")
             return
 
-        if peer is None or not peer.is_authenticated:
+        if not peer.is_authenticated:
             log.warning(f"Unauthenticated packet {packet_type}")
             self._disconnect_client(client)
             return
 
         if packet_type == PacketType.CURSOR_UPDATE:
             # Decode and store cursor, then rebroadcast
-            if peer is not None:
-                client_id, x, y, z = decode_cursor(payload)
-                peer.set_cursor(x, y, z)
+            client_id, x, y, z = decode_cursor(payload)
+            peer.set_cursor(x, y, z)
             self.broadcast(PacketType.CURSOR_UPDATE, payload, exclude=client)
-            with self._queue_lock:
-                self._incoming_queue.append((int(packet_type), payload))
+            self._enqueue_packet(int(packet_type), payload)
             return
 
         if packet_type == PacketType.TILE_UPDATE:
             self.broadcast(PacketType.TILE_UPDATE, payload, exclude=client)
-            with self._queue_lock:
-                self._incoming_queue.append((int(packet_type), payload))
+            self._enqueue_packet(int(packet_type), payload)
             return
 
         if packet_type == PacketType.MESSAGE:
-            if peer is not None:
-                # Re-encode with client info for broadcast
-                text = payload.decode("utf-8", errors="ignore")
-                log.info(f"Chat from {peer.name}: {text}")
-                broadcast_payload = encode_chat(peer.client_id, peer.name, text)
-                self.broadcast(PacketType.MESSAGE, broadcast_payload)
-                with self._queue_lock:
-                    self._incoming_queue.append((int(packet_type), broadcast_payload))
+            # Re-encode with client info for broadcast
+            text = payload.decode("utf-8", errors="ignore")
+            log.info(f"Chat from {peer.name}: {text}")
+            broadcast_payload = encode_chat(peer.client_id, peer.name, text)
+            self.broadcast(PacketType.MESSAGE, broadcast_payload)
+            self._enqueue_packet(int(packet_type), broadcast_payload)
             return
 
         if packet_type == PacketType.MAP_REQUEST:
@@ -250,6 +292,17 @@ class LiveServer:
 
         x_min, y_min, x_max, y_max, z = decode_map_request(payload)
         log.info(f"Map request from {peer.name}: ({x_min},{y_min}) to ({x_max},{y_max}) z={z}")
+
+        # Security: Prevent massive map requests
+        width = abs(x_max - x_min) + 1
+        height = abs(y_max - y_min) + 1
+        area = width * height
+        if area > MAX_MAP_REQUEST_AREA:
+            log.warning(f"Rejected massive map request from {peer.name}: {area} tiles (limit {MAX_MAP_REQUEST_AREA})")
+            # Send empty response
+            chunk = encode_map_chunk(0, 1, [], x_min=x_min, y_min=y_min, z=z)
+            peer.send_packet(PacketType.MAP_CHUNK, chunk)
+            return
 
         if self._map_provider is None:
             # No map provider, send empty response
@@ -281,6 +334,8 @@ class LiveServer:
     def _disconnect_client(self, client_sock: socket.socket) -> None:
         """Disconnects a client."""
         peer = self.clients.pop(client_sock, None)
+        self._client_packet_rates.pop(client_sock, None)
+
         addr = peer.address if peer is not None else "Unknown"
         name = peer.name if peer is not None else "Unknown"
         with suppress(Exception):
@@ -312,3 +367,23 @@ class LiveServer:
                 self._disconnect_client(sock)
                 return True
         return False
+
+    def get_banned_hosts(self) -> list[str]:
+        """Return a stable list of currently banned host addresses."""
+        return sorted(str(host) for host in self._banned_hosts if str(host).strip())
+
+    def unban_host(self, host: str) -> bool:
+        """Remove a host address from ban list."""
+        normalized = str(host or "").strip()
+        if not normalized:
+            return False
+        if normalized not in self._banned_hosts:
+            return False
+        self._banned_hosts.discard(normalized)
+        return True
+
+    def clear_banned_hosts(self) -> int:
+        """Clear all banned hosts and return how many entries were removed."""
+        count = len(self._banned_hosts)
+        self._banned_hosts.clear()
+        return int(count)

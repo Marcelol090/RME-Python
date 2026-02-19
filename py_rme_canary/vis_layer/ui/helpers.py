@@ -4,7 +4,22 @@ from dataclasses import dataclass
 
 from PyQt6.QtGui import QColor
 
-from py_rme_canary.logic_layer.geometry import iter_brush_border_offsets, iter_brush_offsets
+from py_rme_canary.logic_layer.geometry import (
+    get_brush_border_offsets,
+    get_brush_offsets,
+    iter_brush_border_offsets,
+    iter_brush_offsets,
+)
+
+__all__ = (
+    "ItemProps",
+    "Viewport",
+    "get_brush_border_offsets",
+    "get_brush_offsets",
+    "iter_brush_border_offsets",
+    "iter_brush_offsets",
+    "qcolor_from_id",
+)
 
 
 def qcolor_from_id(server_id: int) -> QColor:

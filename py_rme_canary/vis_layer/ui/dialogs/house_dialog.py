@@ -29,6 +29,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
     from py_rme_canary.core.data.houses import House
@@ -57,12 +60,18 @@ class HouseCard(QFrame):
         layout.setSpacing(8)
         layout.setContentsMargins(12, 12, 12, 12)
 
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+        t = tm.tokens.get("typography", {})
+        font_mono = t.get("font_mono", "monospace")
+
         # Header row
         header = QHBoxLayout()
 
         # House icon + name
         name = QLabel(f"House: {self._house.name or 'Unnamed House'}")
-        name.setStyleSheet("font-weight: 600; color: #E5E5E7; font-size: 13px;")
+        name.setStyleSheet(f"font-weight: 600; color: {c['text']['primary']}; font-size: 13px;")
         header.addWidget(name)
 
         header.addStretch()
@@ -70,13 +79,13 @@ class HouseCard(QFrame):
         # ID badge
         id_badge = QLabel(f"#{self._house.id}")
         id_badge.setStyleSheet(
-            """
-            background: #363650;
-            color: #A1A1AA;
+            f"""
+            background: {c['surface']['tertiary']};
+            color: {c['text']['secondary']};
             padding: 2px 6px;
-            border-radius: 4px;
+            border-radius: {r['sm']}px;
             font-size: 10px;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: {font_mono};
         """
         )
         header.addWidget(id_badge)
@@ -90,13 +99,13 @@ class HouseCard(QFrame):
         # Rent
         rent = self._house.rent or 0
         rent_label = QLabel(f"Rent: {rent:,} gold")
-        rent_label.setStyleSheet("color: #F59E0B; font-size: 11px;")
+        rent_label.setStyleSheet(f"color: {c['brand']['active']}; font-size: 11px;")
         info.addWidget(rent_label)
 
         # Guildhall indicator
         if getattr(self._house, "guildhall", False):
             guild_label = QLabel("Guildhall")
-            guild_label.setStyleSheet("color: #8B5CF6; font-size: 11px;")
+            guild_label.setStyleSheet(f"color: {c['brand']['secondary']}; font-size: 11px;")
             info.addWidget(guild_label)
 
         info.addStretch()
@@ -108,7 +117,7 @@ class HouseCard(QFrame):
         entry_text = f"Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})" if entry else "Entry: Not set"
 
         entry_label = QLabel(entry_text)
-        entry_label.setStyleSheet("color: #52525B; font-size: 10px;")
+        entry_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 10px;")
         layout.addWidget(entry_label)
 
         # Action buttons
@@ -132,28 +141,33 @@ class HouseCard(QFrame):
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        border = "#8B5CF6" if self._selected else "#363650"
-        bg = "#363650" if self._selected else "#2A2A3E"
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
+
+        border = c["brand"]["primary"] if self._selected else c["border"]["default"]
+        bg = c["state"]["active"] if self._selected else c["surface"]["secondary"]
 
         self.setStyleSheet(
             f"""
             HouseCard {{
                 background: {bg};
                 border: 2px solid {border};
-                border-radius: 10px;
+                border-radius: {r["md"]}px;
             }}
 
             QPushButton {{
-                background: #404060;
-                color: #E5E5E7;
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["primary"]};
                 border: none;
-                border-radius: 4px;
+                border-radius: {r["sm"]}px;
                 padding: 4px 10px;
                 font-size: 10px;
             }}
 
             QPushButton:hover {{
-                background: #8B5CF6;
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
             }}
         """
         )
@@ -179,7 +193,7 @@ class HouseCard(QFrame):
         super().mousePressEvent(event)
 
 
-class HouseListDialog(QDialog):
+class HouseListDialog(ModernDialog):
     """Dialog for managing map houses.
 
     Signals:
@@ -191,46 +205,35 @@ class HouseListDialog(QDialog):
     goto_position = pyqtSignal(int, int, int)
 
     def __init__(self, game_map: GameMap | None = None, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="House Manager")
 
         self._game_map = game_map
         self._house_cards: list[HouseCard] = []
         self._selected_house_id: int | None = None
 
-        self.setWindowTitle("House Manager")
         self.setMinimumSize(500, 500)
-        self.setModal(True)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
         self._load_houses()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        layout = self.content_layout
         layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
 
-        # Header
-        header_layout = QHBoxLayout()
-
-        header = QLabel("Houses")
-        header.setStyleSheet(
-            """
-            font-size: 18px;
-            font-weight: 700;
-            color: #E5E5E7;
-        """
-        )
-        header_layout.addWidget(header)
-
-        header_layout.addStretch()
+        # Header Stats (moved from old header)
+        header_stats = QHBoxLayout()
+        header_stats.addStretch()
 
         self.count_label = QLabel("0 houses")
-        self.count_label.setStyleSheet("color: #A1A1AA;")
-        header_layout.addWidget(self.count_label)
+        self.count_label.setStyleSheet(f"color: {c['text']['secondary']};")
+        header_stats.addWidget(self.count_label)
 
-        layout.addLayout(header_layout)
+        layout.addLayout(header_stats)
 
         # Search
         self.search = QLineEdit()
@@ -260,65 +263,34 @@ class HouseListDialog(QDialog):
         scroll.setWidget(self.cards_container)
         layout.addWidget(scroll)
 
-        # Action buttons
-        action_layout = QHBoxLayout()
+        # Footer Buttons
+        self.add_spacer_to_footer()
 
-        self.btn_add = QPushButton("New House")
-        self.btn_add.clicked.connect(self._on_add)
-        action_layout.addWidget(self.btn_add)
-
-        self.btn_delete = QPushButton("Delete")
+        self.btn_delete = self.add_button("Delete", callback=self._on_delete, role="secondary")
         self.btn_delete.setEnabled(False)
-        self.btn_delete.clicked.connect(self._on_delete)
-        action_layout.addWidget(self.btn_delete)
 
-        action_layout.addStretch()
-
-        layout.addLayout(action_layout)
-
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.accept)
-        layout.addWidget(buttons)
+        self.btn_add = self.add_button("New House", callback=self._on_add, role="primary")
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QLineEdit {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+        self.search.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
                 padding: 10px 14px;
-                color: #E5E5E7;
-            }
+                color: {c['text']['primary']};
+            }}
 
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
-
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
-
-            QPushButton:disabled {
-                background: #2A2A3E;
-                color: #52525B;
-            }
-        """
+            QLineEdit:focus {{
+                border-color: {c['brand']['primary']};
+            }}
+            """
         )
 
     def _load_houses(self) -> None:
@@ -452,7 +424,7 @@ class HouseListDialog(QDialog):
             self._load_houses()
 
 
-class HouseEditDialog(QDialog):
+class HouseEditDialog(ModernDialog):
     """Dialog for editing house properties."""
 
     def __init__(
@@ -463,8 +435,6 @@ class HouseEditDialog(QDialog):
         house_name: str | None = None,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
-
         if house is None:
             from py_rme_canary.core.data.houses import House as HouseModel  # lazy import
 
@@ -474,18 +444,20 @@ class HouseEditDialog(QDialog):
 
         self._house = house
 
-        self.setWindowTitle(f"Edit House #{self._house.id}")
-        self.setMinimumWidth(350)
-        self.setModal(True)
+        super().__init__(parent, title=f"Edit House #{self._house.id}")
 
-        self._setup_ui()
+        self.setMinimumWidth(350)
+
+        self._init_content()
         self._apply_style()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI."""
-        layout = QVBoxLayout(self)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+
+        layout = self.content_layout
         layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
 
         # Form
         form = QFormLayout()
@@ -513,43 +485,41 @@ class HouseEditDialog(QDialog):
         entry = self._house.entry
         entry_text = f"Entry: ({int(entry.x)}, {int(entry.y)}, {int(entry.z)})" if entry else "Entry: Not set"
         entry_label = QLabel(entry_text)
-        entry_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+        entry_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 11px;")
         layout.addWidget(entry_label)
 
         # Buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject, role="secondary")
+        self.add_button("Save", callback=self.accept, role="primary")
 
     def _apply_style(self) -> None:
         """Apply styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QLineEdit, QSpinBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
+        self.content_area.setStyleSheet(
+            f"""
+            QLineEdit, QSpinBox {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 padding: 8px;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QLineEdit:focus, QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
+            QLineEdit:focus, QSpinBox:focus {{
+                border-color: {c["brand"]["primary"]};
+            }}
 
-            QCheckBox {
-                color: #E5E5E7;
-            }
+            QCheckBox {{
+                color: {c["text"]["primary"]};
+            }}
 
-            QLabel {
-                color: #A1A1AA;
-            }
+            QLabel {{
+                color: {c["text"]["secondary"]};
+            }}
         """
         )
 

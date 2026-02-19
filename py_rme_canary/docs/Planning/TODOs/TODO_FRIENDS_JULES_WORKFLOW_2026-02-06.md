@@ -20,3 +20,47 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
 - Mudanças de amizade e presença persistem em banco local.
 - Privacidade (`public`, `friends_only`, `private`) afeta exibição de atividade de mapa.
 - P0 busca/contexto segue verde em testes direcionados.
+
+## Incremental Update (2026-02-11)
+
+- Identificada causa de explosão de sessões no Jules:
+  - `generate-suggestions` criava sessão nova em toda execução sem tentativa de reuso.
+- Planejada e implementada estratégia de pool local para reuso controlado:
+  - pool por `source + branch + task`;
+  - tamanho padrão `2` sessões;
+  - rotação round-robin com `send_message`;
+  - fallback para `create_session` quando sessão não existe/expira.
+
+## Incremental Update (2026-02-11 - Track Sessions Hardening)
+
+- Modelo recomendado atualizado para sessões fixas por trilha:
+  - `JULES_LINEAR_SESSION_TESTS`
+  - `JULES_LINEAR_SESSION_REFACTOR`
+  - `JULES_LINEAR_SESSION_UIUX`
+- `jules_runner.py` agora resolve automaticamente a variável correta por `--track`,
+  com fallback compatível para `JULES_LINEAR_SESSION` apenas quando necessário.
+- Workflows agendados separados por concorrência de trilha:
+  - `jules-linear-tests-session`
+  - `jules-linear-refactor-session`
+  - `jules-linear-uiux-session`
+
+## Incremental Update (2026-02-11 - Track Ops Commands)
+
+- Added comandos operacionais específicos por trilha no `jules_runner.py`:
+  - `track-session-status --track <tests|refactor|uiux>`
+  - `track-sessions-status` (snapshot de todas as trilhas)
+- Objetivo: facilitar acionamento e observabilidade por categoria (`refatoração`, `teste`, `design UI/UX`) sem risco de consultar sessão errada.
+
+## Incremental Update (2026-02-11 - Suggestions Multi-Session + Web Context)
+
+- Corrigido o fluxo que gerava sessões com saída "apenas JSON" sem progresso prático:
+  - `generate-suggestions` agora tenta operar primeiro em sessões fixas por trilha (`tests/refactor/uiux`) quando disponíveis.
+  - Cada trilha recebe prompt próprio (`task::track`) e coleta de `latest_activity` com retry/backoff.
+- Reforçada confiabilidade de leitura de atividade:
+  - adicionado `_fetch_activity_with_retry(...)` para reduzir snapshots vazios imediatamente após `send_message`.
+- Adicionado contexto de atualização remota antes de acionar Jules:
+  - `fetch_web_updates_context(...)` busca referências oficiais e injeta em prompts (`build_quality_prompt`, `build_stitch_ui_prompt`, `build_linear_scheduled_prompt`).
+- Prompt contract hardening:
+  - prompts agora exigem uso explícito de MCP stack (`Stitch`, `Render`, `Context7`) e reporte de onde cada MCP foi usado.
+- Observabilidade ampliada:
+  - artefatos `jules_track_sessions_activity.json` e `jules_web_updates.json` passam a registrar execução/insumos.

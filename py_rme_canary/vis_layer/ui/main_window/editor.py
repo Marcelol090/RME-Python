@@ -4,9 +4,10 @@ import logging
 import os
 from collections import OrderedDict
 
-from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QAction, QKeySequence, QPixmap
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QAction, QActionGroup, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QDockWidget,
     QLabel,
@@ -15,7 +16,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QStatusBar,
-    QStyle,
     QToolBar,
 )
 
@@ -28,6 +28,7 @@ from py_rme_canary.vis_layer.renderer import OpenGLCanvasWidget
 from py_rme_canary.vis_layer.renderer.map_drawer import MapDrawer
 from py_rme_canary.vis_layer.ui.docks.actions_history import ActionsHistoryDock
 from py_rme_canary.vis_layer.ui.docks.minimap import MinimapWidget
+from py_rme_canary.vis_layer.ui.docks.modern_palette_dock import ModernPaletteDock
 from py_rme_canary.vis_layer.ui.drawing_options_coordinator import (
     DrawingOptionsCoordinator,
     create_coordinator,
@@ -39,7 +40,6 @@ from py_rme_canary.vis_layer.ui.main_window.find_on_map import open_find_waypoin
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 
 logger = logging.getLogger(__name__)
-from py_rme_canary.vis_layer.ui.docks.palette import PaletteManager
 from py_rme_canary.vis_layer.ui.main_window.build_actions import build_actions
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_assets import QtMapEditorAssetsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_brushes import QtMapEditorBrushesMixin
@@ -55,6 +55,7 @@ from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_palettes import QtMapE
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_session import QtMapEditorSessionMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_toolbars import QtMapEditorToolbarsMixin
 from py_rme_canary.vis_layer.ui.main_window.qt_map_editor_view import QtMapEditorViewMixin
+from py_rme_canary.vis_layer.ui.main_window.ui_backend_contract import verify_and_repair_ui_backend_contract
 
 
 class QtMapEditor(
@@ -82,6 +83,7 @@ class QtMapEditor(
     # Menus created by builders
     _menu_toolbars: QMenu
     menu_file: QMenu
+    menu_recent_files: QMenu
     menu_edit: QMenu
     menu_search: QMenu
     menu_selection: QMenu
@@ -129,6 +131,11 @@ class QtMapEditor(
     act_borderize_paste: QAction
     act_selection_mode: QAction
     act_lasso_select: QAction
+    act_brush_size_group: QActionGroup
+    act_brush_size_actions: list[QAction]
+    act_brush_shape_group: QActionGroup
+    act_brush_shape_square: QAction
+    act_brush_shape_circle: QAction
     act_selection_depth_compensate: QAction
     act_selection_depth_current: QAction
     act_selection_depth_lower: QAction
@@ -138,6 +145,7 @@ class QtMapEditor(
     act_mirror_axis_x: QAction
     act_mirror_axis_y: QAction
     act_mirror_axis_set_from_cursor: QAction
+    mirror_axis_action_group: QActionGroup
     act_zoom_in: QAction
     act_zoom_out: QAction
     act_zoom_normal: QAction
@@ -191,6 +199,7 @@ class QtMapEditor(
     act_palette_raw: QAction
     act_palette_large_icons: QAction
     act_window_minimap: QAction
+    act_window_tool_options: QAction
     act_window_actions_history: QAction
     act_window_friends: QAction
     act_clear_invalid_tiles_selection: QAction
@@ -229,6 +238,7 @@ class QtMapEditor(
     act_live_stop: QAction
     act_live_kick: QAction
     act_live_ban: QAction
+    act_live_banlist: QAction
 
     # Editor-owned actions (created in editor.py)
     act_find_item: QAction
@@ -280,6 +290,7 @@ class QtMapEditor(
     automagic_cb: QCheckBox
     shape_square: QPushButton
     shape_circle: QPushButton
+    brush_shape_group: QButtonGroup
     cursor_pos_label: QLabel
     goto_x_spin: QSpinBox
     goto_y_spin: QSpinBox
@@ -306,11 +317,14 @@ class QtMapEditor(
     friends_local_user_id: int | None
     friends_privacy_mode: str
     _friends_timer: QTimer | None
+    _brush_draw_offsets: tuple[tuple[int, int], ...]
+    _brush_border_offsets: tuple[tuple[int, int], ...]
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.setWindowTitle("py_rme_canary (PyQt6) – Map Editor")
+        self.setWindowTitle("Noct Map Editor")
+        self.setWindowIcon(load_icon("logo_axolotl"))
         self.resize(1280, 860)
 
         self.brush_mgr = BrushManager.from_json_file(os.path.join("data", "brushes.json"))
@@ -334,6 +348,7 @@ class QtMapEditor(
 
         self.map: GameMap = GameMap(header=MapHeader(otbm_version=2, width=256, height=256))
         self.session = EditorSession(self.map, self.brush_mgr, on_tiles_changed=self._on_tiles_changed)
+        self.session.on_brush_size_changed = self._on_session_brush_size_changed
 
         self.viewport = Viewport()
         self.current_path: str | None = None
@@ -344,6 +359,7 @@ class QtMapEditor(
 
         self.brush_size = 0
         self.brush_shape = "square"
+        self._warm_brush_offsets_cache()
 
         self.fill_armed = False
         self.paste_armed = False
@@ -419,7 +435,10 @@ class QtMapEditor(
 
         # UI services
         self.indicators = IndicatorService()
-        self.palettes = PaletteManager(self)
+        # Modern Palette Dock replacing PaletteManager
+        self.palettes = ModernPaletteDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.palettes)
+
         self.actions_history = ActionsHistoryDock(self)
 
         # Optional docks (Window menu)
@@ -436,7 +455,8 @@ class QtMapEditor(
         self.canvas = OpenGLCanvasWidget(self, editor=self)
         self.setCentralWidget(self.canvas)
 
-        self.status = QStatusBar(self)
+        from py_rme_canary.vis_layer.ui.widgets.status_bar import ModernStatusBar
+        self.status = ModernStatusBar(self)
         self.setStatusBar(self.status)
 
         # Core actions + wiring live in ui/main_window/build_actions.py
@@ -459,15 +479,18 @@ class QtMapEditor(
         self.act_map_statistics_graphs.setShortcut(QKeySequence("Ctrl+Shift+G"))
         self.act_map_statistics_graphs.triggered.connect(self._show_map_statistics_graphs)
 
-        self.act_replace_items = QAction(load_icon("action_replace"), "Replace Items...", self)
-        self.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
-        self.act_replace_items.triggered.connect(self._open_replace_items_dialog)
+        if not hasattr(self, "act_replace_items"):
+            self.act_replace_items = QAction(load_icon("action_replace"), "Replace Items...", self)
+            self.act_replace_items.setShortcut(QKeySequence("Ctrl+Shift+F"))
+            self.act_replace_items.triggered.connect(self._open_replace_items_dialog)
 
-        self.act_replace_items_on_selection = QAction("Replace Items on Selection...", self)
-        self.act_replace_items_on_selection.triggered.connect(self._open_replace_items_on_selection_dialog)
+        if not hasattr(self, "act_replace_items_on_selection"):
+            self.act_replace_items_on_selection = QAction("Replace Items on Selection...", self)
+            self.act_replace_items_on_selection.triggered.connect(self._open_replace_items_on_selection_dialog)
 
-        self.act_remove_item_on_selection = QAction("Remove Item on Selection...", self)
-        self.act_remove_item_on_selection.triggered.connect(self._open_remove_item_on_selection_dialog)
+        if not hasattr(self, "act_remove_item_on_selection"):
+            self.act_remove_item_on_selection = QAction("Remove Item on Selection...", self)
+            self.act_remove_item_on_selection.triggered.connect(self._open_remove_item_on_selection_dialog)
 
         self.menu_find_on_map = QMenu("Find on Map", self)
         self.act_find_waypoint = QAction("Waypoint...", self)
@@ -559,8 +582,18 @@ class QtMapEditor(
         self._live_timer.timeout.connect(self._poll_live_events)
         self._live_timer.start()
 
+        # Continuous UI/backend contract verification (with Rust-accelerated signature diff)
+        self._ui_backend_contract_signature: int = 0
+        self._ui_backend_contract_last_repairs_key: str = ""
+        self._ui_backend_contract_last_repairs_signature: int = 0
+        self._ui_backend_contract_timer = QTimer(self)
+        self._ui_backend_contract_timer.setInterval(600)
+        self._ui_backend_contract_timer.timeout.connect(self._verify_ui_backend_contract)
+        self._ui_backend_contract_timer.start()
+
         self._update_brush_label()
         self.apply_ui_state_to_session()
+        self._verify_ui_backend_contract()
         self.act_ghost_higher_floors.setChecked(bool(self.ghost_higher_floors))
         self.act_show_client_box.setChecked(bool(self.show_client_box))
         self.act_show_client_ids.setChecked(bool(self.show_client_ids))
@@ -617,6 +650,11 @@ class QtMapEditor(
 
             action.triggered.connect(_handler)
 
+    def closeEvent(self, event) -> None:  # noqa: N802
+        if not self._handle_window_close_request(event):
+            return
+        super().closeEvent(event)
+
     def advance_animation_clock(self, delta_ms: int) -> None:
         if int(delta_ms) <= 0:
             return
@@ -625,25 +663,22 @@ class QtMapEditor(
     def animation_time_ms(self) -> int:
         return int(self._animation_clock_ms)
 
-        # Small UX polish
-        self.act_copy_position.setStatusTip("Copy current cursor position to clipboard")
-        self.act_jump_to_brush.setStatusTip("Focus the brush list filter")
-        self.act_jump_to_item.setStatusTip("Focus the brush id field")
-        self.act_duplicate_selection.setStatusTip("Copy selection and arm paste")
-        self.act_clear_selection.setStatusTip("Clear current selection")
-        self.act_automagic.setStatusTip("Toggle automatic border functions (legacy: A)")
-        self.act_borderize_selection.setStatusTip("Recreate automatic borders in the selected area")
+    def _verify_ui_backend_contract(self) -> None:
+        repairs, signature = verify_and_repair_ui_backend_contract(
+            self,
+            last_signature=int(getattr(self, "_ui_backend_contract_signature", 0)),
+        )
+        self._ui_backend_contract_signature = int(signature)
+        if not repairs:
+            return
 
-        # Fallback icons for common actions (native style)
-        if self.act_new.icon().isNull():
-            self.act_new.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
-        if self.act_open.icon().isNull():
-            self.act_open.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
-        if self.act_save.icon().isNull():
-            self.act_save.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
-        if self.act_save_as.icon().isNull():
-            self.act_save_as.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
-        if self.act_undo.icon().isNull():
-            self.act_undo.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack))
-        if self.act_redo.icon().isNull():
-            self.act_redo.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward))
+        repairs_key = "|".join(sorted(str(entry) for entry in repairs))
+        if (
+            repairs_key == str(getattr(self, "_ui_backend_contract_last_repairs_key", ""))
+            and int(getattr(self, "_ui_backend_contract_last_repairs_signature", 0)) == int(signature)
+        ):
+            return
+
+        self._ui_backend_contract_last_repairs_key = repairs_key
+        self._ui_backend_contract_last_repairs_signature = int(signature)
+        logger.debug("UI/backend contract repairs applied: %s", ", ".join(repairs))

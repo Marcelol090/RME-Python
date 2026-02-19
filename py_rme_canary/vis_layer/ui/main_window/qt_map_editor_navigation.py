@@ -16,6 +16,26 @@ logger = logging.getLogger(__name__)
 
 
 class QtMapEditorNavigationMixin:
+    def _sync_selection_depth_actions(
+        self: QtMapEditor, mode: SelectionDepthMode | str | None = None
+    ) -> None:
+        current = self.session.get_selection_depth_mode() if mode is None else SelectionDepthMode.from_value(mode)
+        mapping = {
+            SelectionDepthMode.COMPENSATE: "act_selection_depth_compensate",
+            SelectionDepthMode.CURRENT: "act_selection_depth_current",
+            SelectionDepthMode.LOWER: "act_selection_depth_lower",
+            SelectionDepthMode.VISIBLE: "act_selection_depth_visible",
+        }
+        for depth_mode, attr in mapping.items():
+            if hasattr(self, attr):
+                act = getattr(self, attr)
+                try:
+                    act.blockSignals(True)
+                    act.setChecked(current == depth_mode)
+                    act.blockSignals(False)
+                except Exception as e:
+                    logger.warning("Error updating selection depth action %s: %s", attr, e)
+
     def center_view_on(self: QtMapEditor, x: int, y: int, z: int, *, push_history: bool = True) -> None:
         """Center viewport on a given tile (used by GoTo and Minimap)."""
 
@@ -166,6 +186,9 @@ class QtMapEditorNavigationMixin:
         self.selection_mode = bool(self.act_selection_mode.isChecked())
         # Cancel any active paint gesture if user toggles modes mid-drag.
         if self.selection_mode:
+            if hasattr(self, "canvas"):
+                with contextlib.suppress(Exception):
+                    self.canvas.cancel_interaction()
             self.session.cancel_gesture()
         elif bool(getattr(self, "lasso_enabled", False)) and hasattr(self, "act_lasso_select"):
             try:
@@ -179,6 +202,10 @@ class QtMapEditorNavigationMixin:
                 with contextlib.suppress(Exception):
                     self.canvas.cancel_lasso()
         self.session.cancel_box_selection()
+        # Cancel any pending pointer gesture in canvas to avoid stuck paint/select states.
+        if hasattr(self, "canvas") and self.canvas is not None:
+            with contextlib.suppress(Exception):
+                self.canvas.cancel_interaction()
         self.canvas.update()
         self._update_action_enabled_states()
 
@@ -193,6 +220,9 @@ class QtMapEditorNavigationMixin:
                 except Exception as e:
                     logger.warning("Error checking selection mode action: %s", e)
             self.selection_mode = True
+            if hasattr(self, "canvas"):
+                with contextlib.suppress(Exception):
+                    self.canvas.cancel_interaction()
             self.session.cancel_gesture()
         if not self.lasso_enabled and hasattr(self, "canvas"):
             with contextlib.suppress(Exception):
@@ -202,19 +232,4 @@ class QtMapEditorNavigationMixin:
 
     def _set_selection_depth_mode(self: QtMapEditor, mode: SelectionDepthMode | str) -> None:
         self.session.set_selection_depth_mode(mode)
-        current = self.session.get_selection_depth_mode()
-        mapping = {
-            SelectionDepthMode.COMPENSATE: "act_selection_depth_compensate",
-            SelectionDepthMode.CURRENT: "act_selection_depth_current",
-            SelectionDepthMode.LOWER: "act_selection_depth_lower",
-            SelectionDepthMode.VISIBLE: "act_selection_depth_visible",
-        }
-        for depth_mode, attr in mapping.items():
-            if hasattr(self, attr):
-                act = getattr(self, attr)
-                try:
-                    act.blockSignals(True)
-                    act.setChecked(current == depth_mode)
-                    act.blockSignals(False)
-                except Exception as e:
-                    logger.warning("Error updating selection depth action %s: %s", attr, e)
+        self._sync_selection_depth_actions()

@@ -23,6 +23,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
@@ -179,7 +182,7 @@ class ValidationWorker(QThread):
         self.finished.emit(issues)
 
 
-class MapValidatorDialog(QDialog):
+class MapValidatorDialog(ModernDialog):
     """Dialog for map validation results.
 
     Usage:
@@ -188,27 +191,22 @@ class MapValidatorDialog(QDialog):
     """
 
     def __init__(self, parent: QWidget | None = None, map_data: GameMap | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Map Validation Results")
         self._map = map_data
         self._worker: ValidationWorker | None = None
 
-        self.setWindowTitle("Map Validator")
-        self.setModal(True)
         self.resize(600, 400)
 
-        self._setup_ui()
+        self._init_content()
         self._apply_style()
 
-    def _setup_ui(self) -> None:
+    def _init_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
 
-        # Header
-        header = QLabel("Map Validation Results")
-        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #E5E5E7;")
-        layout.addWidget(header)
+        layout = self.content_layout
+        layout.setSpacing(12)
 
         # Progress bar
         self._progress = QProgressBar()
@@ -218,7 +216,7 @@ class MapValidatorDialog(QDialog):
 
         # Status label
         self._status = QLabel("Click 'Validate' to start...")
-        self._status.setStyleSheet("color: #9CA3AF;")
+        self._status.setStyleSheet(f"color: {c['text']['secondary']};")
         layout.addWidget(self._status)
 
         # Results table
@@ -232,87 +230,59 @@ class MapValidatorDialog(QDialog):
 
         # Summary
         self._summary = QLabel("")
-        self._summary.setStyleSheet("color: #9CA3AF; font-size: 11px;")
+        self._summary.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 11px;")
         layout.addWidget(self._summary)
 
         # Buttons
-        button_layout = QHBoxLayout()
-
-        self._validate_btn = QPushButton("Validate")
-        self._validate_btn.clicked.connect(self._start_validation)
-        button_layout.addWidget(self._validate_btn)
-
-        button_layout.addStretch()
-
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        button_box.rejected.connect(self.reject)
-        button_layout.addWidget(button_box)
-
-        layout.addLayout(button_layout)
+        self.add_spacer_to_footer()
+        self._validate_btn = self.add_button("Validate", callback=self._start_validation, role="primary")
+        self.add_button("Close", callback=self.reject, role="secondary")
 
     def _apply_style(self) -> None:
         """Apply modern styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
+        tm = get_theme_manager()
+        c = tm.tokens["color"]
+        r = tm.tokens["radius"]
 
-            QTableWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
-                gridline-color: #363650;
-                color: #E5E5E7;
-            }
+        self.content_area.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["md"]}px;
+                gridline-color: {c["border"]["default"]};
+                color: {c["text"]["primary"]};
+            }}
 
-            QTableWidget::item {
+            QTableWidget::item {{
                 padding: 6px;
-            }
+            }}
 
-            QTableWidget::item:selected {
-                background: #8B5CF6;
-            }
+            QTableWidget::item:selected {{
+                background: {c["brand"]["primary"]};
+                color: {c["surface"]["primary"]};
+            }}
 
-            QHeaderView::section {
-                background: #1A1A2E;
-                color: #9CA3AF;
+            QHeaderView::section {{
+                background: {c["surface"]["tertiary"]};
+                color: {c["text"]["secondary"]};
                 border: none;
                 padding: 8px;
                 font-weight: bold;
-            }
+            }}
 
-            QProgressBar {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            QProgressBar {{
+                background: {c["surface"]["secondary"]};
+                border: 1px solid {c["border"]["default"]};
+                border-radius: {r["sm"]}px;
                 text-align: center;
-                color: #E5E5E7;
-            }
+                color: {c["text"]["primary"]};
+            }}
 
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #8B5CF6, stop:1 #A78BFA);
-                border-radius: 3px;
-            }
-
-            QPushButton {
-                background: #8B5CF6;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                color: white;
-                font-weight: bold;
-            }
-
-            QPushButton:hover {
-                background: #7C3AED;
-            }
-
-            QPushButton:disabled {
-                background: #4B5563;
-            }
+            QProgressBar::chunk {{
+                background: {c["brand"]["secondary"]};
+                border-radius: {r["sm"]}px;
+            }}
         """
         )
 

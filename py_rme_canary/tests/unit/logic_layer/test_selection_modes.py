@@ -83,6 +83,18 @@ def test_selection_mode_compensate_same_as_lower() -> None:
     assert result == [7, 8, 9, 10]
 
 
+def test_selection_mode_from_value_normalizes_string() -> None:
+    """Test enum parser accepts string payloads from UI/config."""
+    assert SelectionDepthMode.from_value("VISIBLE") == SelectionDepthMode.VISIBLE
+    assert SelectionDepthMode.from_value(" current ") == SelectionDepthMode.CURRENT
+
+
+def test_selection_mode_from_value_falls_back_to_compensate() -> None:
+    """Test enum parser fallback for invalid/empty values."""
+    assert SelectionDepthMode.from_value("") == SelectionDepthMode.COMPENSATE
+    assert SelectionDepthMode.from_value("invalid") == SelectionDepthMode.COMPENSATE
+
+
 def test_compensation_offset_at_ground_level() -> None:
     """Test that compensation is not applied at ground level (z=7)."""
     x, y = apply_compensation_offset(x=100, y=100, z=7, base_z=7)

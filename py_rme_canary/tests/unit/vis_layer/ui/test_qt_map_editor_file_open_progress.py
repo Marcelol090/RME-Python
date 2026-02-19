@@ -73,12 +73,13 @@ class _FakeLoadingDialog:
         self.__class__.created.append(self)
 
     def show(self) -> None:
-        pass
+        return None
 
     def set_message(self, message: str) -> None:
         self.messages.append(str(message))
 
     def set_progress(self, value: int, max_val: int = 100) -> None:
+        _ = max_val
         self.progress_values.append(int(value))
 
     def close(self) -> None:
@@ -89,13 +90,7 @@ def test_open_otbm_uses_progress_phases_and_refreshes_ui(app, monkeypatch) -> No
     editor = _DummyEditor()
     _FakeLoadingDialog.created.clear()
 
-    gm = SimpleNamespace(
-        load_report={"metadata": {"source": "otbm"}},
-        header=SimpleNamespace(otbm_version=3, width=100, height=100, description="Test"),
-        tiles=[],
-        towns=[],
-        waypoints=[],
-    )
+    gm = SimpleNamespace(load_report={"metadata": {"source": "otbm"}})
     loader = SimpleNamespace(
         last_otbm_path="C:/maps/resolved.otbm",
         last_id_mapper="mapper-ok",
@@ -105,14 +100,12 @@ def test_open_otbm_uses_progress_phases_and_refreshes_ui(app, monkeypatch) -> No
     detection = SimpleNamespace(kind="otbm", reason="ok", engine="tfs")
     critical_calls: list[str] = []
 
-    # Patch ModernLoadingDialog instead of ModernProgressDialog
     monkeypatch.setattr(file_module, "ModernLoadingDialog", _FakeLoadingDialog)
     monkeypatch.setattr(file_module.QFileDialog, "getOpenFileName", staticmethod(lambda *_a, **_k: ("C:/maps/a.otbm", "")))
     monkeypatch.setattr(file_module, "detect_map_file", lambda _path: detection)
     monkeypatch.setattr(file_module, "OTBMLoader", lambda: loader)
     monkeypatch.setattr(file_module, "EditorSession", lambda *args, **kwargs: SimpleNamespace(args=args, kwargs=kwargs))
     monkeypatch.setattr(file_module.QMessageBox, "critical", staticmethod(lambda *_a, **_k: critical_calls.append("critical")))
-    monkeypatch.setattr(file_module.QMessageBox, "information", staticmethod(lambda *_a, **_k: None))
 
     editor._open_otbm()
 
@@ -130,16 +123,30 @@ def test_open_otbm_uses_progress_phases_and_refreshes_ui(app, monkeypatch) -> No
     assert len(_FakeLoadingDialog.created) == 1
     progress = _FakeLoadingDialog.created[-1]
     assert progress.closed
-    # Values mapped from steps 1-6 to percentages: 16, 33, 50, 66, 83, 100
-    assert len(progress.progress_values) == 6
-    assert progress.progress_values[-1] == 100
+    assert progress.progress_values == [16, 33, 50, 66, 83, 100]
     assert "Detecting map format..." in progress.messages
     assert "Reading map file and translating IDs..." in progress.messages
     assert "Refreshing viewport and palettes..." in progress.messages
 
 
-def test_open_otbm_reports_cancelation_when_progress_is_canceled(app, monkeypatch) -> None:
-    # ModernLoadingDialog doesn't support cancellation via "wasCanceled" in the current implementation
-    # So we remove this test or adapt it if we added cancellation.
-    # For now, let's just ensure it doesn't crash if we were to simulate an error.
-    pass
+def test_open_otbm_reports_error_and_closes_progress(app, monkeypatch) -> None:
+    editor = _DummyEditor()
+    _FakeLoadingDialog.created.clear()
+
+    critical_messages: list[str] = []
+
+    monkeypatch.setattr(file_module, "ModernLoadingDialog", _FakeLoadingDialog)
+    monkeypatch.setattr(file_module.QFileDialog, "getOpenFileName", staticmethod(lambda *_a, **_k: ("C:/maps/a.otbm", "")))
+    monkeypatch.setattr(file_module, "detect_map_file", lambda _path: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(
+        file_module.QMessageBox,
+        "critical",
+        staticmethod(lambda _parent, _title, text: critical_messages.append(str(text))),
+    )
+
+    editor._open_otbm()
+
+    assert critical_messages
+    assert "boom" in critical_messages[0].lower()
+    progress = _FakeLoadingDialog.created[-1]
+    assert progress.closed

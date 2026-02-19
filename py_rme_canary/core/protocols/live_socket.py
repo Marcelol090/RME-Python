@@ -28,6 +28,7 @@ class LiveSocket:
         self.password: str = ""
         self.last_error: str = ""
         self._lock = threading.Lock()
+        self._recv_buffer = bytearray()
 
     def set_name(self, name: str) -> bool:
         self.name = str(name)
@@ -81,8 +82,11 @@ class LiveSocket:
             return False
 
     def recv_packet(self) -> tuple[int, bytes] | None:
-        """Receive a single packet (blocking)."""
+        """Receive a single packet (blocking).
 
+        DEPRECATED: Use process_incoming_data() for non-blocking I/O.
+        This method remains for backward compatibility but is vulnerable to DoS.
+        """
         sock = self.socket
         if sock is None:
             return None
@@ -104,6 +108,68 @@ class LiveSocket:
             return None
 
         return int(header.packet_type), payload
+
+    def process_incoming_data(self) -> list[tuple[int, bytes]]:
+        """Read available data and return list of complete packets.
+
+        This method is non-blocking regarding packet completeness.
+        It reads available data from the socket, appends to buffer,
+        and extracts as many full packets as possible.
+        """
+        sock = self.socket
+        if sock is None:
+            return []
+
+        # Read available data (up to 4096 bytes)
+        try:
+            chunk = sock.recv(4096)
+            if not chunk:
+                # Connection closed
+                self.close()
+                return []
+            self._recv_buffer.extend(chunk)
+        except BlockingIOError:
+            # No data available right now
+            pass
+        except OSError as e:
+            log.debug(f"Socket error reading data: {e}")
+            self.close()
+            return []
+
+        packets = []
+        header_size = 8
+
+        while True:
+            if len(self._recv_buffer) < header_size:
+                break
+
+            # Peek header
+            header_data = self._recv_buffer[:header_size]
+            try:
+                header = NetworkHeader.unpack(header_data)
+            except Exception:
+                log.error("Invalid header data, disconnecting")
+                self.close()
+                return []
+
+            if header.size > MAX_PAYLOAD_SIZE:
+                log.warning(f"Packet too large: {header.size} > {MAX_PAYLOAD_SIZE}. Disconnecting.")
+                self.close()
+                return []
+
+            total_size = header_size + int(header.size)
+            if len(self._recv_buffer) < total_size:
+                # Not enough data for full packet yet
+                break
+
+            # Extract packet
+            payload = bytes(self._recv_buffer[header_size:total_size])
+            packets.append((int(header.packet_type), payload))
+
+            # Remove from buffer
+            del self._recv_buffer[:total_size]
+
+        return packets
 
     def _read_n_bytes(self, n: int) -> bytes | None:
         sock = self.socket
