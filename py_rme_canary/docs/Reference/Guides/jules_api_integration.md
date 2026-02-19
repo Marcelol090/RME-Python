@@ -42,6 +42,30 @@ Resolution strategy:
 - neutralizes common prompt-injection strings in report context;
 - enforces deterministic JSON contract extraction (`implemented`, `suggested_next`).
 
+## Persona Packs (Legacy-aware Refactor)
+
+To preserve legacy specialization without monolithic prompts, the runner now loads modular persona packs from:
+- `.github/jules/personas/`
+
+Default behavior:
+- `tests` track -> `tests_contract_guard.md`
+- `refactor` track -> `refactor_code_health.md`
+- `uiux` track -> `uiux_widget_render.md`
+- fallback -> `general_quality.md`
+
+CLI overrides:
+- `--persona-pack <name-or-path>`
+- `--max-persona-chars <n>`
+
+Audit support:
+- `audit-persona-structure` for machine-readable comparison between legacy persona structure
+  and the current modular packs.
+
+Persona content is injected into prompt blocks as `<persona_context>` for:
+- quality suggestions
+- stitch prompts
+- linear scheduled prompts
+
 ## Codex + Jules Asynchronous Pattern
 
 Recommended flow:
@@ -51,3 +75,10 @@ Recommended flow:
 4. Human review remains mandatory before merge.
 
 This model does not require internal access to Jules reasoning traces; it relies on repository artifacts and workflow events as the system-of-record.
+
+## Workflow Security Notes
+
+For issue-triggered automation (`.github/workflows/jules-on-issue-label.yml`):
+- keep actor allowlists on workflow conditions (`if:`) to prevent untrusted prompt injection from arbitrary users;
+- keep `contents` permissions read-only unless write is strictly required;
+- keep the output contract in-repo (`reports/jules/suggestions.*` + schema validation) to allow deterministic review by Codex/humans.

@@ -42,12 +42,19 @@ Prompt templates are versioned in:
 - `.github/jules/prompts/linear_refactors.md`
 - `.github/jules/prompts/linear_uiux.md`
 
+Persona packs are versioned in:
+- `.github/jules/personas/tests_contract_guard.md`
+- `.github/jules/personas/refactor_code_health.md`
+- `.github/jules/personas/uiux_widget_render.md`
+- fallback: `.github/jules/personas/general_quality.md`
+
 ## Local Commands
 Build prompt only:
 
 ```bash
 python py_rme_canary/scripts/jules_runner.py --project-root . build-linear-prompt \
   --track uiux \
+  --persona-pack uiux_widget_render \
   --schedule-slot uiux-07am \
   --prompt-out .quality_reports/jules_linear_uiux_prompt.txt \
   --json-out .quality_reports/jules_linear_uiux_prompt.json
@@ -63,6 +70,7 @@ Send to fixed session:
 ```bash
 python py_rme_canary/scripts/jules_runner.py --project-root . send-linear-prompt \
   --track refactor \
+  --persona-pack refactor_code_health \
   --schedule-slot refactor-03am \
   --json-out .quality_reports/jules_linear_refactor_response.json
 ```
@@ -95,3 +103,4 @@ python py_rme_canary/scripts/jules_runner.py --project-root . track-sessions-sta
 - Keep prompts bounded and PR-sized.
 - Prioritize pending `P0` items first, then `P1`.
 - Keep session artifacts in `.quality_reports/` for auditability.
+- `jules_runner.py` now injects `<persona_context>` into linear prompts by track default unless overridden by `--persona-pack`.

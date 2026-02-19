@@ -145,6 +145,39 @@ def test_session_status_command_normalizes_latest_activity(tmp_path, monkeypatch
     assert payload["latest_activity"]["type"] == "PLAN"
 
 
+def test_audit_persona_structure_command_writes_summary(tmp_path) -> None:
+    legacy_dir = tmp_path / "legacy"
+    persona_dir = tmp_path / "personas"
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    persona_dir.mkdir(parents=True, exist_ok=True)
+    (legacy_dir / "Profiler.md").write_text("# profiler", encoding="utf-8")
+    (legacy_dir / "Smeller.md").write_text("# smeller", encoding="utf-8")
+    (persona_dir / "uiux_widget_render.md").write_text("# uiux", encoding="utf-8")
+    (persona_dir / "refactor_code_health.md").write_text("# refactor", encoding="utf-8")
+    (persona_dir / "general_quality.md").write_text("# general", encoding="utf-8")
+
+    out_path = tmp_path / "audit.json"
+    exit_code = jules_runner.main(
+        [
+            "--project-root",
+            str(tmp_path),
+            "audit-persona-structure",
+            "--legacy-dir",
+            str(legacy_dir),
+            "--persona-dir",
+            str(persona_dir),
+            "--json-out",
+            str(out_path),
+        ]
+    )
+    assert exit_code == 0
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert payload["summary"]["legacy_count"] == 2
+    assert payload["summary"]["current_count"] == 3
+    assert payload["summary"]["status"] == "improved_with_structured_personas"
+    assert payload["missing_mappings"] == []
+
+
 def test_read_quality_context_compacts_artifacts_section(tmp_path) -> None:
     report_path = tmp_path / "refactor_summary.md"
     artifacts = "\n".join(f"- `quality_2026020{i:02d}.log`" for i in range(1, 40))
@@ -187,6 +220,68 @@ def test_build_quality_prompt_sanitizes_untrusted_inputs() -> None:
     assert "untrusted data" in prompt
 
 
+def test_load_persona_context_uses_track_default_and_reads_file(tmp_path) -> None:
+    persona_path = tmp_path / ".github" / "jules" / "personas" / "uiux_widget_render.md"
+    persona_path.parent.mkdir(parents=True, exist_ok=True)
+    persona_path.write_text("## Persona\nUI/UX guardrails", encoding="utf-8")
+
+    context, metadata = jules_runner.load_persona_context(tmp_path, track="uiux", max_chars=120)
+
+    assert "UI/UX guardrails" in context
+    assert metadata["status"] == "ok"
+    assert metadata["track"] == "uiux"
+
+
+def test_build_quality_prompt_includes_persona_context() -> None:
+    prompt = jules_runner.build_quality_prompt(
+        report_text="ctx",
+        task="quality-pipeline-jules",
+        persona_context="persona-check",
+    )
+    assert "<persona_context>" in prompt
+    assert "persona-check" in prompt
+
+
+def test_load_persona_context_supports_pack_override(tmp_path) -> None:
+    persona_path = tmp_path / ".github" / "jules" / "personas" / "custom_pack.md"
+    persona_path.parent.mkdir(parents=True, exist_ok=True)
+    persona_path.write_text("custom persona", encoding="utf-8")
+
+    context, metadata = jules_runner.load_persona_context(
+        tmp_path,
+        track="tests",
+        persona_pack="custom_pack",
+        max_chars=120,
+    )
+
+    assert "custom persona" in context
+    assert metadata["path"].endswith("custom_pack.md")
+
+
+def test_load_persona_context_returns_safe_fallback_when_file_missing(tmp_path) -> None:
+    context, metadata = jules_runner.load_persona_context(tmp_path, track="refactor", max_chars=120)
+
+    assert "No persona context file available" in context
+    assert metadata["status"] == "missing"
+
+
+def test_persona_structure_audit_detects_missing_mappings(tmp_path) -> None:
+    legacy_dir = tmp_path / "legacy"
+    persona_dir = tmp_path / "personas"
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    persona_dir.mkdir(parents=True, exist_ok=True)
+    (legacy_dir / "Bugger.md").write_text("# bugger", encoding="utf-8")
+    (persona_dir / "general_quality.md").write_text("# general", encoding="utf-8")
+
+    payload = jules_runner.build_persona_structure_audit(
+        project_root=tmp_path,
+        legacy_dir=legacy_dir,
+        persona_dir=persona_dir,
+    )
+    assert payload["summary"]["status"] == "refactor_required_missing_persona_mappings"
+    assert payload["missing_mappings"] == ["bugger"]
+
+
 def test_parse_skill_names_defaults_when_empty() -> None:
     names = jules_runner.parse_skill_names("")
     assert names == list(jules_runner.DEFAULT_STITCH_SKILLS)
@@ -212,9 +307,11 @@ def test_build_stitch_ui_prompt_embeds_skill_and_quality_context() -> None:
         task="stitch-uiux-map-editor",
         skill_context="skill-context",
         quality_context="quality-context",
+        persona_context="persona-context",
     )
     assert "skill-context" in prompt
     assert "quality-context" in prompt
+    assert "persona-context" in prompt
     assert '"plan"' in prompt
     assert "stitch-uiux-map-editor" in prompt
 
@@ -255,6 +352,7 @@ def test_build_stitch_prompt_command_writes_outputs(tmp_path) -> None:
     payload = json.loads(json_out.read_text(encoding="utf-8"))
     assert payload["task"] == "uiux-sync"
     assert payload["skills"] == ["jules-uiux-stitch"]
+    assert payload["persona"]["status"] in {"ok", "missing"}
 
 
 def test_build_linear_prompt_command_writes_outputs(tmp_path) -> None:
@@ -306,6 +404,7 @@ def test_build_linear_prompt_command_writes_outputs(tmp_path) -> None:
     payload = json.loads(json_out.read_text(encoding="utf-8"))
     assert payload["track"] == "uiux"
     assert payload["session_name"] == "sessions/123"
+    assert payload["persona"]["track"] == "uiux"
 
 
 def test_send_linear_prompt_uses_env_session(tmp_path, monkeypatch) -> None:
@@ -543,6 +642,8 @@ def test_generate_suggestions_creates_session_and_pool_file(tmp_path, monkeypatc
     payload = json.loads(pool_file.read_text(encoding="utf-8"))
     pool_key = jules_runner._pool_key(source="sources/github/org/repo", branch="main", task="quality-pipeline-jules")
     assert payload["pools"][pool_key]["sessions"] == ["sessions/new-a"]
+    web_updates_payload = json.loads((report_dir / "jules_web_updates.json").read_text(encoding="utf-8"))
+    assert web_updates_payload["persona"]["general"]["status"] in {"ok", "missing"}
 
 
 def test_generate_suggestions_reuses_existing_pool_session(tmp_path, monkeypatch) -> None:
@@ -705,3 +806,7 @@ def test_generate_suggestions_prefers_track_sessions_when_available(tmp_path, mo
     assert calls["send"] == 3
     assert set(sent_sessions) == {"sessions/tests-1", "sessions/refactor-1", "sessions/uiux-1"}
     assert (report_dir / "jules_track_sessions_activity.json").exists()
+    track_payload = json.loads((report_dir / "jules_track_sessions_activity.json").read_text(encoding="utf-8"))
+    assert len(track_payload) == 3
+    assert {entry["track"] for entry in track_payload} == {"tests", "refactor", "uiux"}
+    assert all(entry.get("persona", {}).get("track") == entry["track"] for entry in track_payload)

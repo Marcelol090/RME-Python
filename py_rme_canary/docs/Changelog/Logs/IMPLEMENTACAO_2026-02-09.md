@@ -1,5 +1,77 @@
 # Implementação - 2026-02-09
 
+## Sessão 2026-02-19: Refatoração da Estrutura Jules (Persona Packs + Prompt Contract)
+
+### Resumo
+
+- Auditoria comparativa da estrutura Jules entre legado (`remeres-map-editor-redux/.jules`) e pipeline Python atual.
+- Conclusão: pipeline Python já era superior em contrato/automação, porém faltava modularidade de persona equivalente ao legado.
+- Refatoração aplicada para combinar os dois pontos fortes:
+  - especialização por persona (track-aware);
+  - manutenção de contrato JSON determinístico e rastreável.
+
+### Arquivos Criados
+
+- `.github/jules/personas/README.md`
+- `.github/jules/personas/general_quality.md`
+- `.github/jules/personas/uiux_widget_render.md`
+- `.github/jules/personas/refactor_code_health.md`
+- `.github/jules/personas/tests_contract_guard.md`
+- `.github/jules/personas/security_live_stack.md`
+- `py_rme_canary/docs/Reference/Guides/jules_prompt_persona_architecture.md`
+
+### Arquivos Modificados
+
+- `py_rme_canary/scripts/jules_runner.py`
+  - adicionados persona defaults por trilha e fallback geral;
+  - adicionado loader/resolve de persona pack;
+  - injeção de `<persona_context>` em `build_quality_prompt`, `build_stitch_ui_prompt`, `build_linear_scheduled_prompt`;
+  - novas flags CLI: `--persona-pack`, `--max-persona-chars`;
+  - metadata de persona anexada aos artefatos JSON de prompt/sugestões.
+- `py_rme_canary/tests/unit/scripts/test_jules_runner.py`
+  - novos testes para persona loading/default/override e inclusão de persona no prompt.
+- `py_rme_canary/docs/Reference/README.md`
+- `py_rme_canary/docs/Reference/Guides/jules_api_integration.md`
+- `py_rme_canary/docs/Reference/Guides/jules_stitch_prompt_workflow.md`
+- `py_rme_canary/docs/Reference/Guides/jules_linear_scheduler_workflow.md`
+- `py_rme_canary/docs/Planning/TODOs/TODO_FRIENDS_JULES_WORKFLOW_2026-02-06.md`
+
+### Referências Externas Consultadas
+
+- Jules API: `https://developers.google.com/jules/api`
+- Jules REST: `https://developers.google.com/jules/api/reference/rest`
+- Jules Action: `https://github.com/google-labs-code/jules-action`
+- Structured outputs (Gemini): `https://ai.google.dev/api/generate-content`
+
+### Hardening complementar (2026-02-19 - Phase 2)
+
+- Adicionado comando de auditoria estrutural:
+  - `python py_rme_canary/scripts/jules_runner.py audit-persona-structure`
+  - gera comparação legada vs atual (contagem, mapeamento, gaps de cobertura) em JSON.
+- Cobertura de testes expandida para:
+  - validação de fallback seguro quando persona pack não existe;
+  - validação de metadata de persona em `generate-suggestions`;
+  - validação da auditoria estrutural e detecção de mapeamentos faltantes.
+- Validação executada:
+  - `ruff check py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+  - `python3 -m py_compile py_rme_canary/scripts/jules_runner.py py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **OK**
+  - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q -s py_rme_canary/tests/unit/scripts/test_jules_runner.py` -> **26 passed**
+  - `python3 py_rme_canary/scripts/jules_runner.py --project-root . audit-persona-structure` -> `status=improved_with_structured_personas`
+
+### Operacionalização (2026-02-19 - Phase 3)
+
+- Pipeline local atualizado:
+  - `py_rme_canary/quality-pipeline/quality_lf.sh` agora roda:
+    - `jules_runner.py generate-suggestions`
+    - `jules_runner.py audit-persona-structure` (gera `.quality_reports/jules_persona_audit.json`)
+- Workflows lineares atualizados para persona explícita por trilha:
+  - `.github/workflows/jules_linear_uiux.yml` -> `--persona-pack uiux_widget_render`
+  - `.github/workflows/jules_linear_refactors.yml` -> `--persona-pack refactor_code_health`
+  - `.github/workflows/jules_linear_tests.yml` -> `--persona-pack tests_contract_guard`
+- Validação operacional:
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint`
+  - Resultado: etapa Jules executou `generate-suggestions` + `audit-persona-structure` com sucesso.
+
 ## Documentation Enhancement Session
 
 ### Arquivos Modificados

@@ -40,6 +40,7 @@ jobs:
         run: |
           python py_rme_canary/scripts/jules_runner.py --project-root . send-linear-prompt \
             --track tests \
+            --persona-pack tests_contract_guard \
             --schedule-slot tests-01am \
             --task p0-p1-tests-slot \
             --json-out .quality_reports/jules_linear_tests_response.json \

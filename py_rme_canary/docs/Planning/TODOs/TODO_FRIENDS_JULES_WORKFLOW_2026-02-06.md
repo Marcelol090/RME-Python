@@ -64,3 +64,18 @@ Concluir a camada social do editor em PyQt6, reforçar integração Jules/Codex 
   - prompts agora exigem uso explícito de MCP stack (`Stitch`, `Render`, `Context7`) e reporte de onde cada MCP foi usado.
 - Observabilidade ampliada:
   - artefatos `jules_track_sessions_activity.json` e `jules_web_updates.json` passam a registrar execução/insumos.
+
+## Incremental Update (2026-02-19 - Persona Packs + Legacy Structural Parity)
+
+- Auditoria comparativa executada entre:
+  - `remeres-map-editor-redux/.jules/newagents/*`
+  - `.github/jules/prompts/*`
+  - `py_rme_canary/scripts/jules_runner.py`
+- Gap principal identificado: o pipeline Python tinha contrato estruturado forte, mas menor especialização por persona em comparação ao legado.
+- Refatoração aplicada:
+  - criada camada modular de personas em `.github/jules/personas/` com mapeamento por trilha (`tests`, `refactor`, `uiux`) e fallback geral;
+  - `jules_runner.py` atualizado para carregar/injetar `<persona_context>` em prompts de quality, stitch e linear;
+  - novos argumentos CLI: `--persona-pack` e `--max-persona-chars` (build/send/generate flows);
+  - metadata de persona registrada nos artefatos JSON para rastreabilidade.
+  - novo comando `audit-persona-structure` para comparar legado vs atual e detectar drift de mapeamento automaticamente.
+  - `quality_lf.sh` passou a executar automaticamente a auditoria de personas ao fim da etapa Jules.

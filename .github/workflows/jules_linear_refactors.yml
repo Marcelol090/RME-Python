@@ -50,6 +50,7 @@ jobs:
         run: |
           python py_rme_canary/scripts/jules_runner.py --project-root . send-linear-prompt \
             --track refactor \
+            --persona-pack refactor_code_health \
             --schedule-slot "${{ steps.slot.outputs.slot }}" \
             --task p0-p1-refactor-slot \
             --json-out .quality_reports/jules_linear_refactor_response.json \

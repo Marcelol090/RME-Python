@@ -50,6 +50,7 @@ jobs:
         run: |
           python py_rme_canary/scripts/jules_runner.py --project-root . send-linear-prompt \
             --track uiux \
+            --persona-pack uiux_widget_render \
             --schedule-slot "${{ steps.slot.outputs.slot }}" \
             --task p0-p1-uiux-slot \
             --json-out .quality_reports/jules_linear_uiux_response.json \

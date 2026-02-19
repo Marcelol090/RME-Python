@@ -190,6 +190,10 @@ python py_rme_canary/scripts/jules_runner.py --project-root . generate-suggestio
   --output-dir reports/jules \
   --schema .github/jules/suggestions.schema.json
 
+# Auditar estrutura de personas (legacy vs packs atuais)
+python py_rme_canary/scripts/jules_runner.py --project-root . audit-persona-structure \
+  --json-out .quality_reports/jules_persona_audit.json
+
 # Gerar snapshot local de contexto de PR do Jules (alinhado ao workflow Codex)
 python py_rme_canary/scripts/build_jules_context.py \
   --owner <github-owner> \
@@ -209,6 +213,7 @@ Operational notes:
 - The pipeline can skip Jules with `--skip-jules`.
 - The runner reads `JULES_SOURCE`/`JULES_BRANCH` from `.env` by default and supports CLI overrides.
 - Jules prompts are built with untrusted-context sanitization (control-char filtering and prompt-injection neutralization), while keeping a stable JSON contract for `reports/jules/suggestions.*`.
+- O `quality_lf.sh` também executa auditoria de personas e gera `.quality_reports/jules_persona_audit.json` para detectar drift estrutural entre legado e estrutura atual.
 
 ### Selective Rust Acceleration (optional)
 

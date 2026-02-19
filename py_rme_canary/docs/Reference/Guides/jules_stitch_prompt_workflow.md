@@ -23,6 +23,7 @@ Use the built-in command to build a normalized prompt:
 python py_rme_canary/scripts/jules_runner.py --project-root . build-stitch-prompt `
   --task "pyqt6-modern-uiux-and-rendering-parity" `
   --skills "jules-rendering-pipeline,jules-uiux-stitch,jules-rust-memory-management" `
+  --persona-pack "uiux_widget_render" `
   --quality-report ".quality_reports/refactor_summary.md" `
   --prompt-out ".quality_reports/stitch_prompt.txt" `
   --json-out ".quality_reports/stitch_prompt.json"
@@ -34,6 +35,7 @@ Then send it to an active session:
 python py_rme_canary/scripts/jules_runner.py --project-root . send-stitch-prompt sessions/<id> `
   --task "pyqt6-modern-uiux-and-rendering-parity" `
   --skills "jules-rendering-pipeline,jules-uiux-stitch,jules-rust-memory-management" `
+  --persona-pack "uiux_widget_render" `
   --quality-report ".quality_reports/refactor_summary.md" `
   --prompt-out ".quality_reports/stitch_prompt_sent.txt" `
   --json-out ".quality_reports/jules_response.json"
@@ -58,9 +60,10 @@ For each Jules proposal:
 - Treat prompt context as untrusted text.
 - Keep the Python fallback path when introducing optimized or Rust-accelerated code.
 - Store generated prompt/session artifacts under `.quality_reports/` for traceability.
+- Persona packs are loaded from `.github/jules/personas/` and injected as `<persona_context>`.
 
 ## External References
-- Jules API quickstart: `https://developers.googleblog.com/en/introducing-jules/`
-- Jules official docs hub: `https://jules.google/docs`
-- Prompting best practices: `https://jules.google/docs/concepts/prompting-best-practices`
-- Session planning and approvals: `https://jules.google/docs/create-task/review-plan`
+- Jules API quickstart: `https://developers.google.com/jules/api`
+- Jules REST reference: `https://developers.google.com/jules/api/reference/rest`
+- Jules Action repository: `https://github.com/google-labs-code/jules-action`
+- Structured outputs guidance (Gemini API): `https://ai.google.dev/api/generate-content`

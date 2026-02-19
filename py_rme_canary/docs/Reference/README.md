@@ -11,6 +11,7 @@
 - Jules API integration: `py_rme_canary/docs/Reference/Guides/jules_api_integration.md`
 - Jules Stitch prompt workflow: `py_rme_canary/docs/Reference/Guides/jules_stitch_prompt_workflow.md`
 - Jules linear scheduler workflow: `py_rme_canary/docs/Reference/Guides/jules_linear_scheduler_workflow.md`
+- Jules persona prompt architecture: `py_rme_canary/docs/Reference/Guides/jules_prompt_persona_architecture.md`
 - Rust acceleration bridge: `py_rme_canary/docs/Reference/Guides/rust_acceleration_bridge.md`
 - Release channel updates: `py_rme_canary/docs/Reference/Guides/release_update_channels_guide.md`
 - UIxWidget branch policy: `py_rme_canary/docs/Reference/Guides/UIXWIDGET_BRANCH_POLICY.md`

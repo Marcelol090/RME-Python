@@ -2176,6 +2176,7 @@ run_jules_generate_suggestions() {
   local schema_path="$ROOT_DIR/.github/jules/suggestions.schema.json"
   local output_dir="$ROOT_DIR/reports/jules"
   local connectivity_json="$REPORT_DIR/jules_connectivity.json"
+  local persona_audit_json="$REPORT_DIR/jules_persona_audit.json"
   mkdir -p "$output_dir"
 
   local -a source_args=()
@@ -2207,6 +2208,11 @@ run_jules_generate_suggestions() {
   else
     log WARN "Jules: integração falhou (pipeline continuará)."
   fi
+
+  log INFO "Auditando estrutura de personas Jules (legacy vs atual)..."
+  run_with_timeout "$TOOL_TIMEOUT" "jules-audit-persona-structure" \
+    "$PYTHON_BIN" "$runner" --project-root "$ROOT_DIR" audit-persona-structure \
+    --json-out "$persona_audit_json" || true
 }
 
 #############################################

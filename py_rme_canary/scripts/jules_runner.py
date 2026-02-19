@@ -30,11 +30,19 @@ DEFAULT_STITCH_SKILLS: tuple[str, ...] = (
     "jules-rust-memory-management",
 )
 DEFAULT_LINEAR_PROMPT_DIR = Path(".github/jules/prompts")
+DEFAULT_PERSONA_PROMPT_DIR = Path(".github/jules/personas")
+DEFAULT_LEGACY_JULES_DIR = Path("remeres-map-editor-redux/.jules/newagents")
 DEFAULT_LINEAR_TRACK_TEMPLATES: dict[str, str] = {
     "tests": "linear_tests.md",
     "refactor": "linear_refactors.md",
     "uiux": "linear_uiux.md",
 }
+DEFAULT_TRACK_PERSONA_TEMPLATES: dict[str, str] = {
+    "tests": "tests_contract_guard.md",
+    "refactor": "refactor_code_health.md",
+    "uiux": "uiux_widget_render.md",
+}
+DEFAULT_GENERAL_PERSONA_TEMPLATE = "general_quality.md"
 DEFAULT_LINEAR_TRACK_SESSION_ENV: dict[str, str] = {
     "tests": "JULES_LINEAR_SESSION_TESTS",
     "refactor": "JULES_LINEAR_SESSION_REFACTOR",
@@ -50,6 +58,20 @@ DEFAULT_JULES_UPDATE_URLS: tuple[str, ...] = (
     "https://github.com/google-labs-code/jules-action",
 )
 MCP_REQUIRED_STACK: tuple[str, ...] = ("Stitch", "Render", "Context7")
+DEFAULT_LEGACY_PERSONA_TO_CURRENT: dict[str, str] = {
+    "profiler": "uiux_widget_render",
+    "smeller": "refactor_code_health",
+    "upgrader": "refactor_code_health",
+    "wxwidgets": "uiux_widget_render",
+    "opengl": "uiux_widget_render",
+    "icon": "uiux_widget_render",
+    "palette": "uiux_widget_render",
+    "refactor": "refactor_code_health",
+    "bugger": "tests_contract_guard",
+    "docs": "general_quality",
+    "domain": "general_quality",
+    "bolt": "general_quality",
+}
 
 
 def utc_now_iso() -> str:
@@ -157,6 +179,126 @@ def read_context_file(path: Path, *, max_chars: int = 2400) -> str:
     raw = path.read_text(encoding="utf-8", errors="ignore").strip()
     clean = _sanitize_untrusted_context(raw)
     return _balanced_truncate(clean, max_chars)
+
+
+def _normalize_persona_template_name(value: str) -> str:
+    token = str(value or "").strip()
+    if not token:
+        return ""
+    if token.endswith(".md"):
+        return token
+    return f"{token}.md"
+
+
+def resolve_persona_template_path(
+    project_root: Path,
+    *,
+    track: str = "",
+    persona_pack: str = "",
+) -> Path:
+    """Resolve persona template path from explicit override or track defaults."""
+    explicit = _normalize_persona_template_name(persona_pack)
+    if explicit:
+        explicit_path = Path(explicit)
+        if explicit_path.is_absolute():
+            return explicit_path
+        # Allow explicit relative paths while keeping simple-name packs in default dir.
+        if "/" in explicit or "\\" in explicit:
+            return (project_root / explicit_path).resolve()
+        return (project_root / DEFAULT_PERSONA_PROMPT_DIR / explicit_path).resolve()
+
+    normalized_track = str(track or "").strip().lower()
+    template_name = DEFAULT_TRACK_PERSONA_TEMPLATES.get(normalized_track, DEFAULT_GENERAL_PERSONA_TEMPLATE)
+    return (project_root / DEFAULT_PERSONA_PROMPT_DIR / template_name).resolve()
+
+
+def load_persona_context(
+    project_root: Path,
+    *,
+    track: str = "",
+    persona_pack: str = "",
+    max_chars: int = 2000,
+) -> tuple[str, dict[str, str]]:
+    """Load persona prompt context for Jules role specialization."""
+    resolved = resolve_persona_template_path(project_root, track=track, persona_pack=persona_pack)
+    text = read_context_file(resolved, max_chars=max_chars)
+    metadata = {
+        "track": str(track or "").strip().lower(),
+        "requested": str(persona_pack or "").strip(),
+        "path": resolved.as_posix(),
+        "status": "ok" if text else "missing",
+    }
+    if text:
+        return text, metadata
+    fallback = (
+        "No persona context file available. Continue with strict JSON contract, "
+        "track scope, and bounded PR-sized execution."
+    )
+    return fallback, metadata
+
+
+def _list_markdown_files(path: Path) -> list[Path]:
+    if not path.exists() or not path.is_dir():
+        return []
+    return sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() == ".md")
+
+
+def _persona_file_entry(base: Path, file_path: Path) -> dict[str, Any]:
+    raw = file_path.read_text(encoding="utf-8", errors="ignore")
+    rel = file_path.relative_to(base).as_posix() if file_path.is_relative_to(base) else file_path.as_posix()
+    return {
+        "name": file_path.stem.lower(),
+        "path": rel,
+        "size_chars": len(raw),
+        "size_lines": len(raw.splitlines()),
+    }
+
+
+def build_persona_structure_audit(
+    *,
+    project_root: Path,
+    legacy_dir: Path,
+    persona_dir: Path,
+) -> dict[str, Any]:
+    """Compare legacy Jules persona structure with current modular persona packs."""
+    legacy_files = _list_markdown_files(legacy_dir)
+    current_files = _list_markdown_files(persona_dir)
+
+    legacy_entries = [_persona_file_entry(project_root, file_path) for file_path in legacy_files]
+    current_entries = [_persona_file_entry(project_root, file_path) for file_path in current_files]
+    current_names = {entry["name"] for entry in current_entries}
+
+    mapping_rows: list[dict[str, str]] = []
+    missing_mappings: list[str] = []
+    for entry in legacy_entries:
+        legacy_name = str(entry["name"])
+        mapped = DEFAULT_LEGACY_PERSONA_TO_CURRENT.get(legacy_name, "general_quality")
+        mapping_rows.append({"legacy": legacy_name, "mapped_to": mapped})
+        if mapped not in current_names:
+            missing_mappings.append(legacy_name)
+
+    direct_overlap = sorted({entry["name"] for entry in legacy_entries} & current_names)
+    summary_status = "improved_with_structured_personas"
+    if missing_mappings:
+        summary_status = "refactor_required_missing_persona_mappings"
+    elif len(current_entries) < 3:
+        summary_status = "refactor_required_insufficient_persona_coverage"
+
+    return {
+        "generated_at": utc_now_iso(),
+        "legacy_dir": legacy_dir.as_posix(),
+        "persona_dir": persona_dir.as_posix(),
+        "legacy_personas": legacy_entries,
+        "current_personas": current_entries,
+        "mapping": mapping_rows,
+        "direct_name_overlap": direct_overlap,
+        "missing_mappings": sorted(set(missing_mappings)),
+        "summary": {
+            "legacy_count": len(legacy_entries),
+            "current_count": len(current_entries),
+            "status": summary_status,
+        },
+    }
 
 
 def _strip_html_tags(value: str) -> str:
@@ -284,6 +426,7 @@ def build_linear_scheduled_prompt(
     quality_context: str,
     planning_context: str,
     rules_context: str,
+    persona_context: str = "",
     web_updates_context: str = "",
 ) -> str:
     """Build scheduled prompt that enforces single-session linear execution."""
@@ -309,6 +452,7 @@ def build_linear_scheduled_prompt(
 
     template_block = _sanitize_untrusted_context(track_template or "No track template provided.")
     skills_block = _sanitize_untrusted_context(skill_context or "No skill context provided.")
+    persona_block = _sanitize_untrusted_context(persona_context or "No persona context provided.")
     quality_block = _sanitize_untrusted_context(quality_context or "No quality report context available.")
     planning_block = _sanitize_untrusted_context(planning_context or "No planning context available.")
     rules_block = _sanitize_untrusted_context(rules_context or "No repository rules context available.")
@@ -352,6 +496,10 @@ def build_linear_scheduled_prompt(
         f"{template_block}\n"
         "</track_template>\n"
         "\n"
+        "<persona_context>\n"
+        f"{persona_block}\n"
+        "</persona_context>\n"
+        "\n"
         "<repository_rules>\n"
         f"{rules_block}\n"
         "</repository_rules>\n"
@@ -374,9 +522,16 @@ def build_linear_scheduled_prompt(
     )
 
 
-def build_quality_prompt(*, report_text: str, task: str, web_updates_context: str = "") -> str:
+def build_quality_prompt(
+    *,
+    report_text: str,
+    task: str,
+    persona_context: str = "",
+    web_updates_context: str = "",
+) -> str:
     """Build an explicit, structured prompt optimized for Jules suggestions."""
     context_block = _sanitize_untrusted_context(report_text or "Quality report context is not available.")
+    persona_block = _sanitize_untrusted_context(persona_context or "No persona context available.")
     web_block = _sanitize_untrusted_context(web_updates_context or "No remote web updates context available.")
     task_label = _sanitize_prompt_task(task)
     return (
@@ -426,6 +581,11 @@ def build_quality_prompt(*, report_text: str, task: str, web_updates_context: st
         "- `severity`: choose CRITICAL/HIGH/MED/LOW using report evidence only.\n"
         "\n"
         f"Task: {task_label}\n"
+        "Persona context (bounded by tags):\n"
+        "<persona_context>\n"
+        f"{persona_block}\n"
+        "</persona_context>\n"
+        "\n"
         "Quality report context (bounded by tags):\n"
         "<quality_report>\n"
         f"{context_block}\n"
@@ -482,11 +642,13 @@ def build_stitch_ui_prompt(
     task: str,
     skill_context: str,
     quality_context: str,
+    persona_context: str = "",
     web_updates_context: str = "",
 ) -> str:
     """Build a structured UI/UX + rendering prompt for Jules Stitch sessions."""
     normalized_task = _sanitize_prompt_task(task or "stitch-uiux-map-editor")
     skills_block = _sanitize_untrusted_context(skill_context or "No skill context was provided.")
+    persona_block = _sanitize_untrusted_context(persona_context or "No persona context available.")
     quality_block = _sanitize_untrusted_context(quality_context or "No quality context available.")
     web_block = _sanitize_untrusted_context(web_updates_context or "No remote web updates context available.")
 
@@ -520,6 +682,10 @@ def build_stitch_ui_prompt(
         "<skills_context>\n"
         f"{skills_block}\n"
         "</skills_context>\n"
+        "\n"
+        "<persona_context>\n"
+        f"{persona_block}\n"
+        "</persona_context>\n"
         "\n"
         "<quality_context>\n"
         f"{quality_block}\n"
@@ -912,6 +1078,38 @@ def command_list_sessions(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_audit_persona_structure(args: argparse.Namespace) -> int:
+    """Audit legacy Jules persona files vs current modular persona packs."""
+    project_root = Path(args.project_root).resolve()
+    legacy_dir = (
+        Path(args.legacy_dir).resolve()
+        if str(getattr(args, "legacy_dir", "")).strip()
+        else (project_root / DEFAULT_LEGACY_JULES_DIR).resolve()
+    )
+    persona_dir = (
+        Path(args.persona_dir).resolve()
+        if str(getattr(args, "persona_dir", "")).strip()
+        else (project_root / DEFAULT_PERSONA_PROMPT_DIR).resolve()
+    )
+
+    payload = build_persona_structure_audit(
+        project_root=project_root,
+        legacy_dir=legacy_dir,
+        persona_dir=persona_dir,
+    )
+    if args.json_out:
+        write_json(Path(args.json_out), payload)
+
+    summary = payload.get("summary", {})
+    print(
+        "[jules] persona-audit "
+        f"legacy={summary.get('legacy_count', 0)} "
+        f"current={summary.get('current_count', 0)} "
+        f"status={summary.get('status', '')}"
+    )
+    return 0
+
+
 def command_session_status(args: argparse.Namespace) -> int:
     """Fetch session payload + latest activity for monitoring/debugging."""
     session_name = normalize_session_name(args.session_name)
@@ -1081,6 +1279,12 @@ def command_build_stitch_prompt(args: argparse.Namespace) -> int:
         Path(args.quality_report).resolve(),
         max_chars=int(args.max_quality_chars),
     )
+    persona_context, persona_meta = load_persona_context(
+        project_root,
+        track="uiux",
+        persona_pack=str(getattr(args, "persona_pack", "")),
+        max_chars=int(getattr(args, "max_persona_chars", 2000)),
+    )
     web_updates_context, web_updates_meta = fetch_web_updates_context(
         timeout_seconds=float(getattr(args, "web_updates_timeout", 8.0)),
         max_chars=int(getattr(args, "max_web_updates_chars", 2200)),
@@ -1089,6 +1293,7 @@ def command_build_stitch_prompt(args: argparse.Namespace) -> int:
     prompt = build_stitch_ui_prompt(
         task=str(args.task or "stitch-uiux-map-editor"),
         skill_context=skill_context,
+        persona_context=persona_context,
         quality_context=quality_context,
         web_updates_context=web_updates_context,
     )
@@ -1105,6 +1310,7 @@ def command_build_stitch_prompt(args: argparse.Namespace) -> int:
                 "generated_at": utc_now_iso(),
                 "task": str(args.task or ""),
                 "skills": skills,
+                "persona": persona_meta,
                 "quality_report": str(Path(args.quality_report).resolve()),
                 "web_updates": web_updates_meta,
                 "prompt": prompt,
@@ -1134,6 +1340,12 @@ def command_send_stitch_prompt(args: argparse.Namespace) -> int:
         Path(args.quality_report).resolve(),
         max_chars=int(args.max_quality_chars),
     )
+    persona_context, _persona_meta = load_persona_context(
+        project_root,
+        track="uiux",
+        persona_pack=str(getattr(args, "persona_pack", "")),
+        max_chars=int(getattr(args, "max_persona_chars", 2000)),
+    )
     web_updates_context, _web_updates_meta = fetch_web_updates_context(
         timeout_seconds=float(getattr(args, "web_updates_timeout", 8.0)),
         max_chars=int(getattr(args, "max_web_updates_chars", 2200)),
@@ -1142,6 +1354,7 @@ def command_send_stitch_prompt(args: argparse.Namespace) -> int:
     prompt = build_stitch_ui_prompt(
         task=str(args.task or "stitch-uiux-map-editor"),
         skill_context=skill_context,
+        persona_context=persona_context,
         quality_context=quality_context,
         web_updates_context=web_updates_context,
     )
@@ -1181,6 +1394,12 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
     quality_context = read_quality_context(
         Path(args.quality_report).resolve(),
         max_chars=int(args.max_quality_chars),
+    )
+    persona_context, persona_meta = load_persona_context(
+        project_root,
+        track=track,
+        persona_pack=str(getattr(args, "persona_pack", "")),
+        max_chars=int(getattr(args, "max_persona_chars", 2000)),
     )
 
     rules_context = read_context_file(
@@ -1229,6 +1448,7 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
         session_name=session_name,
         track_template=track_template,
         skill_context=skill_context,
+        persona_context=persona_context,
         quality_context=quality_context,
         planning_context=planning_context,
         rules_context=rules_context,
@@ -1245,6 +1465,7 @@ def _build_linear_prompt_payload(args: argparse.Namespace) -> tuple[str, dict[st
         "session_env_fallbacks": list(session_env_fallbacks),
         "session_resolved_from": resolved_from,
         "skills": skills,
+        "persona": persona_meta,
         "quality_report": str(Path(args.quality_report).resolve()),
         "planning_docs": planning_docs,
         "web_updates": web_updates_meta,
@@ -1404,9 +1625,16 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                 fetch_enabled=bool(getattr(args, "fetch_web_updates", True)),
             )
             quality_context = read_quality_context(quality_report)
+            general_persona_context, general_persona_meta = load_persona_context(
+                project_root,
+                track="",
+                persona_pack=str(getattr(args, "persona_pack", "")),
+                max_chars=int(getattr(args, "max_persona_chars", 2000)),
+            )
             prompt = build_quality_prompt(
                 report_text=quality_context,
                 task=task,
+                persona_context=general_persona_context,
                 web_updates_context=web_updates_context,
             )
             use_track_sessions = bool(getattr(args, "use_track_sessions", True))
@@ -1421,9 +1649,16 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                 aggregate_implemented: list[dict[str, Any]] = []
                 aggregate_suggested: list[dict[str, Any]] = []
                 for track_name, selected_session, resolved_from in track_sessions:
+                    track_persona_context, track_persona_meta = load_persona_context(
+                        project_root,
+                        track=track_name,
+                        persona_pack=str(getattr(args, "persona_pack", "")),
+                        max_chars=int(getattr(args, "max_persona_chars", 2000)),
+                    )
                     track_prompt = build_quality_prompt(
                         report_text=quality_context,
                         task=f"{task}::{track_name}",
+                        persona_context=track_persona_context,
                         web_updates_context=web_updates_context,
                     )
                     try:
@@ -1441,6 +1676,7 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                                 "track": track_name,
                                 "session_name": selected_session,
                                 "session_resolved_from": resolved_from,
+                                "persona": track_persona_meta,
                                 "send_payload": payload,
                                 "latest_activity": track_activity,
                                 "latest_activity_raw": track_raw,
@@ -1456,6 +1692,7 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                                 "track": track_name,
                                 "session_name": selected_session,
                                 "session_resolved_from": resolved_from,
+                                "persona": track_persona_meta,
                                 "error": str(exc),
                                 "http_status": int(exc.status) if exc.status is not None else None,
                             }
@@ -1463,7 +1700,10 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                 implemented = aggregate_implemented
                 suggested_next = aggregate_suggested
                 write_json(report_dir / "jules_track_sessions_activity.json", track_activity_payloads)
-                write_json(report_dir / "jules_web_updates.json", {"updates": web_updates_meta})
+                write_json(
+                    report_dir / "jules_web_updates.json",
+                    {"updates": web_updates_meta, "persona": {"general": general_persona_meta}},
+                )
             else:
                 reused_session = False
                 if use_session_pool:
@@ -1523,7 +1763,10 @@ def command_generate_suggestions(args: argparse.Namespace) -> int:
                         automation_mode=args.automation_mode,
                     )
                 write_json(report_dir / "jules_session.json", session_payload)
-                write_json(report_dir / "jules_web_updates.json", {"updates": web_updates_meta})
+                write_json(
+                    report_dir / "jules_web_updates.json",
+                    {"updates": web_updates_meta, "persona": {"general": general_persona_meta}},
+                )
 
                 if isinstance(session_payload, dict):
                     if not session_name:
@@ -1610,6 +1853,23 @@ def build_parser() -> argparse.ArgumentParser:
     list_sessions.add_argument("--json-out", default="", help="Optional json output file.")
     list_sessions.set_defaults(func=command_list_sessions)
 
+    audit_persona = subparsers.add_parser(
+        "audit-persona-structure",
+        help="Compare legacy .jules personas with current .github/jules/personas packs.",
+    )
+    audit_persona.add_argument(
+        "--legacy-dir",
+        default="",
+        help="Optional legacy persona dir override (defaults to remeres-map-editor-redux/.jules/newagents).",
+    )
+    audit_persona.add_argument(
+        "--persona-dir",
+        default="",
+        help="Optional current persona dir override (defaults to .github/jules/personas).",
+    )
+    audit_persona.add_argument("--json-out", default="", help="Optional json output file.")
+    audit_persona.set_defaults(func=command_audit_persona_structure)
+
     status = subparsers.add_parser("session-status", help="Fetch session + latest activity.")
     status.add_argument("session_name", help="Session name/id (sessions/<id> or raw id).")
     status.add_argument("--source", default="", help="Jules source override.")
@@ -1686,7 +1946,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=".quality_reports/refactor_summary.md",
         help="Quality report path.",
     )
+    build_stitch.add_argument(
+        "--persona-pack",
+        default="",
+        help="Optional persona pack file/name from .github/jules/personas.",
+    )
     build_stitch.add_argument("--max-skill-chars", default=1600, type=int, help="Max chars per skill file.")
+    build_stitch.add_argument("--max-persona-chars", default=2000, type=int, help="Max chars for persona context.")
     build_stitch.add_argument("--max-quality-chars", default=3200, type=int, help="Max chars for quality context.")
     build_stitch.add_argument(
         "--fetch-web-updates",
@@ -1718,7 +1984,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=".quality_reports/refactor_summary.md",
         help="Quality report path.",
     )
+    send_stitch.add_argument(
+        "--persona-pack",
+        default="",
+        help="Optional persona pack file/name from .github/jules/personas.",
+    )
     send_stitch.add_argument("--max-skill-chars", default=1600, type=int, help="Max chars per skill file.")
+    send_stitch.add_argument("--max-persona-chars", default=2000, type=int, help="Max chars for persona context.")
     send_stitch.add_argument("--max-quality-chars", default=3200, type=int, help="Max chars for quality context.")
     send_stitch.add_argument(
         "--fetch-web-updates",
@@ -1770,7 +2042,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Planning document path (repeatable).",
     )
+    build_linear.add_argument(
+        "--persona-pack",
+        default="",
+        help="Optional persona pack file/name from .github/jules/personas.",
+    )
     build_linear.add_argument("--max-skill-chars", default=1600, type=int, help="Max chars per skill file.")
+    build_linear.add_argument("--max-persona-chars", default=2000, type=int, help="Max chars for persona context.")
     build_linear.add_argument("--max-quality-chars", default=3200, type=int, help="Max chars for quality context.")
     build_linear.add_argument("--max-rules-chars", default=2200, type=int, help="Max chars for rules context.")
     build_linear.add_argument(
@@ -1831,7 +2109,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Planning document path (repeatable).",
     )
+    send_linear.add_argument(
+        "--persona-pack",
+        default="",
+        help="Optional persona pack file/name from .github/jules/personas.",
+    )
     send_linear.add_argument("--max-skill-chars", default=1600, type=int, help="Max chars per skill file.")
+    send_linear.add_argument("--max-persona-chars", default=2000, type=int, help="Max chars for persona context.")
     send_linear.add_argument("--max-quality-chars", default=3200, type=int, help="Max chars for quality context.")
     send_linear.add_argument("--max-rules-chars", default=2200, type=int, help="Max chars for rules context.")
     send_linear.add_argument(
@@ -1891,6 +2175,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use fixed track sessions (tests/refactor/uiux) before session-pool fallback.",
     )
     generate.add_argument("--activity-attempts", default=3, type=int, help="Latest-activity retry attempts.")
+    generate.add_argument(
+        "--persona-pack",
+        default="",
+        help="Optional persona pack file/name from .github/jules/personas.",
+    )
+    generate.add_argument("--max-persona-chars", default=2000, type=int, help="Max chars for persona context.")
     generate.add_argument(
         "--fetch-web-updates",
         action=argparse.BooleanOptionalAction,
