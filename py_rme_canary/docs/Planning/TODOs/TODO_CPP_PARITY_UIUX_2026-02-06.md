@@ -804,3 +804,4 @@
   - `python3 -m py_compile` nos arquivos alterados -> `OK`.
   - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s <tests de settings + user_settings>` -> `12 passed`.
   - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> `19 passed`.
+  - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint` -> pipeline concluído com `status=ok`, relatório atualizado em `.quality_reports/refactor_summary.md` e sugestões em `reports/jules/suggestions.json`.
