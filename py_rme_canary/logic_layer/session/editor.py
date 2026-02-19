@@ -10,7 +10,7 @@ import logging
 import os
 import random
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -2435,6 +2435,33 @@ class EditorSession:
 
     def clear_selection(self) -> None:
         self._selection.clear_selection()
+
+    def set_selection_tiles(self, tiles: Iterable[TileKey], *, filter_nonempty: bool = True) -> set[TileKey]:
+        """Replace selection with a batch of tile keys.
+
+        Args:
+            tiles: Iterable of ``(x, y, z)`` tuples.
+            filter_nonempty: When ``True``, keep only tiles that currently exist
+                and are logically non-empty.
+
+        Returns:
+            The normalized set that was effectively applied.
+        """
+        normalized: set[TileKey] = set()
+        for raw_key in tiles:
+            try:
+                x, y, z = raw_key
+            except Exception:
+                continue
+            normalized.add((int(x), int(y), int(z)))
+
+        if filter_nonempty:
+            normalized = {
+                key for key in normalized if tile_is_nonempty(self.game_map.get_tile(key[0], key[1], key[2]))
+            }
+
+        self._selection.set_selection(normalized)
+        return set(normalized)
 
     def toggle_select_tile(self, *, x: int, y: int, z: int) -> None:
         self._selection.toggle_select_tile(x=x, y=y, z=z)
