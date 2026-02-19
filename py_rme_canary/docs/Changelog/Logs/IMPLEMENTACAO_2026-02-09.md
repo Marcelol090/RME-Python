@@ -2260,3 +2260,47 @@ Mesclados PRs ativos em `development` (`#38`, `#42`, `#44`) com resolução de c
 - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py` -> **7 passed, 1 warning**
 - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **19 passed**
 - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/logic_layer/test_hotkey_manager.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **26 passed**
+
+---
+
+## Sessão 7 (2026-02-19): Preferences/Settings parity integration
+
+### Resumo
+
+Fechada a lacuna de paridade do fluxo de preferências moderno, garantindo:
+- entrada por `File > Preferences...` usando `SettingsDialog` moderno;
+- persistência real em `UserSettings`;
+- aplicação runtime no editor (theme/grid/tooltips/brush/merge settings);
+- fallback seguro para o diálogo legado quando necessário.
+
+### Arquivos Modificados
+
+- `py_rme_canary/vis_layer/ui/dialogs/settings_dialog.py`
+  - categorias agora carregam defaults de `UserSettings`;
+  - `SettingsDialog.accept()` emite payload estruturado:
+    - `general`, `editor`, `graphics`, `interface`, `client_version`.
+  - tema atualizado para presets do Noct (`Noct Green Glass`, `Noct 8-bit Glass`, `Noct Liquid Glass`).
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_modern_ux.py`
+  - `goto_position(...)` corrigido para usar `center_view_on(...)` com fallback robusto.
+  - `_apply_settings(...)` expandido para persistir/aplicar preferências em runtime.
+
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_file.py`
+  - `_open_preferences()` prioriza `show_settings_dialog()` e mantém fallback para `PreferencesDialog` legado.
+
+- `py_rme_canary/core/config/user_settings.py`
+  - novas chaves persistentes para tema, defaults de grid/tooltips, brush defaults,
+    merge/borderize defaults, input de interface e estilos de palette.
+
+- Testes:
+  - `py_rme_canary/tests/unit/vis_layer/ui/main_window/test_qt_map_editor_settings_flow.py`
+  - `py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py`
+  - `py_rme_canary/tests/unit/core/config/test_client_profiles.py`
+
+### Validação
+
+- `ruff check` (arquivos alterados) -> **All checks passed**
+- `python3 -m py_compile` (arquivos alterados) -> **OK**
+- `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s` nos testes de settings/user-settings -> **12 passed**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **19 passed**
+

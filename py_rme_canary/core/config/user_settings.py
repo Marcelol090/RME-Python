@@ -50,6 +50,16 @@ class UserSettings:
         self._settings.setValue(self._pref_key(name), int(value))
         self._settings.sync()
 
+    def _get_str_pref(self, name: str, default: str) -> str:
+        try:
+            return str(self._settings.value(self._pref_key(name), str(default)) or str(default))
+        except Exception:
+            return str(default)
+
+    def _set_str_pref(self, name: str, value: str) -> None:
+        self._settings.setValue(self._pref_key(name), str(value or ""))
+        self._settings.sync()
+
     def get_default_client_version(self) -> int:
         try:
             return int(self._settings.value("preferences/default_client_version", 0))
@@ -155,6 +165,98 @@ class UserSettings:
 
     def set_copy_position_format(self, value: int) -> None:
         self._set_int_pref("copy_position_format", int(value))
+
+    def get_theme_name(self) -> str:
+        return self._get_str_pref("theme_name", "glass_morphism")
+
+    def set_theme_name(self, value: str) -> None:
+        self._set_str_pref("theme_name", str(value))
+
+    def get_show_grid_default(self) -> bool:
+        return self._get_bool_pref("show_grid_default", True)
+
+    def set_show_grid_default(self, value: bool) -> None:
+        self._set_bool_pref("show_grid_default", bool(value))
+
+    def get_show_tooltips_default(self) -> bool:
+        return self._get_bool_pref("show_tooltips_default", True)
+
+    def set_show_tooltips_default(self, value: bool) -> None:
+        self._set_bool_pref("show_tooltips_default", bool(value))
+
+    def get_default_brush_size(self) -> int:
+        return self._get_int_pref("default_brush_size", 1)
+
+    def set_default_brush_size(self, value: int) -> None:
+        self._set_int_pref("default_brush_size", int(value))
+
+    def get_automagic_default(self) -> bool:
+        return self._get_bool_pref("automagic_default", True)
+
+    def set_automagic_default(self, value: bool) -> None:
+        self._set_bool_pref("automagic_default", bool(value))
+
+    def get_eraser_leave_unique(self) -> bool:
+        return self._get_bool_pref("eraser_leave_unique", True)
+
+    def set_eraser_leave_unique(self, value: bool) -> None:
+        self._set_bool_pref("eraser_leave_unique", bool(value))
+
+    def get_merge_paste_default(self) -> bool:
+        return self._get_bool_pref("merge_paste_default", False)
+
+    def set_merge_paste_default(self, value: bool) -> None:
+        self._set_bool_pref("merge_paste_default", bool(value))
+
+    def get_merge_move_default(self) -> bool:
+        return self._get_bool_pref("merge_move_default", False)
+
+    def set_merge_move_default(self, value: bool) -> None:
+        self._set_bool_pref("merge_move_default", bool(value))
+
+    def get_borderize_paste_default(self) -> bool:
+        return self._get_bool_pref("borderize_paste_default", True)
+
+    def set_borderize_paste_default(self, value: bool) -> None:
+        self._set_bool_pref("borderize_paste_default", bool(value))
+
+    def get_switch_mouse_buttons(self) -> bool:
+        return self._get_bool_pref("switch_mouse_buttons", False)
+
+    def set_switch_mouse_buttons(self, value: bool) -> None:
+        self._set_bool_pref("switch_mouse_buttons", bool(value))
+
+    def get_double_click_properties(self) -> bool:
+        return self._get_bool_pref("double_click_properties", True)
+
+    def set_double_click_properties(self, value: bool) -> None:
+        self._set_bool_pref("double_click_properties", bool(value))
+
+    def get_inversed_scroll(self) -> bool:
+        return self._get_bool_pref("inversed_scroll", False)
+
+    def set_inversed_scroll(self, value: bool) -> None:
+        self._set_bool_pref("inversed_scroll", bool(value))
+
+    def get_scroll_speed(self) -> int:
+        return self._get_int_pref("scroll_speed", 50)
+
+    def set_scroll_speed(self, value: int) -> None:
+        self._set_int_pref("scroll_speed", int(value))
+
+    def get_zoom_speed(self) -> int:
+        return self._get_int_pref("zoom_speed", 50)
+
+    def set_zoom_speed(self, value: int) -> None:
+        self._set_int_pref("zoom_speed", int(value))
+
+    def get_palette_style(self, palette: str, *, default: int = 0) -> int:
+        key = f"palette_{str(palette).strip().lower()}_style"
+        return self._get_int_pref(key, int(default))
+
+    def set_palette_style(self, palette: str, value: int) -> None:
+        key = f"palette_{str(palette).strip().lower()}_style"
+        self._set_int_pref(key, int(value))
 
     def get_client_profiles(self) -> list[ClientProfile]:
         """Get all persisted client profiles."""

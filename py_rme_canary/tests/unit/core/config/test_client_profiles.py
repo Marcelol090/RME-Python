@@ -127,6 +127,22 @@ def test_user_settings_persists_preferences_fields() -> None:
     settings.set_replace_count_limit(25000)
     settings.set_delete_backup_days(21)
     settings.set_copy_position_format(3)
+    settings.set_theme_name("glass_8bit")
+    settings.set_show_grid_default(False)
+    settings.set_show_tooltips_default(False)
+    settings.set_default_brush_size(4)
+    settings.set_automagic_default(False)
+    settings.set_eraser_leave_unique(False)
+    settings.set_merge_paste_default(True)
+    settings.set_merge_move_default(True)
+    settings.set_borderize_paste_default(False)
+    settings.set_switch_mouse_buttons(True)
+    settings.set_double_click_properties(False)
+    settings.set_inversed_scroll(True)
+    settings.set_scroll_speed(70)
+    settings.set_zoom_speed(40)
+    settings.set_palette_style("terrain", 1)
+    settings.set_palette_style("collection", 2)
 
     loaded = UserSettings(org=org, app=app)
     assert loaded.get_show_welcome_dialog() is False
@@ -141,3 +157,19 @@ def test_user_settings_persists_preferences_fields() -> None:
     assert loaded.get_replace_count_limit() == 25000
     assert loaded.get_delete_backup_days() == 21
     assert loaded.get_copy_position_format() == 3
+    assert loaded.get_theme_name() == "glass_8bit"
+    assert loaded.get_show_grid_default() is False
+    assert loaded.get_show_tooltips_default() is False
+    assert loaded.get_default_brush_size() == 4
+    assert loaded.get_automagic_default() is False
+    assert loaded.get_eraser_leave_unique() is False
+    assert loaded.get_merge_paste_default() is True
+    assert loaded.get_merge_move_default() is True
+    assert loaded.get_borderize_paste_default() is False
+    assert loaded.get_switch_mouse_buttons() is True
+    assert loaded.get_double_click_properties() is False
+    assert loaded.get_inversed_scroll() is True
+    assert loaded.get_scroll_speed() == 70
+    assert loaded.get_zoom_speed() == 40
+    assert loaded.get_palette_style("terrain") == 1
+    assert loaded.get_palette_style("collection") == 2

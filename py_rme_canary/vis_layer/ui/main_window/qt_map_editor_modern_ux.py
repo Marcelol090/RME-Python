@@ -23,11 +23,11 @@ from PyQt6.QtWidgets import QApplication, QMenu, QMessageBox
 from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.core.data.position import Position
 from py_rme_canary.logic_layer.clipboard import ClipboardManager
+from py_rme_canary.vis_layer.ui.dialogs.about import AboutDialog
 from py_rme_canary.vis_layer.ui.dialogs.command_palette import CommandPalette
 from py_rme_canary.vis_layer.ui.dialogs.global_search import GlobalSearchDialog
 from py_rme_canary.vis_layer.ui.dialogs.house_dialog import HouseListDialog
 from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import MapPropertiesDialog
-from py_rme_canary.vis_layer.ui.dialogs.about import AboutDialog
 from py_rme_canary.vis_layer.ui.dialogs.navigation_dialogs import GoToPositionDialog
 from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import SettingsDialog
 from py_rme_canary.vis_layer.ui.dialogs.spawn_manager import SpawnManagerDialog
@@ -428,11 +428,21 @@ class QtMapEditorModernUXMixin:
 
     def goto_position(self: QtMapEditor, x: int, y: int, z: int) -> None:
         """Navigate to a position on the map."""
+        tx = int(x)
+        ty = int(y)
+        tz = int(z)
+        if hasattr(self, "center_view_on"):
+            try:
+                self.center_view_on(tx, ty, tz, push_history=True)
+                return
+            except Exception:
+                logger.exception("goto_position fallback after center_view_on failure")
         if hasattr(self, "viewport"):
-            self.viewport.center_x = x
-            self.viewport.center_y = y
+            self.viewport.origin_x = max(0, tx)
+            self.viewport.origin_y = max(0, ty)
+            self.viewport.z = max(0, min(15, tz))
         if hasattr(self, "z_spin"):
-            self.z_spin.setValue(z)
+            self.z_spin.setValue(max(0, min(15, tz)))
         if hasattr(self, "canvas"):
             self.canvas.update()
 
@@ -450,20 +460,129 @@ class QtMapEditorModernUXMixin:
 
     def _apply_settings(self: QtMapEditor, settings: dict) -> None:
         """Apply settings from settings dialog."""
-        logger.info(f"Applying settings: {list(settings.keys())}")
+        if not isinstance(settings, dict):
+            return
+        logger.info("Applying settings: %s", list(settings.keys()))
         try:
-            general = settings.get("general", {}) if isinstance(settings, dict) else {}
-            default_cv = general.get("default_client_version")
-            if default_cv is not None:
-                get_user_settings().set_default_client_version(int(default_cv))
-            auto_load = general.get("auto_load_appearances")
-            if auto_load is not None:
-                get_user_settings().set_auto_load_appearances(bool(auto_load))
+            user_settings = get_user_settings()
 
-            editor = settings.get("editor", {}) if isinstance(settings, dict) else {}
-            sprite_match = editor.get("sprite_match_on_paste")
-            if sprite_match is not None:
-                get_user_settings().set_sprite_match_on_paste(bool(sprite_match))
+            general = settings.get("general", {})
+            if isinstance(general, dict):
+                if "show_welcome_dialog" in general:
+                    user_settings.set_show_welcome_dialog(bool(general["show_welcome_dialog"]))
+                if "always_make_backup" in general:
+                    user_settings.set_always_make_backup(bool(general["always_make_backup"]))
+                if "check_updates_on_startup" in general:
+                    user_settings.set_check_updates_on_startup(bool(general["check_updates_on_startup"]))
+                if "only_one_instance" in general:
+                    user_settings.set_only_one_instance(bool(general["only_one_instance"]))
+                if "undo_queue_size" in general:
+                    user_settings.set_undo_queue_size(int(general["undo_queue_size"]))
+                if "undo_max_memory_mb" in general:
+                    user_settings.set_undo_max_memory_mb(int(general["undo_max_memory_mb"]))
+                if "worker_threads" in general:
+                    user_settings.set_worker_threads(int(general["worker_threads"]))
+                if "copy_position_format" in general:
+                    user_settings.set_copy_position_format(int(general["copy_position_format"]))
+                if "auto_load_appearances" in general:
+                    user_settings.set_auto_load_appearances(bool(general["auto_load_appearances"]))
+                if "enable_tileset_editing" in general:
+                    user_settings.set_enable_tileset_editing(bool(general["enable_tileset_editing"]))
+
+            editor = settings.get("editor", {})
+            if isinstance(editor, dict):
+                if "default_brush_size" in editor:
+                    user_settings.set_default_brush_size(int(editor["default_brush_size"]))
+                    if hasattr(self, "_set_brush_size"):
+                        self._set_brush_size(int(editor["default_brush_size"]))
+                if "automagic_default" in editor:
+                    automagic = bool(editor["automagic_default"])
+                    user_settings.set_automagic_default(automagic)
+                    if hasattr(self, "act_automagic"):
+                        self.act_automagic.setChecked(automagic)
+                if "eraser_leave_unique" in editor:
+                    value = bool(editor["eraser_leave_unique"])
+                    user_settings.set_eraser_leave_unique(value)
+                    if hasattr(self, "session"):
+                        self.session.set_eraser_leave_unique(value)
+                if "merge_paste" in editor:
+                    user_settings.set_merge_paste_default(bool(editor["merge_paste"]))
+                if "merge_move" in editor:
+                    user_settings.set_merge_move_default(bool(editor["merge_move"]))
+                if "borderize_paste" in editor:
+                    user_settings.set_borderize_paste_default(bool(editor["borderize_paste"]))
+                if "sprite_match_on_paste" in editor:
+                    user_settings.set_sprite_match_on_paste(bool(editor["sprite_match_on_paste"]))
+                if hasattr(self, "act_merge_paste") and "merge_paste" in editor:
+                    self.act_merge_paste.setChecked(bool(editor["merge_paste"]))
+                if hasattr(self, "act_merge_move") and "merge_move" in editor:
+                    self.act_merge_move.setChecked(bool(editor["merge_move"]))
+                if hasattr(self, "act_borderize_paste") and "borderize_paste" in editor:
+                    self.act_borderize_paste.setChecked(bool(editor["borderize_paste"]))
+                if hasattr(self, "apply_ui_state_to_session"):
+                    self.apply_ui_state_to_session()
+
+            graphics = settings.get("graphics", {})
+            if isinstance(graphics, dict):
+                if "theme_name" in graphics:
+                    theme_name = str(graphics["theme_name"])
+                    user_settings.set_theme_name(theme_name)
+                    if hasattr(self, "_set_editor_theme"):
+                        self._set_editor_theme(theme_name)
+                if "show_grid_default" in graphics:
+                    show_grid = bool(graphics["show_grid_default"])
+                    user_settings.set_show_grid_default(show_grid)
+                    if hasattr(self, "act_show_grid"):
+                        self.act_show_grid.setChecked(show_grid)
+                if "show_tooltips_default" in graphics:
+                    show_tooltips = bool(graphics["show_tooltips_default"])
+                    user_settings.set_show_tooltips_default(show_tooltips)
+                    if hasattr(self, "act_show_tooltips"):
+                        self.act_show_tooltips.setChecked(show_tooltips)
+
+            interface = settings.get("interface", {})
+            if isinstance(interface, dict):
+                if "switch_mouse_buttons" in interface:
+                    value = bool(interface["switch_mouse_buttons"])
+                    user_settings.set_switch_mouse_buttons(value)
+                    self.switch_mouse_buttons = value
+                if "double_click_properties" in interface:
+                    value = bool(interface["double_click_properties"])
+                    user_settings.set_double_click_properties(value)
+                    self.double_click_properties = value
+                if "inversed_scroll" in interface:
+                    value = bool(interface["inversed_scroll"])
+                    user_settings.set_inversed_scroll(value)
+                    self.inversed_scroll = value
+                if "scroll_speed" in interface:
+                    user_settings.set_scroll_speed(int(interface["scroll_speed"]))
+                    self.scroll_speed = int(interface["scroll_speed"])
+                if "zoom_speed" in interface:
+                    user_settings.set_zoom_speed(int(interface["zoom_speed"]))
+                    self.zoom_speed = int(interface["zoom_speed"])
+                palette_keys = (
+                    "palette_terrain_style",
+                    "palette_doodad_style",
+                    "palette_item_style",
+                    "palette_raw_style",
+                    "palette_collection_style",
+                )
+                for key in palette_keys:
+                    if key in interface:
+                        palette_name = key.replace("palette_", "").replace("_style", "")
+                        user_settings.set_palette_style(palette_name, int(interface[key]))
+
+            client_version = settings.get("client_version", {})
+            if isinstance(client_version, dict):
+                if "default_client_version" in client_version:
+                    user_settings.set_default_client_version(int(client_version["default_client_version"]))
+                if "client_assets_folder" in client_version:
+                    user_settings.set_client_assets_folder(str(client_version["client_assets_folder"] or ""))
+
+            if hasattr(self, "canvas"):
+                self.canvas.update()
+            if hasattr(self, "status"):
+                self.status.showMessage("Preferences updated")
         except Exception:
             logger.exception("Failed to apply settings")
 

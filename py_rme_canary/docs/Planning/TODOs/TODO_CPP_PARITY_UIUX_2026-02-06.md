@@ -786,3 +786,21 @@
 - Cobertura adicionada:
   - `tests/unit/logic_layer/test_hotkey_manager.py`
   - `tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py`
+
+## Incremental Update (2026-02-19 - Phase 9: Preferences pipeline parity)
+- Fechado gap de paridade no fluxo de `Preferences...` (menu File) e no contrato UI->backend:
+  - `qt_map_editor_file._open_preferences()` agora prioriza `SettingsDialog` moderno com fallback seguro para `PreferencesDialog` legado.
+  - `SettingsDialog` passou a emitir payload estruturado por categoria (`general/editor/graphics/interface/client_version`) em `settings_applied`.
+  - `_apply_settings(...)` no `qt_map_editor_modern_ux.py` agora persiste preferências reais em `UserSettings` e aplica estados runtime (theme, grid/tooltips, brush/automagic, merge/borderize).
+  - `goto_position(...)` corrigido para usar `center_view_on(...)` (fallback robusto) em vez de atributos inválidos no viewport.
+- Persistência ampliada:
+  - `core/config/user_settings.py` recebeu novos campos de preferência para tema, grid/tooltips padrão, brush defaults, merge/borderize defaults, interface input e estilos de palettes.
+- Cobertura adicionada/atualizada:
+  - `tests/unit/vis_layer/ui/main_window/test_qt_map_editor_settings_flow.py`
+  - `tests/unit/vis_layer/ui/test_dialogs.py` (novos testes de defaults + payload no SettingsDialog)
+  - `tests/unit/core/config/test_client_profiles.py` (persistência dos novos campos em `UserSettings`).
+- Validação:
+  - `ruff check` nos arquivos alterados -> `All checks passed`.
+  - `python3 -m py_compile` nos arquivos alterados -> `OK`.
+  - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s <tests de settings + user_settings>` -> `12 passed`.
+  - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> `19 passed`.

@@ -404,6 +404,13 @@ class QtMapEditorFileMixin:
             self.canvas.update()
 
     def _open_preferences(self: QtMapEditor) -> None:
+        if hasattr(self, "show_settings_dialog"):
+            try:
+                self.show_settings_dialog()
+                return
+            except Exception:
+                logger.exception("Modern settings dialog failed, falling back to legacy preferences")
+
         from py_rme_canary.vis_layer.ui.main_window.preferences_dialog import PreferencesDialog
 
         dialog = PreferencesDialog(self)

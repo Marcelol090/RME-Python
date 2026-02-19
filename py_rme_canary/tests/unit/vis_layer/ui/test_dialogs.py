@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from uuid import uuid4
+
 import pytest
 
 # Skip tests if PyQt6 not available
@@ -86,6 +88,54 @@ class TestSettingsDialog:
         for i in range(dialog._nav_list.count()):
             dialog._nav_list.setCurrentRow(i)
             assert dialog._stack.currentIndex() == i
+
+    def test_settings_dialog_loads_user_settings_defaults(self, app, monkeypatch):
+        from PyQt6.QtWidgets import QCheckBox, QComboBox
+
+        from py_rme_canary.core.config.user_settings import UserSettings
+        from py_rme_canary.vis_layer.ui.dialogs import settings_dialog as settings_module
+        from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import SettingsDialog
+
+        settings = UserSettings(org="py_rme_canary_tests", app=f"settings_dialog_{uuid4().hex}")
+        settings.set_show_welcome_dialog(False)
+        settings.set_copy_position_format(3)
+        settings.set_theme_name("glass_8bit")
+        settings.set_switch_mouse_buttons(True)
+        settings.set_default_client_version(1098)
+        settings.set_client_assets_folder("/tmp/client-assets")
+        monkeypatch.setattr(settings_module, "get_user_settings", lambda: settings)
+
+        dialog = SettingsDialog()
+        show_welcome = dialog.findChild(QCheckBox, "show_welcome")
+        copy_format = dialog.findChild(QComboBox, "copy_pos_format")
+        theme = dialog.findChild(QComboBox, "theme")
+        switch_buttons = dialog.findChild(QCheckBox, "switch_mouse_buttons")
+        default_version = dialog.findChild(QComboBox, "default_client_version")
+
+        assert show_welcome is not None and show_welcome.isChecked() is False
+        assert copy_format is not None and copy_format.currentIndex() == 3
+        assert theme is not None and theme.currentText() == "Noct 8-bit Glass"
+        assert switch_buttons is not None and switch_buttons.isChecked() is True
+        assert default_version is not None and int(default_version.currentData()) == 1098
+
+    def test_settings_dialog_accept_emits_structured_payload(self, app):
+        from PyQt6.QtWidgets import QCheckBox
+
+        from py_rme_canary.vis_layer.ui.dialogs.settings_dialog import SettingsDialog
+
+        dialog = SettingsDialog()
+        payloads: list[dict] = []
+        dialog.settings_applied.connect(lambda data: payloads.append(dict(data)))
+
+        show_grid = dialog.findChild(QCheckBox, "show_grid_default")
+        assert show_grid is not None
+        show_grid.setChecked(False)
+        dialog.accept()
+
+        assert payloads
+        payload = payloads[0]
+        assert {"general", "editor", "graphics", "interface", "client_version"} <= set(payload.keys())
+        assert payload["graphics"]["show_grid_default"] is False
 
 
 class TestGlobalSearchDialog:

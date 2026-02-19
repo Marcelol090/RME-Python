@@ -37,6 +37,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.core.config.user_settings import get_user_settings
 from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 
@@ -52,8 +53,9 @@ def _color_button(initial: str = "#ffffff") -> QPushButton:
     btn.setStyleSheet(f"background: {initial}; border: 1px solid #555; border-radius: 4px;")
 
     def _pick() -> None:
-        from PyQt6.QtGui import QColor as _QC
-        c = QColorDialog.getColor(_QC(btn.property("_color")), btn, "Choose Color")
+        from PyQt6.QtGui import QColor
+
+        c = QColorDialog.getColor(QColor(btn.property("_color")), btn, "Choose Color")
         if c.isValid():
             btn.setProperty("_color", c.name())
             btn.setStyleSheet(f"background: {c.name()}; border: 1px solid #555; border-radius: 4px;")
@@ -91,6 +93,20 @@ def _section_label(text: str, color_token: str) -> QLabel:
     return lbl
 
 
+def _dir_picker_text(widget: QWidget) -> str:
+    edit = widget.findChild(QLineEdit, "dir_edit")
+    if edit is None:
+        return ""
+    return str(edit.text() or "").strip()
+
+
+def _set_dir_picker_text(widget: QWidget, value: str) -> None:
+    edit = widget.findChild(QLineEdit, "dir_edit")
+    if edit is None:
+        return
+    edit.setText(str(value or ""))
+
+
 # ---------------------------------------------------------------------------
 # Category Base
 # ---------------------------------------------------------------------------
@@ -117,6 +133,9 @@ class SettingsCategory(QFrame):
 
     def reset_settings(self) -> None:
         pass
+
+    def collect_settings(self) -> dict[str, object]:
+        return {}
 
 
 def _scrollable(inner: QWidget) -> QScrollArea:
@@ -257,11 +276,7 @@ class GeneralSettings(SettingsCategory):
         # Auto-load appearances
         self.auto_load_appearances = QCheckBox("Auto-load appearances.dat when available")
         self.auto_load_appearances.setObjectName("auto_load_appearances")
-        try:
-            from py_rme_canary.core.config.user_settings import get_user_settings
-            self.auto_load_appearances.setChecked(get_user_settings().get_auto_load_appearances())
-        except Exception:
-            self.auto_load_appearances.setChecked(True)
+        self.auto_load_appearances.setChecked(True)
         self.auto_load_appearances.stateChanged.connect(self.mark_changed)
         form.addRow(self.auto_load_appearances)
 
@@ -274,6 +289,38 @@ class GeneralSettings(SettingsCategory):
 
         layout.addLayout(form)
         layout.addStretch()
+        self._load_current_settings()
+
+    def _load_current_settings(self) -> None:
+        settings = get_user_settings()
+        self.show_welcome.setChecked(bool(settings.get_show_welcome_dialog()))
+        self.check_updates.setChecked(bool(settings.get_check_updates_on_startup()))
+        self.only_one_instance.setChecked(bool(settings.get_only_one_instance()))
+        self.create_backup.setChecked(bool(settings.get_always_make_backup()))
+        self.undo_queue_size.setValue(int(settings.get_undo_queue_size()))
+        self.undo_memory_mb.setValue(int(settings.get_undo_max_memory_mb()))
+        self.worker_threads.setValue(int(settings.get_worker_threads()))
+        self.copy_pos_format.setCurrentIndex(int(settings.get_copy_position_format()))
+        self.auto_load_appearances.setChecked(bool(settings.get_auto_load_appearances()))
+        self.enable_tileset_editing.setChecked(bool(settings.get_enable_tileset_editing()))
+        self._changed = False
+
+    def collect_settings(self) -> dict[str, object]:
+        return {
+            "show_welcome_dialog": bool(self.show_welcome.isChecked()),
+            "check_updates_on_startup": bool(self.check_updates.isChecked()),
+            "only_one_instance": bool(self.only_one_instance.isChecked()),
+            "always_make_backup": bool(self.create_backup.isChecked()),
+            "auto_save": bool(self.auto_save.isChecked()),
+            "auto_save_interval": int(self.auto_save_interval.value()),
+            "undo_queue_size": int(self.undo_queue_size.value()),
+            "undo_max_memory_mb": int(self.undo_memory_mb.value()),
+            "worker_threads": int(self.worker_threads.value()),
+            "copy_position_format": int(self.copy_pos_format.currentIndex()),
+            "recent_files_count": int(self.recent_count.value()),
+            "auto_load_appearances": bool(self.auto_load_appearances.isChecked()),
+            "enable_tileset_editing": bool(self.enable_tileset_editing.isChecked()),
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -396,11 +443,7 @@ class EditorSettings(SettingsCategory):
             "Enable sprite hash matching for cross-version copy/paste.\n"
             "Allows copying between RME instances with different client versions."
         )
-        try:
-            from py_rme_canary.core.config.user_settings import get_user_settings
-            self.sprite_match_paste.setChecked(get_user_settings().get_sprite_match_on_paste())
-        except Exception:
-            self.sprite_match_paste.setChecked(True)
+        self.sprite_match_paste.setChecked(True)
         self.sprite_match_paste.stateChanged.connect(self.mark_changed)
         form.addRow(self.sprite_match_paste)
 
@@ -419,6 +462,37 @@ class EditorSettings(SettingsCategory):
 
         layout.addLayout(form)
         layout.addStretch()
+        self._load_current_settings()
+
+    def _load_current_settings(self) -> None:
+        settings = get_user_settings()
+        self.default_brush_size.setValue(int(settings.get_default_brush_size()))
+        self.automagic_default.setChecked(bool(settings.get_automagic_default()))
+        self.eraser_leave_unique.setChecked(bool(settings.get_eraser_leave_unique()))
+        self.merge_paste.setChecked(bool(settings.get_merge_paste_default()))
+        self.merge_move.setChecked(bool(settings.get_merge_move_default()))
+        self.borderize_paste.setChecked(bool(settings.get_borderize_paste_default()))
+        self.sprite_match_paste.setChecked(bool(settings.get_sprite_match_on_paste()))
+        self._changed = False
+
+    def collect_settings(self) -> dict[str, object]:
+        return {
+            "default_brush_size": int(self.default_brush_size.value()),
+            "automagic_default": bool(self.automagic_default.isChecked()),
+            "doodad_erase_same": bool(self.doodad_eraser_same.isChecked()),
+            "eraser_leave_unique": bool(self.eraser_leave_unique.isChecked()),
+            "house_brush_remove": bool(self.house_brush_remove.isChecked()),
+            "auto_assign_doorid": bool(self.auto_assign_doorid.isChecked()),
+            "auto_create_spawn": bool(self.auto_create_spawn.isChecked()),
+            "warn_duplicate_ids": bool(self.warn_duplicate_ids.isChecked()),
+            "prevent_toporder": bool(self.prevent_toporder.isChecked()),
+            "merge_paste": bool(self.merge_paste.isChecked()),
+            "merge_move": bool(self.merge_move.isChecked()),
+            "borderize_paste": bool(self.borderize_paste.isChecked()),
+            "sprite_match_on_paste": bool(self.sprite_match_paste.isChecked()),
+            "default_floor": int(self.default_floor.value()),
+            "group_same_actions": bool(self.group_same_actions.isChecked()),
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +501,12 @@ class EditorSettings(SettingsCategory):
 
 class GraphicsSettings(SettingsCategory):
     """Graphics settings – mirrors C++ Preferences > Graphics."""
+
+    THEME_OPTIONS: list[tuple[str, str]] = [
+        ("Noct Green Glass", "glass_morphism"),
+        ("Noct 8-bit Glass", "glass_8bit"),
+        ("Noct Liquid Glass", "liquid_glass"),
+    ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -565,16 +645,8 @@ class GraphicsSettings(SettingsCategory):
 
         self.theme = QComboBox()
         self.theme.setObjectName("theme")
-        self.theme.addItems(["Dark (Modern)", "Light", "Neon (Cyberpunk)"])
-
-        # Select current
-        tm = get_theme_manager()
-        if tm.current_theme == "light":
-            self.theme.setCurrentIndex(1)
-        elif tm.current_theme == "neon":
-            self.theme.setCurrentIndex(2)
-        else:
-            self.theme.setCurrentIndex(0)
+        for label, _theme_name in self.THEME_OPTIONS:
+            self.theme.addItem(label)
 
         self.theme.currentIndexChanged.connect(self._on_theme_changed)
         form.addRow("Theme:", self.theme)
@@ -620,15 +692,39 @@ class GraphicsSettings(SettingsCategory):
 
         layout.addLayout(form)
         layout.addStretch()
+        self._load_current_settings()
+
+    def _load_current_settings(self) -> None:
+        settings = get_user_settings()
+        theme_name = str(settings.get_theme_name() or get_theme_manager().current_theme)
+        theme_values = [theme for _, theme in self.THEME_OPTIONS]
+        if theme_name in theme_values:
+            self.theme.setCurrentIndex(theme_values.index(theme_name))
+        else:
+            self.theme.setCurrentIndex(0)
+        self.show_grid.setChecked(bool(settings.get_show_grid_default()))
+        self.show_tooltips.setChecked(bool(settings.get_show_tooltips_default()))
+        self._changed = False
 
     def _on_theme_changed(self, index: int) -> None:
         """Apply theme immediately for preview."""
         tm = get_theme_manager()
-        # Indexes match addItems order: ["Dark", "Light", "Neon"]
-        themes = ["dark", "light", "neon"]
+        themes = [theme for _, theme in self.THEME_OPTIONS]
         if 0 <= index < len(themes):
             tm.set_theme(themes[index])
         self.mark_changed()
+
+    def collect_settings(self) -> dict[str, object]:
+        themes = [theme for _, theme in self.THEME_OPTIONS]
+        idx = int(self.theme.currentIndex())
+        selected_theme = themes[idx] if 0 <= idx < len(themes) else themes[0]
+        return {
+            "theme_name": str(selected_theme),
+            "show_grid_default": bool(self.show_grid.isChecked()),
+            "show_tooltips_default": bool(self.show_tooltips.isChecked()),
+            "grid_opacity": int(self.grid_opacity.value()),
+            "animation_speed": str(self.animation_speed.currentText()),
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -640,6 +736,7 @@ class InterfaceSettings(SettingsCategory):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._palette_style_combos: dict[str, QComboBox] = {}
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -673,6 +770,7 @@ class InterfaceSettings(SettingsCategory):
             combo.addItems(_style_items)
             combo.currentIndexChanged.connect(self.mark_changed)
             form.addRow(name, combo)
+            self._palette_style_combos[obj_name] = combo
 
         # --- Large Icons toggles ---
         layout.addWidget(_section_label("Large Icons", c["text"]["secondary"]))
@@ -744,6 +842,31 @@ class InterfaceSettings(SettingsCategory):
 
         layout.addLayout(form)
         layout.addStretch()
+        self._load_current_settings()
+
+    def _load_current_settings(self) -> None:
+        settings = get_user_settings()
+        for key, combo in self._palette_style_combos.items():
+            palette_name = key.replace("palette_", "").replace("_style", "")
+            combo.setCurrentIndex(int(settings.get_palette_style(palette_name, default=0)))
+        self.switch_buttons.setChecked(bool(settings.get_switch_mouse_buttons()))
+        self.double_click_props.setChecked(bool(settings.get_double_click_properties()))
+        self.inversed_scroll.setChecked(bool(settings.get_inversed_scroll()))
+        self.scroll_speed.setValue(int(settings.get_scroll_speed()))
+        self.zoom_speed.setValue(int(settings.get_zoom_speed()))
+        self._changed = False
+
+    def collect_settings(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "switch_mouse_buttons": bool(self.switch_buttons.isChecked()),
+            "double_click_properties": bool(self.double_click_props.isChecked()),
+            "inversed_scroll": bool(self.inversed_scroll.isChecked()),
+            "scroll_speed": int(self.scroll_speed.value()),
+            "zoom_speed": int(self.zoom_speed.value()),
+        }
+        for key, combo in self._palette_style_combos.items():
+            payload[key] = int(combo.currentIndex())
+        return payload
 
 
 # ---------------------------------------------------------------------------
@@ -850,6 +973,43 @@ class ClientVersionSettings(SettingsCategory):
         layout.addWidget(version_scroll, 1)
 
         layout.addStretch()
+        self._load_current_settings()
+
+    def _load_current_settings(self) -> None:
+        settings = get_user_settings()
+        default_version = int(settings.get_default_client_version() or 0)
+        idx = self.default_version.findData(default_version)
+        self.default_version.setCurrentIndex(idx if idx >= 0 else 0)
+        fallback_assets = str(settings.get_client_assets_folder() or "").strip()
+        if fallback_assets:
+            selected_version = int(self.default_version.currentData() or 0)
+            picker = self._version_dir_widgets.get(selected_version)
+            if picker is not None:
+                _set_dir_picker_text(picker, fallback_assets)
+        self._changed = False
+
+    def collect_settings(self) -> dict[str, object]:
+        default_version = int(self.default_version.currentData() or 0)
+        version_dirs: dict[str, str] = {}
+        for vid, picker in self._version_dir_widgets.items():
+            text = _dir_picker_text(picker)
+            if text:
+                version_dirs[str(int(vid))] = text
+
+        default_assets_dir = ""
+        if default_version > 0:
+            picker = self._version_dir_widgets.get(default_version)
+            if picker is not None:
+                default_assets_dir = _dir_picker_text(picker)
+        if not default_assets_dir:
+            default_assets_dir = next(iter(version_dirs.values()), "")
+
+        return {
+            "default_client_version": int(default_version),
+            "check_signatures": bool(self.check_signatures.isChecked()),
+            "version_dirs": version_dirs,
+            "client_assets_folder": str(default_assets_dir),
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -859,7 +1019,7 @@ class ClientVersionSettings(SettingsCategory):
 class SettingsDialog(ModernDialog):
     """
     Modern Settings Dialog with Antigravity Design.
-    
+
     Features:
     - Vertical sidebar navigation with icons
     - Glassmorphism panels
@@ -952,7 +1112,7 @@ class SettingsDialog(ModernDialog):
                 outline: none;
                 padding: 8px;
             }}
-            
+
             QListWidget#SettingsNav::item {{
                 height: 48px;
                 padding-left: 16px;
@@ -961,12 +1121,12 @@ class SettingsDialog(ModernDialog):
                 color: {c["text"]["secondary"]};
                 margin-bottom: 4px;
             }}
-            
+
             QListWidget#SettingsNav::item:hover {{
                 background-color: {c["state"]["hover"]};
                 color: {c["text"]["primary"]};
             }}
-            
+
             QListWidget#SettingsNav::item:selected {{
                 background-color: {c["brand"]["primary"]};
                 color: #ffffff;
@@ -976,17 +1136,17 @@ class SettingsDialog(ModernDialog):
             QStackedWidget#SettingsContent {{
                 background: transparent;
             }}
-            
+
             /* Scroll Area adjustment */
             QScrollArea {{
                 background: transparent;
                 border: none;
             }}
-            
+
             QScrollArea > QWidget > QWidget {{
                 background: transparent;
             }}
-            
+
             /* Section Headers in Content */
             QLabel {{
                 color: {c["text"]["primary"]};
@@ -1012,13 +1172,27 @@ class SettingsDialog(ModernDialog):
             for cat in self._categories:
                 cat.reset_settings()
 
+    def _collect_settings(self) -> dict[str, object]:
+        payload: dict[str, object] = {}
+        for cat in self._categories:
+            if isinstance(cat, GeneralSettings):
+                payload["general"] = cat.collect_settings()
+            elif isinstance(cat, EditorSettings):
+                payload["editor"] = cat.collect_settings()
+            elif isinstance(cat, GraphicsSettings):
+                payload["graphics"] = cat.collect_settings()
+            elif isinstance(cat, InterfaceSettings):
+                payload["interface"] = cat.collect_settings()
+            elif isinstance(cat, ClientVersionSettings):
+                payload["client_version"] = cat.collect_settings()
+        return payload
+
     def accept(self) -> None:
         """Save all changes on accept."""
         for cat in self._categories:
             if cat.has_changes():
                 cat.apply_settings()
 
-        # Emit legacy signal just in case, though usually we rely on dialog result
-        self.settings_applied.emit({})
+        self.settings_applied.emit(self._collect_settings())
 
         super().accept()
