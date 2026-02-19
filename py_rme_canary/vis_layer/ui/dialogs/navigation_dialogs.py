@@ -20,8 +20,18 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
+
+
+def _c() -> dict:
+    return get_theme_manager().tokens["color"]
+
+
+def _r() -> dict:
+    return get_theme_manager().tokens.get("radius", {})
 
 
 class GoToPositionDialog(QDialog):
@@ -64,18 +74,20 @@ class GoToPositionDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _c()
+
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Header
         header = QLabel("Enter target position:")
-        header.setStyleSheet("font-size: 14px; font-weight: 600; color: #E5E5E7;")
+        header.setStyleSheet(f"font-size: 14px; font-weight: 600; color: {c['text']['primary']};")
         layout.addWidget(header)
 
         # Current position info
         current_label = QLabel(f"Current: ({self._current_x}, {self._current_y}, {self._current_z})")
-        current_label.setStyleSheet("color: #A1A1AA; font-size: 12px;")
+        current_label.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 12px;")
         layout.addWidget(current_label)
 
         # Coordinate inputs
@@ -85,7 +97,7 @@ class GoToPositionDialog(QDialog):
         # X
         x_container = QVBoxLayout()
         x_label = QLabel("X")
-        x_label.setStyleSheet("color: #8B5CF6; font-weight: 600;")
+        x_label.setStyleSheet(f"color: {c['brand']['secondary']}; font-weight: 600;")
         x_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         x_container.addWidget(x_label)
 
@@ -99,7 +111,7 @@ class GoToPositionDialog(QDialog):
         # Y
         y_container = QVBoxLayout()
         y_label = QLabel("Y")
-        y_label.setStyleSheet("color: #EC4899; font-weight: 600;")
+        y_label.setStyleSheet(f"color: {c['brand']['active']}; font-weight: 600;")
         y_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         y_container.addWidget(y_label)
 
@@ -113,7 +125,7 @@ class GoToPositionDialog(QDialog):
         # Z
         z_container = QVBoxLayout()
         z_label = QLabel("Z")
-        z_label.setStyleSheet("color: #10B981; font-weight: 600;")
+        z_label.setStyleSheet(f"color: {c['state']['success']}; font-weight: 600;")
         z_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         z_container.addWidget(z_label)
 
@@ -157,54 +169,59 @@ class GoToPositionDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+        c = _c()
+        r = _r()
+        rad = r.get("md", 6)
+        rad_lg = r.get("lg", 8)
 
-            QSpinBox {
-                background: #2A2A3E;
-                border: 2px solid #363650;
-                border-radius: 8px;
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {c['surface']['primary']};
+            }}
+
+            QSpinBox {{
+                background: {c['surface']['secondary']};
+                border: 2px solid {c['border']['default']};
+                border-radius: {rad_lg}px;
                 padding: 12px;
-                color: #E5E5E7;
+                color: {c['text']['primary']};
                 font-size: 16px;
                 font-weight: 600;
                 min-width: 80px;
-            }
+            }}
 
-            QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
+            QSpinBox:focus {{
+                border-color: {c['brand']['secondary']};
+            }}
 
-            QSpinBox::up-button, QSpinBox::down-button {
+            QSpinBox::up-button, QSpinBox::down-button {{
                 width: 20px;
-                background: #363650;
+                background: {c['surface']['tertiary']};
                 border: none;
-            }
+            }}
 
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background: #8B5CF6;
-            }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
+                background: {c['brand']['secondary']};
+            }}
 
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
+            QPushButton {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['strong']};
+                border-radius: {rad}px;
                 padding: 8px 12px;
                 font-size: 11px;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
+            QPushButton:hover {{
+                background: {c['surface']['hover']};
+                border-color: {c['brand']['secondary']};
+            }}
 
-            QDialogButtonBox QPushButton {
+            QDialogButtonBox QPushButton {{
                 min-width: 80px;
-            }
+            }}
         """
         )
 
@@ -262,6 +279,8 @@ class FindItemDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _c()
+
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -270,7 +289,7 @@ class FindItemDialog(QDialog):
         search_layout = QHBoxLayout()
 
         search_label = QLabel("Item ID:")
-        search_label.setStyleSheet("color: #E5E5E7; font-weight: 500;")
+        search_label.setStyleSheet(f"color: {c['text']['primary']}; font-weight: 500;")
         search_layout.addWidget(search_label)
 
         self.search_spin = QSpinBox()
@@ -288,7 +307,7 @@ class FindItemDialog(QDialog):
 
         # Results
         results_label = QLabel("Results:")
-        results_label.setStyleSheet("color: #A1A1AA; font-size: 12px;")
+        results_label.setStyleSheet(f"color: {c['text']['secondary']}; font-size: 12px;")
         layout.addWidget(results_label)
 
         from PyQt6.QtWidgets import QListWidget
@@ -299,7 +318,7 @@ class FindItemDialog(QDialog):
 
         # Status
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: #52525B; font-size: 11px;")
+        self.status_label.setStyleSheet(f"color: {c['text']['disabled']}; font-size: 11px;")
         layout.addWidget(self.status_label)
 
         # Buttons
@@ -320,61 +339,67 @@ class FindItemDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
+        c = _c()
+        r = _r()
+        rad = r.get("md", 6)
+        rad_lg = r.get("lg", 8)
+        rad_sm = r.get("sm", 4)
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+            f"""
+            QDialog {{
+                background: {c['surface']['primary']};
+            }}
 
-            QSpinBox {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 6px;
+            QSpinBox {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad}px;
                 padding: 8px;
-                color: #E5E5E7;
-            }
+                color: {c['text']['primary']};
+            }}
 
-            QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
+            QSpinBox:focus {{
+                border-color: {c['brand']['secondary']};
+            }}
 
-            QPushButton {
-                background: #8B5CF6;
+            QPushButton {{
+                background: {c['brand']['secondary']};
                 color: white;
                 border: none;
-                border-radius: 6px;
+                border-radius: {rad}px;
                 padding: 8px 16px;
                 font-weight: 500;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #A78BFA;
-            }
+            QPushButton:hover {{
+                background: {c['brand']['hover']};
+            }}
 
-            QPushButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
+            QPushButton:disabled {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['disabled']};
+            }}
 
-            QListWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                color: #E5E5E7;
-            }
+            QListWidget {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_lg}px;
+                color: {c['text']['primary']};
+            }}
 
-            QListWidget::item {
+            QListWidget::item {{
                 padding: 8px;
-                border-radius: 4px;
-            }
+                border-radius: {rad_sm}px;
+            }}
 
-            QListWidget::item:hover {
-                background: #363650;
-            }
+            QListWidget::item:hover {{
+                background: {c['surface']['tertiary']};
+            }}
 
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
+            QListWidget::item:selected {{
+                background: {c['brand']['secondary']};
+            }}
         """
         )
 

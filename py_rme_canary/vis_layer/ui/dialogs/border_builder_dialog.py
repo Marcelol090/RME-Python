@@ -33,8 +33,18 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.logic_layer.brush_definitions import BrushDefinition
+
+
+def _c() -> dict:
+    return get_theme_manager().tokens["color"]
+
+
+def _r() -> dict:
+    return get_theme_manager().tokens.get("radius", {})
 
 
 class BorderPreviewWidget(QFrame):
@@ -56,6 +66,7 @@ class BorderPreviewWidget(QFrame):
 
     def paintEvent(self, event: Any) -> None:
         """Draw the 3x3 preview grid."""
+        c = _c()
         super().paintEvent(event)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -64,7 +75,7 @@ class BorderPreviewWidget(QFrame):
         cell = min(w, h) // 3
 
         # Draw grid
-        painter.setPen(QPen(QColor("#363650"), 1))
+        painter.setPen(QPen(QColor(c["border"]["default"]), 1))
         for i in range(4):
             painter.drawLine(i * cell, 0, i * cell, 3 * cell)
             painter.drawLine(0, i * cell, 3 * cell, i * cell)
@@ -78,19 +89,19 @@ class BorderPreviewWidget(QFrame):
         ]
 
         # Draw center tile (selected)
-        painter.setBrush(QColor("#8B5CF6"))
+        painter.setBrush(QColor(c["brand"]["secondary"]))
         painter.drawRect(cell, cell, cell, cell)
 
         # Draw neighbors based on mask
         for bit, (gx, gy) in enumerate(neighbors):
             if self._mask & (1 << bit):
-                painter.setBrush(QColor("#4CAF50"))
+                painter.setBrush(QColor(c["state"]["success"]))
             else:
-                painter.setBrush(QColor("#2A2A3E"))
+                painter.setBrush(QColor(c["surface"]["secondary"]))
             painter.drawRect(gx * cell, gy * cell, cell, cell)
 
         # Draw key label
-        painter.setPen(QColor("#E5E5E7"))
+        painter.setPen(QColor(c["text"]["primary"]))
         painter.drawText(0, 3 * cell + 5, 3 * cell, 20, Qt.AlignmentFlag.AlignCenter, self._key)
         painter.end()
 
@@ -126,35 +137,39 @@ class BorderPatternList(QFrame):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(4)
 
         # Title
         title = QLabel("Border Patterns (16)")
-        title.setStyleSheet("font-weight: bold; color: #E5E5E7;")
+        title.setStyleSheet(f"font-weight: bold; color: {c['text']['primary']};")
         layout.addWidget(title)
 
         # Pattern list
         self.list_widget = QListWidget()
         self.list_widget.setStyleSheet(
-            """
-            QListWidget {
-                background: #1A1A2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
-            QListWidget::item {
+            f"""
+            QListWidget {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+            }}
+            QListWidget::item {{
                 padding: 8px;
-                color: #E5E5E7;
-                border-bottom: 1px solid #2A2A3E;
-            }
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
-            QListWidget::item:hover {
-                background: #2A2A3E;
-            }
+                color: {c['text']['primary']};
+                border-bottom: 1px solid {c['surface']['secondary']};
+            }}
+            QListWidget::item:selected {{
+                background: {c['brand']['secondary']};
+            }}
+            QListWidget::item:hover {{
+                background: {c['surface']['secondary']};
+            }}
         """
         )
         self.list_widget.currentRowChanged.connect(self._on_row_changed)
@@ -223,13 +238,18 @@ class BorderBuilderDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+        rad = r.get("md", 6)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
         # Title
         title = QLabel("Border Builder")
-        title.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 18px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(title)
 
         description = QLabel(
@@ -237,7 +257,7 @@ class BorderBuilderDialog(QDialog):
             "Select a brush to see, edit, and persist border sprite mappings."
         )
         description.setWordWrap(True)
-        description.setStyleSheet("color: #A1A1AA; margin-bottom: 8px;")
+        description.setStyleSheet(f"color: {c['text']['secondary']}; margin-bottom: 8px;")
         layout.addWidget(description)
 
         # Main splitter
@@ -249,24 +269,24 @@ class BorderBuilderDialog(QDialog):
         left_layout.setContentsMargins(0, 0, 0, 0)
 
         brush_label = QLabel("Brushes with Borders")
-        brush_label.setStyleSheet("font-weight: bold; color: #E5E5E7;")
+        brush_label.setStyleSheet(f"font-weight: bold; color: {c['text']['primary']};")
         left_layout.addWidget(brush_label)
 
         self.brush_list = QListWidget()
         self.brush_list.setStyleSheet(
-            """
-            QListWidget {
-                background: #1A1A2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
-            QListWidget::item {
+            f"""
+            QListWidget {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+            }}
+            QListWidget::item {{
                 padding: 8px;
-                color: #E5E5E7;
-            }
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
+                color: {c['text']['primary']};
+            }}
+            QListWidget::item:selected {{
+                background: {c['brand']['secondary']};
+            }}
         """
         )
         self.brush_list.currentItemChanged.connect(self._on_brush_selected)
@@ -284,25 +304,25 @@ class BorderBuilderDialog(QDialog):
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Preview
-        preview_group = QGroupBox("Pattern Preview")
-        preview_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
+        group_qss = f"""
+            QGroupBox {{
+                color: {c['text']['primary']};
                 font-weight: bold;
-                border: 1px solid #363650;
-                border-radius: 4px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
+            }}
         """
-        )
+
+        # Preview
+        preview_group = QGroupBox("Pattern Preview")
+        preview_group.setStyleSheet(group_qss)
         preview_layout = QVBoxLayout(preview_group)
 
         self.preview_widget = BorderPreviewWidget()
@@ -312,68 +332,38 @@ class BorderBuilderDialog(QDialog):
 
         # Brush info
         info_group = QGroupBox("Brush Info")
-        info_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
-                font-weight: bold;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """
-        )
+        info_group.setStyleSheet(group_qss)
         info_layout = QFormLayout(info_group)
         info_layout.setSpacing(8)
 
+        lbl_qss = f"color: {c['text']['primary']};"
+
         self.info_name = QLabel("—")
-        self.info_name.setStyleSheet("color: #E5E5E7;")
+        self.info_name.setStyleSheet(lbl_qss)
         info_layout.addRow("Name:", self.info_name)
 
         self.info_type = QLabel("—")
-        self.info_type.setStyleSheet("color: #E5E5E7;")
+        self.info_type.setStyleSheet(lbl_qss)
         info_layout.addRow("Type:", self.info_type)
 
         self.info_server_id = QLabel("—")
-        self.info_server_id.setStyleSheet("color: #E5E5E7;")
+        self.info_server_id.setStyleSheet(lbl_qss)
         info_layout.addRow("Server ID:", self.info_server_id)
 
         self.info_border_count = QLabel("—")
-        self.info_border_count.setStyleSheet("color: #E5E5E7;")
+        self.info_border_count.setStyleSheet(lbl_qss)
         info_layout.addRow("Borders:", self.info_border_count)
 
         right_layout.addWidget(info_group)
 
         # Rule editor
         editor_group = QGroupBox("Rule Editor")
-        editor_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
-                font-weight: bold;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """
-        )
+        editor_group.setStyleSheet(group_qss)
         editor_layout = QFormLayout(editor_group)
         editor_layout.setSpacing(8)
 
         self.rule_pattern = QLabel("—")
-        self.rule_pattern.setStyleSheet("color: #E5E5E7;")
+        self.rule_pattern.setStyleSheet(lbl_qss)
         editor_layout.addRow("Pattern:", self.rule_pattern)
 
         self.rule_item_id = QSpinBox()
@@ -404,7 +394,7 @@ class BorderBuilderDialog(QDialog):
         right_layout.addWidget(editor_group)
 
         self.message_label = QLabel("")
-        self.message_label.setStyleSheet("color: #A1A1AA;")
+        self.message_label.setStyleSheet(f"color: {c['text']['secondary']};")
         self.message_label.setWordWrap(True)
         right_layout.addWidget(self.message_label)
 
@@ -439,25 +429,29 @@ class BorderBuilderDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark styling."""
+        c = _c()
+        r = _r()
+        rad = r.get("md", 6)
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
-            QLabel {
-                color: #A1A1AA;
-            }
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
-                border: 1px solid #52525B;
-                border-radius: 6px;
+            f"""
+            QDialog {{
+                background: {c['surface']['primary']};
+            }}
+            QLabel {{
+                color: {c['text']['secondary']};
+            }}
+            QPushButton {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['strong']};
+                border-radius: {rad}px;
                 padding: 8px 20px;
-            }
-            QPushButton:hover {
-                background: #404060;
-                border-color: #8B5CF6;
-            }
+            }}
+            QPushButton:hover {{
+                background: {c['surface']['hover']};
+                border-color: {c['brand']['secondary']};
+            }}
         """
         )
 
@@ -684,10 +678,7 @@ class BorderBuilderDialog(QDialog):
             changed = import_borders_into_manager(self.brush_manager, borders)
             self._reload_current_brush()
             self._load_brushes_refresh()
-            self._set_message(
-                f"Imported {len(borders)} border definition(s) from XML "
-                f"({changed} rule(s) changed)."
-            )
+            self._set_message(f"Imported {len(borders)} border definition(s) from XML " f"({changed} rule(s) changed).")
         except Exception as exc:
             QMessageBox.critical(
                 self,

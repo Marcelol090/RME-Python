@@ -24,6 +24,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from core.data.gamemap import GameMap
 
@@ -45,6 +47,15 @@ except ImportError:
     Figure = None
 
 
+def _tokens() -> dict:
+    """Return the current color tokens dict."""
+    return get_theme_manager().tokens["color"]
+
+
+# Chart-specific categorical palette (not theme-dependent).
+_CHART_PALETTE = ["#22C55E", "#8B5CF6", "#EF4444", "#F59E0B", "#3B82F6", "#6B7280"]
+
+
 class ChartWidget(QWidget):
     """Widget that displays a matplotlib chart."""
 
@@ -52,17 +63,18 @@ class ChartWidget(QWidget):
         super().__init__(parent)
         self._figure: Figure | None = None
         self._canvas: FigureCanvas | None = None
+        c = _tokens()
 
         if not HAS_MATPLOTLIB:
             layout = QVBoxLayout(self)
             label = QLabel("Matplotlib not installed.\npip install matplotlib")
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet("color: #EF4444; font-size: 14px;")
+            label.setStyleSheet(f"color: {c['state']['error']}; font-size: 14px;")
             layout.addWidget(label)
             return
 
         self._figure = Figure(figsize=(8, 6), dpi=100)
-        self._figure.set_facecolor("#1E1E2E")
+        self._figure.set_facecolor(c["surface"]["primary"])
         self._canvas = FigureCanvas(self._figure)
         self._canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -93,9 +105,13 @@ class ItemDistributionChart(ChartWidget):
         if not self._figure:
             return
 
+        c = _tokens()
+        text_primary = c["text"]["primary"]
+        text_secondary = c["text"]["tertiary"]
+
         self._figure.clear()
         ax = self._figure.add_subplot(111)
-        ax.set_facecolor("#1E1E2E")
+        ax.set_facecolor(c["surface"]["primary"])
 
         # Collect statistics
         categories = {
@@ -124,14 +140,13 @@ class ItemDistributionChart(ChartWidget):
         # Filter out zero values
         labels = []
         sizes = []
-        colors = ["#22C55E", "#8B5CF6", "#EF4444", "#F59E0B", "#3B82F6", "#6B7280"]
         filtered_colors = []
 
         for i, (label, size) in enumerate(categories.items()):
             if size > 0:
                 labels.append(f"{label}\n({size:,})")
                 sizes.append(size)
-                filtered_colors.append(colors[i % len(colors)])
+                filtered_colors.append(_CHART_PALETTE[i % len(_CHART_PALETTE)])
 
         if sizes:
             wedges, texts, autotexts = ax.pie(
@@ -140,14 +155,23 @@ class ItemDistributionChart(ChartWidget):
                 colors=filtered_colors,
                 autopct="%1.1f%%",
                 startangle=90,
-                textprops={"color": "#E5E5E7", "fontsize": 10},
+                textprops={"color": text_primary, "fontsize": 10},
             )
             for autotext in autotexts:
-                autotext.set_color("#E5E5E7")
+                autotext.set_color(text_primary)
         else:
-            ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes, color="#9CA3AF", fontsize=14)
+            ax.text(
+                0.5,
+                0.5,
+                "No data",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                color=text_secondary,
+                fontsize=14,
+            )
 
-        ax.set_title("Item Distribution by Category", color="#E5E5E7", fontsize=14, pad=20)
+        ax.set_title("Item Distribution by Category", color=text_primary, fontsize=14, pad=20)
         self.refresh()
 
 
@@ -164,9 +188,14 @@ class FloorDistributionChart(ChartWidget):
         if not self._figure:
             return
 
+        c = _tokens()
+        text_primary = c["text"]["primary"]
+        text_secondary = c["text"]["tertiary"]
+        border_clr = c["border"]["default"]
+
         self._figure.clear()
         ax = self._figure.add_subplot(111)
-        ax.set_facecolor("#1E1E2E")
+        ax.set_facecolor(c["surface"]["primary"])
 
         # Count tiles per floor
         floor_counts: dict[int, int] = {}
@@ -185,9 +214,9 @@ class FloorDistributionChart(ChartWidget):
             colors = []
             for z in floors:
                 if z < 7:  # Underground
-                    colors.append("#6B7280")
+                    colors.append(c["text"]["tertiary"])
                 elif z == 7:  # Ground level
-                    colors.append("#22C55E")
+                    colors.append(c["state"]["success"])
                 else:  # Above ground
                     colors.append("#3B82F6")
 
@@ -202,20 +231,27 @@ class FloorDistributionChart(ChartWidget):
                     f"{count:,}",
                     ha="center",
                     va="bottom",
-                    color="#E5E5E7",
+                    color=text_primary,
                     fontsize=9,
                 )
         else:
-            ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes, color="#9CA3AF", fontsize=14)
+            ax.text(
+                0.5,
+                0.5,
+                "No data",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                color=text_secondary,
+                fontsize=14,
+            )
 
-        ax.set_xlabel("Floor (Z)", color="#E5E5E7")
-        ax.set_ylabel("Tile Count", color="#E5E5E7")
-        ax.set_title("Tiles per Floor", color="#E5E5E7", fontsize=14, pad=20)
-        ax.tick_params(colors="#9CA3AF")
-        ax.spines["bottom"].set_color("#363650")
-        ax.spines["top"].set_color("#363650")
-        ax.spines["left"].set_color("#363650")
-        ax.spines["right"].set_color("#363650")
+        ax.set_xlabel("Floor (Z)", color=text_primary)
+        ax.set_ylabel("Tile Count", color=text_primary)
+        ax.set_title("Tiles per Floor", color=text_primary, fontsize=14, pad=20)
+        ax.tick_params(colors=text_secondary)
+        for spine in ax.spines.values():
+            spine.set_color(border_clr)
 
         self._figure.tight_layout()
         self.refresh()
@@ -236,12 +272,18 @@ class DensityHeatmapChart(ChartWidget):
         if not self._figure:
             return
 
+        c = _tokens()
+        text_primary = c["text"]["primary"]
+        text_secondary = c["text"]["tertiary"]
+        border_clr = c["border"]["default"]
+        surface = c["surface"]["primary"]
+
         try:
             import numpy as np
         except Exception:
             self._figure.clear()
             ax = self._figure.add_subplot(111)
-            ax.set_facecolor("#1E1E2E")
+            ax.set_facecolor(surface)
             ax.text(
                 0.5,
                 0.5,
@@ -249,7 +291,7 @@ class DensityHeatmapChart(ChartWidget):
                 ha="center",
                 va="center",
                 transform=ax.transAxes,
-                color="#EF4444",
+                color=c["state"]["error"],
                 fontsize=14,
             )
             self.refresh()
@@ -257,7 +299,7 @@ class DensityHeatmapChart(ChartWidget):
 
         self._figure.clear()
         ax = self._figure.add_subplot(111)
-        ax.set_facecolor("#1E1E2E")
+        ax.set_facecolor(surface)
 
         # Get map bounds
         min_x = min_y = float("inf")
@@ -308,15 +350,15 @@ class DensityHeatmapChart(ChartWidget):
 
         # Colorbar
         cbar = self._figure.colorbar(im, ax=ax)
-        cbar.ax.yaxis.set_tick_params(color="#E5E5E7")
-        cbar.outline.set_edgecolor("#363650")
+        cbar.ax.yaxis.set_tick_params(color=text_primary)
+        cbar.outline.set_edgecolor(border_clr)
         for label in cbar.ax.get_yticklabels():
-            label.set_color("#E5E5E7")
+            label.set_color(text_primary)
 
-        ax.set_title("Tile Density Heatmap", color="#E5E5E7", fontsize=14, pad=20)
-        ax.set_xlabel("X Region", color="#E5E5E7")
-        ax.set_ylabel("Y Region", color="#E5E5E7")
-        ax.tick_params(colors="#9CA3AF")
+        ax.set_title("Tile Density Heatmap", color=text_primary, fontsize=14, pad=20)
+        ax.set_xlabel("X Region", color=text_primary)
+        ax.set_ylabel("Y Region", color=text_primary)
+        ax.tick_params(colors=text_secondary)
 
         self._figure.tight_layout()
         self.refresh()
@@ -348,6 +390,7 @@ class StatisticsGraphsDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _tokens()
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(16, 16, 16, 16)
@@ -355,7 +398,7 @@ class StatisticsGraphsDialog(QDialog):
         # Header
         header = QHBoxLayout()
         title = QLabel("Map Statistics Visualization")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {c['text']['primary']};")
         header.addWidget(title)
         header.addStretch()
         layout.addLayout(header)
@@ -394,45 +437,49 @@ class StatisticsGraphsDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply modern dark theme styling."""
+        c = _tokens()
+        r = get_theme_manager().tokens.get("radius", {})
+        rad = r.get("md", 6)
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
+            f"""
+            QDialog {{
+                background: {c['surface']['primary']};
+                color: {c['text']['primary']};
+            }}
 
-            QTabWidget::pane {
-                border: 1px solid #363650;
-                border-radius: 6px;
-                background: #1E1E2E;
-            }
+            QTabWidget::pane {{
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad}px;
+                background: {c['surface']['primary']};
+            }}
 
-            QTabBar::tab {
-                background: #2A2A3E;
-                color: #9CA3AF;
+            QTabBar::tab {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['tertiary']};
                 padding: 8px 16px;
-                border: 1px solid #363650;
+                border: 1px solid {c['border']['default']};
                 border-bottom: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-            }
+                border-top-left-radius: {rad}px;
+                border-top-right-radius: {rad}px;
+            }}
 
-            QTabBar::tab:selected {
-                background: #363650;
-                color: #E5E5E7;
-            }
+            QTabBar::tab:selected {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
+            }}
 
-            QPushButton {
-                background: #363650;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
+            QPushButton {{
+                background: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['strong']};
+                border-radius: {rad}px;
                 padding: 8px 16px;
-                color: #E5E5E7;
-            }
+                color: {c['text']['primary']};
+            }}
 
-            QPushButton:hover {
-                background: #4B5563;
-            }
+            QPushButton:hover {{
+                background: {c['border']['strong']};
+            }}
         """
         )
 

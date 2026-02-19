@@ -53,10 +53,10 @@ NOCT_GREEN_GLASS_THEME: ThemeTokens = {
         "brand": {"primary": "#3EEA8D", "secondary": "#2AD979", "active": "#7DFFB8"},
         "surface": {
             "primary": "rgba(6, 28, 18, 0.90)",  # Deep dark green glass
-            "secondary": "rgba(10, 40, 24, 0.76)", # Panel background
-            "tertiary": "rgba(62, 234, 141, 0.14)", # Interactive
-            "elevated": "rgba(10, 34, 22, 0.96)",   # Menus/Popups
-            "overlay": "rgba(0, 0, 0, 0.6)",        # Modal backdrop
+            "secondary": "rgba(10, 40, 24, 0.76)",  # Panel background
+            "tertiary": "rgba(62, 234, 141, 0.14)",  # Interactive
+            "elevated": "rgba(10, 34, 22, 0.96)",  # Menus/Popups
+            "overlay": "rgba(0, 0, 0, 0.6)",  # Modal backdrop
         },
         "text": {"primary": "#E8FFF3", "secondary": "#A7D9BF", "tertiary": "#6BA086", "disabled": "#3E6A57"},
         "border": {
@@ -64,7 +64,13 @@ NOCT_GREEN_GLASS_THEME: ThemeTokens = {
             "strong": "rgba(62, 234, 141, 0.45)",
             "interactive": "#3EEA8D",
         },
-        "state": {"hover": "rgba(62, 234, 141, 0.16)", "active": "rgba(62, 234, 141, 0.32)", "error": "#FF5F7A"},
+        "state": {
+            "hover": "rgba(62, 234, 141, 0.16)",
+            "active": "rgba(62, 234, 141, 0.32)",
+            "error": "#FF5F7A",
+            "warning": "#F59E0B",
+            "success": "#22C55E",
+        },
     },
     "spacing": {"xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "xxl": 48},
     "radius": {"sm": 8, "md": 12, "lg": 18, "xl": 28, "round": 9999},
@@ -81,8 +87,8 @@ NOCT_8BIT_GLASS_THEME: ThemeTokens = {
     "color": {
         "brand": {"primary": "#19F5B8", "secondary": "#00D4FF", "active": "#C676FF"},
         "surface": {
-            "primary": "rgba(8, 18, 58, 0.95)",     # Deep retro blue
-            "secondary": "rgba(20, 35, 86, 0.86)",   # Panel
+            "primary": "rgba(8, 18, 58, 0.95)",  # Deep retro blue
+            "secondary": "rgba(20, 35, 86, 0.86)",  # Panel
             "tertiary": "rgba(25, 245, 184, 0.10)",
             "elevated": "rgba(11, 20, 66, 0.98)",
             "overlay": "rgba(0, 0, 0, 0.65)",
@@ -93,10 +99,16 @@ NOCT_8BIT_GLASS_THEME: ThemeTokens = {
             "strong": "rgba(0, 212, 255, 0.55)",
             "interactive": "#19F5B8",
         },
-        "state": {"hover": "rgba(0, 212, 255, 0.16)", "active": "rgba(198, 118, 255, 0.22)", "error": "#FF4F9A"},
+        "state": {
+            "hover": "rgba(0, 212, 255, 0.16)",
+            "active": "rgba(198, 118, 255, 0.22)",
+            "error": "#FF4F9A",
+            "warning": "#FFB800",
+            "success": "#39FF14",
+        },
     },
     "spacing": {"xs": 4, "sm": 8, "md": 14, "lg": 22, "xl": 28, "xxl": 40},
-    "radius": {"sm": 2, "md": 3, "lg": 4, "xl": 6, "round": 9999}, # Almost square for 8-bit feel
+    "radius": {"sm": 2, "md": 3, "lg": 4, "xl": 6, "round": 9999},  # Almost square for 8-bit feel
     "typography": {"font_primary": "'Press Start 2P', VT323, monospace", "font_mono": "VT323, monospace"},
     "ux": {"name": "Noct 8-bit Glass", "component_style": "pixel"},
 }
@@ -110,7 +122,7 @@ NOCT_LIQUID_GLASS_THEME: ThemeTokens = {
     "color": {
         "brand": {"primary": "#48F2D4", "secondary": "#7BE7FF", "active": "#9BFFE9"},
         "surface": {
-            "primary": "rgba(6, 20, 34, 0.86)",    # Deep smooth dark blue
+            "primary": "rgba(6, 20, 34, 0.86)",  # Deep smooth dark blue
             "secondary": "rgba(12, 35, 54, 0.72)",  # Translucent panel
             "tertiary": "rgba(123, 231, 255, 0.16)",
             "elevated": "rgba(10, 28, 44, 0.94)",
@@ -122,10 +134,16 @@ NOCT_LIQUID_GLASS_THEME: ThemeTokens = {
             "strong": "rgba(72, 242, 212, 0.42)",
             "interactive": "#48F2D4",
         },
-        "state": {"hover": "rgba(123, 231, 255, 0.18)", "active": "rgba(72, 242, 212, 0.28)", "error": "#FF647F"},
+        "state": {
+            "hover": "rgba(123, 231, 255, 0.18)",
+            "active": "rgba(72, 242, 212, 0.28)",
+            "error": "#FF647F",
+            "warning": "#FFAD33",
+            "success": "#4ADE80",
+        },
     },
     "spacing": {"xs": 4, "sm": 9, "md": 16, "lg": 24, "xl": 32, "xxl": 48},
-    "radius": {"sm": 10, "md": 16, "lg": 24, "xl": 34, "round": 9999}, # Highly rounded for iOS feel
+    "radius": {"sm": 10, "md": 16, "lg": 24, "xl": 34, "round": 9999},  # Highly rounded for iOS feel
     "typography": {"font_primary": "Manrope, Inter, sans-serif", "font_mono": "'JetBrains Mono', monospace"},
     "ux": {"name": "Noct Liquid Glass", "component_style": "liquid"},
 }

@@ -35,6 +35,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
@@ -210,140 +212,145 @@ class ExportTilesetsDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply dark theme styling."""
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens.get("radius", {})
+        rad = r.get("md", 6)
+        rad_sm = r.get("sm", 4)
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #1E1E2E;
-                color: #CDD6F4;
-            }
-            QGroupBox {
+            f"""
+            QDialog {{
+                background-color: {c['surface']['primary']};
+                color: {c['text']['primary']};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #45475A;
-                border-radius: 6px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad}px;
                 margin-top: 12px;
                 padding-top: 12px;
-                background-color: #181825;
-            }
-            QGroupBox::title {
+                background-color: {c['surface']['secondary']};
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 12px;
                 padding: 0 6px;
-                color: #8B5CF6;
-            }
-            QLabel {
-                color: #CDD6F4;
-            }
-            QLabel#headerLabel {
+                color: {c['brand']['secondary']};
+            }}
+            QLabel {{
+                color: {c['text']['primary']};
+            }}
+            QLabel#headerLabel {{
                 font-size: 14px;
                 font-weight: bold;
-                color: #8B5CF6;
-            }
-            QLabel#selectionLabel {
+                color: {c['brand']['secondary']};
+            }}
+            QLabel#selectionLabel {{
                 font-size: 11px;
-                color: #6C7086;
-            }
-            QLabel#errorLabel {
+                color: {c['text']['tertiary']};
+            }}
+            QLabel#errorLabel {{
                 font-size: 11px;
-                color: #F38BA8;
+                color: {c['state']['error']};
                 padding: 8px;
                 background-color: rgba(243, 139, 168, 0.1);
-                border-radius: 4px;
-            }
-            QLabel#previewLabel {
+                border-radius: {rad_sm}px;
+            }}
+            QLabel#previewLabel {{
                 font-size: 11px;
-                color: #89B4FA;
+                color: {c['brand']['active']};
                 padding: 8px;
-                background-color: #313244;
-                border-radius: 4px;
-            }
-            QListWidget {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
-                color: #CDD6F4;
-            }
-            QListWidget::item {
+                background-color: {c['surface']['tertiary']};
+                border-radius: {rad_sm}px;
+            }}
+            QListWidget {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+                color: {c['text']['primary']};
+            }}
+            QListWidget::item {{
                 padding: 6px;
-            }
-            QListWidget::item:selected {
-                background-color: #8B5CF6;
-            }
-            QListWidget::item:hover {
-                background-color: #45475A;
-            }
-            QLineEdit {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {c['brand']['secondary']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {c['border']['default']};
+            }}
+            QLineEdit {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 8px;
-                color: #CDD6F4;
-            }
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
-            QComboBox {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
+                color: {c['text']['primary']};
+            }}
+            QLineEdit:focus {{
+                border-color: {c['brand']['secondary']};
+            }}
+            QComboBox {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 8px 12px;
-                color: #CDD6F4;
-            }
-            QComboBox:focus {
-                border-color: #8B5CF6;
-            }
-            QComboBox::drop-down {
+                color: {c['text']['primary']};
+            }}
+            QComboBox:focus {{
+                border-color: {c['brand']['secondary']};
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 30px;
-            }
-            QComboBox::down-arrow {
+            }}
+            QComboBox::down-arrow {{
                 image: none;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 6px solid #CDD6F4;
+                border-top: 6px solid {c['text']['primary']};
                 margin-right: 10px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                selection-background-color: #8B5CF6;
-                color: #CDD6F4;
-            }
-            QCheckBox {
-                color: #CDD6F4;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                selection-background-color: {c['brand']['secondary']};
+                color: {c['text']['primary']};
+            }}
+            QCheckBox {{
+                color: {c['text']['primary']};
                 spacing: 8px;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox::indicator {{
                 width: 18px;
                 height: 18px;
-                border-radius: 4px;
-                border: 1px solid #45475A;
-                background-color: #313244;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #8B5CF6;
-                border-color: #8B5CF6;
-            }
-            QPushButton {
-                background-color: #45475A;
+                border-radius: {rad_sm}px;
+                border: 1px solid {c['border']['default']};
+                background-color: {c['surface']['tertiary']};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {c['brand']['secondary']};
+                border-color: {c['brand']['secondary']};
+            }}
+            QPushButton {{
+                background-color: {c['border']['default']};
                 border: none;
-                border-radius: 6px;
+                border-radius: {rad}px;
                 padding: 8px 16px;
-                color: #CDD6F4;
+                color: {c['text']['primary']};
                 font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #585B70;
-            }
-            QPushButton:pressed {
-                background-color: #8B5CF6;
-            }
-            QPushButton:disabled {
-                background-color: #313244;
-                color: #6C7086;
-            }
-            QDialogButtonBox QPushButton {
+            }}
+            QPushButton:hover {{
+                background-color: {c['border']['strong']};
+            }}
+            QPushButton:pressed {{
+                background-color: {c['brand']['secondary']};
+            }}
+            QPushButton:disabled {{
+                background-color: {c['surface']['tertiary']};
+                color: {c['text']['tertiary']};
+            }}
+            QDialogButtonBox QPushButton {{
                 min-width: 90px;
-            }
+            }}
         """
         )
 

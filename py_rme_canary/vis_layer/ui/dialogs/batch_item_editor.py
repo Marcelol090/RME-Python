@@ -39,10 +39,20 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger(__name__)
+
+
+def _c() -> dict:
+    return get_theme_manager().tokens["color"]
+
+
+def _r() -> dict:
+    return get_theme_manager().tokens.get("radius", {})
 
 
 class BatchOperation(StrEnum):
@@ -178,6 +188,7 @@ class ReplaceItemsModel(QAbstractListModel):
             return None
 
         item = self._items[row]
+        c = _c()
 
         if role == Qt.ItemDataRole.DisplayRole:
             status = f"[Done: {item.total}]" if item.complete else "[Pending]"
@@ -185,7 +196,7 @@ class ReplaceItemsModel(QAbstractListModel):
         elif role == Qt.ItemDataRole.UserRole:
             return item
         elif role == Qt.ItemDataRole.ForegroundRole:
-            return QColor("#10B981") if item.complete else QColor("#E5E5E7")
+            return QColor(c["state"]["success"]) if item.complete else QColor(c["text"]["primary"])
 
         return None
 
@@ -210,13 +221,17 @@ class ItemIdSelector(QFrame):
         self._setup_ui(label)
 
     def _setup_ui(self, label: str) -> None:
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
         # Label
         lbl = QLabel(label)
-        lbl.setStyleSheet("color: #A1A1AA;")
+        lbl.setStyleSheet(f"color: {c['text']['secondary']};")
         lbl.setFixedWidth(60)
         layout.addWidget(lbl)
 
@@ -224,11 +239,9 @@ class ItemIdSelector(QFrame):
         self.preview_label = QLabel()
         self.preview_label.setFixedSize(36, 36)
         self.preview_label.setStyleSheet(
-            """
-            background: #2A2A3E;
-            border: 1px solid #363650;
-            border-radius: 4px;
-        """
+            f"background: {c['surface']['secondary']};"
+            f" border: 1px solid {c['border']['default']};"
+            f" border-radius: {rad_sm}px;"
         )
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.preview_label)
@@ -237,15 +250,15 @@ class ItemIdSelector(QFrame):
         self.id_spin = QSpinBox()
         self.id_spin.setRange(0, 999999)
         self.id_spin.setStyleSheet(
-            """
-            QSpinBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QSpinBox {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 6px;
                 min-width: 80px;
-            }
+            }}
         """
         )
         self.id_spin.valueChanged.connect(self._on_id_changed)
@@ -255,14 +268,14 @@ class ItemIdSelector(QFrame):
         self.browse_btn = QPushButton("...")
         self.browse_btn.setFixedSize(32, 32)
         self.browse_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #363650;
-                color: #E5E5E7;
+            f"""
+            QPushButton {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['primary']};
                 border: none;
-                border-radius: 4px;
-            }
-            QPushButton:hover { background: #8B5CF6; }
+                border-radius: {rad_sm}px;
+            }}
+            QPushButton:hover {{ background: {c['brand']['secondary']}; }}
         """
         )
         self.browse_btn.setToolTip("Browse items")
@@ -383,13 +396,17 @@ class BatchItemEditor(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
         # Header
         header = QLabel("Batch Item Editor")
-        header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
+        header.setStyleSheet(f"font-size: 18px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(header)
 
         desc = QLabel(
@@ -397,28 +414,28 @@ class BatchItemEditor(QDialog):
             "Each replacement will substitute all occurrences of the source item."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #A1A1AA;")
+        desc.setStyleSheet(f"color: {c['text']['secondary']};")
         layout.addWidget(desc)
 
         # Input section
-        input_group = QGroupBox("Add Replacement")
-        input_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+        group_qss = f"""
+            QGroupBox {{
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 margin-top: 12px;
                 padding: 12px;
                 padding-top: 24px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
+            }}
         """
-        )
+
+        input_group = QGroupBox("Add Replacement")
+        input_group.setStyleSheet(group_qss)
         input_layout = QVBoxLayout(input_group)
 
         # Source item
@@ -428,7 +445,7 @@ class BatchItemEditor(QDialog):
         # Arrow indicator
         arrow = QLabel("↓")
         arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        arrow.setStyleSheet("color: #8B5CF6; font-size: 20px;")
+        arrow.setStyleSheet(f"color: {c['brand']['secondary']}; font-size: 20px;")
         input_layout.addWidget(arrow)
 
         # Target item
@@ -436,46 +453,46 @@ class BatchItemEditor(QDialog):
         input_layout.addWidget(self.target_selector)
 
         # Add button
+        secondary_btn_qss = f"""
+            QPushButton {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+                padding: 8px 16px;
+            }}
+            QPushButton:hover {{ background: {c['surface']['tertiary']}; }}
+        """
+
         add_btn = QPushButton("+ Add to Queue")
         add_btn.clicked.connect(self._add_replacement)
-        add_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                padding: 8px 16px;
-            }
-            QPushButton:hover { background: #363650; }
-        """
-        )
+        add_btn.setStyleSheet(secondary_btn_qss)
         input_layout.addWidget(add_btn)
 
         layout.addWidget(input_group)
 
         # Queue section
         queue_group = QGroupBox("Replacement Queue")
-        queue_group.setStyleSheet(input_group.styleSheet())
+        queue_group.setStyleSheet(group_qss)
         queue_layout = QVBoxLayout(queue_group)
 
         self.model = ReplaceItemsModel()
         self.queue_list = QListView()
         self.queue_list.setModel(self.model)
         self.queue_list.setStyleSheet(
-            """
-            QListView {
-                background: #1A1A2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
-            QListView::item {
+            f"""
+            QListView {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+            }}
+            QListView::item {{
                 padding: 8px;
-                border-bottom: 1px solid #2A2A3E;
-            }
-            QListView::item:selected {
-                background: #8B5CF6;
-            }
+                border-bottom: 1px solid {c['surface']['secondary']};
+            }}
+            QListView::item:selected {{
+                background: {c['brand']['secondary']};
+            }}
         """
         )
         self.queue_list.setMinimumHeight(150)
@@ -486,12 +503,12 @@ class BatchItemEditor(QDialog):
 
         remove_btn = QPushButton("Remove Selected")
         remove_btn.clicked.connect(self._remove_selected)
-        remove_btn.setStyleSheet(add_btn.styleSheet())
+        remove_btn.setStyleSheet(secondary_btn_qss)
         queue_btns.addWidget(remove_btn)
 
         clear_btn = QPushButton("Clear All")
         clear_btn.clicked.connect(self.model.clear)
-        clear_btn.setStyleSheet(add_btn.styleSheet())
+        clear_btn.setStyleSheet(secondary_btn_qss)
         queue_btns.addWidget(clear_btn)
 
         queue_btns.addStretch()
@@ -507,24 +524,24 @@ class BatchItemEditor(QDialog):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setStyleSheet(
-            """
-            QProgressBar {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QProgressBar {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 text-align: center;
-                color: #E5E5E7;
-            }
-            QProgressBar::chunk {
-                background: #8B5CF6;
+                color: {c['text']['primary']};
+            }}
+            QProgressBar::chunk {{
+                background: {c['brand']['secondary']};
                 border-radius: 3px;
-            }
+            }}
         """
         )
         progress_layout.addWidget(self.progress_bar, 1)
 
         self.status_label = QLabel("Ready")
-        self.status_label.setStyleSheet("color: #A1A1AA;")
+        self.status_label.setStyleSheet(f"color: {c['text']['secondary']};")
         progress_layout.addWidget(self.status_label)
 
         layout.addLayout(progress_layout)
@@ -535,7 +552,7 @@ class BatchItemEditor(QDialog):
         # Selection only checkbox
         if not self._selection_only:
             self.selection_check = QCheckBox("Selection Only")
-            self.selection_check.setStyleSheet("color: #E5E5E7;")
+            self.selection_check.setStyleSheet(f"color: {c['text']['primary']};")
             btn_layout.addWidget(self.selection_check)
 
         btn_layout.addStretch()
@@ -543,43 +560,33 @@ class BatchItemEditor(QDialog):
         execute_btn = QPushButton("Execute")
         execute_btn.clicked.connect(self._execute)
         execute_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #8B5CF6;
+            f"""
+            QPushButton {{
+                background: {c['brand']['secondary']};
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: {rad_sm}px;
                 padding: 10px 24px;
                 font-weight: bold;
-            }
-            QPushButton:hover { background: #7C3AED; }
+            }}
+            QPushButton:hover {{ background: {c['brand']['active']}; }}
         """
         )
         btn_layout.addWidget(execute_btn)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
-        close_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                padding: 10px 24px;
-            }
-            QPushButton:hover { background: #363650; }
-        """
-        )
+        close_btn.setStyleSheet(secondary_btn_qss)
         btn_layout.addWidget(close_btn)
 
         layout.addLayout(btn_layout)
 
     def _apply_style(self) -> None:
         """Apply dark theme styling."""
+        c = _c()
         self.setStyleSheet(
-            """
-            QDialog { background: #0F0F1A; }
+            f"""
+            QDialog {{ background: {c['surface']['primary']}; }}
         """
         )
 

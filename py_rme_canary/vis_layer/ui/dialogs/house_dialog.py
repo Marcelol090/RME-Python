@@ -14,8 +14,6 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -295,6 +293,8 @@ class HouseListDialog(ModernDialog):
 
     def _load_houses(self) -> None:
         """Load houses from map."""
+        c = get_theme_manager().tokens["color"]
+
         # Clear existing cards
         for card in self._house_cards:
             card.deleteLater()
@@ -327,7 +327,7 @@ class HouseListDialog(ModernDialog):
 
         if count == 0:
             empty = QLabel("No houses defined yet.\nClick 'New House' to create one.")
-            empty.setStyleSheet("color: #52525B; padding: 20px;")
+            empty.setStyleSheet(f"color: {c['text']['disabled']}; padding: 20px;")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.cards_layout.insertWidget(0, empty)
 

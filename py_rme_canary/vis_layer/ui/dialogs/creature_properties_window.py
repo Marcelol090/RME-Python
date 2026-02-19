@@ -21,6 +21,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
@@ -73,6 +75,8 @@ class CreaturePropertiesWindow(QDialog):
         margin = _scale_dip(self, 16)
         layout.setContentsMargins(margin, margin, margin, margin)
 
+        c = get_theme_manager().tokens["color"]
+
         # Properties group
         props_group = QGroupBox("Creature Properties")
         props_layout = QFormLayout(props_group)
@@ -80,7 +84,7 @@ class CreaturePropertiesWindow(QDialog):
 
         # Creature name
         self._name_label = QLabel(f'"{self._data.name}"')
-        self._name_label.setStyleSheet("font-weight: bold; color: #8B5CF6;")
+        self._name_label.setStyleSheet(f"font-weight: bold; color: {c['brand']['primary']};")
         props_layout.addRow("Creature:", self._name_label)
 
         # Spawn interval
@@ -104,7 +108,7 @@ class CreaturePropertiesWindow(QDialog):
         info_label = QLabel(
             "Note: Spawn interval determines how often this creature\n" "respawns after being killed in-game."
         )
-        info_label.setStyleSheet("color: #8B8B9B; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 11px;")
         layout.addWidget(info_label)
 
         # Buttons
@@ -114,61 +118,64 @@ class CreaturePropertiesWindow(QDialog):
         layout.addWidget(btn_box)
 
     def _style(self):
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            CreaturePropertiesWindow {
-                background: #1E1E2E;
-            }
-            QGroupBox {
-                color: #E5E5E7;
+            f"""
+            CreaturePropertiesWindow {{
+                background: {c['surface']['primary']};
+            }}
+            QGroupBox {{
+                color: {c['text']['primary']};
                 font-weight: bold;
-                border: 1px solid #363650;
-                border-radius: 4px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 8px;
                 padding: 0 4px;
-            }
-            QLabel {
-                color: #E5E5E7;
-            }
-            QSpinBox, QComboBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            }}
+            QLabel {{
+                color: {c['text']['primary']};
+            }}
+            QSpinBox, QComboBox {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 padding: 6px;
                 min-width: 120px;
-            }
-            QSpinBox:focus, QComboBox:focus {
-                border-color: #8B5CF6;
-            }
-            QComboBox::drop-down {
+            }}
+            QSpinBox:focus, QComboBox:focus {{
+                border-color: {c['brand']['primary']};
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 20px;
-            }
-            QComboBox QAbstractItemView {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                selection-background-color: #8B5CF6;
-            }
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            }}
+            QComboBox QAbstractItemView {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                selection-background-color: {c['brand']['primary']};
+            }}
+            QPushButton {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 padding: 8px 16px;
                 min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #363650;
-            }
-            QPushButton:pressed {
-                background: #8B5CF6;
-            }
+            }}
+            QPushButton:hover {{
+                background: {c['state']['hover']};
+            }}
+            QPushButton:pressed {{
+                background: {c['brand']['primary']};
+            }}
         """
         )
 

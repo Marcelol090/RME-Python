@@ -45,6 +45,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
@@ -370,125 +372,130 @@ class TilesetPropertiesDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply dark theme styling."""
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens.get("radius", {})
+        rad = r.get("md", 6)
+        rad_sm = r.get("sm", 4)
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #1E1E2E;
-                color: #CDD6F4;
-            }
-            QGroupBox {
+            f"""
+            QDialog {{
+                background-color: {c['surface']['primary']};
+                color: {c['text']['primary']};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #45475A;
-                border-radius: 6px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad}px;
                 margin-top: 12px;
                 padding-top: 12px;
-                background-color: #181825;
-            }
-            QGroupBox::title {
+                background-color: {c['surface']['secondary']};
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 12px;
                 padding: 0 6px;
-                color: #8B5CF6;
-            }
-            QLabel {
-                color: #CDD6F4;
-            }
-            QListWidget {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
-                color: #CDD6F4;
-            }
-            QListWidget::item {
+                color: {c['brand']['secondary']};
+            }}
+            QLabel {{
+                color: {c['text']['primary']};
+            }}
+            QListWidget {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+                color: {c['text']['primary']};
+            }}
+            QListWidget::item {{
                 padding: 6px;
-            }
-            QListWidget::item:selected {
-                background-color: #8B5CF6;
-            }
-            QListWidget::item:hover {
-                background-color: #45475A;
-            }
-            QTableWidget {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
-                color: #CDD6F4;
-                gridline-color: #45475A;
-            }
-            QTableWidget::item {
+            }}
+            QListWidget::item:selected {{
+                background-color: {c['brand']['secondary']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {c['border']['default']};
+            }}
+            QTableWidget {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+                color: {c['text']['primary']};
+                gridline-color: {c['border']['default']};
+            }}
+            QTableWidget::item {{
                 padding: 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #8B5CF6;
-            }
-            QHeaderView::section {
-                background-color: #181825;
-                color: #CDD6F4;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {c['brand']['secondary']};
+            }}
+            QHeaderView::section {{
+                background-color: {c['surface']['secondary']};
+                color: {c['text']['primary']};
                 padding: 6px;
                 border: none;
-                border-bottom: 1px solid #45475A;
-            }
-            QLineEdit {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
+                border-bottom: 1px solid {c['border']['default']};
+            }}
+            QLineEdit {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 8px;
-                color: #CDD6F4;
-            }
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
-            QSpinBox {
-                background-color: #313244;
-                border: 1px solid #45475A;
-                border-radius: 4px;
+                color: {c['text']['primary']};
+            }}
+            QLineEdit:focus {{
+                border-color: {c['brand']['secondary']};
+            }}
+            QSpinBox {{
+                background-color: {c['surface']['tertiary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 6px 10px;
-                color: #CDD6F4;
-            }
-            QSpinBox:focus {
-                border-color: #8B5CF6;
-            }
-            QSpinBox::up-button, QSpinBox::down-button {
-                background-color: #45475A;
+                color: {c['text']['primary']};
+            }}
+            QSpinBox:focus {{
+                border-color: {c['brand']['secondary']};
+            }}
+            QSpinBox::up-button, QSpinBox::down-button {{
+                background-color: {c['border']['default']};
                 border: none;
                 width: 20px;
-            }
-            QCheckBox {
-                color: #CDD6F4;
+            }}
+            QCheckBox {{
+                color: {c['text']['primary']};
                 spacing: 8px;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox::indicator {{
                 width: 18px;
                 height: 18px;
-                border-radius: 4px;
-                border: 1px solid #45475A;
-                background-color: #313244;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #8B5CF6;
-                border-color: #8B5CF6;
-            }
-            QPushButton {
-                background-color: #45475A;
+                border-radius: {rad_sm}px;
+                border: 1px solid {c['border']['default']};
+                background-color: {c['surface']['tertiary']};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {c['brand']['secondary']};
+                border-color: {c['brand']['secondary']};
+            }}
+            QPushButton {{
+                background-color: {c['border']['default']};
                 border: none;
-                border-radius: 6px;
+                border-radius: {rad}px;
                 padding: 8px 16px;
-                color: #CDD6F4;
+                color: {c['text']['primary']};
                 font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #585B70;
-            }
-            QPushButton:pressed {
-                background-color: #8B5CF6;
-            }
-            QSplitter::handle {
-                background-color: #45475A;
+            }}
+            QPushButton:hover {{
+                background-color: {c['border']['strong']};
+            }}
+            QPushButton:pressed {{
+                background-color: {c['brand']['secondary']};
+            }}
+            QSplitter::handle {{
+                background-color: {c['border']['default']};
                 width: 2px;
-            }
-            QDialogButtonBox QPushButton {
+            }}
+            QDialogButtonBox QPushButton {{
                 min-width: 90px;
-            }
+            }}
         """
         )
 

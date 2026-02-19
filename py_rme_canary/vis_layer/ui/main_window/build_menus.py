@@ -38,7 +38,10 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
         m_file.addSeparator()
 
     # Export submenu
-    if any(hasattr(editor, act) for act in ("act_export_png", "act_export_otmm", "act_export_tilesets", "act_export_minimap")):
+    if any(
+        hasattr(editor, act)
+        for act in ("act_export_png", "act_export_otmm", "act_export_tilesets", "act_export_minimap")
+    ):
         m_export = m_file.addMenu("Export")
         if hasattr(editor, "act_export_minimap"):
             m_export.addAction(editor.act_export_minimap)
@@ -159,6 +162,11 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_map.addAction(editor.act_map_cleanup)
     m_map.addAction(editor.act_map_properties)
     m_map.addAction(editor.act_map_statistics_legacy)
+    m_map.addSeparator()
+    if hasattr(editor, "act_convert_map_format"):
+        m_map.addAction(editor.act_convert_map_format)
+    if hasattr(editor, "act_change_map_version"):
+        m_map.addAction(editor.act_change_map_version)
 
     # ---- Selection Menu (C++ Selection) ----
     m_selection = mb.addMenu("Selection")
@@ -262,6 +270,13 @@ def build_menus_and_toolbars(editor: QtMapEditor) -> None:
     m_zoom_nav.addAction(editor.act_zoom_in)
     m_zoom_nav.addAction(editor.act_zoom_out)
     m_zoom_nav.addAction(editor.act_zoom_normal)
+
+    # Hotkey Slots (C++ Navigate > Hotkeys)
+    if hasattr(editor, "act_hotkey_actions") and editor.act_hotkey_actions:
+        m_navigate.addSeparator()
+        m_hotkeys = m_navigate.addMenu("Hotkeys (F1–F10)")
+        for act in editor.act_hotkey_actions:
+            m_hotkeys.addAction(act)
 
     # ---- Window Menu (C++ Window) ----
     m_window = mb.addMenu(load_icon("menu_window"), "Window")

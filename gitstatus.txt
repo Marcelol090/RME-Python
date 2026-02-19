@@ -1,0 +1,34 @@
+M  vis_layer/ui/dialogs/browse_tile_dialog.py
+M  vis_layer/ui/dialogs/container_properties_window.py
+M  vis_layer/ui/dialogs/creature_properties_window.py
+MM vis_layer/ui/dialogs/find_item_dialog.py
+M  vis_layer/ui/dialogs/find_replace_dialog.py
+M  vis_layer/ui/dialogs/global_search.py
+MM vis_layer/ui/dialogs/house_dialog.py
+M  vis_layer/ui/dialogs/spawn_properties_window.py
+ M vis_layer/ui/main_window/build_actions.py
+ M vis_layer/ui/main_window/build_menus.py
+ M vis_layer/ui/main_window/qt_map_editor_brushes.py
+ M vis_layer/ui/main_window/qt_map_editor_file.py
+MM vis_layer/ui/theme/__init__.py
+M  vis_layer/ui/widgets/status_bar.py
+?? ../gitstatus.txt
+?? logic_layer/hotkey_manager.py
+?? logic_layer/selection_worker.py
+?? vis_layer/ui/dialogs/map_version_dialog.py
+f2e8dda feat(ui): connect search results select-all to session selection
+9bc0b1d fix(ui-tests): stabilize theme/welcome/layer regressions after merge
+828adbf merge: resolve development conflicts for PR #67
+cb53058 merge: integrate jules liveserver dos fixes
+cc76499 merge: integrate jules security rate limiting hardening
+===BRANCH===
+* UixWidget
+  development
+  development-sync
+  ingame
+  main
+  master
+  pr-map-templates
+  quality-quality-pipeline-fixes
+  sync-development
+  temp/pr57-merge-test

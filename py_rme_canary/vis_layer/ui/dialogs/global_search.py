@@ -30,6 +30,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.gamemap import GameMap
 
@@ -341,8 +343,9 @@ class GlobalSearchDialog(QDialog):
         layout.addWidget(self.results_list)
 
         # Status
+        c = get_theme_manager().tokens["color"]
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+        self.status_label.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 11px;")
         layout.addWidget(self.status_label)
 
         # Buttons
@@ -362,86 +365,89 @@ class GlobalSearchDialog(QDialog):
         layout.addLayout(button_row)
 
     def _apply_style(self) -> None:
-        """Apply modern styling."""
+        """Apply themed styling."""
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-            }
+            f"""
+            QDialog {{
+                background: {c['surface']['primary']};
+            }}
 
-            QLineEdit {
-                background: #2A2A3E;
-                border: 2px solid #363650;
-                border-radius: 8px;
+            QLineEdit {{
+                background: {c['surface']['secondary']};
+                border: 2px solid {c['border']['default']};
+                border-radius: {r['md']}px;
                 padding: 10px 14px;
-                color: #E5E5E7;
+                color: {c['text']['primary']};
                 font-size: 14px;
-            }
+            }}
 
-            QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
+            QLineEdit:focus {{
+                border-color: {c['brand']['primary']};
+            }}
 
-            QCheckBox {
-                color: #A1A1AA;
+            QCheckBox {{
+                color: {c['text']['tertiary']};
                 font-size: 12px;
-            }
+            }}
 
-            QCheckBox:checked {
-                color: #E5E5E7;
-            }
+            QCheckBox:checked {{
+                color: {c['text']['primary']};
+            }}
 
-            QListWidget {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 8px;
-                color: #E5E5E7;
+            QListWidget {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
+                color: {c['text']['primary']};
                 outline: none;
-            }
+            }}
 
-            QListWidget::item {
+            QListWidget::item {{
                 padding: 10px 12px;
-                border-radius: 6px;
+                border-radius: {r['sm']}px;
                 margin: 2px 4px;
-            }
+            }}
 
-            QListWidget::item:hover {
-                background: #363650;
-            }
+            QListWidget::item:hover {{
+                background: {c['surface']['tertiary']};
+            }}
 
-            QListWidget::item:selected {
-                background: #8B5CF6;
-            }
+            QListWidget::item:selected {{
+                background: {c['brand']['primary']};
+            }}
 
-            QProgressBar {
-                background: #363650;
+            QProgressBar {{
+                background: {c['surface']['tertiary']};
                 border: none;
-                border-radius: 4px;
+                border-radius: {r['sm']}px;
                 height: 6px;
-            }
+            }}
 
-            QProgressBar::chunk {
-                background: #8B5CF6;
-                border-radius: 4px;
-            }
+            QProgressBar::chunk {{
+                background: {c['brand']['primary']};
+                border-radius: {r['sm']}px;
+            }}
 
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
+            QPushButton {{
+                background: {c['brand']['primary']};
+                color: {c['surface']['primary']};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r['sm']}px;
                 padding: 8px 16px;
                 font-weight: 500;
-            }
+            }}
 
-            QPushButton:hover {
-                background: #A78BFA;
-            }
+            QPushButton:hover {{
+                background: {c['brand']['active']};
+            }}
 
-            QPushButton:disabled {
-                background: #363650;
-                color: #52525B;
-            }
+            QPushButton:disabled {{
+                background: {c['surface']['tertiary']};
+                color: {c['text']['disabled']};
+            }}
         """
         )
 

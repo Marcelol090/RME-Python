@@ -213,3 +213,34 @@ class QtMapEditorBrushesMixin:
         """Callback from EditorSession when brush size changes externally."""
         if int(self.brush_size) != int(size):
             self._set_brush_size(int(size))
+
+    def _activate_hotkey(self: QtMapEditor, slot: int) -> None:
+        """Activate HotkeyManager slot *slot* (0-9, mapped to F1-F10).
+
+        If the slot stores a brush id, set it as the active brush.
+        If it stores a position, teleport the viewport to that position.
+        """
+        hkm = getattr(self, "hotkey_manager", None)
+        if hkm is None:
+            try:
+                from py_rme_canary.logic_layer.hotkey_manager import HotkeyManager
+
+                self.hotkey_manager = HotkeyManager()
+                hkm = self.hotkey_manager
+            except Exception:
+                return
+
+        hotkey = hkm.get_hotkey(int(slot))
+        if hotkey is None or not hotkey.enabled:
+            return
+
+        from py_rme_canary.logic_layer.hotkey_manager import HotkeyType
+
+        if hotkey.hotkey_type == HotkeyType.BRUSH and hotkey.brush_id is not None:
+            self._set_selected_brush_id(int(hotkey.brush_id))
+        elif hotkey.hotkey_type == HotkeyType.POSITION and hotkey.position is not None:
+            x, y, z = hotkey.position
+            self.viewport.center_x = int(x)
+            self.viewport.center_y = int(y)
+            self.viewport.z = int(z)
+            self.canvas.update()

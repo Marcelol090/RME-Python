@@ -32,6 +32,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     from py_rme_canary.core.data.item import Item
     from py_rme_canary.core.data.tile import Tile
@@ -62,16 +64,19 @@ class ItemStackItemWidget(QWidget):
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(8)
 
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         # Sprite icon
         sprite_label = QLabel()
         sprite_label.setFixedSize(32, 32)
         sprite_label.setStyleSheet(
-            """
-            QLabel {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
+            f"""
+            QLabel {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
+            }}
         """
         )
 
@@ -118,11 +123,11 @@ class ItemStackItemWidget(QWidget):
 
         info_label = QLabel(info_text)
         info_label.setStyleSheet(
-            """
-            QLabel {
-                color: #E5E5E7;
+            f"""
+            QLabel {{
+                color: {c['text']['primary']};
                 font-size: 13px;
-            }
+            }}
         """
         )
         layout.addWidget(info_label, 1)
@@ -143,27 +148,30 @@ class ItemStackListWidget(QListWidget):
         # Connect to detect reordering
         self.model().rowsMoved.connect(self._on_rows_moved)
 
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            ItemStackListWidget {
-                background: #1E1E2E;
-                border: 1px solid #363650;
-                border-radius: 8px;
+            f"""
+            ItemStackListWidget {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
                 padding: 4px;
-            }
-            ItemStackListWidget::item {
-                background: #2A2A3E;
-                border-radius: 4px;
+            }}
+            ItemStackListWidget::item {{
+                background: {c['surface']['secondary']};
+                border-radius: {r['sm']}px;
                 padding: 2px;
                 margin: 1px 0;
-            }
-            ItemStackListWidget::item:selected {
-                background: #363650;
-                border: 1px solid #8B5CF6;
-            }
-            ItemStackListWidget::item:hover {
-                background: #363650;
-            }
+            }}
+            ItemStackListWidget::item:selected {{
+                background: {c['surface']['tertiary']};
+                border: 1px solid {c['brand']['primary']};
+            }}
+            ItemStackListWidget::item:hover {{
+                background: {c['surface']['tertiary']};
+            }}
         """
         )
 
@@ -220,18 +228,21 @@ class BrowseTileDialog(QDialog):
         layout.setSpacing(12)
         layout.setContentsMargins(16, 16, 16, 16)
 
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         # Header with position info
         header = QLabel(f"Position: ({self.position[0]}, {self.position[1]}, Floor {self.position[2]})")
         header.setStyleSheet(
-            """
-            QLabel {
-                color: #E5E5E7;
+            f"""
+            QLabel {{
+                color: {c['text']['primary']};
                 font-size: 14px;
                 font-weight: 600;
                 padding: 8px;
-                background: #2A2A3E;
-                border-radius: 6px;
-            }
+                background: {c['surface']['secondary']};
+                border-radius: {r['sm']}px;
+            }}
         """
         )
         layout.addWidget(header)
@@ -239,20 +250,20 @@ class BrowseTileDialog(QDialog):
         # Item stack list
         stack_group = QGroupBox("Item Stack")
         stack_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
+            f"""
+            QGroupBox {{
+                color: {c['text']['primary']};
                 font-weight: 600;
-                border: 1px solid #363650;
-                border-radius: 8px;
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['md']}px;
                 margin-top: 12px;
                 padding-top: 12px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 8px;
-            }
+            }}
         """
         )
 
@@ -428,36 +439,39 @@ class BrowseTileDialog(QDialog):
             self.item_list.setCurrentRow(current_idx + 1)
 
     def _apply_style(self) -> None:
-        """Apply modern dark theme."""
+        """Apply themed styling."""
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
         self.setStyleSheet(
-            """
-            BrowseTileDialog {
-                background: #1E1E2E;
-            }
-            QSpinBox, QLineEdit {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 6px;
+            f"""
+            BrowseTileDialog {{
+                background: {c['surface']['primary']};
+            }}
+            QSpinBox, QLineEdit {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {r['sm']}px;
                 padding: 6px;
-            }
-            QSpinBox:focus, QLineEdit:focus {
-                border-color: #8B5CF6;
-            }
-            QPushButton {
-                background: #8B5CF6;
-                color: white;
+            }}
+            QSpinBox:focus, QLineEdit:focus {{
+                border-color: {c['brand']['primary']};
+            }}
+            QPushButton {{
+                background: {c['brand']['primary']};
+                color: {c['surface']['primary']};
                 border: none;
-                border-radius: 6px;
+                border-radius: {r['sm']}px;
                 padding: 8px 16px;
                 font-weight: 500;
-            }
-            QPushButton:hover {
-                background: #A78BFA;
-            }
-            QPushButton:pressed {
-                background: #7C3AED;
-            }
+            }}
+            QPushButton:hover {{
+                background: {c['brand']['active']};
+            }}
+            QPushButton:pressed {{
+                background: {c['brand']['secondary']};
+            }}
         """
         )
 

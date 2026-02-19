@@ -36,10 +36,22 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger(__name__)
+
+
+def _c() -> dict:
+    """Return the current color tokens."""
+    return get_theme_manager().tokens["color"]
+
+
+def _r() -> dict:
+    """Return the current radius tokens."""
+    return get_theme_manager().tokens.get("radius", {})
 
 
 @dataclass(slots=True)
@@ -149,15 +161,16 @@ class SpriteDelegate(QStyledItemDelegate):
         return QSize(self.CELL_SIZE, self.CELL_SIZE)
 
     def paint(self, painter: QPainter, option, index: QModelIndex) -> None:
+        c = _c()
         painter.save()
 
         # Background
         if option.state & 1:  # Selected
-            painter.fillRect(option.rect, QColor("#8B5CF6"))
+            painter.fillRect(option.rect, QColor(c["brand"]["secondary"]))
         elif option.state & 2:  # Hover
-            painter.fillRect(option.rect, QColor("#2A2A3E"))
+            painter.fillRect(option.rect, QColor(c["surface"]["secondary"]))
         else:
-            painter.fillRect(option.rect, QColor("#1A1A2E"))
+            painter.fillRect(option.rect, QColor(c["surface"]["primary"]))
 
         sprite = index.data(Qt.ItemDataRole.UserRole)
         if sprite:
@@ -173,16 +186,16 @@ class SpriteDelegate(QStyledItemDelegate):
                 painter.drawPixmap(x, y, scaled)
             else:
                 # Draw placeholder
-                painter.setPen(QColor("#363650"))
-                painter.setBrush(QColor("#2A2A3E"))
+                painter.setPen(QColor(c["border"]["default"]))
+                painter.setBrush(QColor(c["surface"]["secondary"]))
                 painter.drawRect(sprite_rect)
 
                 if not sprite.is_valid:
-                    painter.setPen(QColor("#EF4444"))
+                    painter.setPen(QColor(c["state"]["error"]))
                     painter.drawText(sprite_rect, Qt.AlignmentFlag.AlignCenter, "X")
 
             # Draw ID label
-            painter.setPen(QColor("#A1A1AA"))
+            painter.setPen(QColor(c["text"]["secondary"]))
             label_rect = option.rect.adjusted(2, self.CELL_SIZE - 16, -2, -2)
             painter.drawText(label_rect, Qt.AlignmentFlag.AlignCenter, str(sprite.sprite_id))
 
@@ -200,6 +213,10 @@ class SpriteDetailPanel(QFrame):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         self.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Sunken)
         self.setMinimumWidth(250)
 
@@ -209,40 +226,40 @@ class SpriteDetailPanel(QFrame):
 
         # Title
         title = QLabel("Sprite Details")
-        title.setStyleSheet("font-size: 14px; font-weight: bold; color: #E5E5E7;")
+        title.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {c['text']['primary']};")
         layout.addWidget(title)
 
-        # Preview
-        preview_group = QGroupBox("Preview")
-        preview_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+        group_qss = f"""
+            QGroupBox {{
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
+            }}
         """
-        )
+
+        # Preview
+        preview_group = QGroupBox("Preview")
+        preview_group.setStyleSheet(group_qss)
         preview_layout = QVBoxLayout(preview_group)
 
         self.preview_label = QLabel()
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setMinimumSize(64, 64)
-        self.preview_label.setStyleSheet("background: #2A2A3E; border-radius: 4px;")
+        self.preview_label.setStyleSheet(f"background: {c['surface']['secondary']};" f" border-radius: {rad_sm}px;")
         preview_layout.addWidget(self.preview_label)
 
         layout.addWidget(preview_group)
 
         # Info form
         info_group = QGroupBox("Information")
-        info_group.setStyleSheet(preview_group.styleSheet())
+        info_group.setStyleSheet(group_qss)
         info_layout = QGridLayout(info_group)
         info_layout.setSpacing(8)
 
@@ -251,11 +268,11 @@ class SpriteDetailPanel(QFrame):
 
         for i, label_text in enumerate(labels):
             label = QLabel(label_text)
-            label.setStyleSheet("color: #A1A1AA;")
+            label.setStyleSheet(f"color: {c['text']['secondary']};")
             info_layout.addWidget(label, i, 0)
 
             value = QLabel("—")
-            value.setStyleSheet("color: #E5E5E7; font-weight: bold;")
+            value.setStyleSheet(f"color: {c['text']['primary']}; font-weight: bold;")
             info_layout.addWidget(value, i, 1)
             self._info_values.append(value)
 
@@ -263,36 +280,36 @@ class SpriteDetailPanel(QFrame):
 
         # Go to ID
         goto_group = QGroupBox("Navigate")
-        goto_group.setStyleSheet(preview_group.styleSheet())
+        goto_group.setStyleSheet(group_qss)
         goto_layout = QHBoxLayout(goto_group)
 
         self.goto_spin = QSpinBox()
         self.goto_spin.setRange(0, 999999)
         self.goto_spin.setStyleSheet(
-            """
-            QSpinBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QSpinBox {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 4px;
-            }
+            }}
         """
         )
         goto_layout.addWidget(self.goto_spin)
 
         goto_btn = QPushButton("Go")
         goto_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #8B5CF6;
+            f"""
+            QPushButton {{
+                background: {c['brand']['secondary']};
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: {rad_sm}px;
                 padding: 6px 12px;
                 font-weight: bold;
-            }
-            QPushButton:hover { background: #7C3AED; }
+            }}
+            QPushButton:hover {{ background: {c['brand']['active']}; }}
         """
         )
         goto_btn.clicked.connect(lambda: self.go_to_id.emit(self.goto_spin.value()))
@@ -305,6 +322,7 @@ class SpriteDetailPanel(QFrame):
 
     def set_sprite(self, sprite: SpriteInfo | None) -> None:
         """Update panel with sprite info."""
+        c = _c()
         self._sprite = sprite
 
         if sprite is None:
@@ -329,9 +347,8 @@ class SpriteDetailPanel(QFrame):
         self._info_values[3].setText(str(sprite.layers))
         self._info_values[4].setText(str(sprite.frames))
         self._info_values[5].setText("Valid" if sprite.is_valid else "Invalid")
-        self._info_values[5].setStyleSheet(
-            "color: #10B981; font-weight: bold;" if sprite.is_valid else "color: #EF4444; font-weight: bold;"
-        )
+        clr = c["state"]["success"] if sprite.is_valid else c["state"]["error"]
+        self._info_values[5].setStyleSheet(f"color: {clr}; font-weight: bold;")
 
 
 class DatDebugDialog(QDialog):
@@ -361,49 +378,53 @@ class DatDebugDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
         # Header
         header = QLabel("DAT/SPR Debug Viewer")
-        header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
+        header.setStyleSheet(f"font-size: 18px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(header)
 
         desc = QLabel(
             "View and inspect all loaded sprites from client data files. " "Use the search box to filter by sprite ID."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #A1A1AA;")
+        desc.setStyleSheet(f"color: {c['text']['secondary']};")
         layout.addWidget(desc)
 
         # Search bar
         search_layout = QHBoxLayout()
 
         search_label = QLabel("Search ID:")
-        search_label.setStyleSheet("color: #E5E5E7;")
+        search_label.setStyleSheet(f"color: {c['text']['primary']};")
         search_layout.addWidget(search_label)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter sprite ID...")
         self.search_input.textChanged.connect(self._on_search)
         self.search_input.setStyleSheet(
-            """
-            QLineEdit {
-                background: #2A2A3E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-                color: #E5E5E7;
+            f"""
+            QLineEdit {{
+                background: {c['surface']['secondary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+                color: {c['text']['primary']};
                 padding: 8px 12px;
-            }
-            QLineEdit:focus { border-color: #8B5CF6; }
+            }}
+            QLineEdit:focus {{ border-color: {c['brand']['secondary']}; }}
         """
         )
         search_layout.addWidget(self.search_input, 1)
 
         # Stats label
         self.stats_label = QLabel("0 sprites loaded")
-        self.stats_label.setStyleSheet("color: #A1A1AA;")
+        self.stats_label.setStyleSheet(f"color: {c['text']['secondary']};")
         search_layout.addWidget(self.stats_label)
 
         layout.addLayout(search_layout)
@@ -426,12 +447,12 @@ class DatDebugDialog(QDialog):
         self.sprite_list.setUniformItemSizes(True)
         self.sprite_list.selectionModel().currentChanged.connect(self._on_selection_changed)
         self.sprite_list.setStyleSheet(
-            """
-            QListView {
-                background: #1A1A2E;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
+            f"""
+            QListView {{
+                background: {c['surface']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+            }}
         """
         )
         list_layout.addWidget(self.sprite_list)
@@ -455,15 +476,15 @@ class DatDebugDialog(QDialog):
         refresh_btn = QPushButton("Refresh")
         refresh_btn.clicked.connect(self._refresh_sprites)
         refresh_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QPushButton {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 8px 16px;
-            }
-            QPushButton:hover { background: #363650; }
+            }}
+            QPushButton:hover {{ background: {c['surface']['tertiary']}; }}
         """
         )
         btn_layout.addWidget(refresh_btn)
@@ -471,16 +492,16 @@ class DatDebugDialog(QDialog):
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
         close_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #8B5CF6;
+            f"""
+            QPushButton {{
+                background: {c['brand']['secondary']};
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: {rad_sm}px;
                 padding: 8px 16px;
                 font-weight: bold;
-            }
-            QPushButton:hover { background: #7C3AED; }
+            }}
+            QPushButton:hover {{ background: {c['brand']['active']}; }}
         """
         )
         btn_layout.addWidget(close_btn)
@@ -489,16 +510,20 @@ class DatDebugDialog(QDialog):
 
     def _apply_style(self) -> None:
         """Apply dark theme styling."""
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         self.setStyleSheet(
-            """
-            QDialog { background: #0F0F1A; }
-            QGroupBox {
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QDialog {{ background: {c['surface']['primary']}; }}
+            QGroupBox {{
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
+            }}
         """
         )
 
