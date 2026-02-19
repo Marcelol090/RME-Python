@@ -15,8 +15,6 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
-    QDialog,
-    QDialogButtonBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -30,6 +28,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 
 if TYPE_CHECKING:
     pass
@@ -377,24 +377,22 @@ class FavoritesList(QListWidget):
             self.favorite_selected.emit(self._favs[r])
 
 
-class OutfitChooserDialog(QDialog):
+class OutfitChooserDialog(ModernDialog):
     outfit_changed = pyqtSignal(int, int, int, int, int, int, str, int)
 
     def __init__(self, parent=None, lt=1, hd=0, bd=0, lg=0, ft=0, ad=0, nm="You", sp=220):
-        super().__init__(parent)
         self._lt, self._hd, self._bd, self._lg, self._ft, self._ad, self._nm, self._sp = lt, hd, bd, lg, ft, ad, nm, sp
         self._part = 0
-        self.setWindowTitle("Customise Character")
+        super().__init__(parent, title="Customise Character")
         self.setMinimumSize(1100, 750)
-        self._setup()
-        self._style()
+        self._setup_content()
         self._load()
         self._pops()
         self._upd()
         self._upcol()
 
-    def _setup(self):
-        m = QVBoxLayout(self)
+    def _setup_content(self):
+        m = QVBoxLayout()
         c = QHBoxLayout()
         c.setSpacing(16)
         c1 = QVBoxLayout()
@@ -470,13 +468,11 @@ class OutfitChooserDialog(QDialog):
         c3.addLayout(fb)
         c.addLayout(c3)
         m.addLayout(c, 1)
-        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        bb.accepted.connect(self._ok)
-        bb.rejected.connect(self.reject)
-        m.addWidget(bb)
 
-    def _style(self):
-        self.setStyleSheet("QDialog{background:#1E1E2E;}QLabel{color:#E5E5E7;}")
+        self.set_content_layout(m)
+
+        self.add_button("OK", callback=self._ok, role="primary")
+        self.add_button("Cancel", callback=self.reject)
 
     def _load(self):
         p = Path.home() / ".py_rme_canary" / "outfit_preferences.json"

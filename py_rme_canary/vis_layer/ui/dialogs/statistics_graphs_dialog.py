@@ -14,15 +14,15 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QDialog,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSizePolicy,
     QTabWidget,
     QVBoxLayout,
     QWidget,
 )
+
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 
 if TYPE_CHECKING:
     from core.data.gamemap import GameMap
@@ -322,7 +322,7 @@ class DensityHeatmapChart(ChartWidget):
         self.refresh()
 
 
-class StatisticsGraphsDialog(QDialog):
+class StatisticsGraphsDialog(ModernDialog):
     """Dialog displaying map statistics as interactive charts.
 
     Provides visual insights into:
@@ -336,29 +336,16 @@ class StatisticsGraphsDialog(QDialog):
     """
 
     def __init__(self, parent: QWidget | None, *, game_map: GameMap) -> None:
-        super().__init__(parent)
         self._game_map = game_map
-
-        self.setWindowTitle("Map Statistics - Graphs")
-        self.setModal(True)
+        super().__init__(parent, title="Map Statistics - Graphs")
         self.resize(800, 600)
+        self._setup_content()
 
-        self._setup_ui()
-        self._apply_style()
-
-    def _setup_ui(self) -> None:
+    def _setup_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
         layout.setSpacing(16)
-        layout.setContentsMargins(16, 16, 16, 16)
-
-        # Header
-        header = QHBoxLayout()
-        title = QLabel("Map Statistics Visualization")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #E5E5E7;")
-        header.addWidget(title)
-        header.addStretch()
-        layout.addLayout(header)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # Tab widget for different charts
         self._tabs = QTabWidget()
@@ -377,64 +364,13 @@ class StatisticsGraphsDialog(QDialog):
 
         layout.addWidget(self._tabs)
 
-        # Buttons
-        button_layout = QHBoxLayout()
+        # Set content layout
+        self.set_content_layout(layout)
 
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.clicked.connect(self._refresh_all)
-        button_layout.addWidget(refresh_btn)
-
-        button_layout.addStretch()
-
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        button_layout.addWidget(close_btn)
-
-        layout.addLayout(button_layout)
-
-    def _apply_style(self) -> None:
-        """Apply modern dark theme styling."""
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #1E1E2E;
-                color: #E5E5E7;
-            }
-
-            QTabWidget::pane {
-                border: 1px solid #363650;
-                border-radius: 6px;
-                background: #1E1E2E;
-            }
-
-            QTabBar::tab {
-                background: #2A2A3E;
-                color: #9CA3AF;
-                padding: 8px 16px;
-                border: 1px solid #363650;
-                border-bottom: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-            }
-
-            QTabBar::tab:selected {
-                background: #363650;
-                color: #E5E5E7;
-            }
-
-            QPushButton {
-                background: #363650;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                padding: 8px 16px;
-                color: #E5E5E7;
-            }
-
-            QPushButton:hover {
-                background: #4B5563;
-            }
-        """
-        )
+        # Buttons in footer
+        self.add_button("Refresh", callback=self._refresh_all)
+        self.add_spacer_to_footer()
+        self.add_button("Close", callback=self.accept)
 
     def _refresh_all(self) -> None:
         """Refresh all charts."""
