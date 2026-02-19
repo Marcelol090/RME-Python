@@ -173,6 +173,7 @@ class GoToPositionDialog(QDialog):
         r = _r()
         rad = r.get("md", 6)
         rad_lg = r.get("lg", 8)
+        surface_hover = c.get("surface", {}).get("hover", c.get("state", {}).get("hover", c["surface"]["tertiary"]))
 
         self.setStyleSheet(
             f"""
@@ -215,7 +216,7 @@ class GoToPositionDialog(QDialog):
             }}
 
             QPushButton:hover {{
-                background: {c['surface']['hover']};
+                background: {surface_hover};
                 border-color: {c['brand']['secondary']};
             }}
 
@@ -344,6 +345,7 @@ class FindItemDialog(QDialog):
         rad = r.get("md", 6)
         rad_lg = r.get("lg", 8)
         rad_sm = r.get("sm", 4)
+        brand_hover = c.get("brand", {}).get("hover", c.get("state", {}).get("hover", c["brand"]["secondary"]))
 
         self.setStyleSheet(
             f"""
@@ -373,7 +375,7 @@ class FindItemDialog(QDialog):
             }}
 
             QPushButton:hover {{
-                background: {c['brand']['hover']};
+                background: {brand_hover};
             }}
 
             QPushButton:disabled {{

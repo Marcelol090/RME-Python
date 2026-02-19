@@ -795,6 +795,8 @@
   - `goto_position(...)` corrigido para usar `center_view_on(...)` (fallback robusto) em vez de atributos inválidos no viewport.
 - Persistência ampliada:
   - `core/config/user_settings.py` recebeu novos campos de preferência para tema, grid/tooltips padrão, brush defaults, merge/borderize defaults, interface input e estilos de palettes.
+- Hardening adicional de dialogs modernos:
+  - `vis_layer/ui/dialogs/navigation_dialogs.py` recebeu fallback de theme tokens (`surface.hover` / `brand.hover`) para evitar `KeyError` em temas que não expõem essas chaves.
 - Cobertura adicionada/atualizada:
   - `tests/unit/vis_layer/ui/main_window/test_qt_map_editor_settings_flow.py`
   - `tests/unit/vis_layer/ui/test_dialogs.py` (novos testes de defaults + payload no SettingsDialog)
@@ -805,3 +807,4 @@
   - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s <tests de settings + user_settings>` -> `12 passed`.
   - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> `19 passed`.
   - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint` -> pipeline concluído com `status=ok`, relatório atualizado em `.quality_reports/refactor_summary.md` e sugestões em `reports/jules/suggestions.json`.
+  - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py` -> `23 passed`.

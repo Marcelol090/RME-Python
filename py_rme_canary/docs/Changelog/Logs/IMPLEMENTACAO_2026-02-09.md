@@ -2292,6 +2292,9 @@ Fechada a lacuna de paridade do fluxo de preferências moderno, garantindo:
   - novas chaves persistentes para tema, defaults de grid/tooltips, brush defaults,
     merge/borderize defaults, input de interface e estilos de palette.
 
+- `py_rme_canary/vis_layer/ui/dialogs/navigation_dialogs.py`
+  - fallback para tokens opcionais de tema (`surface.hover` / `brand.hover`) evitando `KeyError` no bootstrap dos dialogs.
+
 - Testes:
   - `py_rme_canary/tests/unit/vis_layer/ui/main_window/test_qt_map_editor_settings_flow.py`
   - `py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py`
@@ -2302,5 +2305,6 @@ Fechada a lacuna de paridade do fluxo de preferências moderno, garantindo:
 - `ruff check` (arquivos alterados) -> **All checks passed**
 - `python3 -m py_compile` (arquivos alterados) -> **OK**
 - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s` nos testes de settings/user-settings -> **12 passed**
+- `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py` -> **23 passed**
 - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **19 passed**
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint` -> **pipeline concluído**, `status=ok`, relatório em `.quality_reports/refactor_summary.md` e sugestões Jules em `reports/jules/suggestions.json`
