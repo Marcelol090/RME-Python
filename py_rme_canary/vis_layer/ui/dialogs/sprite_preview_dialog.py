@@ -49,10 +49,20 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+
 if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger(__name__)
+
+
+def _c() -> dict:
+    return get_theme_manager().tokens["color"]
+
+
+def _r() -> dict:
+    return get_theme_manager().tokens.get("radius", {})
 
 
 class ZoomLevel(IntEnum):
@@ -113,9 +123,10 @@ class SpriteCanvas(QFrame):
         self._animation_timer = QTimer(self)
         self._animation_timer.timeout.connect(self._next_frame)
 
+        c = _c()
         self.setMinimumSize(128, 128)
         self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Sunken)
-        self.setStyleSheet("background: #1A1A2E;")
+        self.setStyleSheet(f"background: {c['surface']['primary']};")
 
     def set_sprite(self, sprite: SpriteData | None) -> None:
         """Set the sprite to preview."""
@@ -184,6 +195,7 @@ class SpriteCanvas(QFrame):
         self._next_frame()
 
     def paintEvent(self, event) -> None:
+        c = _c()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
@@ -193,7 +205,7 @@ class SpriteCanvas(QFrame):
         if self._show_checkered:
             self._draw_checkered_bg(painter, rect)
         else:
-            painter.fillRect(rect, QColor("#2A2A3E"))
+            painter.fillRect(rect, QColor(c["surface"]["secondary"]))
 
         # Draw sprite
         if self._sprite and self._sprite.frames and self._current_frame < len(self._sprite.frames):
@@ -219,12 +231,12 @@ class SpriteCanvas(QFrame):
                 painter.drawPixmap(x, y, scaled)
         else:
             # No sprite
-            painter.setPen(QColor("#A1A1AA"))
+            painter.setPen(QColor(c["text"]["secondary"]))
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "No sprite loaded")
 
         # Draw frame indicator
         if self._sprite and len(self._sprite.frames) > 1:
-            painter.setPen(QColor("#8B5CF6"))
+            painter.setPen(QColor(c["brand"]["secondary"]))
             info = f"Frame {self._current_frame + 1}/{len(self._sprite.frames)}"
             painter.drawText(
                 rect.adjusted(4, 4, -4, -4), Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight, info
@@ -232,8 +244,9 @@ class SpriteCanvas(QFrame):
 
     def _draw_checkered_bg(self, painter: QPainter, rect: QRect) -> None:
         """Draw a checkered transparency background."""
+        c = _c()
         tile_size = 8
-        colors = [QColor("#252538"), QColor("#1E1E30")]
+        colors = [QColor(c["surface"]["secondary"]), QColor(c["surface"]["primary"])]
 
         for y in range(0, rect.height(), tile_size):
             for x in range(0, rect.width(), tile_size):
@@ -263,6 +276,10 @@ class SpriteInfoPanel(QFrame):
         self._sprite: SpriteData | None = None
 
     def _setup_ui(self) -> None:
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         self.setMinimumWidth(200)
 
@@ -273,19 +290,19 @@ class SpriteInfoPanel(QFrame):
         # Info group
         info_group = QGroupBox("Sprite Info")
         info_group.setStyleSheet(
-            """
-            QGroupBox {
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QGroupBox {{
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
+            }}
         """
         )
         info_layout = QGridLayout(info_group)
@@ -296,11 +313,11 @@ class SpriteInfoPanel(QFrame):
 
         for i, text in enumerate(labels):
             label = QLabel(text)
-            label.setStyleSheet("color: #A1A1AA;")
+            label.setStyleSheet(f"color: {c['text']['secondary']};")
             info_layout.addWidget(label, i, 0)
 
             value = QLabel("—")
-            value.setStyleSheet("color: #E5E5E7; font-weight: bold;")
+            value.setStyleSheet(f"color: {c['text']['primary']}; font-weight: bold;")
             info_layout.addWidget(value, i, 1)
             self._values.append(value)
 
@@ -350,13 +367,17 @@ class SpritePreviewDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Initialize UI components."""
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
         # Header
         header = QLabel("Sprite Preview")
-        header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E5E5E7;")
+        header.setStyleSheet(f"font-size: 18px; font-weight: 700; color: {c['text']['primary']};")
         layout.addWidget(header)
 
         # Main content
@@ -402,18 +423,18 @@ class SpritePreviewDialog(QDialog):
         self.frame_slider.setMaximum(0)
         self.frame_slider.valueChanged.connect(self._on_slider_changed)
         self.frame_slider.setStyleSheet(
-            """
-            QSlider::groove:horizontal {
-                background: #2A2A3E;
+            f"""
+            QSlider::groove:horizontal {{
+                background: {c['surface']['secondary']};
                 height: 6px;
                 border-radius: 3px;
-            }
-            QSlider::handle:horizontal {
-                background: #8B5CF6;
+            }}
+            QSlider::handle:horizontal {{
+                background: {c['brand']['secondary']};
                 width: 16px;
                 margin: -5px 0;
                 border-radius: 8px;
-            }
+            }}
         """
         )
         anim_layout.addWidget(self.frame_slider, 1)
@@ -425,7 +446,7 @@ class SpritePreviewDialog(QDialog):
 
         # Zoom selector
         zoom_label = QLabel("Zoom:")
-        zoom_label.setStyleSheet("color: #E5E5E7;")
+        zoom_label.setStyleSheet(f"color: {c['text']['primary']};")
         opts_layout.addWidget(zoom_label)
 
         self.zoom_combo = QComboBox()
@@ -433,19 +454,19 @@ class SpritePreviewDialog(QDialog):
         self.zoom_combo.setCurrentIndex(1)  # 2x default
         self.zoom_combo.currentIndexChanged.connect(self._on_zoom_changed)
         self.zoom_combo.setStyleSheet(
-            """
-            QComboBox {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+            f"""
+            QComboBox {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 padding: 4px 8px;
-            }
-            QComboBox::drop-down { border: none; }
-            QComboBox::down-arrow {
+            }}
+            QComboBox::drop-down {{ border: none; }}
+            QComboBox::down-arrow {{
                 image: none;
                 border: none;
-            }
+            }}
         """
         )
         opts_layout.addWidget(self.zoom_combo)
@@ -456,7 +477,7 @@ class SpritePreviewDialog(QDialog):
         self.checkered_check = QCheckBox("Checkered BG")
         self.checkered_check.setChecked(True)
         self.checkered_check.stateChanged.connect(self._on_checkered_changed)
-        self.checkered_check.setStyleSheet("color: #E5E5E7;")
+        self.checkered_check.setStyleSheet(f"color: {c['text']['primary']};")
         opts_layout.addWidget(self.checkered_check)
 
         canvas_container.addLayout(opts_layout)
@@ -476,16 +497,16 @@ class SpritePreviewDialog(QDialog):
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
         close_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: #8B5CF6;
+            f"""
+            QPushButton {{
+                background: {c['brand']['secondary']};
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: {rad_sm}px;
                 padding: 8px 24px;
                 font-weight: bold;
-            }
-            QPushButton:hover { background: #7C3AED; }
+            }}
+            QPushButton:hover {{ background: {c['brand']['active']}; }}
         """
         )
         btn_layout.addWidget(close_btn)
@@ -493,28 +514,35 @@ class SpritePreviewDialog(QDialog):
         layout.addLayout(btn_layout)
 
     def _button_style(self) -> str:
-        return """
-            QPushButton {
-                background: #2A2A3E;
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+        return f"""
+            QPushButton {{
+                background: {c['surface']['secondary']};
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
                 font-size: 12px;
-            }
-            QPushButton:hover { background: #363650; }
-            QPushButton:pressed { background: #8B5CF6; }
+            }}
+            QPushButton:hover {{ background: {c['surface']['tertiary']}; }}
+            QPushButton:pressed {{ background: {c['brand']['secondary']}; }}
         """
 
     def _apply_style(self) -> None:
         """Apply dark theme styling."""
+        c = _c()
+        r = _r()
+        rad_sm = r.get("sm", 4)
+
         self.setStyleSheet(
-            """
-            QDialog { background: #0F0F1A; }
-            QGroupBox {
-                color: #E5E5E7;
-                border: 1px solid #363650;
-                border-radius: 4px;
-            }
+            f"""
+            QDialog {{ background: {c['surface']['primary']}; }}
+            QGroupBox {{
+                color: {c['text']['primary']};
+                border: 1px solid {c['border']['default']};
+                border-radius: {rad_sm}px;
+            }}
         """
         )
 
