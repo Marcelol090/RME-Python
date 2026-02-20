@@ -2380,3 +2380,204 @@ Fechada a lacuna de paridade do fluxo de preferências moderno, garantindo:
 - `QT_QPA_PLATFORM=offscreen PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_dialogs.py` -> **23 passed**
 - `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **19 passed**
 - `bash py_rme_canary/quality-pipeline/quality_lf.sh --dry-run --verbose --skip-ui-tests --skip-security --skip-deadcode --skip-sonarlint` -> **pipeline concluído**, `status=ok`, relatório em `.quality_reports/refactor_summary.md` e sugestões Jules em `reports/jules/suggestions.json`
+
+---
+
+## Sessão 8 (2026-02-19): Legacy parity de tema no renderer (grid + tooltip)
+
+### Lacuna identificada
+- Na varredura do legacy Redux recente (PR de theming global com mudanças em `theme.*` e `tooltip_drawer.cpp`), a parte Python ainda tinha render overlays com cores fixas:
+  - Grid: `(58, 58, 58, 255)`
+  - Tooltip hover/texto: `(255, 255, 255, 160)` e `(230, 230, 230, 220)`
+- Isso quebrava consistência visual ao alternar temas no editor.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/renderer/map_drawer.py`
+  - adicionado parser robusto de token de cor para:
+    - `#RRGGBB`
+    - `#RRGGBBAA`
+    - `rgb(...)` / `rgba(...)`
+  - adicionado acesso best-effort ao `ThemeManager.tokens["color"]` com fallback seguro (sem dependência rígida de UI runtime).
+  - novos resolvers:
+    - `grid_color_rgba()`
+    - `tooltip_outline_rgba()`
+    - `tooltip_text_rgba()`
+  - `_draw_tooltips(...)` passou a usar os resolvers acima.
+- `py_rme_canary/vis_layer/renderer/drawers/grid_drawer.py`
+  - `grid_color` hardcoded substituído por `drawer.grid_color_rgba()`.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/test_map_drawer_overlays.py`
+  - novo: `test_draw_grid_uses_theme_border_color_when_available`
+- `py_rme_canary/tests/unit/vis_layer/test_map_drawer_tooltips.py`
+  - novo: `test_draw_tooltips_uses_theme_colors_when_available`
+  - backend fake ampliado para capturar RGBA do texto renderizado.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/renderer/map_drawer.py py_rme_canary/vis_layer/renderer/drawers/grid_drawer.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_overlays.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_tooltips.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/renderer/map_drawer.py py_rme_canary/vis_layer/renderer/drawers/grid_drawer.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_overlays.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_tooltips.py` -> **OK**
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/test_map_drawer_culling.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_overlays.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_tooltips.py` -> **13 passed, 1 warning**
+
+---
+
+## Sessão 9 (2026-02-19): Jump-to-Brush com diálogo legado + theming no FindBrushDialog
+
+### Lacuna identificada
+- O atalho/ação `Navigate > Jump to Brush...` ainda não usava o diálogo legado de busca; o fluxo só focava o campo `brush_filter`.
+- `FindBrushDialog` tinha visual hardcoded (cores fixas), fora do pipeline de tema centralizado já adotado no restante da UI.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py`
+  - `_jump_to_brush(...)` migrado para fluxo real:
+    - abre `FindBrushDialog`;
+    - aplica brush selecionada via `_set_selected_brush_id(...)`;
+    - escolhe palette por `brush_type` com `_palette_key_for_brush_type(...)`;
+    - força modo desenho (`_set_selection_mode_checked(False)`);
+    - atualiza status e traz dock de brushes para frente.
+  - novo `_show_find_brush_dialog(...)`:
+    - coleta brushes reais de `brush_mgr._brushes`;
+    - popula o diálogo com entradas concretas.
+  - fallback antigo (`_focus_brush_filter`) mantido somente quando o diálogo não está disponível no runtime.
+- `py_rme_canary/vis_layer/ui/dialogs/find_brush_dialog.py`
+  - delegate/list/dialog agora usam `ThemeManager.tokens` (surface/text/border/state/radius);
+  - removidas dependências de cores hardcoded no paint e stylesheet;
+  - adicionados helpers com fallback seguro para tema ausente/parcial.
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_jump_to_brush.py`
+  - valida aplicação de brush/palette;
+  - valida cancel sem side effects;
+  - valida fallback de foco quando diálogo indisponível;
+  - valida mapeamento legado `brush_type -> palette`.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_find_brush_dialog_theme.py`
+  - valida uso de tokens de tema no dialog/list;
+  - valida fallback seguro de tema.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py py_rme_canary/vis_layer/ui/dialogs/find_brush_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_jump_to_brush.py py_rme_canary/tests/unit/vis_layer/ui/test_find_brush_dialog_theme.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/main_window/qt_map_editor_navigation.py py_rme_canary/vis_layer/ui/dialogs/find_brush_dialog.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_jump_to_brush.py py_rme_canary/tests/unit/vis_layer/ui/test_find_brush_dialog_theme.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_jump_to_brush.py py_rme_canary/tests/unit/vis_layer/ui/test_find_brush_dialog_theme.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py` -> **11 passed**
+
+---
+
+## Sessão 10 (2026-02-19): Modern palette dock/grid theme parity
+
+### Lacuna identificada
+- O caminho moderno de palette (`ModernPaletteWidget`) ainda tinha estilo hardcoded para cards/lista.
+- `ModernPaletteDock` não tinha hook explícito de atualização de tema para runtime switch.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/docks/modern_palette.py`
+  - adicionado `_theme_colors()` com fallback seguro para tokens ausentes/parciais;
+  - styling do `QListWidget` migrado para tokens de tema (`surface`, `text`, `border`, `state`, `radius`);
+  - adicionado `refresh_theme()` no widget para reaplicar estilo e rerender de entries/fallback icons;
+  - hardening do drag hotspot com `QPoint` explícito em `startDrag`.
+- `py_rme_canary/vis_layer/ui/docks/modern_palette_dock.py`
+  - adicionado `refresh_theme()` para:
+    - `SearchBar` (filtro);
+    - tabs da palette;
+    - propagação para widgets internos (`ModernPaletteWidget` + `tool_options`).
+
+### Testes adicionados/atualizados
+- `py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py`
+  - novo: `test_modern_palette_dock_uses_theme_tokens_in_styles`.
+
+### Validação
+- `python3 -m ruff check py_rme_canary/vis_layer/ui/docks/modern_palette.py py_rme_canary/vis_layer/ui/docks/modern_palette_dock.py py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **OK**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/docks/modern_palette.py py_rme_canary/vis_layer/ui/docks/modern_palette_dock.py py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_jump_to_brush.py py_rme_canary/tests/unit/vis_layer/ui/test_find_brush_dialog_theme.py` -> **11 passed**
+
+---
+
+## Sessão 11 (2026-02-19): Theme parity nos widgets utilitários (layer/history/minimap/favorites)
+
+### Lacuna identificada
+- Parte dos widgets auxiliares ainda estava com estilos hardcoded fora do pipeline de tema:
+  - `LayerManager`
+  - `QuickAccessBar` / `FavoriteButton`
+  - `UndoRedoPanel` / `QuickUndoRedo`
+  - `FloorIndicator` / `MinimapWidget` / `FloorMinimapPanel`
+- Isso gerava inconsistência visual ao alternar entre os temas `noct_green_glass`, `noct_8bit_glass` e `noct_liquid_glass`.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/widgets/layer_manager.py`
+  - hardening do stylesheet tokenizado e manutenção de `refresh_theme()`;
+  - correção de blocos QSS em f-string para prevenir erro de runtime em parsing.
+- `py_rme_canary/vis_layer/ui/widgets/quick_access.py`
+  - adicionada resolução de tokens com fallback seguro (`_theme_colors`);
+  - menu de contexto migrado para tokens (`surface`, `border`, `state`, `text`, `radius`);
+  - `FavoriteButton.refresh_theme()` e `QuickAccessBar.refresh_theme()` com propagação para botões ativos.
+- `py_rme_canary/vis_layer/ui/widgets/undo_redo.py`
+  - migração completa para tokens de tema em `UndoRedoPanel` e `QuickUndoRedo`;
+  - adição de hooks `refresh_theme()` para runtime switch.
+- `py_rme_canary/vis_layer/ui/widgets/minimap.py`
+  - migração para tokens em `FloorIndicator`, `MinimapWidget`, `FloorMinimapPanel` e menu de contexto;
+  - `paintEvent` do minimap passou a usar `brand.primary` para viewport com fallback robusto;
+  - adição de `refresh_theme()` nos três widgets.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py`
+  - novos testes de contrato de tema:
+    - `test_undo_redo_panel_uses_theme_tokens_in_stylesheet`
+    - `test_quick_access_uses_theme_tokens_in_stylesheet`
+    - `test_floor_minimap_panel_uses_theme_tokens_in_stylesheet`
+
+### Validação
+- `ruff check py_rme_canary/vis_layer/ui/widgets/layer_manager.py py_rme_canary/vis_layer/ui/widgets/quick_access.py py_rme_canary/vis_layer/ui/widgets/undo_redo.py py_rme_canary/vis_layer/ui/widgets/minimap.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/widgets/layer_manager.py py_rme_canary/vis_layer/ui/widgets/quick_access.py py_rme_canary/vis_layer/ui/widgets/undo_redo.py py_rme_canary/vis_layer/ui/widgets/minimap.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/test_map_drawer_overlays.py py_rme_canary/tests/unit/vis_layer/test_map_drawer_tooltips.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py py_rme_canary/tests/unit/vis_layer/ui/test_modern_palette_dock.py py_rme_canary/tests/unit/vis_layer/ui/test_find_brush_dialog_theme.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_jump_to_brush.py py_rme_canary/tests/unit/vis_layer/ui/test_qt_map_editor_hotkeys.py py_rme_canary/tests/ui/test_toolbar_menu_sync.py` -> **68 passed**
+
+---
+
+## Sessão 12 (2026-02-19): Refatoração do Tileset Browser (sidebar/select menu) + contrato de seleção
+
+### Lacuna identificada
+- O componente `TilesetBrowser` (sidebar de categorias + grid de brushes) ainda tinha blocos hardcoded de estilo e duplicação de lógica de rebuild de grid.
+- Isso aumentava risco de desync visual entre temas e regressões na seleção ao alternar entre categoria e busca.
+
+### Implementação no Python
+- `py_rme_canary/vis_layer/ui/panels/tileset_browser.py`
+  - introduzido resolver de tokens (`_theme_colors`) com fallback seguro;
+  - `CategoryList`, `BrushGridItem` e `TilesetBrowser` migrados para theme tokens;
+  - adicionado hook `refresh_theme()` em todos os componentes do painel;
+  - fluxo de render da grade refatorado para pipeline único:
+    - `_clear_grid()`
+    - `_rebuild_grid(...)`
+  - `search` e `category` agora reutilizam o mesmo pipeline com preservação do brush selecionado (`_selected_brush_id`);
+  - hardening do header para ícone opcional sem espaços extras.
+- `py_rme_canary/tests/unit/vis_layer/ui/test_tileset_browser.py` (novo)
+  - cobertura para:
+    - carregamento inicial de dados/categorias;
+    - busca e reset para categoria ativa;
+    - emissão da signal `brush_selected`;
+    - validação de theme tokens no stylesheet.
+
+### Validação
+- `ruff check py_rme_canary/vis_layer/ui/panels/tileset_browser.py py_rme_canary/tests/unit/vis_layer/ui/test_tileset_browser.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **All checks passed**
+- `python3 -m py_compile py_rme_canary/vis_layer/ui/panels/tileset_browser.py py_rme_canary/tests/unit/vis_layer/ui/test_tileset_browser.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **OK**
+- `QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -s py_rme_canary/tests/unit/vis_layer/ui/test_tileset_browser.py py_rme_canary/tests/unit/vis_layer/ui/test_widgets.py` -> **28 passed**
+
+---
+
+## Sessão 13 (2026-02-19): Migração de workflows Gemini para o repositório Python
+
+### Objetivo
+- Atender solicitação de manter o `remeres-map-editor-redux` sem alterações e mover os workflows Gemini para `.github/workflows` do projeto Python.
+
+### Implementação
+- Adicionados no repositório Python:
+  - `.github/workflows/gemini-dispatch.yml`
+  - `.github/workflows/gemini-invoke.yml`
+  - `.github/workflows/gemini-review.yml`
+  - `.github/workflows/gemini-triage.yml`
+  - `.github/workflows/gemini-scheduled-triage.yml`
+- Os arquivos no legacy C++ foram restaurados para o estado original (sem mudanças locais pendentes).
+
+### Validação
+- Parse YAML local:
+  - `OK .github/workflows/gemini-dispatch.yml`
+  - `OK .github/workflows/gemini-invoke.yml`
+  - `OK .github/workflows/gemini-review.yml`
+  - `OK .github/workflows/gemini-triage.yml`
+  - `OK .github/workflows/gemini-scheduled-triage.yml`
+- Verificação de estado:
+  - no repositório Python: workflows Gemini presentes como novos arquivos.
+  - no legacy (`remeres-map-editor-redux`): sem alterações pendentes nesses workflows.

@@ -52,12 +52,35 @@
             </details>
             <last_updated>2026-02-19</last_updated>
         </module>
+        <module name="lua_monster_import" status="complete">
+            <description>Lua Monster Import (Revscript)</description>
+            <details>Fully implemented and tested Revscript importer in core/io/lua_creature_import.py.</details>
+            <last_updated>2026-02-09</last_updated>
+        </module>
+        <module name="appearances_dat_support" status="complete">
+            <description>Full Appearances.dat Support</description>
+            <details>Complete parsing of AppearanceFlags in core/assets/appearances_dat.py, supporting all 45+ protobuf fields.</details>
+            <last_updated>2026-02-09</last_updated>
+        </module>
+        <module name="sprite_hash_matching" status="complete">
+            <description>Sprite Hash Matching</description>
+            <details>Complete FNV-1a hash matching integrated via logic_layer/cross_version/sprite_hash.py.</details>
+            <last_updated>2026-02-09</last_updated>
+        </module>
+        <module name="rust_acceleration_expansion" status="complete">
+            <description>Rust Acceleration Expansion</description>
+            <details>Expanded Rust acceleration to 5 core functions including FNV-1a hash, sprite hash, minimap buffer, PNG IDAT assembly, and position deduplication.</details>
+            <last_updated>2026-02-14</last_updated>
+        </module>
+        <module name="strict_quality_hardening" status="complete">
+            <description>Strict Quality Hardening (mypy --strict)</description>
+            <details>mypy --strict passes clean on the entire project (373 source files, 0 errors).</details>
+            <last_updated>2026-02-10</last_updated>
+        </module>
+        <module name="in_game_preview_release" status="complete">
+            <description>In-Game Preview &amp; v3.0 Release Polish</description>
+            <details>Completed all phases of the In-Game Preview program and polished the v3.0 release infrastructure.</details>
+            <last_updated>2026-02-10</last_updated>
+        </module>
     </modules>
-    <pending_features>
-        <feature priority="high">Lua Monster Import (Revscript)</feature>
-        <feature priority="medium">Complete Sprite Hash Matching</feature>
-        <feature priority="medium">Full Appearances.dat Support</feature>
-        <feature priority="low">Rust Acceleration expansion</feature>
-    </pending_features>
 </project_status>
-
