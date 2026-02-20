@@ -27,6 +27,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
+
 if TYPE_CHECKING:
     from py_rme_canary.logic_layer.png_exporter import PNGExporter
 
@@ -70,7 +72,7 @@ class ExportWorker(QThread):
         self._exporter.cancel()
 
 
-class PNGExportDialog(QDialog):
+class PNGExportDialog(ModernDialog):
     """Dialog for image export options with progress."""
 
     def __init__(
@@ -78,19 +80,16 @@ class PNGExportDialog(QDialog):
         parent: QWidget | None = None,
         session: Any = None,
     ) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="Export Image")
         self._session = session
         self._worker: ExportWorker | None = None
 
-        self.setWindowTitle("Export Image")
         self.setMinimumWidth(400)
         self.setModal(True)
 
-        self._setup_ui()
+        self._populate_content()
 
-    def _setup_ui(self) -> None:
-        layout = QVBoxLayout(self)
-
+    def _populate_content(self) -> None:
         # Options group
         options_group = QGroupBox("Export Options")
         options_layout = QVBoxLayout(options_group)
@@ -145,32 +144,25 @@ class PNGExportDialog(QDialog):
         chunk_row.addStretch()
         options_layout.addLayout(chunk_row)
 
-        layout.addWidget(options_group)
+        self.content_layout.addWidget(options_group)
 
         # Memory estimate
         self._memory_label = QLabel("Estimated memory: calculating...")
-        layout.addWidget(self._memory_label)
+        self.content_layout.addWidget(self._memory_label)
 
         # Progress section
         self._progress_bar = QProgressBar()
         self._progress_bar.setVisible(False)
-        layout.addWidget(self._progress_bar)
+        self.content_layout.addWidget(self._progress_bar)
 
         self._status_label = QLabel("")
         self._status_label.setVisible(False)
-        layout.addWidget(self._status_label)
+        self.content_layout.addWidget(self._status_label)
 
         # Buttons
-        button_layout = QHBoxLayout()
-        self._export_btn = QPushButton("Export...")
-        self._export_btn.clicked.connect(self._on_export)
-        button_layout.addWidget(self._export_btn)
-
-        self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.clicked.connect(self._on_cancel)
-        button_layout.addWidget(self._cancel_btn)
-
-        layout.addLayout(button_layout)
+        self.add_spacer_to_footer()
+        self._cancel_btn = self.add_button("Cancel", callback=self._on_cancel)
+        self._export_btn = self.add_button("Export...", callback=self._on_export, role="primary")
 
         # Connect signals
         self._z_spin.valueChanged.connect(self._update_estimate)

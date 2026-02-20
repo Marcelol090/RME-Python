@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import (
 )
 
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 
 if TYPE_CHECKING:
     pass
@@ -50,7 +51,7 @@ class ExportFormat(IntEnum):
     JSON = auto()
 
 
-class ExportTilesetsDialog(QDialog):
+class ExportTilesetsDialog(ModernDialog):
     """Dialog for exporting tilesets to files.
 
     Provides interface for:
@@ -79,29 +80,23 @@ class ExportTilesetsDialog(QDialog):
             default_path: Default export directory.
             parent: Parent widget.
         """
-        super().__init__(parent)
+        super().__init__(parent, title="Export Tilesets")
         self._available_tilesets = tilesets or []
         self._default_path = default_path or Path.home()
 
-        self.setWindowTitle("Export Tilesets")
         self.setMinimumSize(500, 450)
         self.setModal(True)
 
-        self._setup_ui()
+        self._populate_content()
         self._apply_style()
         self._load_tilesets()
         self._validate()
 
-    def _setup_ui(self) -> None:
+    def _populate_content(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        self.content_layout.setSpacing(16)
 
-        # Header
-        header = QLabel("Export Tilesets")
-        header.setObjectName("headerLabel")
-        layout.addWidget(header)
+        # Header label removed as title is present in ModernDialog
 
         # Tileset selection group
         selection_group = QGroupBox("Select Tilesets")
@@ -132,7 +127,7 @@ class ExportTilesetsDialog(QDialog):
         self._selection_label.setObjectName("selectionLabel")
         selection_layout.addWidget(self._selection_label)
 
-        layout.addWidget(selection_group, 1)
+        self.content_layout.addWidget(selection_group, 1)
 
         # Output configuration group
         output_group = QGroupBox("Output Configuration")
@@ -167,7 +162,7 @@ class ExportTilesetsDialog(QDialog):
         self._format_combo.currentIndexChanged.connect(self._on_format_changed)
         output_layout.addRow("Format:", self._format_combo)
 
-        layout.addWidget(output_group)
+        self.content_layout.addWidget(output_group)
 
         # Options group
         options_group = QGroupBox("Export Options")
@@ -188,27 +183,24 @@ class ExportTilesetsDialog(QDialog):
         self._overwrite_check.setToolTip("Replace files if they already exist")
         options_layout.addWidget(self._overwrite_check)
 
-        layout.addWidget(options_group)
+        self.content_layout.addWidget(options_group)
 
         # Error message area
         self._error_label = QLabel()
         self._error_label.setObjectName("errorLabel")
         self._error_label.setWordWrap(True)
         self._error_label.hide()
-        layout.addWidget(self._error_label)
+        self.content_layout.addWidget(self._error_label)
 
         # Preview of output path
         self._preview_label = QLabel()
         self._preview_label.setObjectName("previewLabel")
-        layout.addWidget(self._preview_label)
+        self.content_layout.addWidget(self._preview_label)
 
         # Dialog buttons
-        self._button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        self._ok_button = self._button_box.button(QDialogButtonBox.StandardButton.Ok)
-        self._ok_button.setText("Export")
-        self._button_box.accepted.connect(self._on_accept)
-        self._button_box.rejected.connect(self.reject)
-        layout.addWidget(self._button_box)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject)
+        self._ok_button = self.add_button("Export", callback=self._on_accept, role="primary")
 
     def _apply_style(self) -> None:
         """Apply dark theme styling."""
@@ -217,12 +209,8 @@ class ExportTilesetsDialog(QDialog):
         rad = r.get("md", 6)
         rad_sm = r.get("sm", 4)
 
-        self.setStyleSheet(
+        self.content_area.setStyleSheet(
             f"""
-            QDialog {{
-                background-color: {c['surface']['primary']};
-                color: {c['text']['primary']};
-            }}
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {c['border']['default']};
