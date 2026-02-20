@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from py_rme_canary.core.config.client_profiles import ClientProfile, create_client_profile
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,23 +34,19 @@ class _ProfileFormData:
     preferred_kind: str
 
 
-class ClientProfileEditDialog(QDialog):
+class ClientProfileEditDialog(ModernDialog):
     """Dialog to create or edit a single client profile."""
 
     def __init__(self, parent: QWidget | None = None, *, profile: ClientProfile | None = None) -> None:
-        super().__init__(parent)
+        title = "Edit Client Profile" if profile is not None else "New Client Profile"
+        super().__init__(parent, title=title)
         self._profile = profile
-        self.setWindowTitle("Edit Client Profile" if profile is not None else "New Client Profile")
         self.setModal(True)
         self.setMinimumWidth(520)
-        self._setup_ui()
+        self._populate_content()
         self._load_profile()
 
-    def _setup_ui(self) -> None:
-        root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
-        root.setSpacing(10)
-
+    def _populate_content(self) -> None:
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         form.setSpacing(8)
@@ -80,17 +77,12 @@ class ClientProfileEditDialog(QDialog):
         self._preferred_kind.addItem("Legacy (.dat/.spr)", "legacy")
         form.addRow("Prefer:", self._preferred_kind)
 
-        root.addLayout(form)
+        self.content_layout.addLayout(form)
+        self.content_layout.addStretch()
 
-        btns = QHBoxLayout()
-        btns.addStretch()
-        cancel = QPushButton("Cancel")
-        cancel.clicked.connect(self.reject)
-        save = QPushButton("Save")
-        save.clicked.connect(self._save)
-        btns.addWidget(cancel)
-        btns.addWidget(save)
-        root.addLayout(btns)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject)
+        self.add_button("Save", callback=self._save, role="primary")
 
     def _load_profile(self) -> None:
         profile = self._profile
@@ -126,7 +118,7 @@ class ClientProfileEditDialog(QDialog):
         )
 
 
-class ClientProfilesDialog(QDialog):
+class ClientProfilesDialog(ModernDialog):
     """Manage persisted client profiles used by the assets loader."""
 
     def __init__(
@@ -136,28 +128,23 @@ class ClientProfilesDialog(QDialog):
         profiles: list[ClientProfile],
         active_profile_id: str,
     ) -> None:
-        super().__init__(parent)
-        self.setWindowTitle("Client Profiles")
+        super().__init__(parent, title="Client Profiles")
         self.setModal(True)
         self.setMinimumSize(860, 420)
         self._profiles = list(profiles)
         self._active_profile_id = str(active_profile_id or "")
         if self._profiles and self._active_profile_id not in {p.profile_id for p in self._profiles}:
             self._active_profile_id = self._profiles[0].profile_id
-        self._setup_ui()
+        self._populate_content()
         self._refresh_table()
 
-    def _setup_ui(self) -> None:
-        root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
-        root.setSpacing(10)
-
+    def _populate_content(self) -> None:
         help_text = QLabel(
             "Configure reusable assets profiles by client version. "
             "Set one profile as active to be auto-loaded for new maps."
         )
         help_text.setWordWrap(True)
-        root.addWidget(help_text)
+        self.content_layout.addWidget(help_text)
 
         self._table = QTableWidget()
         self._table.setColumnCount(5)
@@ -168,7 +155,7 @@ class ClientProfilesDialog(QDialog):
         self._table.verticalHeader().setVisible(False)
         self._table.horizontalHeader().setStretchLastSection(True)
         self._table.itemDoubleClicked.connect(self._edit_selected)
-        root.addWidget(self._table, 1)
+        self.content_layout.addWidget(self._table, 1)
 
         controls = QGridLayout()
         controls.setHorizontalSpacing(8)
@@ -189,17 +176,11 @@ class ClientProfilesDialog(QDialog):
         controls.addWidget(self._btn_delete, 0, 2)
         controls.addWidget(self._btn_active, 0, 3)
         controls.setColumnStretch(4, 1)
-        root.addLayout(controls)
+        self.content_layout.addLayout(controls)
 
-        bottom = QHBoxLayout()
-        bottom.addStretch()
-        cancel = QPushButton("Cancel")
-        cancel.clicked.connect(self.reject)
-        ok = QPushButton("OK")
-        ok.clicked.connect(self.accept)
-        bottom.addWidget(cancel)
-        bottom.addWidget(ok)
-        root.addLayout(bottom)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject)
+        self.add_button("OK", callback=self.accept, role="primary")
 
     def _refresh_table(self) -> None:
         self._profiles.sort(key=lambda p: (int(p.client_version), p.name.lower(), p.profile_id))
