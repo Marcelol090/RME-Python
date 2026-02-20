@@ -72,3 +72,15 @@ def test_allowed_math_module(engine: ScriptEngine) -> None:
     result = engine.execute(script)
     assert result.success
     assert result.return_value == 2.0
+
+
+def test_blocked_frame_access(engine: ScriptEngine) -> None:
+    script = """
+def gen():
+    yield 1
+g = gen()
+frame = g.gi_frame
+"""
+    result = engine.execute(script)
+    assert result.status == ScriptStatus.SECURITY_ERROR
+    assert "Forbidden attribute access: gi_frame" in result.error

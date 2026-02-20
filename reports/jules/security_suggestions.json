@@ -1,92 +1,34 @@
 {
   "version": 1,
   "category": "security",
-  "generated_at": "2026-02-13T10:00:00Z",
-  "task": "security-scan-and-fix",
+  "generated_at": "2026-02-20T07:08:35Z",
   "implemented": [
     {
-      "id": "SEC-007",
-      "summary": "Fixed Partial Read DoS vulnerability in LiveSocket by implementing non-blocking buffering (process_incoming_data).",
-      "files": [
-        "py_rme_canary/core/protocols/live_socket.py",
-        "py_rme_canary/core/protocols/live_server.py",
-        "py_rme_canary/core/protocols/live_peer.py"
-      ],
-      "evidence": "Verified with reproduction test case tests/reproduce_issue/test_live_socket_dos_partial.py which now passes."
-    },
-    {
-      "id": "SEC-005",
-      "summary": "Fixed DoS vulnerability in LiveSocket where unlimited payload size could lead to OOM attacks.",
-      "files": [
-        "py_rme_canary/core/protocols/live_socket.py"
-      ],
-      "evidence": "Verified with reproduction test case in py_rme_canary/tests/unit/core/protocols/test_live_socket_security.py"
-    },
-    {
-      "id": "SEC-006",
-      "summary": "Fixed regression in ItemTypeDetector where door lookups were failing due to missing definitions.",
-      "files": [
-        "py_rme_canary/logic_layer/item_type_detector.py"
-      ],
-      "evidence": "Verified with existing unit tests in py_rme_canary/tests/unit/logic_layer/test_item_type_detector.py"
-    },
-    {
-      "id": "SEC-001",
-      "summary": "Fixed timing attack vulnerability in LiveServer password comparison using secrets.compare_digest.",
-      "files": [
-        "py_rme_canary/core/protocols/live_server.py"
-      ],
-      "evidence": "Verified with unit tests in py_rme_canary/tests/unit/core/protocols/test_live_server_security.py"
-    },
-    {
-      "id": "SEC-002",
-      "summary": "Verified usage of defusedxml for safe XML parsing to prevent XXE attacks.",
-      "files": [
-        "py_rme_canary/core/io/xml/safe.py",
-        "py_rme_canary/core/io/lua_creature_import.py"
-      ],
-      "evidence": "Code review confirmed imports from core.io.xml.safe"
-    },
-    {
-      "id": "SEC-003",
-      "summary": "Verified ScriptEngine sandbox implementation blocking dangerous AST nodes.",
+      "id": "JULES-SEC-001",
+      "summary": "Block frame traversal in ScriptEngine sandbox",
       "files": [
         "py_rme_canary/logic_layer/script_engine.py"
-      ],
-      "evidence": "Code review confirmed AST visitor blocks eval, exec, open, and dangerous attributes"
-    },
-    {
-      "id": "SEC-004",
-      "summary": "Fixed authentication bypass vulnerability where unauthenticated clients could send messages and updates.",
-      "files": [
-        "py_rme_canary/core/protocols/live_server.py",
-        "py_rme_canary/core/protocols/live_peer.py"
-      ],
-      "evidence": "Verified with reproduction test case in py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py"
-    },
-    {
-      "id": "SEC-007",
-      "summary": "Implemented Rate Limiting and Map Request Size Limits for LiveServer to mitigate DoS attacks.",
-      "files": [
-        "py_rme_canary/core/protocols/live_server.py",
-        "py_rme_canary/core/protocols/live_peer.py"
-      ],
-      "evidence": "Verified with py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py (50 packets/second limit and oversized map request rejection)."
+      ]
     }
   ],
   "suggested_next": [
     {
-      "id": "SUG-SEC-001",
-      "severity": "CRITICAL",
-      "summary": "Implement TLS encryption for LiveServer connections.",
-      "rationale": "Passwords and map data are currently transmitted in plain text. TLS is required to prevent eavesdropping and MITM attacks.",
+      "id": "JULES-SEC-002",
+      "severity": "HIGH",
+      "summary": "LiveServer password sent in plaintext",
+      "rationale": "Without SSL/TLS, the password is vulnerable to interception.",
       "files": [
-        "py_rme_canary/core/protocols/live_server.py",
-        "py_rme_canary/core/protocols/live_client.py"
+        "py_rme_canary/core/protocols/live_server.py"
       ],
-      "links": [
-        "https://docs.python.org/3/library/ssl.html"
-      ]
+      "links": []
+    },
+    {
+      "id": "JULES-SEC-003",
+      "severity": "LOW",
+      "summary": "Review Hardcoded Secrets in Tests",
+      "rationale": "Hardcoded credentials in tests may leak into production or history.",
+      "files": [],
+      "links": []
     }
   ]
 }
