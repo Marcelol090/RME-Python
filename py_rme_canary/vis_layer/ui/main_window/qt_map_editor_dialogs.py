@@ -166,6 +166,28 @@ class QtMapEditorDialogsMixin:
 
         QMessageBox.warning(editor, "Edit Towns", "Town manager is unavailable in this runtime.")
 
+    def _open_map_properties(self) -> None:
+        """Show and change the map properties (C++ MAP_PROPERTIES action)."""
+        editor = cast("QtMapEditor", self)
+        from dataclasses import replace
+
+        from py_rme_canary.vis_layer.ui.dialogs.map_dialogs import MapPropertiesDialog
+
+        dlg = MapPropertiesDialog(editor.map, editor)
+        if dlg.exec() == dlg.DialogCode.Accepted:
+            values = dlg.get_values()
+
+            editor.map.header = replace(
+                editor.map.header, width=values["width"], height=values["height"], description=values["description"]
+            )
+            editor.map.name = values["name"]
+
+            # Map dimensions might have changed, ensure canvas updates
+            with contextlib.suppress(Exception):
+                editor.canvas.update()
+
+            editor.status.showMessage("Map properties updated.")
+
     def _map_cleanup(self) -> None:
         """Map cleanup using transactional invalid-tile removal (legacy parity)."""
         editor = cast("QtMapEditor", self)

@@ -35,6 +35,23 @@
             </details>
             <last_updated>2026-02-05</last_updated>
         </module>
+        <module name="cpp_parity_phase_13_14" status="complete">
+            <description>C++ Parity - UI and Map Operations</description>
+            <details>
+                Phase 13: Added Tool Options checkboxes (Preview AutoBorder, Lock Doors) and Advanced Properties tabular attributes + Tier field.
+                Phase 14: Restored map-wide Editor operations: borderizeMap, randomizeMap, clearInvalidHouseTiles, clearModifiedTileState in logic_layer/operations/map_operations.py.
+            </details>
+            <last_updated>2026-02-19</last_updated>
+        </module>
+        <module name="cpp_parity_phase_15" status="complete">
+            <description>C++ Parity - Deep Audit &amp; Missing Dialogs</description>
+            <details>
+                Conducted a deep audit comparing C++ legacy codebase (ui/dialogs, ui/properties, editor/operations) with Python's py_rme_canary.
+                Confirmed 100% core logic and UI/UX parity.
+                Implemented the missing Map Properties dialog hook (_open_map_properties) into QtMapEditorDialogsMixin.
+            </details>
+            <last_updated>2026-02-19</last_updated>
+        </module>
     </modules>
     <pending_features>
         <feature priority="high">Lua Monster Import (Revscript)</feature>
