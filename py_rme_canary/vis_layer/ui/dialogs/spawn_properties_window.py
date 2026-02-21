@@ -16,9 +16,6 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
-    QApplication,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QFrame,
     QGroupBox,
@@ -30,7 +27,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from py_rme_canary.vis_layer.ui.dialogs.base_modern import ModernDialog
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
+from py_rme_canary.vis_layer.ui.utils.scaling import scale_dip
 
 if TYPE_CHECKING:
     from py_rme_canary.core.data.spawn import Spawn
@@ -46,7 +45,7 @@ class SpawnRadiusPreview(QFrame):
         super().__init__(parent)
         self._radius = 3
         self._max_creatures = 4
-        size = _scale_dip(self, 150)
+        size = scale_dip(self, 150)
         self.setFixedSize(size, size)
         self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Sunken)
 
@@ -122,7 +121,7 @@ class SpawnRadiusPreview(QFrame):
         painter.end()
 
 
-class SpawnPropertiesWindow(QDialog):
+class SpawnPropertiesWindow(ModernDialog):
     """Dialog for editing spawn area properties.
 
     Allows editing:
@@ -162,41 +161,49 @@ class SpawnPropertiesWindow(QDialog):
             tile: The tile containing the spawn.
             parent: Parent widget.
         """
-        super().__init__(parent)
+        super().__init__(parent, title="Edit Spawn")
         self._spawn = spawn
         self._tile = tile
 
-        self.setWindowTitle("Edit Spawn")
-        self.setMinimumSize(_scale_dip(self, 450), _scale_dip(self, 420))
-        self.setModal(True)
+        self.setMinimumSize(scale_dip(self, 450), scale_dip(self, 420))
 
-        self._setup_ui()
-        self._apply_style()
+        self._populate_ui()
         self._load_values()
 
-    def _setup_ui(self) -> None:
+    def _populate_ui(self) -> None:
         """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(_scale_dip(self, 16))
-        margin = _scale_dip(self, 20)
-        layout.setContentsMargins(margin, margin, margin, margin)
+        layout = self.content_layout
+        layout.setSpacing(scale_dip(self, 16))
 
-        # Header
+        c = get_theme_manager().tokens["color"]
+        r = get_theme_manager().tokens["radius"]
+
+        # Header within content (Spawn Configuration) - maybe redundant with window title but keeping it
+        # Actually window title is "Edit Spawn", header was "Spawn Configuration".
         header = QHBoxLayout()
         self._header_label = QLabel("Spawn Configuration")
         self._header_label.setObjectName("headerLabel")
+        self._header_label.setStyleSheet(f"""
+            QLabel#headerLabel {{
+                font-size: 14px;
+                font-weight: bold;
+                color: {c['brand']['primary']};
+            }}
+        """)
         header.addWidget(self._header_label)
         header.addStretch()
         layout.addLayout(header)
 
         # Main content - preview and settings side by side
         content_layout = QHBoxLayout()
-        content_layout.setSpacing(_scale_dip(self, 20))
+        content_layout.setSpacing(scale_dip(self, 20))
 
         # Left side - Preview
         preview_group = QGroupBox("Preview")
         preview_layout = QVBoxLayout(preview_group)
         preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self._apply_group_style(preview_group, c, r)
 
         self._preview = SpawnRadiusPreview()
         preview_layout.addWidget(self._preview)
@@ -205,6 +212,7 @@ class SpawnPropertiesWindow(QDialog):
         legend = QLabel("● Center  ● Creatures")
         legend.setObjectName("legend")
         legend.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        legend.setStyleSheet(f"color: {c['text']['tertiary']}; font-size: 10px;")
         preview_layout.addWidget(legend)
 
         content_layout.addWidget(preview_group)
@@ -212,7 +220,8 @@ class SpawnPropertiesWindow(QDialog):
         # Right side - Settings
         settings_group = QGroupBox("Settings")
         settings_layout = QFormLayout(settings_group)
-        settings_layout.setSpacing(_scale_dip(self, 16))
+        settings_layout.setSpacing(scale_dip(self, 16))
+        self._apply_group_style(settings_group, c, r)
 
         # Spawn Radius
         radius_layout = QHBoxLayout()
@@ -222,6 +231,7 @@ class SpawnPropertiesWindow(QDialog):
         self._radius_spin.setValue(self.DEFAULT_RADIUS)
         self._radius_spin.setToolTip("Radius in tiles where creatures can spawn")
         self._radius_spin.valueChanged.connect(self._on_radius_changed)
+        self._apply_input_style(self._radius_spin, c, r)
         radius_layout.addWidget(self._radius_spin)
 
         self._radius_slider = QSlider(Qt.Orientation.Horizontal)
@@ -229,6 +239,7 @@ class SpawnPropertiesWindow(QDialog):
         self._radius_slider.setValue(self.DEFAULT_RADIUS)
         self._radius_slider.valueChanged.connect(self._radius_spin.setValue)
         self._radius_spin.valueChanged.connect(self._radius_slider.setValue)
+        self._apply_slider_style(self._radius_slider, c, r)
         radius_layout.addWidget(self._radius_slider, 1)
 
         settings_layout.addRow("Radius:", radius_layout)
@@ -239,6 +250,7 @@ class SpawnPropertiesWindow(QDialog):
         self._creatures_spin.setValue(self.DEFAULT_MAX_CREATURES)
         self._creatures_spin.setToolTip("Maximum number of creatures in this spawn")
         self._creatures_spin.valueChanged.connect(self._on_creatures_changed)
+        self._apply_input_style(self._creatures_spin, c, r)
         settings_layout.addRow("Max Creatures:", self._creatures_spin)
 
         # Spawn Interval
@@ -249,6 +261,7 @@ class SpawnPropertiesWindow(QDialog):
         self._interval_spin.setValue(self.DEFAULT_INTERVAL)
         self._interval_spin.setSuffix(" sec")
         self._interval_spin.setToolTip("Time between creature respawns")
+        self._apply_input_style(self._interval_spin, c, r)
         interval_layout.addWidget(self._interval_spin)
 
         # Quick interval presets
@@ -258,6 +271,16 @@ class SpawnPropertiesWindow(QDialog):
             btn.setObjectName("presetLabel")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.mousePressEvent = lambda e, v=value: self._interval_spin.setValue(v)
+            btn.setStyleSheet(f"""
+                QLabel#presetLabel {{
+                    font-size: 11px;
+                    color: {c['brand']['active']};
+                    padding: 2px 4px;
+                }}
+                QLabel#presetLabel:hover {{
+                    color: {c['brand']['primary']};
+                }}
+            """)
             interval_presets.addWidget(btn)
         interval_presets.addStretch()
 
@@ -273,10 +296,20 @@ class SpawnPropertiesWindow(QDialog):
         # Statistics info
         stats_group = QGroupBox("Statistics")
         stats_layout = QVBoxLayout(stats_group)
+        self._apply_group_style(stats_group, c, r)
 
         self._stats_label = QLabel()
         self._stats_label.setObjectName("statsLabel")
         self._stats_label.setWordWrap(True)
+        self._stats_label.setStyleSheet(f"""
+            QLabel#statsLabel {{
+                font-size: 11px;
+                color: {c['text']['secondary']};
+                padding: 8px;
+                background-color: {c['surface']['tertiary']};
+                border-radius: 4px;
+            }}
+        """)
         stats_layout.addWidget(self._stats_label)
 
         layout.addWidget(stats_group)
@@ -286,22 +319,12 @@ class SpawnPropertiesWindow(QDialog):
         layout.addStretch()
 
         # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.add_spacer_to_footer()
+        self.add_button("Cancel", callback=self.reject)
+        self.add_button("OK", callback=self._on_accept, role="primary")
 
-    def _apply_style(self) -> None:
-        """Apply themed styling."""
-        c = get_theme_manager().tokens["color"]
-        r = get_theme_manager().tokens["radius"]
-
-        self.setStyleSheet(
-            f"""
-            QDialog {{
-                background-color: {c['surface']['primary']};
-                color: {c['text']['primary']};
-            }}
+    def _apply_group_style(self, group, c, r):
+        group.setStyleSheet(f"""
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {c['border']['default']};
@@ -316,33 +339,10 @@ class SpawnPropertiesWindow(QDialog):
                 padding: 0 6px;
                 color: {c['brand']['primary']};
             }}
-            QLabel {{
-                color: {c['text']['primary']};
-            }}
-            QLabel#headerLabel {{
-                font-size: 14px;
-                font-weight: bold;
-                color: {c['brand']['primary']};
-            }}
-            QLabel#legend {{
-                font-size: 10px;
-                color: {c['text']['tertiary']};
-            }}
-            QLabel#presetLabel {{
-                font-size: 11px;
-                color: {c['brand']['active']};
-                padding: 2px 4px;
-            }}
-            QLabel#presetLabel:hover {{
-                color: {c['brand']['primary']};
-            }}
-            QLabel#statsLabel {{
-                font-size: 11px;
-                color: {c['text']['secondary']};
-                padding: 8px;
-                background-color: {c['surface']['tertiary']};
-                border-radius: 4px;
-            }}
+        """)
+
+    def _apply_input_style(self, widget, c, r):
+        widget.setStyleSheet(f"""
             QSpinBox {{
                 background-color: {c['surface']['tertiary']};
                 border: 1px solid {c['border']['default']};
@@ -362,6 +362,10 @@ class SpawnPropertiesWindow(QDialog):
             QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
                 background-color: {c['state']['hover']};
             }}
+        """)
+
+    def _apply_slider_style(self, slider, c, r):
+        slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{
                 border: 1px solid {c['border']['default']};
                 height: 6px;
@@ -383,25 +387,7 @@ class SpawnPropertiesWindow(QDialog):
                 background-color: {c['brand']['primary']};
                 border-radius: 3px;
             }}
-            QPushButton {{
-                background-color: {c['border']['default']};
-                border: none;
-                border-radius: {r['sm']}px;
-                padding: 8px 20px;
-                color: {c['text']['primary']};
-                font-weight: 500;
-            }}
-            QPushButton:hover {{
-                background-color: {c['state']['hover']};
-            }}
-            QPushButton:pressed {{
-                background-color: {c['brand']['primary']};
-            }}
-            QDialogButtonBox QPushButton {{
-                min-width: 90px;
-            }}
-        """
-        )
+        """)
 
     def _load_values(self) -> None:
         """Load values from the spawn."""
@@ -508,14 +494,3 @@ class SpawnPropertiesWindow(QDialog):
             "max_creatures": self._creatures_spin.value(),
             "interval": self._interval_spin.value(),
         }
-
-
-def _scale_dip(widget: QWidget, value: int) -> int:
-    app = QApplication.instance()
-    if app is None:
-        return int(value)
-    screen = widget.screen() or app.primaryScreen()
-    if screen is None:
-        return int(value)
-    factor = float(screen.logicalDotsPerInch()) / 96.0
-    return max(1, int(round(float(value) * max(1.0, factor))))
