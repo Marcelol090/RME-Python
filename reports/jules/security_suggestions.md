@@ -36,6 +36,14 @@
   - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
   - evidence: Verified with `py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py` (50 packets/second limit + oversized map request rejection).
 
+- [SEC-008] Fixed Sandbox Escape vulnerability in ScriptEngine by blocking access to generator and frame attributes (gi_frame, f_back, etc).
+  - files: `py_rme_canary/logic_layer/script_engine.py`
+  - evidence: Verified with `py_rme_canary/tests/unit/logic_layer/test_script_engine_security.py`
+
+- [SEC-009] Fixed Stored XSS vulnerability in ChatDialog by escaping HTML content in messages.
+  - files: `py_rme_canary/vis_layer/ui/dialogs/chat_dialog.py`
+  - evidence: Verified with `py_rme_canary/tests/unit/vis_layer/ui/test_chat_dialog_security.py`
+
 ## Suggested Next
 
 - [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.

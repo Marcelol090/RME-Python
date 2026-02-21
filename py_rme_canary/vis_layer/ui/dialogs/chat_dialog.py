@@ -5,6 +5,7 @@ Provides a 1-on-1 chat interface.
 
 from __future__ import annotations
 
+import html
 from datetime import datetime
 
 from PyQt6.QtWidgets import (
@@ -109,4 +110,6 @@ class ChatDialog(ModernDialog):
         c = tm.tokens["color"]
 
         color = c["brand"]["primary"] if sender == "You" else c["text"]["secondary"]
-        self.history.append(f'<span style="color: {c["text"]["tertiary"]};">[{timestamp}]</span> <b style="color: {color};">{sender}:</b> {text}')
+        escaped_sender = html.escape(sender)
+        escaped_text = html.escape(text)
+        self.history.append(f'<span style="color: {c["text"]["tertiary"]};">[{timestamp}]</span> <b style="color: {color};">{escaped_sender}:</b> {escaped_text}')
