@@ -3,15 +3,9 @@
 from __future__ import annotations
 
 import sys
+import pytest
+import importlib
 from unittest.mock import MagicMock, patch
-
-# Unconditionally mock PyQt6 to ensure headless execution and avoid
-# "QWidget: Must construct a QApplication before a QWidget" errors.
-mock_qt = MagicMock()
-sys.modules["PyQt6"] = mock_qt
-sys.modules["PyQt6.QtWidgets"] = mock_qt
-sys.modules["PyQt6.QtCore"] = mock_qt
-sys.modules["PyQt6.QtGui"] = mock_qt
 
 # Define mock classes to support inheritance and method calls
 class MockableWidget:
@@ -64,23 +58,7 @@ class QLabel(QWidget):
     def setFixedHeight(self, h): pass
     def setObjectName(self, n): pass
 
-# Attach mocks to the mocked module
-mock_qt.QWidget = QWidget
-mock_qt.QDialog = QDialog
-mock_qt.QTextEdit = QTextEdit
-mock_qt.QLineEdit = QLineEdit
-mock_qt.QPushButton = QPushButton
-mock_qt.QVBoxLayout = QVBoxLayout
-mock_qt.QHBoxLayout = QHBoxLayout
-mock_qt.QFrame = QFrame
-mock_qt.QLabel = QLabel
-mock_qt.Qt = MagicMock()
-
-# Mock ModernDialog base to avoid dependency on its internal PyQt usage
-# We need to mock it BEFORE importing ChatDialog
-mock_modern = MagicMock()
-sys.modules["py_rme_canary.vis_layer.ui.dialogs.base_modern"] = mock_modern
-
+# Mock ModernDialog base
 class ModernDialog(QDialog):
     def __init__(self, parent=None, title=""):
         super().__init__(parent)
@@ -88,14 +66,56 @@ class ModernDialog(QDialog):
         # Mock attributes usually set by ModernDialog
         self.history = QTextEdit()
 
-mock_modern.ModernDialog = ModernDialog
+# ---------------------------------------------------------
+# Test Setup
+# ---------------------------------------------------------
 
-# Now import ChatDialog which will use the mocks
-import pytest
-from py_rme_canary.vis_layer.ui.dialogs.chat_dialog import ChatDialog
+@pytest.fixture
+def isolated_modules():
+    """Patches sys.modules with mocked PyQt6 and base_modern for test isolation."""
+    mock_qt = MagicMock()
+    mock_qt.QWidget = QWidget
+    mock_qt.QDialog = QDialog
+    mock_qt.QTextEdit = QTextEdit
+    mock_qt.QLineEdit = QLineEdit
+    mock_qt.QPushButton = QPushButton
+    mock_qt.QVBoxLayout = QVBoxLayout
+    mock_qt.QHBoxLayout = QHBoxLayout
+    mock_qt.QFrame = QFrame
+    mock_qt.QLabel = QLabel
+    mock_qt.Qt = MagicMock()
+
+    mock_modern_module = MagicMock()
+    mock_modern_module.ModernDialog = ModernDialog
+
+    # We must patch all potential PyQt6 imports
+    with patch.dict(sys.modules, {
+        "PyQt6": mock_qt,
+        "PyQt6.QtWidgets": mock_qt,
+        "PyQt6.QtCore": mock_qt,
+        "PyQt6.QtGui": mock_qt,
+        "py_rme_canary.vis_layer.ui.dialogs.base_modern": mock_modern_module,
+    }):
+        yield
 
 @patch("py_rme_canary.vis_layer.ui.dialogs.chat_dialog.get_theme_manager")
-def test_chat_dialog_xss_vulnerability(mock_tm):
+def test_chat_dialog_xss_vulnerability(mock_tm, isolated_modules):
+    # Since we patched sys.modules, we must import/reload the module under test
+    # inside the patched context to ensure it uses the mocks.
+    # Note: If chat_dialog was already imported, we'd need to reload it.
+    # But since we're patching sys.modules, importlib.import_module should pick up the mocks if not cached,
+    # or reload if cached. Let's force reload just to be safe.
+
+    # We need to import chat_dialog here because top-level import might have failed or used real PyQt
+    try:
+        from py_rme_canary.vis_layer.ui.dialogs import chat_dialog
+        importlib.reload(chat_dialog)
+    except ImportError:
+        # If it fails to import initially (e.g. real PyQt missing), we try importing again which should now succeed with mocks
+        import py_rme_canary.vis_layer.ui.dialogs.chat_dialog as chat_dialog
+
+    ChatDialog = chat_dialog.ChatDialog
+
     # Setup theme manager mock
     mock_tm.return_value.tokens = {
         "color": {
