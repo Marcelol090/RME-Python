@@ -12,6 +12,7 @@ Features:
 from __future__ import annotations
 
 import os
+import time
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
@@ -32,6 +33,7 @@ from PyQt6.QtWidgets import (
 from py_rme_canary.vis_layer.ui.resources.icon_pack import load_icon
 from py_rme_canary.vis_layer.ui.theme import get_theme_manager
 from py_rme_canary.vis_layer.ui.icons import icon_logo_axolotl
+from py_rme_canary.vis_layer.ui.utils.recent_files import RecentFilesManager
 
 if TYPE_CHECKING:
     from PyQt6.QtWidgets import QWidget
@@ -48,11 +50,24 @@ class RecentFileWidget(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(4)
 
+        # Header layout for Name + Time
+        header = QHBoxLayout()
+        header.setSpacing(8)
+
         # Filename
         name = os.path.basename(path)
         self.name_lbl = QLabel(name)
         self.name_lbl.setObjectName("RecentName")
-        layout.addWidget(self.name_lbl)
+        header.addWidget(self.name_lbl)
+
+        # Time Ago
+        time_str = self._get_time_ago(path)
+        self.time_lbl = QLabel(time_str)
+        self.time_lbl.setObjectName("RecentTime")
+        self.time_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        header.addWidget(self.time_lbl)
+
+        layout.addLayout(header)
 
         # Path (truncated)
         self.path_lbl = QLabel(path)
@@ -62,6 +77,33 @@ class RecentFileWidget(QWidget):
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._apply_style()
+
+    def _get_time_ago(self, path: str) -> str:
+        """Calculate human readable time ago string."""
+        if not os.path.exists(path):
+            return "File missing"
+
+        try:
+            mtime = os.path.getmtime(path)
+            diff = time.time() - mtime
+
+            if diff < 60:
+                return "Just now"
+            elif diff < 3600:
+                mins = int(diff / 60)
+                return f"{mins}m ago"
+            elif diff < 86400:
+                hours = int(diff / 3600)
+                return f"{hours}h ago"
+            elif diff < 604800:
+                days = int(diff / 86400)
+                return f"{days}d ago"
+            else:
+                import datetime
+                dt = datetime.datetime.fromtimestamp(mtime)
+                return dt.strftime("%Y-%m-%d")
+        except Exception:
+            return ""
 
     def _apply_style(self):
         tm = get_theme_manager()
@@ -84,6 +126,12 @@ class RecentFileWidget(QWidget):
             QLabel#RecentPath {{
                 color: {c["text"]["tertiary"]};
                 font-size: 11px;
+                background: transparent;
+            }}
+            QLabel#RecentTime {{
+                color: {c["text"]["tertiary"]};
+                font-size: 11px;
+                font-weight: 500;
                 background: transparent;
             }}
         """)
@@ -191,13 +239,23 @@ class WelcomeDialog(QDialog):
         lbl_recent.setObjectName("RecentHeader")
         header_layout.addWidget(lbl_recent)
 
+        header_layout.addStretch()
+
+        # Clear Button
+        self.btn_clear = QPushButton("Clear")
+        self.btn_clear.setObjectName("ClearButton")
+        self.btn_clear.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_clear.clicked.connect(self._on_clear_recent)
+        header_layout.addWidget(self.btn_clear)
+
+        header_layout.addSpacing(8)
+
         # Close Button
         self.btn_close = QPushButton("✕")
         self.btn_close.setObjectName("CloseButton")
         self.btn_close.setFixedSize(32, 32)
         self.btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_close.clicked.connect(self.reject)
-        header_layout.addStretch()
         header_layout.addWidget(self.btn_close)
 
         right_layout.addLayout(header_layout)
@@ -234,8 +292,16 @@ class WelcomeDialog(QDialog):
             item.setSizeHint(QSize(0, 68))
             item.setData(Qt.ItemDataRole.UserRole, path)
 
-            self.recent_list.addItem(item)
+            # Note: QListWidgetItem(parent) adds to list, no need to call addItem again
+            # if we pass the parent. But if we didn't pass parent to constructor, we'd use addItem.
+            # Here we passed parent in constructor: QListWidgetItem(self.recent_list)
             self.recent_list.setItemWidget(item, widget)
+
+    def _on_clear_recent(self):
+        """Clear recent files list."""
+        RecentFilesManager.instance().clear()
+        self.recent_files = []
+        self._populate_recent()
 
     def _apply_style(self) -> None:
         tm = get_theme_manager()
@@ -331,6 +397,20 @@ class WelcomeDialog(QDialog):
             QPushButton#CloseButton:hover {{
                 background-color: {c["state"]["error"]};
                 color: white;
+            }}
+
+            QPushButton#ClearButton {{
+                background: transparent;
+                border: none;
+                color: {c["text"]["tertiary"]};
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px 8px;
+                border-radius: {r["sm"]}px;
+            }}
+            QPushButton#ClearButton:hover {{
+                background-color: {c["state"]["hover"]};
+                color: {c["brand"]["primary"]};
             }}
 
             QListWidget {{
