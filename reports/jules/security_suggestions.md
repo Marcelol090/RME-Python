@@ -1,43 +1,32 @@
-# Security Suggestions
+# Security Audit Report
 
-- Generated at: `2026-02-13T10:00:00Z`
-- Category: `security`
-- Task: `security-scan-and-fix`
+**Date:** 2026-02-19
+**Agent:** Jules
 
-## Implemented
+## Executive Summary
+This report details the security vulnerabilities identified and remediated in the `py_rme_canary` codebase. The focus was on fixing critical injection vulnerabilities and hardening the scripting sandbox.
 
-- [SEC-007] Fixed Partial Read DoS vulnerability in LiveSocket by implementing non-blocking buffering (process_incoming_data).
-  - files: `py_rme_canary/core/protocols/live_socket.py`, `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
-  - evidence: Verified with reproduction test case `tests/reproduce_issue/test_live_socket_dos_partial.py` which now passes.
+## Implemented Fixes
 
-- [SEC-005] Fixed DoS vulnerability in LiveSocket where unlimited payload size could lead to OOM attacks.
-  - files: `py_rme_canary/core/protocols/live_socket.py`
-  - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_socket_security.py`
+### 1. ScriptEngine Sandbox Hardening (SEC-001)
+- **Severity:** HIGH
+- **Description:** The `ScriptEngine` sandbox was vulnerable to stack traversal attacks via generator frames and other attributes, potentially allowing arbitrary code execution.
+- **Fix:** Updated `ScriptSecurityChecker` to block access to `gi_frame`, `f_back`, `f_globals`, and other internal attributes.
+- **Verification:** Added `py_rme_canary/tests/unit/logic_layer/test_script_engine_hardened.py`.
 
-- [SEC-006] Fixed regression in ItemTypeDetector where door lookups were failing due to missing definitions.
-  - files: `py_rme_canary/logic_layer/item_type_detector.py`
-  - evidence: Verified with existing unit tests in `py_rme_canary/tests/unit/logic_layer/test_item_type_detector.py`
+### 2. ChatDialog XSS Remediation (SEC-002)
+- **Severity:** HIGH
+- **Description:** The `ChatDialog` was vulnerable to Cross-Site Scripting (XSS) as user input was not sanitized before being rendered in the HTML-based `QTextEdit`.
+- **Fix:** Implemented input sanitization using `html.escape()` for both sender names and message content.
+- **Verification:** Added `py_rme_canary/tests/unit/vis_layer/ui/test_chat_dialog_xss.py`.
 
-- [SEC-001] Fixed timing attack vulnerability in LiveServer password comparison using secrets.compare_digest.
-  - files: `py_rme_canary/core/protocols/live_server.py`
-  - evidence: Verified with unit tests in `py_rme_canary/tests/unit/core/protocols/test_live_server_security.py`
+### 3. LiveServer Plaintext Password Warning (SEC-003)
+- **Severity:** MEDIUM
+- **Description:** The LiveServer protocol transmits passwords in plaintext.
+- **Fix:** Added a startup warning to the server logs advising administrators to use external encryption (VPN/SSH).
 
-- [SEC-002] Verified usage of defusedxml for safe XML parsing to prevent XXE attacks.
-  - files: `py_rme_canary/core/io/xml/safe.py`, `py_rme_canary/core/io/lua_creature_import.py`
+## Future Suggestions
 
-- [SEC-003] Verified ScriptEngine sandbox implementation blocking dangerous AST nodes.
-  - files: `py_rme_canary/logic_layer/script_engine.py`
-
-- [SEC-004] Fixed authentication bypass vulnerability where unauthenticated clients could send messages and updates.
-  - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
-  - evidence: Verified with reproduction test case in `py_rme_canary/tests/unit/core/protocols/test_live_server_auth_bypass.py`
-
-- [SEC-007] Implemented Rate Limiting and Map Request Size Limits for LiveServer to mitigate DoS attacks.
-  - files: `py_rme_canary/core/protocols/live_server.py`, `py_rme_canary/core/protocols/live_peer.py`
-  - evidence: Verified with `py_rme_canary/tests/unit/core/protocols/test_live_server_dos.py` (50 packets/second limit + oversized map request rejection).
-
-## Suggested Next
-
-- [CRITICAL] [SUG-SEC-001] Implement TLS encryption for LiveServer connections.
-  - rationale: Passwords and map data are currently transmitted in plain text. TLS is required to prevent eavesdropping and MITM attacks.
-  - links: https://docs.python.org/3/library/ssl.html
+### SEC-FUTURE-001: Implement TLS/SSL for LiveServer
+- **Severity:** HIGH
+- **Rationale:** Relying on external tunnels is error-prone. Built-in TLS support would ensure secure communication by default.
