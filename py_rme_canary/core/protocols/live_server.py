@@ -98,6 +98,9 @@ class LiveServer:
             self.thread.start()
 
             log.info(f"Live Server started on {self.host}:{self.port}")
+            if self.password:
+                log.warning("Security Warning: Password authentication is enabled but transmission is plaintext. "
+                            "Ensure this connection is secured by external means (VPN/SSH) to prevent credential theft.")
             return True
         except Exception as e:
             log.error(f"Failed to start server: {e}")
